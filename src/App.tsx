@@ -1,0 +1,82 @@
+import { useEffect } from 'react'
+import { AppLayout } from './layout/AppLayout'
+import { ToastContainer } from './components/ToastContainer'
+import { OnboardingModal } from './components/OnboardingModal'
+import { useAutoSave, useProjectRestore } from './hooks/useAutoSave'
+import { useProjectStore } from './store/projectStore'
+import { saveProject } from './persistence/db'
+import { useToastStore } from './store/toastStore'
+
+function App() {
+  useProjectRestore()
+  useAutoSave()
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      const store = useProjectStore.getState()
+      const showToast = useToastStore.getState().showToast
+
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault()
+        const { start, end } = store.getPlaybackRange()
+        if (store.currentTime >= end) store.setCurrentTime(start)
+        store.setIsPlaying(!store.isPlaying)
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (store.selectedClipId) store.removeClip(store.selectedClipId)
+      }
+
+      if (e.key === 'Escape') store.setSelectedClipId(null)
+
+      if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        saveProject(store.project).then(() => showToast('保存しました', 'success')).catch(() => showToast('保存に失敗しました', 'error'))
+      }
+
+      if (e.key === 'z' && (e.metaKey || e.ctrlKey) && e.shiftKey) { e.preventDefault(); store.redo() }
+      else if (e.key === 'z' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); store.undo() }
+
+      if (e.key === 'd' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); store.duplicateSelectedClip() }
+      if (e.key === 'c' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); store.copySelectedClip(); showToast('コピーしました', 'info') }
+      if (e.key === 'v' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); store.pasteClip() }
+
+      if (e.key === 's' && !e.metaKey && !e.ctrlKey && store.selectedClipId) store.splitClipAt(store.selectedClipId, store.currentTime)
+      if (e.key === 'i' || e.key === 'I') store.setInPoint(store.currentTime)
+      if (e.key === 'o' || e.key === 'O') store.setOutPoint(store.currentTime)
+      if (e.key === 'm' || e.key === 'M') store.addMarker(store.currentTime)
+      if (e.key === 'g' || e.key === 'G') store.setShowSafeAreas(!store.showSafeAreas)
+      if (e.key === 'f' || e.key === 'F') {
+        const preview = document.querySelector('[data-preview-container]') as HTMLElement | null
+        if (preview) {
+          if (document.fullscreenElement) document.exitFullscreen()
+          else preview.requestFullscreen()
+        }
+      }
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        const step = e.shiftKey ? 1 : 1 / store.project.fps
+        store.setCurrentTime(Math.max(0, store.currentTime - step))
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        const step = e.shiftKey ? 1 : 1 / store.project.fps
+        store.setCurrentTime(Math.min(store.getProjectDuration(), store.currentTime + step))
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  return (
+    <>
+      <AppLayout />
+      <ToastContainer />
+      <OnboardingModal />
+    </>
+  )
+}
+
+export default App
