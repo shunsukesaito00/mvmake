@@ -72,7 +72,7 @@ npm run dev
 ```bash
 npm test          # ユニットテスト (Vitest)
 npm run test:e2e  # E2Eテスト (Playwright、初回は npx playwright install chromium が必要)
-npm run test:e2e:prod # 公開環境(GitHub Pages)に対する基本フローのスモークE2E
+npm run test:e2e:prod # 公開環境(GitHub Pages)に対するスモークE2E(基本3シナリオ)
 npm run screenshot # README用スクリーンショット生成
 ```
 

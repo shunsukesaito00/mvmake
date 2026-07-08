@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { makeSilentWav } from './helpers'
 
 test('基本フロー: 起動 → オンボーディング → テキスト追加 → タイムライン確認', async ({ page }) => {
   // './' は baseURL のサブパス(本番の /mvmake/ など)を保持する
@@ -38,4 +39,21 @@ test('サンプルプロジェクト: オンボーディングから開いて編
   await expect(page.locator('footer').getByText('Our Story.jpg')).toBeVisible()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
   await expect(page.getByText('▶ 再生してプレビュー')).toBeVisible()
+})
+
+test('音量キーフレーム: オーディオクリップでキーフレームを追加できる', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
+  await page.goto('./')
+  await expect(page.getByText('FABLE', { exact: true })).toBeVisible()
+
+  const wav = makeSilentWav(0.5)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'bgm.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await page.locator('footer').getByText('bgm.wav').click()
+
+  await page.getByRole('button', { name: '音量キーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
 })
