@@ -65,6 +65,9 @@ jobs:
             }
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # Pages バックエンドが混雑するとデフォルト10分では完了しないことがある
+          timeout: 1200000
 
   # デプロイ直後の公開環境に対して基本フローのスモークE2Eを実行する
   smoke:
