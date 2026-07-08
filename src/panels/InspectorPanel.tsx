@@ -8,6 +8,7 @@ import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
 import { ColorAdjustmentsSection } from '../components/ColorAdjustmentsSection'
 import { VisualFadeSection } from '../components/VisualFadeSection'
 import { PhotoGuideSection } from '../components/PhotoGuideSection'
+import { MarkerInspectorSection } from '../components/MarkerInspectorSection'
 import { Icons } from '../components/icons'
 import { isPhotoGuideClip } from '../utils/photoGuide'
 
@@ -85,11 +86,25 @@ function CollapsibleSection({ title, defaultOpen = true, children }: { title: st
 }
 
 export function InspectorPanel() {
+  const selectedMarker = useProjectStore((s) => s.getSelectedMarker())
   const selectedClip = useProjectStore((s) => s.getSelectedClip())
   const updateClip = useProjectStore((s) => s.updateClip)
   const removeClip = useProjectStore((s) => s.removeClip)
   const splitClipAt = useProjectStore((s) => s.splitClipAt)
   const rippleDelete = useProjectStore((s) => s.rippleDelete)
+
+  if (selectedMarker) {
+    return (
+      <div className="flex h-full flex-col overflow-hidden">
+        <PanelHeader title="インスペクター" icon={<Icons.Settings size={14} />} />
+        <div className="border-b border-border px-3 py-2.5">
+          <p className="text-sm font-semibold text-text-primary">章マーカー</p>
+          <p className="font-mono text-[10px] text-text-muted">{selectedMarker.time.toFixed(1)}s</p>
+        </div>
+        <MarkerInspectorSection marker={selectedMarker} />
+      </div>
+    )
+  }
 
   if (!selectedClip) {
     return (

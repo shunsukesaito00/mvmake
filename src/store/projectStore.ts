@@ -79,7 +79,7 @@ function createDefaultProject(): Project {
 
 export interface TimelineDragState {
   clipId: string
-  mode: 'move' | 'trimStart' | 'trimEnd' | 'playhead' | 'volumeKeyframe'
+  mode: 'move' | 'trimStart' | 'trimEnd' | 'playhead' | 'volumeKeyframe' | 'marker'
   startX: number
   startY: number
   originalStartTime: number
@@ -90,6 +90,7 @@ export interface TimelineDragState {
   keyframeId?: string
   originalKeyframeTime?: number
   originalKeyframeVolume?: number
+  markerId?: string
 }
 
 interface ProjectState {
@@ -97,6 +98,7 @@ interface ProjectState {
   currentTime: number
   isPlaying: boolean
   selectedClipId: string | null
+  selectedMarkerId: string | null
   pixelsPerSecond: number
   dragState: TimelineDragState | null
   exportProgress: number
@@ -115,6 +117,7 @@ interface ProjectState {
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
   setSelectedClipId: (id: string | null) => void
+  setSelectedMarkerId: (id: string | null) => void
   setPixelsPerSecond: (pps: number) => void
   setDragState: (state: TimelineDragState | null) => void
   setExportProgress: (progress: number) => void
@@ -157,11 +160,13 @@ interface ProjectState {
   setProjectSettings: (settings: { width?: number; height?: number; fps?: number }) => void
   applyTemplate: (template: ProjectTemplate) => void
   addMarker: (time: number, label?: string) => void
+  updateMarker: (id: string, updates: Partial<Pick<TimelineMarker, 'label' | 'time'>>, recordHistory?: boolean) => void
   removeMarker: (id: string) => void
 
   getSelectedClip: () => Clip | null
+  getSelectedMarker: () => TimelineMarker | null
   getProjectDuration: () => number
-  getSnapPoints: (excludeClipId?: string) => number[]
+  getSnapPoints: (excludeClipId?: string, excludeMarkerId?: string) => number[]
   getPlaybackRange: () => { start: number; end: number }
   resetProject: () => void
   loadProject: (project: Project) => void
@@ -227,6 +232,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   currentTime: 0,
   isPlaying: false,
   selectedClipId: null,
+  selectedMarkerId: null,
   pixelsPerSecond: 80,
   dragState: null,
   exportProgress: 0,
@@ -244,7 +250,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   setCurrentTime: (time) => set({ currentTime: Math.max(0, time) }),
   setIsPlaying: (playing) => set({ isPlaying: playing }),
-  setSelectedClipId: (id) => set({ selectedClipId: id }),
+  setSelectedClipId: (id) => set({ selectedClipId: id, selectedMarkerId: null }),
+  setSelectedMarkerId: (id) => set({ selectedMarkerId: id, selectedClipId: null }),
   setPixelsPerSecond: (pps) => set({ pixelsPerSecond: Math.max(20, Math.min(300, pps)) }),
   setDragState: (state) => set({ dragState: state }),
   setExportProgress: (progress) => set({ exportProgress: progress }),
@@ -285,6 +292,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       past: past.slice(0, -1),
       future: [cloneProject(project), ...future].slice(0, MAX_HISTORY),
       selectedClipId: null,
+      selectedMarkerId: null,
     })
   },
 
@@ -297,6 +305,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       past: [...past, cloneProject(project)].slice(-MAX_HISTORY),
       future: future.slice(1),
       selectedClipId: null,
+      selectedMarkerId: null,
     })
   },
 
@@ -792,7 +801,21 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         ...state.project,
         markers: (state.project.markers ?? []).filter((m) => m.id !== id),
       },
+      selectedMarkerId: state.selectedMarkerId === id ? null : state.selectedMarkerId,
       future: [],
+    }))
+  },
+
+  updateMarker: (id, updates, recordHistory = false) => {
+    if (recordHistory) get().pushHistory()
+    set((state) => ({
+      project: {
+        ...state.project,
+        markers: (state.project.markers ?? []).map((m) =>
+          m.id === id ? { ...m, ...updates } : m,
+        ),
+      },
+      ...(recordHistory ? { future: [] } : {}),
     }))
   },
 
@@ -800,6 +823,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project, selectedClipId } = get()
     if (!selectedClipId) return null
     return findClip(project, selectedClipId)?.clip ?? null
+  },
+
+  getSelectedMarker: () => {
+    const { project, selectedMarkerId } = get()
+    if (!selectedMarkerId) return null
+    return (project.markers ?? []).find((m) => m.id === selectedMarkerId) ?? null
   },
 
   getProjectDuration: () => {
@@ -813,12 +842,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     return { start: inPoint ?? 0, end: outPoint ?? end }
   },
 
-  getSnapPoints: (excludeClipId) => {
+  getSnapPoints: (excludeClipId, excludeMarkerId) => {
     const { project, currentTime, inPoint, outPoint } = get()
     const points = new Set<number>([0, currentTime])
     if (inPoint !== null) points.add(inPoint)
     if (outPoint !== null) points.add(outPoint)
-    for (const marker of project.markers ?? []) points.add(marker.time)
+    for (const marker of project.markers ?? []) {
+      if (marker.id === excludeMarkerId) continue
+      points.add(marker.time)
+    }
     for (const track of project.tracks) {
       for (const clip of track.clips) {
         if (clip.id === excludeClipId) continue
@@ -838,6 +870,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       currentTime: 0,
       isPlaying: false,
       selectedClipId: null,
+      selectedMarkerId: null,
       clipboard: null,
       inPoint: null,
       outPoint: null,
@@ -854,6 +887,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       currentTime: 0,
       isPlaying: false,
       selectedClipId: null,
+      selectedMarkerId: null,
       past: [],
       future: [],
       showPlayHint: false,

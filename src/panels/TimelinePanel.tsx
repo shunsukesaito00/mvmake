@@ -67,6 +67,7 @@ export function TimelinePanel() {
   const fps = project.fps
   const pixelsPerSecond = useProjectStore((s) => s.pixelsPerSecond)
   const selectedClipId = useProjectStore((s) => s.selectedClipId)
+  const selectedMarkerId = useProjectStore((s) => s.selectedMarkerId)
   const dragState = useProjectStore((s) => s.dragState)
   const inPoint = useProjectStore((s) => s.inPoint)
   const outPoint = useProjectStore((s) => s.outPoint)
@@ -74,8 +75,10 @@ export function TimelinePanel() {
 
   const setPixelsPerSecond = useProjectStore((s) => s.setPixelsPerSecond)
   const setSelectedClipId = useProjectStore((s) => s.setSelectedClipId)
+  const setSelectedMarkerId = useProjectStore((s) => s.setSelectedMarkerId)
   const setDragState = useProjectStore((s) => s.setDragState)
   const updateClip = useProjectStore((s) => s.updateClip)
+  const updateMarker = useProjectStore((s) => s.updateMarker)
   const pushHistory = useProjectStore((s) => s.pushHistory)
   const moveClip = useProjectStore((s) => s.moveClip)
   const getSnapPoints = useProjectStore((s) => s.getSnapPoints)
@@ -156,6 +159,12 @@ export function TimelinePanel() {
       const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
       if (!clip) return
       updateClip(dragState.clipId, { duration: clampTrimEnd(clip, snapped - dragState.originalStartTime, mediaAssets), sourceDuration: clampTrimEnd(clip, snapped - dragState.originalStartTime, mediaAssets) })
+    } else if (dragState.mode === 'marker' && dragState.markerId) {
+      const snapPoints = getSnapPoints(undefined, dragState.markerId)
+      const raw = dragState.originalStartTime + dt
+      const snapped = snapTime(Math.max(0, Math.min(raw, duration)), snapPoints)
+      setSnapGuide(snapped !== raw ? snapped : null)
+      updateMarker(dragState.markerId, { time: snapped }, false)
     } else if (dragState.mode === 'volumeKeyframe' && dragState.keyframeId != null) {
       const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
       if (clip?.type !== 'audio' && clip?.type !== 'video') return
@@ -169,7 +178,7 @@ export function TimelinePanel() {
       const next = updateVolumeKeyframeList(keyframes, dragState.keyframeId, { time: newTime, volume: newVolume })
       updateClip(dragState.clipId, { audio: { ...audioClip.audio, volumeKeyframes: next } }, false)
     }
-  }, [dragState, pixelsPerSecond, getSnapPoints, updateClip, moveClip, getTrackAtY, tracks, mediaAssets, project.tracks, seek, duration])
+  }, [dragState, pixelsPerSecond, getSnapPoints, updateClip, updateMarker, moveClip, getTrackAtY, tracks, mediaAssets, project.tracks, seek, duration])
 
   const handleMouseUp = useCallback(() => {
     setDragState(null)
@@ -190,6 +199,7 @@ export function TimelinePanel() {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     seek(Math.max(0, Math.min((e.clientX - rect.left) / pixelsPerSecond, duration)))
     setSelectedClipId(null)
+    setSelectedMarkerId(null)
   }
 
   const startDrag = (clip: Clip, mode: 'move' | 'trimStart' | 'trimEnd', e: React.MouseEvent) => {
@@ -214,6 +224,24 @@ export function TimelinePanel() {
     e.stopPropagation()
     e.preventDefault()
     setDragState({ clipId: '', mode: 'playhead', startX: e.clientX, startY: e.clientY, originalStartTime: 0, originalDuration: 0, originalSourceStart: 0, originalTrackId: '', originalTime: useProjectStore.getState().currentTime })
+  }
+
+  const startMarkerDrag = (markerId: string, time: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    pushHistory()
+    setSelectedMarkerId(markerId)
+    setDragState({
+      clipId: '',
+      markerId,
+      mode: 'marker',
+      startX: e.clientX,
+      startY: e.clientY,
+      originalStartTime: time,
+      originalDuration: 0,
+      originalSourceStart: 0,
+      originalTrackId: '',
+    })
   }
 
   const startVolumeKeyframeDrag = (clip: AudioClip | VideoClip, keyframeId: string, keyframeTime: number, keyframeVolume: number, e: React.MouseEvent) => {
@@ -273,11 +301,24 @@ export function TimelinePanel() {
                   <span className="ml-1.5 font-mono text-[9px] text-text-muted">{formatTime(i, fps)}</span>
                 </div>
               ))}
-              {markers.map((m) => (
-                <div key={m.id} className="absolute top-0 h-full w-0.5 bg-emerald-500/70" style={{ left: m.time * pixelsPerSecond }} title={m.label} onClick={(e) => { e.stopPropagation(); if (e.detail === 2) removeMarker(m.id) }}>
-                  <Icons.Marker size={10} className="absolute -top-0.5 -left-[5px] text-emerald-500" />
-                </div>
-              ))}
+              {markers.map((m) => {
+                const isSelected = selectedMarkerId === m.id
+                return (
+                  <div
+                    key={m.id}
+                    data-marker-id={m.id}
+                    className={`absolute top-0 z-10 h-full cursor-ew-resize ${isSelected ? 'z-30' : ''}`}
+                    style={{ left: m.time * pixelsPerSecond - 5, width: 10 }}
+                    title={m.label}
+                    onMouseDown={(e) => startMarkerDrag(m.id, m.time, e)}
+                    onClick={(e) => { e.stopPropagation(); setSelectedMarkerId(m.id) }}
+                    onDoubleClick={(e) => { e.stopPropagation(); removeMarker(m.id) }}
+                  >
+                    <div className={`absolute top-0 left-1/2 h-full w-0.5 -translate-x-1/2 ${isSelected ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' : 'bg-emerald-500/70'}`} />
+                    <Icons.Marker size={10} className={`absolute -top-0.5 left-1/2 -translate-x-1/2 ${isSelected ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                  </div>
+                )
+              })}
               {inPoint !== null && <div className="absolute top-0 h-full w-0.5 bg-accent" style={{ left: inPoint * pixelsPerSecond }} />}
               {outPoint !== null && <div className="absolute top-0 h-full w-0.5 bg-orange-500" style={{ left: outPoint * pixelsPerSecond }} />}
             </div>

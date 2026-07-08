@@ -367,6 +367,38 @@ test('書き出し: 章マーカー区間を In/Out に設定できる', async (
   await expect(page.getByText('書き出し範囲: 20.0–50.0s')).toBeVisible()
 })
 
+test('マーカー: インスペクターで編集しタイムライン上でドラッグ移動できる', async ({ page }) => {
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+
+  const marker = page.locator('[title="新郎プロフィール"]')
+  await marker.click()
+  const markerId = await marker.getAttribute('data-marker-id')
+  expect(markerId).toBeTruthy()
+  await expect(page.locator('aside').getByText('章マーカー', { exact: true })).toBeVisible()
+
+  const labelInput = page.locator('input[type="text"]').first()
+  await labelInput.fill('新郎パート')
+  await expect(page.locator(`[data-marker-id="${markerId}"]`)).toHaveAttribute('title', '新郎パート')
+
+  const timeInput = page.locator('input[type="number"]').first()
+  await timeInput.fill('25')
+  await expect(page.locator('aside').getByText('25.0s')).toBeVisible()
+
+  const markerHandle = page.locator(`[data-marker-id="${markerId}"]`)
+  const box = await markerHandle.boundingBox()
+  expect(box).toBeTruthy()
+  const startX = box!.x + box!.width / 2
+  const startY = box!.y + box!.height / 2
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  await page.mouse.move(startX + 80, startY)
+  await page.mouse.up()
+
+  const movedTime = Number(await timeInput.inputValue())
+  expect(movedTime).toBeGreaterThan(25)
+})
+
 test('書き出し: 対応環境ではMP4ダウンロード、非対応環境ではエラー表示(スモーク)', async ({ page }) => {
   test.setTimeout(180_000)
 

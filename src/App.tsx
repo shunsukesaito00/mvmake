@@ -26,9 +26,13 @@ function App() {
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (store.selectedClipId) store.removeClip(store.selectedClipId)
+        else if (store.selectedMarkerId) store.removeMarker(store.selectedMarkerId)
       }
 
-      if (e.key === 'Escape') store.setSelectedClipId(null)
+      if (e.key === 'Escape') {
+        store.setSelectedClipId(null)
+        store.setSelectedMarkerId(null)
+      }
 
       if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()

@@ -290,3 +290,39 @@ describe('setInOutFromMarker', () => {
     expect(useProjectStore.getState().outPoint).toBe(50)
   })
 })
+
+describe('marker selection and editing', () => {
+  it('マーカー選択時はクリップ選択を解除する', () => {
+    setProject(makeProject([videoClip('c1', 0, 3)]))
+    useProjectStore.getState().addMarker(1, 'Test')
+    const markerId = useProjectStore.getState().project.markers![0].id
+
+    useProjectStore.getState().setSelectedClipId('c1')
+    useProjectStore.getState().setSelectedMarkerId(markerId)
+
+    expect(useProjectStore.getState().selectedClipId).toBeNull()
+    expect(useProjectStore.getState().getSelectedMarker()?.label).toBe('Test')
+  })
+
+  it('updateMarker でラベルと時刻を更新できる', () => {
+    useProjectStore.getState().addMarker(5, 'Before')
+    const markerId = useProjectStore.getState().project.markers![0].id
+
+    useProjectStore.getState().updateMarker(markerId, { label: 'After', time: 12 }, true)
+
+    const marker = useProjectStore.getState().project.markers?.find((m) => m.id === markerId)
+    expect(marker?.label).toBe('After')
+    expect(marker?.time).toBe(12)
+  })
+
+  it('removeMarker で選択中マーカーを解除する', () => {
+    useProjectStore.getState().addMarker(2, 'Remove me')
+    const markerId = useProjectStore.getState().project.markers![0].id
+    useProjectStore.getState().setSelectedMarkerId(markerId)
+
+    useProjectStore.getState().removeMarker(markerId)
+
+    expect(useProjectStore.getState().selectedMarkerId).toBeNull()
+    expect(useProjectStore.getState().project.markers).toHaveLength(0)
+  })
+})
