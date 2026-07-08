@@ -123,7 +123,8 @@ function textClipFromPreset(presetId: string, trackId: string, startTime: number
       shadowBlur: preset.text.shadowBlur ?? 4,
       textAlign: preset.text.textAlign ?? 'center',
     },
-    transform: { ...DEFAULT_TRANSFORM },
+    // 画像側の中央タイトルと重ならないよう下部(ローワーサード)に配置する
+    transform: { ...DEFAULT_TRANSFORM, y: 0.8 },
     animation: { type: 'fadeIn', duration: 0.8 },
   }
 }
