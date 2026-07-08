@@ -21,6 +21,7 @@
 | `src/engine/audioEngine.ts` | Web Audio 再生 + `mixAudioOffline()`(書き出し用オフラインミックス) |
 | `src/engine/exporter.ts` | `exportProject()`。WebCodecs でエンコードし mp4-muxer で MP4 化 |
 | `src/engine/mediaLoader.ts` | File → `MediaAsset` 変換(duration・サムネイル・波形の抽出) |
+| `src/engine/demoProject.ts` | `createDemoProject()`。Canvas 生成画像+テキストのサンプルプロジェクト(オンボーディングから起動) |
 | `src/persistence/db.ts` | IndexedDB への保存・復元・プロジェクト一覧/複製/削除 |
 | `src/persistence/projectFile.ts` | `.fable` ファイル(JSON+メディアZIP)のエクスポート/インポート |
 | `src/hooks/` | `usePlayback`(再生ループ)、`useAutoSave` / `useProjectRestore`、`usePanelSize`(リサイズ可能レイアウト) |
@@ -29,6 +30,9 @@
 | `src/panels/` | `MediaPanel` / `PreviewPanel` / `InspectorPanel` / `TimelinePanel` |
 | `src/components/` | `Toolbar`、`ExportButton`、モーダル類、`ToastContainer`、共通 UI(`ui.tsx` / `icons.tsx`) |
 | `src/store/toastStore.ts` | トースト通知用ストア |
+| `e2e/` | Playwright E2E テスト(`npm run test:e2e`、本番スモークは `test:e2e:prod`) |
+| `scripts/` | README スクリーンショット生成(`npm run screenshot`)、maskable アイコン生成 |
+| `.github/workflows/` | `ci.yml`(lint・test・build・E2E)、`deploy.yml`(Pages デプロイ + 本番スモーク) |
 
 エディタ UI は実装済み。`src/App.tsx` はキーボードショートカット(再生・undo/redo・コピペ・分割・イン/アウト点など)の登録と `AppLayout` の描画を担う。
 
