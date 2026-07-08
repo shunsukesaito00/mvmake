@@ -19,7 +19,7 @@ function getClipBox(clip: VisualClip, project: Project): { w: number; h: number 
     const lineCount = Math.max(splitTextLines(clip.text.content).length, 1)
     const longestLine = getLongestLineLength(clip.text.content)
     const w = Math.max(fs * longestLine * 0.6, fs * 2) / W
-    const h = getTextBlockHeight(lineCount, fs) / H
+    const h = getTextBlockHeight(lineCount, fs, clip.text.lineHeight) / H
     return { w: Math.min(w, 1.5), h }
   }
 

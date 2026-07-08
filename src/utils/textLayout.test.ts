@@ -15,12 +15,20 @@ describe('textLayout', () => {
 
   it('getTextBlockHeight が行数に比例する', () => {
     expect(getTextBlockHeight(2, 40)).toBe(40 * TEXT_LINE_HEIGHT_RATIO * 2)
+    expect(getTextBlockHeight(2, 40, 1.5)).toBe(40 * 1.5 * 2)
   })
 
   it('getTextLineYPositions が中央揃えの Y を返す', () => {
     const ys = getTextLineYPositions(2, 20, 100)
     expect(ys).toHaveLength(2)
     expect(ys[1] - ys[0]).toBeCloseTo(20 * TEXT_LINE_HEIGHT_RATIO)
+  })
+
+  it('getTextLineYPositions が上揃え・下揃えに対応する', () => {
+    const top = getTextLineYPositions(2, 20, 50, { verticalAlign: 'top' })
+    const bottom = getTextLineYPositions(2, 20, 100, { verticalAlign: 'bottom' })
+    expect(top[0]).toBeCloseTo(50 + 12)
+    expect(bottom[1]).toBeCloseTo(100 - 12)
   })
 
   it('getLongestLineLength が最長行を返す', () => {

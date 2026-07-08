@@ -1,6 +1,7 @@
 import { createId } from './id'
 import {
   DEFAULT_TRANSFORM,
+  DEFAULT_TEXT_LINE_HEIGHT,
   TEXT_PRESETS,
   type ProjectTemplate,
   type TextClip,
@@ -35,6 +36,8 @@ export function buildTemplateTextClips(template: ProjectTemplate, textTrackId: s
         shadowColor: preset.text.shadowColor ?? 'rgba(0,0,0,0.5)',
         shadowBlur: preset.text.shadowBlur ?? 4,
         textAlign: preset.text.textAlign ?? 'center',
+        lineHeight: preset.text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT,
+        verticalAlign: preset.text.verticalAlign ?? 'center',
       },
       transform: { ...DEFAULT_TRANSFORM },
       animation: { type: 'fadeIn' as const, duration: 0.8 },
@@ -61,6 +64,8 @@ export function buildPhotoGuideClips(template: ProjectTemplate, textTrackId: str
       shadowColor: 'rgba(0,0,0,0.2)',
       shadowBlur: 2,
       textAlign: 'center' as const,
+      lineHeight: DEFAULT_TEXT_LINE_HEIGHT,
+      verticalAlign: 'center' as const,
     },
     transform: { ...DEFAULT_TRANSFORM, opacity: 0.85 },
     animation: { type: 'none' as const, duration: 0 },

@@ -4,6 +4,7 @@ import {
   DEFAULT_KEN_BURNS,
   DEFAULT_VISUAL_FADE,
   DEFAULT_TRANSFORM,
+  DEFAULT_TEXT_LINE_HEIGHT,
   type ImageClip,
   type MediaAsset,
   normalizeProject,
@@ -123,6 +124,8 @@ function textClipFromPreset(presetId: string, trackId: string, startTime: number
       shadowColor: preset.text.shadowColor ?? 'rgba(0,0,0,0.5)',
       shadowBlur: preset.text.shadowBlur ?? 4,
       textAlign: preset.text.textAlign ?? 'center',
+      lineHeight: preset.text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT,
+      verticalAlign: preset.text.verticalAlign ?? 'center',
     },
     // 画像側の中央タイトルと重ならないよう下部(ローワーサード)に配置する
     transform: { ...DEFAULT_TRANSFORM, y: 0.8 },

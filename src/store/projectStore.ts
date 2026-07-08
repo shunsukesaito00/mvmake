@@ -8,6 +8,7 @@ import {
   DEFAULT_DUCKING,
   DEFAULT_KEN_BURNS,
   DEFAULT_TRANSFORM,
+  DEFAULT_TEXT_LINE_HEIGHT,
   DEFAULT_VISUAL_FADE,
   type ImageClip,
   type MediaAsset,
@@ -412,6 +413,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       shadowColor: preset.text.shadowColor ?? 'rgba(0,0,0,0.5)',
       shadowBlur: preset.text.shadowBlur ?? 4,
       textAlign: preset.text.textAlign ?? 'center',
+      lineHeight: preset.text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT,
+      verticalAlign: preset.text.verticalAlign ?? 'center',
     }
 
     const clip: TextClip = {

@@ -56,6 +56,8 @@ export interface KenBurns {
   endY: number
 }
 
+export type TextVerticalAlign = 'top' | 'center' | 'bottom'
+
 export interface TextStyle {
   content: string
   fontFamily: string
@@ -66,6 +68,10 @@ export interface TextStyle {
   shadowColor: string
   shadowBlur: number
   textAlign: 'left' | 'center' | 'right'
+  /** 行の高さ倍率(フォントサイズに対する比率) */
+  lineHeight: number
+  /** transform.y を基準としたテキストブロックの縦配置 */
+  verticalAlign: TextVerticalAlign
 }
 
 export interface ClipAnimation {
@@ -214,6 +220,8 @@ export const DEFAULT_TRANSFORM: Transform = {
   rotation: 0,
   opacity: 1,
 }
+
+export const DEFAULT_TEXT_LINE_HEIGHT = 1.2
 
 export const DEFAULT_COLOR: ColorAdjustments = {
   brightness: 0,
@@ -410,6 +418,16 @@ function normalizeClip(clip: Clip): Clip {
   }
   if (clip.type === 'audio') {
     return { ...clip, speed: clip.speed ?? 1, ducking: clip.ducking ?? { ...DEFAULT_DUCKING } }
+  }
+  if (clip.type === 'text') {
+    return {
+      ...clip,
+      text: {
+        ...clip.text,
+        lineHeight: clip.text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT,
+        verticalAlign: clip.text.verticalAlign ?? 'center',
+      },
+    }
   }
   return clip
 }

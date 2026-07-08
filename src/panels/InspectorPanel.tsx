@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import type { AudioClip, ImageClip, TextClip, Transform, VideoClip } from '../types/project'
-import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, TEXT_PRESETS } from '../types/project'
+import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_TEXT_LINE_HEIGHT, TEXT_PRESETS } from '../types/project'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
 import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
@@ -228,7 +228,26 @@ export function InspectorPanel() {
               <option value="center">中央</option>
               <option value="right">右揃え</option>
             </select>
+            <select
+              aria-label="縦配置"
+              value={(selectedClip as TextClip).text.verticalAlign ?? 'center'}
+              onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, verticalAlign: e.target.value as TextClip['text']['verticalAlign'] } })}
+              className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+            >
+              <option value="top">上揃え</option>
+              <option value="center">中央</option>
+              <option value="bottom">下揃え</option>
+            </select>
             <Slider label="フォントサイズ" value={(selectedClip as TextClip).text.fontSize} min={12} max={120} step={1} onChange={(v) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, fontSize: v } })} format={(v) => `${v}px`} />
+            <Slider
+              label="行間"
+              value={(selectedClip as TextClip).text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT}
+              min={0.8}
+              max={2.5}
+              step={0.1}
+              onChange={(v) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, lineHeight: v } })}
+              format={(v) => `${v.toFixed(1)}倍`}
+            />
             <Slider label="縁取り" value={(selectedClip as TextClip).text.strokeWidth} min={0} max={10} step={0.5} onChange={(v) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, strokeWidth: v } })} />
             <Slider label="影のぼかし" value={(selectedClip as TextClip).text.shadowBlur} min={0} max={20} step={1} onChange={(v) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, shadowBlur: v } })} />
             <div className="flex gap-3">

@@ -365,7 +365,7 @@ function drawTextClip(ctx: CanvasRenderingContext2D, clip: TextClip, canvasW: nu
     let y = transform.y * canvasH
 
     if (animType === 'slideUp' && progress < 1) {
-      y += (1 - easeOutCubic(progress)) * getTextLineHeight(fontSize)
+      y += (1 - easeOutCubic(progress)) * getTextLineHeight(fontSize, text.lineHeight)
     }
     if (animType === 'scaleIn' && progress < 1) {
       const scale = 0.5 + 0.5 * easeOutCubic(progress)
@@ -379,7 +379,10 @@ function drawTextClip(ctx: CanvasRenderingContext2D, clip: TextClip, canvasW: nu
       ctx.shadowBlur = text.shadowBlur * (canvasW / 1920)
     }
 
-    const lineYs = getTextLineYPositions(lines.length, fontSize, y)
+    const lineYs = getTextLineYPositions(lines.length, fontSize, y, {
+      lineHeight: text.lineHeight,
+      verticalAlign: text.verticalAlign,
+    })
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       if (!line) continue

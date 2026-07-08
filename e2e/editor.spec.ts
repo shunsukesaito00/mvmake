@@ -58,6 +58,16 @@ test('インスペクター: 複数行テキストを入力できる', async ({ 
   await expect(page.locator('footer').getByText('新郎')).toBeVisible()
 })
 
+test('インスペクター: テキストの行間と縦配置を設定できる', async ({ page }) => {
+  await addOpeningText(page)
+
+  await page.getByRole('slider', { name: '行間' }).fill('1.8')
+  await expect(page.getByRole('slider', { name: '行間' })).toHaveValue('1.8')
+
+  await page.getByLabel('縦配置').selectOption('top')
+  await expect(page.getByLabel('縦配置')).toHaveValue('top')
+})
+
 test('インスペクター: 未選択時のクイックスタートからテキストを追加できる', async ({ page }) => {
   await page.getByTitle('プロジェクト一覧').click()
   await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()
