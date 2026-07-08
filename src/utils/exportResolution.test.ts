@@ -26,9 +26,14 @@ describe('exportResolution', () => {
     expect(getNativeExportButtonLabel(1920, 1080)).toBe('1080p で書き出し')
   })
 
-  it('正方形・4K のラベルを返す', () => {
+  it('正方形・4K・縦型のラベルを返す', () => {
     expect(getNativeExportButtonLabel(1080, 1080)).toBe('1080×1080 で書き出し')
     expect(getNativeExportButtonLabel(3840, 2160)).toBe('4K で書き出し')
+    expect(getNativeExportButtonLabel(1080, 1920)).toBe('9:16 で書き出し')
+  })
+
+  it('縦型プロジェクトはネイティブ解像度で書き出す', () => {
+    expect(resolveExportSize(1080, 1920, 'project')).toEqual({ width: 1080, height: 1920 })
   })
 
   it('旧 1080p プリセット値を project に正規化', () => {

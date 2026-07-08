@@ -34,6 +34,7 @@ export function getNativeExportButtonLabel(width: number, height: number): strin
   const preset = RESOLUTION_PRESETS.find((p) => p.width === width && p.height === height)
   if (preset?.id === '4k') return '4K で書き出し'
   if (preset?.id === 'square') return '1080×1080 で書き出し'
+  if (preset?.id === 'vertical') return '9:16 で書き出し'
   return `${formatExportDimensions(width, height)} で書き出し`
 }
 

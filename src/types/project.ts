@@ -342,6 +342,7 @@ export const RESOLUTION_PRESETS = [
   { id: '720p', label: '720p (1280×720)', width: 1280, height: 720 },
   { id: '4k', label: '4K (3840×2160)', width: 3840, height: 2160 },
   { id: 'square', label: '正方形 (1080×1080)', width: 1080, height: 1080 },
+  { id: 'vertical', label: '縦型 9:16 (1080×1920)', width: 1080, height: 1920 },
 ] as const
 
 function normalizeClip(clip: Clip): Clip {
