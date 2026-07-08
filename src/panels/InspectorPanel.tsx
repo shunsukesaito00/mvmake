@@ -5,6 +5,7 @@ import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, TEXT_PRESETS } from '../t
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
 import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
+import { ColorAdjustmentsSection } from '../components/ColorAdjustmentsSection'
 import { Icons } from '../components/icons'
 
 function InspectorEmptyState() {
@@ -145,9 +146,10 @@ export function InspectorPanel() {
               <Slider label="速度" value={(selectedClip as VideoClip).speed} min={0.25} max={4} step={0.25} onChange={(v) => updateClip(selectedClip.id, { speed: v }, true)} format={(v) => `${v}x`} />
             </CollapsibleSection>
             <CollapsibleSection title="色調補正">
-              <Slider label="明るさ" value={(selectedClip as VideoClip).color?.brightness ?? DEFAULT_COLOR.brightness} min={-1} max={1} step={0.05} onChange={(v) => updateClip(selectedClip.id, { color: { ...(selectedClip as VideoClip).color ?? DEFAULT_COLOR, brightness: v } })} />
-              <Slider label="コントラスト" value={(selectedClip as VideoClip).color?.contrast ?? DEFAULT_COLOR.contrast} min={-1} max={1} step={0.05} onChange={(v) => updateClip(selectedClip.id, { color: { ...(selectedClip as VideoClip).color ?? DEFAULT_COLOR, contrast: v } })} />
-              <Slider label="彩度" value={(selectedClip as VideoClip).color?.saturation ?? DEFAULT_COLOR.saturation} min={-1} max={1} step={0.05} onChange={(v) => updateClip(selectedClip.id, { color: { ...(selectedClip as VideoClip).color ?? DEFAULT_COLOR, saturation: v } })} />
+              <ColorAdjustmentsSection
+                color={(selectedClip as VideoClip).color ?? DEFAULT_COLOR}
+                onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+              />
             </CollapsibleSection>
             <CollapsibleSection title="クロップ" defaultOpen={false}>
               <label className="flex items-center gap-2 text-xs text-text-secondary">
@@ -169,9 +171,10 @@ export function InspectorPanel() {
         {selectedClip.type === 'image' && (
           <>
             <CollapsibleSection title="色調補正">
-              <Slider label="明るさ" value={(selectedClip as ImageClip).color?.brightness ?? DEFAULT_COLOR.brightness} min={-1} max={1} step={0.05} onChange={(v) => updateClip(selectedClip.id, { color: { ...(selectedClip as ImageClip).color ?? DEFAULT_COLOR, brightness: v } })} />
-              <Slider label="コントラスト" value={(selectedClip as ImageClip).color?.contrast ?? DEFAULT_COLOR.contrast} min={-1} max={1} step={0.05} onChange={(v) => updateClip(selectedClip.id, { color: { ...(selectedClip as ImageClip).color ?? DEFAULT_COLOR, contrast: v } })} />
-              <Slider label="彩度" value={(selectedClip as ImageClip).color?.saturation ?? DEFAULT_COLOR.saturation} min={-1} max={1} step={0.05} onChange={(v) => updateClip(selectedClip.id, { color: { ...(selectedClip as ImageClip).color ?? DEFAULT_COLOR, saturation: v } })} />
+              <ColorAdjustmentsSection
+                color={(selectedClip as ImageClip).color ?? DEFAULT_COLOR}
+                onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+              />
             </CollapsibleSection>
             <CollapsibleSection title="Ken Burns" defaultOpen={false}>
               <label className="flex items-center gap-2 text-xs text-text-secondary">

@@ -138,6 +138,20 @@ test('トランジション: 画像クリップへの適用フロー', async ({ 
   await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
 })
 
+test('色調補正: カラールックプリセットを適用できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await page.locator('footer').getByText('photo.png').click()
+
+  await page.getByRole('button', { name: 'フィルム風ルック' }).click()
+  await expect(page.getByText('「フィルム風」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'フィルム風ルック' })).toHaveAttribute('aria-pressed', 'true')
+})
+
 test('タイムライン: クリップのドラッグ移動', async ({ page }) => {
   await addOpeningText(page)
   const clip = page.locator('footer').getByText('Opening')
