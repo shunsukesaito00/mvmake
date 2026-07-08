@@ -16,7 +16,6 @@ import {
   PROJECT_TEMPLATES,
   type ProjectTemplate,
   type TextClip,
-  TEXT_PRESETS,
   type TextPreset,
   type TextStyle,
   type TimelineMarker,
@@ -27,6 +26,7 @@ import {
 } from '../types/project'
 import { clearMediaCache } from '../engine/compositor'
 import { createId } from '../utils/id'
+import { buildPhotoGuideClips, buildTemplateMarkers, buildTemplateTextClips } from '../utils/weddingTemplate'
 import {
   cloneProject,
   duplicateClip,
@@ -679,39 +679,17 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const textTrack = get().project.tracks.find((t) => t.type === 'text')
     if (!textTrack) return
 
-    const newClips: TextClip[] = template.textClips.map(({ presetId, startTime }) => {
-      const preset = TEXT_PRESETS.find((p) => p.id === presetId)
-      if (!preset) throw new Error(`Unknown preset: ${presetId}`)
-      return {
-        id: createId(),
-        trackId: textTrack.id,
-        startTime,
-        duration: preset.duration,
-        sourceStart: 0,
-        sourceDuration: preset.duration,
-        type: 'text' as const,
-        text: {
-          content: preset.text.content ?? '',
-          fontFamily: preset.text.fontFamily ?? 'Noto Sans JP',
-          fontSize: preset.text.fontSize ?? 48,
-          color: preset.text.color ?? '#ffffff',
-          strokeColor: preset.text.strokeColor ?? '#000000',
-          strokeWidth: preset.text.strokeWidth ?? 0,
-          shadowColor: preset.text.shadowColor ?? 'rgba(0,0,0,0.5)',
-          shadowBlur: preset.text.shadowBlur ?? 4,
-          textAlign: preset.text.textAlign ?? 'center',
-        },
-        transform: { ...DEFAULT_TRANSFORM },
-        animation: { type: 'fadeIn' as const, duration: 0.8 },
-      }
-    })
+    const textClips = buildTemplateTextClips(template, textTrack.id)
+    const guideClips = buildPhotoGuideClips(template, textTrack.id)
+    const markers = buildTemplateMarkers(template)
 
     set((state) => ({
       project: {
         ...state.project,
         name: template.name,
+        markers: [...(state.project.markers ?? []), ...markers],
         tracks: state.project.tracks.map((t) =>
-          t.id === textTrack.id ? { ...t, clips: [...t.clips, ...newClips] } : t,
+          t.id === textTrack.id ? { ...t, clips: [...t.clips, ...textClips, ...guideClips] } : t,
         ),
       },
       future: [],

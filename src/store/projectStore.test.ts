@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useProjectStore } from './projectStore'
+import { PROJECT_TEMPLATES } from '../types/project'
 import type { ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
 import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
 
@@ -227,5 +228,21 @@ describe('copy / paste', () => {
     expect(clips).toHaveLength(2)
     expect(clips[1].startTime).toBe(10)
     expect(clips[1].id).not.toBe('c1')
+  })
+})
+
+describe('applyTemplate', () => {
+  it('構造化テンプレートで章マーカーと写真ガイドを配置する', () => {
+    const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(template)
+
+    const { project } = useProjectStore.getState()
+    expect(project.name).toBe('結婚式ムービー')
+    expect(project.markers).toHaveLength(5)
+    expect(project.markers?.map((m) => m.label)).toContain('新郎プロフィール')
+
+    const textClips = getTrackClips(TRACK_TEXT)
+    expect(textClips.length).toBe(template.textClips.length + (template.photoGuides?.length ?? 0))
+    expect(textClips.some((c) => c.type === 'text' && c.text.content === '写真: 新郎 幼少期')).toBe(true)
   })
 })

@@ -186,12 +186,25 @@ export interface TextPreset {
   duration: number
 }
 
+export interface TemplateChapterMarker {
+  time: number
+  label: string
+}
+
+export interface TemplatePhotoGuide {
+  label: string
+  startTime: number
+  duration: number
+}
+
 export interface ProjectTemplate {
   id: string
   label: string
   description: string
   name: string
   textClips: Array<{ presetId: string; startTime: number }>
+  markers?: TemplateChapterMarker[]
+  photoGuides?: TemplatePhotoGuide[]
 }
 
 export const DEFAULT_TRANSFORM: Transform = {
@@ -333,6 +346,34 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     textClips: [
       { presetId: 'thankyou', startTime: 0 },
       { presetId: 'ending', startTime: 6 },
+    ],
+  },
+  {
+    id: 'structured-wedding',
+    label: '結婚式フル構成',
+    description: '章マーカーと写真ガイド付きの標準構成',
+    name: '結婚式ムービー',
+    textClips: [
+      { presetId: 'opening', startTime: 2 },
+      { presetId: 'thankyou', startTime: 120 },
+      { presetId: 'ending', startTime: 126 },
+    ],
+    markers: [
+      { time: 0, label: 'オープニング' },
+      { time: 20, label: '新郎プロフィール' },
+      { time: 50, label: '新婦プロフィール' },
+      { time: 80, label: '二人の歩み' },
+      { time: 110, label: 'エンディング' },
+    ],
+    photoGuides: [
+      { label: '新郎 幼少期', startTime: 22, duration: 7 },
+      { label: '新郎 学生時代', startTime: 32, duration: 7 },
+      { label: '新郎 趣味・仕事', startTime: 42, duration: 6 },
+      { label: '新婦 幼少期', startTime: 52, duration: 7 },
+      { label: '新婦 学生時代', startTime: 62, duration: 7 },
+      { label: '新婦 趣味・仕事', startTime: 72, duration: 6 },
+      { label: '出会い〜交際', startTime: 82, duration: 10 },
+      { label: '思い出の写真', startTime: 94, duration: 14 },
     ],
   },
 ]
