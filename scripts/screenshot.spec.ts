@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test'
  */
 test('README 用スクリーンショットを生成', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByText('FABLE', { exact: true })).toBeVisible()
 
   // テキストクリップ(Opening)を先頭に追加

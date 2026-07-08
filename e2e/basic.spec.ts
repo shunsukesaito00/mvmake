@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test'
 
 test('基本フロー: 起動 → オンボーディング → テキスト追加 → タイムライン確認', async ({ page }) => {
-  await page.goto('/')
+  // './' は baseURL のサブパス(本番の /mvmake/ など)を保持する
+  await page.goto('./')
 
   // ツールバーが表示される
   await expect(page.getByText('FABLE', { exact: true })).toBeVisible()

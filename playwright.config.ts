@@ -1,12 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// E2E_BASE_URL を指定すると、ローカルサーバーを起動せずその環境(本番など)に対して実行する
+const externalBaseURL = process.env.E2E_BASE_URL
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: externalBaseURL ?? 'http://localhost:4173',
     trace: 'on-first-retry',
   },
   projects: [
@@ -19,10 +22,12 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: 'npm run build && npm run preview',
-    url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: externalBaseURL
+    ? undefined
+    : {
+        command: 'npm run build && npm run preview',
+        url: 'http://localhost:4173',
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 })

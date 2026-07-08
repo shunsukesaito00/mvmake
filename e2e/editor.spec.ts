@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
   await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByText('FABLE', { exact: true })).toBeVisible()
 })
 

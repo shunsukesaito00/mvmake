@@ -10,6 +10,7 @@
     "lint": "oxlint",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:prod": "E2E_BASE_URL=https://shunsukesaito00.github.io/mvmake/ playwright test e2e/basic.spec.ts",
     "preview": "vite preview",
     "screenshot": "playwright test --config playwright.screenshot.config.ts"
   },
