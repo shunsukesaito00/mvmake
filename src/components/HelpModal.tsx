@@ -21,6 +21,7 @@ const SHORTCUTS = [
   { key: 'Escape', action: '選択解除' },
   { key: 'F', action: 'フルスクリーン' },
   { key: 'G', action: 'セーフエリア表示切替' },
+  { key: '?', action: 'このショートカット一覧を表示' },
 ]
 
 export function HelpModal({ open, onClose }: HelpModalProps) {

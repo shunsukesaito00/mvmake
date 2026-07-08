@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MediaPanel } from '../panels/MediaPanel'
 import { PreviewPanel } from '../panels/PreviewPanel'
 import { InspectorPanel } from '../panels/InspectorPanel'
@@ -27,6 +27,16 @@ export function AppLayout() {
   const [showHelp, setShowHelp] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const { sizes, update } = usePanelSizes()
+
+  // 「?」キーでショートカット一覧をトグル表示
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === '?') setShowHelp((v) => !v)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   return (
     <>

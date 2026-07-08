@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
+import { useToastStore } from '../store/toastStore'
+import { createDemoProject } from '../engine/demoProject'
+import { saveProject } from '../persistence/db'
 import { Btn } from './ui'
 import { Icons } from './icons'
 
@@ -27,6 +30,7 @@ export function OnboardingModal() {
   const restoreReady = useProjectStore((s) => s.restoreReady)
   const [visible, setVisible] = useState(false)
   const [step, setStep] = useState(0)
+  const [creatingDemo, setCreatingDemo] = useState(false)
 
   useEffect(() => {
     if (!restoreReady) return
@@ -44,6 +48,26 @@ export function OnboardingModal() {
       // 保存できなくても閉じる操作は続行
     }
     setVisible(false)
+  }
+
+  const openDemo = async () => {
+    if (creatingDemo) return
+    setCreatingDemo(true)
+    const showToast = useToastStore.getState().showToast
+    try {
+      const demo = await createDemoProject()
+      await saveProject(demo).catch(() => {
+        // 保存に失敗しても編集体験は開始できる
+      })
+      useProjectStore.getState().loadProject(demo)
+      dismiss()
+      showToast('サンプルプロジェクトを開きました。再生ボタンでプレビューできます', 'success')
+    } catch (err) {
+      console.error(err)
+      showToast('サンプルの作成に失敗しました', 'error')
+    } finally {
+      setCreatingDemo(false)
+    }
   }
 
   if (!visible) return null
@@ -100,6 +124,14 @@ export function OnboardingModal() {
             {isLast ? '始める' : '次へ'}
           </Btn>
         </div>
+
+        <button
+          onClick={openDemo}
+          disabled={creatingDemo}
+          className="mt-3 w-full rounded-lg border border-dashed border-border-light px-3 py-2 text-xs text-text-secondary transition-colors hover:border-accent/50 hover:bg-accent-muted hover:text-accent disabled:opacity-50"
+        >
+          {creatingDemo ? 'サンプルを準備中...' : 'サンプルプロジェクトを開いて試す'}
+        </button>
       </div>
     </div>
   )
