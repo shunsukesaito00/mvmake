@@ -42,6 +42,27 @@ jobs:
     outputs:
       page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Actions 側がタイムアウトしても Pages 側にデプロイが「進行中」のまま残ることがあり、
+      # その場合は後続のデプロイが 400 で拒否され続ける。先に滞留分をキャンセルする
+      - name: 滞留した Pages デプロイをキャンセル
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo
+            const { data: deployments } = await github.rest.repos.listDeployments({
+              owner, repo, environment: 'github-pages', per_page: 10,
+            })
+            for (const d of deployments) {
+              try {
+                // pages_deployment_id にはコミット SHA も指定できる。進行中でなければ 404/422 になるので無視
+                await github.request('POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel', {
+                  owner, repo, pages_deployment_id: d.sha,
+                })
+                core.info(`進行中の Pages デプロイをキャンセルしました: ${d.sha}`)
+              } catch (e) {
+                core.debug(`skip ${d.sha}: ${e.status}`)
+              }
+            }
       - id: deployment
         uses: actions/deploy-pages@v4
 
