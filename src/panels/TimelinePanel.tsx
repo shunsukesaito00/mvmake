@@ -276,10 +276,11 @@ export function TimelinePanel() {
                       {media?.thumbnail && clip.type !== 'audio' && <img src={media.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />}
                       <Waveform data={clip.type === 'audio' ? media?.waveform : undefined} />
                       <div className="relative z-10 truncate px-2 py-1.5 text-[10px] font-semibold text-white drop-shadow-sm">{label}</div>
+                      {/* z-20: ラベル行(z-10)より前面に置き、クリップ上端でもトリムを掴めるようにする */}
                       {!track.locked && (
                         <>
-                          <div className="absolute top-0 bottom-0 left-0 w-2 cursor-ew-resize bg-white/15 hover:bg-white/30" onMouseDown={(e) => startDrag(clip, 'trimStart', e)} />
-                          <div className="absolute top-0 right-0 bottom-0 w-2 cursor-ew-resize bg-white/15 hover:bg-white/30" onMouseDown={(e) => startDrag(clip, 'trimEnd', e)} />
+                          <div className="absolute top-0 bottom-0 left-0 z-20 w-2 cursor-ew-resize bg-white/15 hover:bg-white/30" onMouseDown={(e) => startDrag(clip, 'trimStart', e)} />
+                          <div className="absolute top-0 right-0 bottom-0 z-20 w-2 cursor-ew-resize bg-white/15 hover:bg-white/30" onMouseDown={(e) => startDrag(clip, 'trimEnd', e)} />
                         </>
                       )}
                     </div>
