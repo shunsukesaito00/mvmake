@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { getLongestLineLength, getTextBlockHeight, splitTextLines } from '../utils/textLayout'
 import { useProjectStore } from '../store/projectStore'
 import type { Clip, ImageClip, Project, TextClip, VideoClip } from '../types/project'
 
@@ -15,9 +16,10 @@ function getClipBox(clip: VisualClip, project: Project): { w: number; h: number 
 
   if (clip.type === 'text') {
     const fs = clip.text.fontSize * (W / 1920)
-    const longestLine = clip.text.content.split('\n').reduce((m, l) => Math.max(m, l.length), 1)
+    const lineCount = Math.max(splitTextLines(clip.text.content).length, 1)
+    const longestLine = getLongestLineLength(clip.text.content)
     const w = Math.max(fs * longestLine * 0.6, fs * 2) / W
-    const h = (fs * 1.5) / H
+    const h = getTextBlockHeight(lineCount, fs) / H
     return { w: Math.min(w, 1.5), h }
   }
 

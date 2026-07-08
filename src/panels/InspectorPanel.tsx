@@ -210,7 +210,14 @@ export function InspectorPanel() {
 
         {selectedClip.type === 'text' && (
           <CollapsibleSection title="テキスト">
-            <textarea value={(selectedClip as TextClip).text.content} onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, content: e.target.value } })} className="w-full rounded-lg bg-surface-3 p-2.5 text-sm text-text-primary outline-none ring-1 ring-border focus:ring-accent/50" rows={2} />
+            <textarea
+              aria-label="テキスト内容"
+              value={(selectedClip as TextClip).text.content}
+              onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, content: e.target.value } })}
+              placeholder="改行で複数行入力できます"
+              className="w-full rounded-lg bg-surface-3 p-2.5 text-sm text-text-primary outline-none ring-1 ring-border focus:ring-accent/50"
+              rows={3}
+            />
             <select value={(selectedClip as TextClip).text.fontFamily} onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, fontFamily: e.target.value } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
               <option value="Noto Sans JP">Noto Sans JP</option>
               <option value="Noto Serif JP">Noto Serif JP</option>

@@ -49,6 +49,15 @@ test('インスペクター: テキスト内容の編集がタイムラインへ
   await expect(page.locator('footer').getByText('Opening')).toBeHidden()
 })
 
+test('インスペクター: 複数行テキストを入力できる', async ({ page }) => {
+  await addOpeningText(page)
+
+  const textarea = page.getByRole('textbox', { name: 'テキスト内容' })
+  await textarea.fill('新郎\n新婦')
+  await expect(textarea).toHaveValue('新郎\n新婦')
+  await expect(page.locator('footer').getByText('新郎')).toBeVisible()
+})
+
 test('インスペクター: 未選択時のクイックスタートからテキストを追加できる', async ({ page }) => {
   await page.getByTitle('プロジェクト一覧').click()
   await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()

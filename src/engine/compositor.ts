@@ -8,6 +8,7 @@ import type {
   TextClip,
   VideoClip,
 } from '../types/project'
+import { getTextLineHeight, getTextLineYPositions, splitTextLines } from '../utils/textLayout'
 import { getVisualFadeMultiplier } from '../utils/visualFade'
 
 interface RenderLayer {
@@ -349,6 +350,9 @@ function drawTextClip(ctx: CanvasRenderingContext2D, clip: TextClip, canvasW: nu
     if (content.length === 0) return
   }
 
+  const lines = splitTextLines(content)
+  if (lines.every((line) => line.length === 0)) return
+
   ctx.save()
   ctx.globalAlpha = opacity
 
@@ -361,7 +365,7 @@ function drawTextClip(ctx: CanvasRenderingContext2D, clip: TextClip, canvasW: nu
     let y = transform.y * canvasH
 
     if (animType === 'slideUp' && progress < 1) {
-      y += (1 - easeOutCubic(progress)) * fontSize * 1.2
+      y += (1 - easeOutCubic(progress)) * getTextLineHeight(fontSize)
     }
     if (animType === 'scaleIn' && progress < 1) {
       const scale = 0.5 + 0.5 * easeOutCubic(progress)
@@ -374,13 +378,19 @@ function drawTextClip(ctx: CanvasRenderingContext2D, clip: TextClip, canvasW: nu
       ctx.shadowColor = text.shadowColor
       ctx.shadowBlur = text.shadowBlur * (canvasW / 1920)
     }
-    if (text.strokeWidth > 0) {
-      ctx.strokeStyle = text.strokeColor
-      ctx.lineWidth = text.strokeWidth * (canvasW / 1920)
-      ctx.strokeText(content, x, y)
+
+    const lineYs = getTextLineYPositions(lines.length, fontSize, y)
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      if (!line) continue
+      if (text.strokeWidth > 0) {
+        ctx.strokeStyle = text.strokeColor
+        ctx.lineWidth = text.strokeWidth * (canvasW / 1920)
+        ctx.strokeText(line, x, lineYs[i])
+      }
+      ctx.fillStyle = text.color
+      ctx.fillText(line, x, lineYs[i])
     }
-    ctx.fillStyle = text.color
-    ctx.fillText(content, x, y)
   })
 
   ctx.restore()
