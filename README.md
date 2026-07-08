@@ -2,10 +2,10 @@
 
 ブラウザ完結型のタイムライン動画編集Webアプリ。CapCut / Premiere Pro クラスの編集機能を結婚式ムービー制作向けに最適化。
 
-**デモ**: `https://<ユーザー名>.github.io/FABLE/`
+**デモ**: https://shunchans.github.io/FABLE/
 
-> GitHub Pages 有効化後、上記の `<ユーザー名>` を実際のアカウント名に置き換えてください。
-> URL は Actions の「Deploy to GitHub Pages」実行結果、または Settings → Pages にも表示されます。
+> 公開には GitHub Pages の有効化が必要です(Settings → Pages → Source を「GitHub Actions」に設定)。
+> デプロイ状況は Actions の「Deploy to GitHub Pages」で確認できます。
 
 ## スクリーンショット
 
