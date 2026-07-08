@@ -9,6 +9,7 @@ import { ColorAdjustmentsSection } from '../components/ColorAdjustmentsSection'
 import { VisualFadeSection } from '../components/VisualFadeSection'
 import { PhotoGuideSection } from '../components/PhotoGuideSection'
 import { MarkerInspectorSection } from '../components/MarkerInspectorSection'
+import { TextStylePresetsSection } from '../components/TextStylePresetsSection'
 import { Icons } from '../components/icons'
 import { isPhotoGuideClip } from '../utils/photoGuide'
 
@@ -341,6 +342,15 @@ export function InspectorPanel() {
             {regularTextClip.animation.type !== 'none' && (
               <Slider label="アニメーション長" value={regularTextClip.animation.duration} min={0.2} max={3} step={0.1} onChange={(v) => updateClip(regularTextClip.id, { animation: { ...regularTextClip.animation, duration: v } })} format={(v) => `${v.toFixed(1)}秒`} />
             )}
+          </CollapsibleSection>
+        )}
+
+        {regularTextClip && (
+          <CollapsibleSection title="スタイルプリセット" defaultOpen={false}>
+            <TextStylePresetsSection
+              text={regularTextClip.text}
+              onApply={(text) => updateClip(regularTextClip.id, { text }, true)}
+            />
           </CollapsibleSection>
         )}
 

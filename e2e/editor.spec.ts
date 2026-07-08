@@ -79,6 +79,25 @@ test('インスペクター: テキストに字幕帯を設定できる', async 
   await expect(page.getByRole('slider', { name: '背景余白' })).toHaveValue('20')
 })
 
+test('インスペクター: テキストスタイルを保存して適用できる', async ({ page }) => {
+  await addOpeningText(page)
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('80')
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('80')
+
+  await page.getByRole('button', { name: 'スタイルプリセット' }).click()
+  await page.getByLabel('スタイル名').fill('大見出し')
+  await page.getByRole('button', { name: 'スタイル保存' }).click()
+  await expect(page.getByText('「大見出し」スタイルを保存しました')).toBeVisible()
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('36')
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('36')
+
+  await page.getByRole('button', { name: '大見出しを適用' }).click()
+  await expect(page.getByText('「大見出し」スタイルを適用しました')).toBeVisible()
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('80')
+})
+
 test('インスペクター: 未選択時のクイックスタートからテキストを追加できる', async ({ page }) => {
   await page.getByTitle('プロジェクト一覧').click()
   await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()
