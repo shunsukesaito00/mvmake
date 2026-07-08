@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: pages
@@ -30,6 +31,9 @@ jobs:
         env:
           # リポジトリ名をサブパスとして使用 (https://<user>.github.io/<repo>/)
           BASE_PATH: /${{ github.event.repository.name }}/
+      # upload-pages-artifact v2+ は chmod を行わないため、Pages 側の権限エラーを防ぐ
+      - name: Fix Pages artifact permissions
+        run: chmod -cR +Xr dist
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -44,52 +48,78 @@ jobs:
     outputs:
       page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Actions 側がタイムアウトしても Pages 側にデプロイが「進行中」のまま残ることがあり、
-      # その場合は後続のデプロイが 400 で拒否され続ける。先に滞留分をキャンセルする
+      # Actions タイムアウト後も Pages 側が deployment_in_progress のまま残ることがある。
+      # Deployments API の latest status だけでは検出できないため、Pages API で確認・キャンセルする
       - name: 滞留した Pages デプロイをキャンセル
         uses: actions/github-script@v8
         with:
           script: |
             const { owner, repo } = context.repo
 
-            async function latestStatus(deploymentId) {
-              const { data } = await github.rest.repos.listDeploymentStatuses({
-                owner, repo, deployment_id: deploymentId, per_page: 1,
-              })
-              return data[0]?.state
+            const ACTIVE_PAGES = new Set([
+              'deployment_in_progress',
+              'syncing_files',
+              'finished_file_sync',
+              'updating_pages',
+              'purging_cdn',
+            ])
+
+            async function getPagesStatus(sha) {
+              try {
+                const { data } = await github.request(
+                  'GET /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}',
+                  { owner, repo, pages_deployment_id: sha },
+                )
+                return data.status ?? null
+              } catch (e) {
+                if (e.status === 404) return null
+                throw e
+              }
+            }
+
+            async function cancelPages(sha) {
+              try {
+                await github.request(
+                  'POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel',
+                  { owner, repo, pages_deployment_id: sha },
+                )
+                core.info(`Pages デプロイをキャンセル: ${sha.slice(0, 7)}`)
+              } catch (e) {
+                core.warning(`キャンセル失敗 ${sha.slice(0, 7)}: ${e.message}`)
+              }
             }
 
             const { data: deployments } = await github.rest.repos.listDeployments({
-              owner, repo, environment: 'github-pages', per_page: 20,
+              owner, repo, environment: 'github-pages', per_page: 15,
             })
+            const shas = [...new Set(deployments.map((d) => d.sha))]
 
-            for (const d of deployments) {
-              const state = await latestStatus(d.id)
-              if (!state || !['in_progress', 'queued', 'pending', 'waiting'].includes(state)) continue
-              try {
-                await github.request('POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel', {
-                  owner, repo, pages_deployment_id: d.sha,
-                })
-                core.info(`進行中の Pages デプロイをキャンセル: ${d.sha.slice(0, 7)} (${state})`)
-              } catch (e) {
-                core.warning(`キャンセル失敗 ${d.sha.slice(0, 7)}: ${e.message}`)
-              }
+            for (const sha of shas) {
+              const status = await getPagesStatus(sha)
+              if (!status) continue
+              core.info(`Pages ${sha.slice(0, 7)}: ${status}`)
+              if (ACTIVE_PAGES.has(status)) await cancelPages(sha)
             }
 
-            // キャンセル反映を待つ(最大2分)。未解消のまま deploy すると 400 になる
-            for (let i = 0; i < 24; i++) {
-              const { data: recent } = await github.rest.repos.listDeployments({
-                owner, repo, environment: 'github-pages', per_page: 5,
-              })
-              let blocked = false
-              for (const d of recent) {
-                const state = await latestStatus(d.id)
-                if (state === 'in_progress') { blocked = true; break }
+            // キャンセル反映を待つ(最大5分)。Deployments API の in_progress だけでは不十分
+            let blocked = false
+            for (let i = 0; i < 60; i++) {
+              blocked = false
+              for (const sha of shas) {
+                const status = await getPagesStatus(sha)
+                if (status && ACTIVE_PAGES.has(status)) {
+                  blocked = true
+                  core.info(`Pages デプロイ解消待ち: ${sha.slice(0, 7)} = ${status}`)
+                  break
+                }
               }
-              if (!blocked) break
-              core.info('Pages デプロイの解消を待機中...')
+              if (!blocked) {
+                core.info('Pages 側の進行中デプロイはありません')
+                break
+              }
               await new Promise((r) => setTimeout(r, 5000))
             }
+            if (blocked) core.setFailed('Pages デプロイが5分以内に解消されませんでした')
       - id: deployment
         uses: actions/deploy-pages@v4
         # timeout は最大 600000ms(10分) が上限。超える値は無視される
