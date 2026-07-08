@@ -8,6 +8,7 @@ import {
   DEFAULT_DUCKING,
   DEFAULT_KEN_BURNS,
   DEFAULT_TRANSFORM,
+  DEFAULT_VISUAL_FADE,
   type ImageClip,
   type MediaAsset,
   normalizeProject,
@@ -185,6 +186,7 @@ function createClipFromMedia(asset: MediaAsset, trackId: string, startTime: numb
       speed: 1,
       color: { ...DEFAULT_COLOR },
       crop: { ...DEFAULT_CROP },
+      ...DEFAULT_VISUAL_FADE,
     } satisfies VideoClip
   }
 
@@ -197,6 +199,7 @@ function createClipFromMedia(asset: MediaAsset, trackId: string, startTime: numb
       kenBurns: { ...DEFAULT_KEN_BURNS },
       color: { ...DEFAULT_COLOR },
       crop: { ...DEFAULT_CROP },
+      ...DEFAULT_VISUAL_FADE,
     } satisfies ImageClip
   }
 
@@ -368,6 +371,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         kenBurns: { ...DEFAULT_KEN_BURNS, enabled: options.kenBurns },
         color: { ...DEFAULT_COLOR },
         crop: { ...DEFAULT_CROP },
+        ...DEFAULT_VISUAL_FADE,
       }
       if (i > 0 && options.transitionType !== 'none') {
         clip.transition = { type: options.transitionType, duration: options.transitionDuration }

@@ -120,6 +120,8 @@ export interface VideoClip extends BaseClip {
   speed: number
   color: ColorAdjustments
   crop: CropSettings
+  fadeIn: number
+  fadeOut: number
 }
 
 export interface ImageClip extends BaseClip {
@@ -130,6 +132,8 @@ export interface ImageClip extends BaseClip {
   transition?: Transition
   color: ColorAdjustments
   crop: CropSettings
+  fadeIn: number
+  fadeOut: number
 }
 
 export interface AudioClip extends BaseClip {
@@ -233,6 +237,11 @@ export const DEFAULT_DUCKING: DuckingSettings = {
   amount: 0.3,
   fade: 0.5,
 }
+
+export const DEFAULT_VISUAL_FADE = {
+  fadeIn: 0,
+  fadeOut: 0,
+} as const
 
 export const TEXT_PRESETS: TextPreset[] = [
   {
@@ -343,6 +352,8 @@ function normalizeClip(clip: Clip): Clip {
       speed: clip.speed ?? 1,
       color: clip.color ?? { ...DEFAULT_COLOR },
       crop: clip.crop ?? { ...DEFAULT_CROP },
+      fadeIn: clip.fadeIn ?? DEFAULT_VISUAL_FADE.fadeIn,
+      fadeOut: clip.fadeOut ?? DEFAULT_VISUAL_FADE.fadeOut,
     }
   }
   if (clip.type === 'image') {
@@ -351,6 +362,8 @@ function normalizeClip(clip: Clip): Clip {
       color: clip.color ?? { ...DEFAULT_COLOR },
       crop: clip.crop ?? { ...DEFAULT_CROP },
       kenBurns: clip.kenBurns ?? { ...DEFAULT_KEN_BURNS },
+      fadeIn: clip.fadeIn ?? DEFAULT_VISUAL_FADE.fadeIn,
+      fadeOut: clip.fadeOut ?? DEFAULT_VISUAL_FADE.fadeOut,
     }
   }
   if (clip.type === 'audio') {

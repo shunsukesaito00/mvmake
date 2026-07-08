@@ -8,6 +8,7 @@ import type {
   TextClip,
   VideoClip,
 } from '../types/project'
+import { getVisualFadeMultiplier } from '../utils/visualFade'
 
 interface RenderLayer {
   clip: Clip
@@ -177,7 +178,12 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
 
     if (isActive) {
       let opacity = clip.transform.opacity
-      if (clip.type === 'text') opacity *= getTextOpacity(clip, time)
+      if (clip.type === 'text') {
+        opacity *= getTextOpacity(clip, time)
+      } else if (clip.type === 'video' || clip.type === 'image') {
+        const localTime = time - clip.startTime
+        opacity *= getVisualFadeMultiplier(localTime, clip.duration, clip.fadeIn, clip.fadeOut)
+      }
       layers.push({ clip, opacity })
     }
   }

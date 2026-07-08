@@ -6,6 +6,7 @@ import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
 import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
 import { ColorAdjustmentsSection } from '../components/ColorAdjustmentsSection'
+import { VisualFadeSection } from '../components/VisualFadeSection'
 import { Icons } from '../components/icons'
 
 function InspectorEmptyState() {
@@ -151,6 +152,14 @@ export function InspectorPanel() {
                 onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
               />
             </CollapsibleSection>
+            <CollapsibleSection title="フェード" defaultOpen={false}>
+              <VisualFadeSection
+                fadeIn={(selectedClip as VideoClip).fadeIn}
+                fadeOut={(selectedClip as VideoClip).fadeOut}
+                clipDuration={selectedClip.duration}
+                onChange={(patch, recordHistory) => updateClip(selectedClip.id, patch, recordHistory)}
+              />
+            </CollapsibleSection>
             <CollapsibleSection title="クロップ" defaultOpen={false}>
               <label className="flex items-center gap-2 text-xs text-text-secondary">
                 <input type="checkbox" checked={(selectedClip as VideoClip).crop?.enabled} onChange={(e) => updateClip(selectedClip.id, { crop: { ...(selectedClip as VideoClip).crop ?? DEFAULT_CROP, enabled: e.target.checked } })} className="accent-accent" />
@@ -174,6 +183,14 @@ export function InspectorPanel() {
               <ColorAdjustmentsSection
                 color={(selectedClip as ImageClip).color ?? DEFAULT_COLOR}
                 onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+              />
+            </CollapsibleSection>
+            <CollapsibleSection title="フェード" defaultOpen={false}>
+              <VisualFadeSection
+                fadeIn={(selectedClip as ImageClip).fadeIn}
+                fadeOut={(selectedClip as ImageClip).fadeOut}
+                clipDuration={selectedClip.duration}
+                onChange={(patch, recordHistory) => updateClip(selectedClip.id, patch, recordHistory)}
               />
             </CollapsibleSection>
             <CollapsibleSection title="Ken Burns" defaultOpen={false}>

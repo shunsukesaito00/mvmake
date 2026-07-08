@@ -25,6 +25,8 @@ const baseVideoClip: VideoClip = {
   audio: { volume: 1, fadeIn: 0, fadeOut: 0 },
   speed: 1, color: { brightness: 0, contrast: 0, saturation: 0 },
   crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
+  fadeIn: 0,
+  fadeOut: 0,
 }
 
 describe('isCompatibleTrack', () => {
@@ -61,6 +63,8 @@ describe('clampTrimEnd', () => {
       kenBurns: { enabled: false, startScale: 1, endScale: 1, startX: 0.5, startY: 0.5, endX: 0.5, endY: 0.5 },
       color: { brightness: 0, contrast: 0, saturation: 0 },
       crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
+      fadeIn: 0,
+      fadeOut: 0,
     }
     expect(clampTrimEnd(imageClip, 60, [])).toBe(60)
   })

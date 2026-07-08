@@ -2,6 +2,7 @@ import {
   DEFAULT_COLOR,
   DEFAULT_CROP,
   DEFAULT_KEN_BURNS,
+  DEFAULT_VISUAL_FADE,
   DEFAULT_TRANSFORM,
   type ImageClip,
   type MediaAsset,
@@ -154,6 +155,7 @@ export async function createDemoProject(): Promise<Project> {
     kenBurns: { ...DEFAULT_KEN_BURNS },
     color: { ...DEFAULT_COLOR },
     crop: { ...DEFAULT_CROP },
+    ...DEFAULT_VISUAL_FADE,
     ...(i > 0 ? { transition: { type: 'crossfade' as const, duration: TRANSITION_DURATION } } : {}),
   }))
 

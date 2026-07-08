@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useProjectStore } from './projectStore'
 import type { ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
-import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_TRANSFORM } from '../types/project'
+import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
 
 const TRACK_V1 = 'track-v1'
 const TRACK_V2 = 'track-v2'
@@ -27,6 +27,7 @@ function videoClip(id: string, startTime: number, duration: number, overrides: P
     speed: 1,
     color: { ...DEFAULT_COLOR },
     crop: { ...DEFAULT_CROP },
+    ...DEFAULT_VISUAL_FADE,
     ...overrides,
   }
 }
