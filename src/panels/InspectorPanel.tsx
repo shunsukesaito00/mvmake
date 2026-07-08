@@ -4,6 +4,7 @@ import type { AudioClip, ImageClip, TextClip, Transform, VideoClip } from '../ty
 import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, TEXT_PRESETS } from '../types/project'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
+import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
 import { Icons } from '../components/icons'
 
 function InspectorEmptyState() {
@@ -133,6 +134,13 @@ export function InspectorPanel() {
             <CollapsibleSection title="動画音声">
               <Slider label="音量" value={(selectedClip as VideoClip).audio.volume} min={0} max={2} step={0.01} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as VideoClip).audio, volume: v } })} />
             </CollapsibleSection>
+            <CollapsibleSection title="音量キーフレーム" defaultOpen={false}>
+              <VolumeKeyframesSection
+                clip={selectedClip as VideoClip}
+                audio={(selectedClip as VideoClip).audio}
+                onAudioChange={(patch) => updateClip(selectedClip.id, { audio: { ...(selectedClip as VideoClip).audio, ...patch } })}
+              />
+            </CollapsibleSection>
             <CollapsibleSection title="再生速度">
               <Slider label="速度" value={(selectedClip as VideoClip).speed} min={0.25} max={4} step={0.25} onChange={(v) => updateClip(selectedClip.id, { speed: v }, true)} format={(v) => `${v}x`} />
             </CollapsibleSection>
@@ -221,6 +229,13 @@ export function InspectorPanel() {
               <Slider label="フェードイン" value={(selectedClip as AudioClip).audio.fadeIn} min={0} max={5} step={0.1} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as AudioClip).audio, fadeIn: v } })} />
               <Slider label="フェードアウト" value={(selectedClip as AudioClip).audio.fadeOut} min={0} max={5} step={0.1} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as AudioClip).audio, fadeOut: v } })} />
               <Slider label="再生速度" value={(selectedClip as AudioClip).speed ?? 1} min={0.5} max={2} step={0.1} onChange={(v) => updateClip(selectedClip.id, { speed: v }, true)} format={(v) => `${v}x`} />
+            </CollapsibleSection>
+            <CollapsibleSection title="音量キーフレーム" defaultOpen={false}>
+              <VolumeKeyframesSection
+                clip={selectedClip as AudioClip}
+                audio={(selectedClip as AudioClip).audio}
+                onAudioChange={(patch) => updateClip(selectedClip.id, { audio: { ...(selectedClip as AudioClip).audio, ...patch } })}
+              />
             </CollapsibleSection>
             <CollapsibleSection title="ダッキング" defaultOpen={false}>
               <label className="flex items-center gap-2 text-xs text-text-secondary">

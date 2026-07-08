@@ -1,5 +1,6 @@
 import type { AudioClip, MediaAsset, Project, VideoClip } from '../types/project'
 import { getAudioClipsFromProject, getDuckingIntervals } from '../utils/clipUtils'
+import { scheduleVolumeAutomation } from '../utils/volumeKeyframes'
 
 interface DuckingSchedule {
   intervals: Array<{ start: number; end: number }>
@@ -72,9 +73,7 @@ class AudioEngine {
     clip: AudioClip | VideoClip,
     buffer: AudioBuffer,
     fromTime: number,
-    volume: number,
-    fadeIn: number,
-    fadeOut: number,
+    audio: AudioClip['audio'],
     speed: number,
     ducking?: DuckingSchedule,
   ): void {
@@ -86,22 +85,13 @@ class AudioEngine {
     source.playbackRate.value = speed
 
     const clipGain = this.context!.createGain()
-    clipGain.gain.value = volume
 
     const localOffset = Math.max(0, fromTime - clip.startTime)
     const offset = clip.sourceStart + localOffset * speed
     const when = this.context!.currentTime + Math.max(0, clip.startTime - fromTime)
     const duration = clip.duration - localOffset
 
-    if (fadeIn > 0) {
-      clipGain.gain.setValueAtTime(0, when)
-      clipGain.gain.linearRampToValueAtTime(volume, when + fadeIn)
-    }
-    if (fadeOut > 0) {
-      const fadeStart = when + duration - fadeOut
-      clipGain.gain.setValueAtTime(volume, fadeStart)
-      clipGain.gain.linearRampToValueAtTime(0, when + duration)
-    }
+    scheduleVolumeAutomation(clipGain.gain, when, localOffset, duration, clip.duration, audio)
 
     source.connect(clipGain)
 
@@ -134,14 +124,13 @@ class AudioEngine {
 
       if (isVideo) {
         const v = clip as VideoClip
-        this.scheduleClip(v, buffer, fromTime, v.audio?.volume ?? 1, v.audio?.fadeIn ?? 0, v.audio?.fadeOut ?? 0, v.speed ?? 1)
+        this.scheduleClip(v, buffer, fromTime, v.audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 }, v.speed ?? 1)
       } else {
         const a = clip as AudioClip
-        const { volume, fadeIn, fadeOut } = a.audio
         const ducking = a.ducking?.enabled
           ? { intervals: duckingIntervals, amount: a.ducking.amount, fade: a.ducking.fade }
           : undefined
-        this.scheduleClip(a, buffer, fromTime, volume, fadeIn, fadeOut, a.speed ?? 1, ducking)
+        this.scheduleClip(a, buffer, fromTime, a.audio, a.speed ?? 1, ducking)
       }
     }
   }
@@ -191,21 +180,10 @@ export async function mixAudioOffline(project: Project, duration: number, sample
       source.playbackRate.value = speed
 
       const gain = offline.createGain()
-      const volume = isVideo ? (clip as VideoClip).audio?.volume ?? 1 : (clip as AudioClip).audio.volume
-      const fadeIn = isVideo ? (clip as VideoClip).audio?.fadeIn ?? 0 : (clip as AudioClip).audio.fadeIn
-      const fadeOut = isVideo ? (clip as VideoClip).audio?.fadeOut ?? 0 : (clip as AudioClip).audio.fadeOut
-      gain.gain.value = volume
+      const audio = isVideo ? (clip as VideoClip).audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 } : (clip as AudioClip).audio
 
       const when = clip.startTime
-      if (fadeIn > 0) {
-        gain.gain.setValueAtTime(0, when)
-        gain.gain.linearRampToValueAtTime(volume, when + fadeIn)
-      }
-      if (fadeOut > 0) {
-        const fadeStart = when + clip.duration - fadeOut
-        gain.gain.setValueAtTime(volume, fadeStart)
-        gain.gain.linearRampToValueAtTime(0, when + clip.duration)
-      }
+      scheduleVolumeAutomation(gain.gain, when, 0, clip.duration, clip.duration, audio)
 
       source.connect(gain)
 

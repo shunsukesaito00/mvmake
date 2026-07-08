@@ -77,6 +77,15 @@ export interface AudioSettings {
   volume: number
   fadeIn: number
   fadeOut: number
+  /** クリップ先頭からの秒数と音量(0〜2)。未設定時は volume を一定値として使用 */
+  volumeKeyframes?: VolumeKeyframe[]
+}
+
+/** クリップ内ローカル時間(秒)での音量キーフレーム */
+export interface VolumeKeyframe {
+  id: string
+  time: number
+  volume: number
 }
 
 /** BGMダッキング: 動画クリップの音声がある区間で自動的に音量を下げる */
