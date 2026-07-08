@@ -12,7 +12,9 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # true だと push 連続時に deploy ジョブが途中キャンセルされ、
+  # Pages 側だけ「進行中」のまま残って後続デプロイが 400 になる
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -49,25 +51,48 @@ jobs:
         with:
           script: |
             const { owner, repo } = context.repo
+
+            async function latestStatus(deploymentId) {
+              const { data } = await github.rest.repos.listDeploymentStatuses({
+                owner, repo, deployment_id: deploymentId, per_page: 1,
+              })
+              return data[0]?.state
+            }
+
             const { data: deployments } = await github.rest.repos.listDeployments({
-              owner, repo, environment: 'github-pages', per_page: 10,
+              owner, repo, environment: 'github-pages', per_page: 20,
             })
+
             for (const d of deployments) {
+              const state = await latestStatus(d.id)
+              if (!state || !['in_progress', 'queued', 'pending', 'waiting'].includes(state)) continue
               try {
-                // pages_deployment_id にはコミット SHA も指定できる。進行中でなければ 404/422 になるので無視
                 await github.request('POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel', {
                   owner, repo, pages_deployment_id: d.sha,
                 })
-                core.info(`進行中の Pages デプロイをキャンセルしました: ${d.sha}`)
+                core.info(`進行中の Pages デプロイをキャンセル: ${d.sha.slice(0, 7)} (${state})`)
               } catch (e) {
-                core.debug(`skip ${d.sha}: ${e.status}`)
+                core.warning(`キャンセル失敗 ${d.sha.slice(0, 7)}: ${e.message}`)
               }
+            }
+
+            // キャンセル反映を待つ(最大2分)。未解消のまま deploy すると 400 になる
+            for (let i = 0; i < 24; i++) {
+              const { data: recent } = await github.rest.repos.listDeployments({
+                owner, repo, environment: 'github-pages', per_page: 5,
+              })
+              let blocked = false
+              for (const d of recent) {
+                const state = await latestStatus(d.id)
+                if (state === 'in_progress') { blocked = true; break }
+              }
+              if (!blocked) break
+              core.info('Pages デプロイの解消を待機中...')
+              await new Promise((r) => setTimeout(r, 5000))
             }
       - id: deployment
         uses: actions/deploy-pages@v4
-        with:
-          # Pages バックエンドが混雑するとデフォルト10分では完了しないことがある
-          timeout: 1200000
+        # timeout は最大 600000ms(10分) が上限。超える値は無視される
 
   # デプロイ直後の公開環境に対して基本フローのスモークE2Eを実行する
   smoke:
