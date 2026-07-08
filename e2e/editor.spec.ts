@@ -355,6 +355,18 @@ test('写真ガイド: 選択区間にスライドショーを配置できる', 
   await expect(page.locator('footer').getByText('guide-b.png')).toBeVisible()
 })
 
+test('書き出し: 章マーカー区間を In/Out に設定できる', async ({ page }) => {
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await page.getByRole('button', { name: '書き出し' }).click()
+
+  await page.getByRole('button', { name: '章「新郎プロフィール」を In/Out に設定' }).click()
+  await expect(page.getByText('「新郎プロフィール」を In/Out に設定しました')).toBeVisible()
+  await expect(page.getByText('IN 20.0')).toBeVisible()
+  await expect(page.getByText('OUT 50.0')).toBeVisible()
+  await expect(page.getByText('書き出し範囲: 20.0–50.0s')).toBeVisible()
+})
+
 test('書き出し: 対応環境ではMP4ダウンロード、非対応環境ではエラー表示(スモーク)', async ({ page }) => {
   test.setTimeout(180_000)
 

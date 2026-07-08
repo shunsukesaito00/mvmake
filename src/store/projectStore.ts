@@ -31,6 +31,7 @@ import { clearMediaCache } from '../engine/compositor'
 import { createId } from '../utils/id'
 import { buildPhotoGuideClips, buildTemplateMarkers, buildTemplateTextClips } from '../utils/weddingTemplate'
 import { computeGuideSlideshowDurationPerImage, isPhotoGuideClip } from '../utils/photoGuide'
+import { getMarkerChapterRanges } from '../utils/markerExport'
 import {
   cloneProject,
   duplicateClip,
@@ -127,6 +128,7 @@ interface ProjectState {
   setInPoint: (time: number | null) => void
   setOutPoint: (time: number | null) => void
   clearInOut: () => void
+  setInOutFromMarker: (markerId: string) => boolean
 
   pushHistory: () => void
   undo: () => void
@@ -255,6 +257,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setInPoint: (time) => set({ inPoint: time }),
   setOutPoint: (time) => set({ outPoint: time }),
   clearInOut: () => set({ inPoint: null, outPoint: null }),
+  setInOutFromMarker: (markerId) => {
+    const duration = get().getProjectDuration()
+    const ranges = getMarkerChapterRanges(get().project.markers ?? [], duration)
+    const range = ranges.find((r) => r.markerId === markerId)
+    if (!range || range.end - range.start <= 0.01) return false
+    set({ inPoint: range.start, outPoint: range.end })
+    return true
+  },
 
   setProjectName: (name) => {
     get().pushHistory()

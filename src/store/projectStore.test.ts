@@ -275,3 +275,18 @@ describe('addSlideshowToGuide', () => {
     expect(videoClips[0].duration).toBeCloseTo(guide!.duration / 2)
   })
 })
+
+describe('setInOutFromMarker', () => {
+  it('章マーカー区間を In/Out に設定する', () => {
+    const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(template)
+
+    const marker = useProjectStore.getState().project.markers?.find((m) => m.label === '新郎プロフィール')
+    expect(marker).toBeDefined()
+
+    const ok = useProjectStore.getState().setInOutFromMarker(marker!.id)
+    expect(ok).toBe(true)
+    expect(useProjectStore.getState().inPoint).toBe(20)
+    expect(useProjectStore.getState().outPoint).toBe(50)
+  })
+})

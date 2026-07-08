@@ -12,6 +12,7 @@ import {
   getNativeExportButtonLabel,
   resolveExportSize,
 } from '../utils/exportResolution'
+import { formatMarkerChapterRange, getMarkerChapterRanges } from '../utils/markerExport'
 
 export function ExportButton() {
   const [showDialog, setShowDialog] = useState(false)
@@ -30,9 +31,13 @@ export function ExportButton() {
   const setExportProgress = useProjectStore((s) => s.setExportProgress)
   const setInPoint = useProjectStore((s) => s.setInPoint)
   const setOutPoint = useProjectStore((s) => s.setOutPoint)
+  const setInOutFromMarker = useProjectStore((s) => s.setInOutFromMarker)
   const clearInOut = useProjectStore((s) => s.clearInOut)
   const getProjectDuration = useProjectStore((s) => s.getProjectDuration)
   const showToast = useToastStore((s) => s.showToast)
+
+  const projectDuration = getProjectDuration()
+  const markerChapters = getMarkerChapterRanges(project.markers ?? [], projectDuration)
 
   const nativeExportLabel = getNativeExportButtonLabel(project.width, project.height)
   const nativeDimensions = getExportResolutionLabel('project', project.width, project.height)
@@ -79,6 +84,16 @@ export function ExportButton() {
 
   const handleDeletePreset = (id: string) => {
     setPresets(deleteExportPreset(id))
+  }
+
+  const handleSetChapterInOut = (markerId: string) => {
+    const ok = setInOutFromMarker(markerId)
+    if (!ok) {
+      showToast('章区間を In/Out に設定できませんでした', 'error')
+      return
+    }
+    const range = getMarkerChapterRanges(project.markers ?? [], projectDuration).find((r) => r.markerId === markerId)
+    showToast(`「${range?.label ?? '章'}」を In/Out に設定しました`, 'info')
   }
 
   const handleExport = async (exportResolution: ExportResolution) => {
@@ -217,6 +232,40 @@ export function ExportButton() {
                 ))}
               </div>
             </div>
+
+            {markerChapters.length > 0 && (
+              <div>
+                <p className="mb-2 text-[11px] font-semibold tracking-wider text-accent uppercase">章マーカー区間</p>
+                <div className="max-h-40 space-y-1.5 overflow-y-auto">
+                  {markerChapters.map((chapter) => (
+                    <button
+                      key={chapter.markerId}
+                      type="button"
+                      aria-label={`章「${chapter.label}」を In/Out に設定`}
+                      onClick={() => handleSetChapterInOut(chapter.markerId)}
+                      className="flex w-full items-center justify-between rounded-xl bg-surface-3 px-3 py-2.5 text-left ring-1 ring-border transition-all hover:ring-accent/40"
+                    >
+                      <span className="text-xs font-medium text-text-primary">{formatMarkerChapterRange(chapter)}</span>
+                      <span className="shrink-0 text-[10px] text-accent">In/Outに設定</span>
+                    </button>
+                  ))}
+                </div>
+                {(inPoint !== null || outPoint !== null) && (
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="text-[10px] text-text-muted">
+                      書き出し範囲: {inPoint?.toFixed(1) ?? '—'}–{outPoint?.toFixed(1) ?? '—'}s
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => clearInOut()}
+                      className="text-[10px] text-text-muted hover:text-text-secondary"
+                    >
+                      範囲をクリア
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <p className="mb-2 text-[11px] font-semibold tracking-wider text-accent uppercase">書き出しプリセット</p>
