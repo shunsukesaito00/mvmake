@@ -1,9 +1,70 @@
 import { useState, type ReactNode } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import type { AudioClip, ImageClip, TextClip, Transform, VideoClip } from '../types/project'
-import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING } from '../types/project'
+import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, TEXT_PRESETS } from '../types/project'
+import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
 import { Icons } from '../components/icons'
+
+function InspectorEmptyState() {
+  const addTextClip = useProjectStore((s) => s.addTextClip)
+  const showToast = useToastStore((s) => s.showToast)
+
+  const handleAddText = () => {
+    const preset = TEXT_PRESETS[0]
+    if (!preset) return
+    addTextClip(preset)
+    showToast(`「${preset.label}」テキストを追加しました`, 'success')
+  }
+
+  const handleImportMedia = () => {
+    const input = document.querySelector<HTMLInputElement>('input[accept*="video"]')
+    if (input) input.click()
+    else showToast('左パネルのメディアタブからファイルを選択してください', 'info')
+  }
+
+  return (
+    <div className="flex flex-1 flex-col overflow-y-auto">
+      <EmptyState
+        icon={<Icons.Film size={20} />}
+        title="クリップ未選択"
+        description="タイムラインでクリップを選択するとプロパティを編集できます"
+      />
+      <div className="space-y-2 px-4 pb-6">
+        <p className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">クイックスタート</p>
+        <button
+          type="button"
+          onClick={handleAddText}
+          className="flex w-full items-center gap-3 rounded-xl bg-surface-3 px-3 py-2.5 text-left ring-1 ring-border transition-all hover:bg-surface-4 hover:ring-accent/30"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-muted text-accent">
+            <Icons.Type size={16} />
+          </span>
+          <span>
+            <span className="block text-xs font-medium text-text-primary">テキストを追加</span>
+            <span className="block text-[10px] text-text-muted">Opening プリセットをタイムラインへ</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={handleImportMedia}
+          className="flex w-full items-center gap-3 rounded-xl bg-surface-3 px-3 py-2.5 text-left ring-1 ring-border transition-all hover:bg-surface-4 hover:ring-accent/30"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-muted text-accent">
+            <Icons.Upload size={16} />
+          </span>
+          <span>
+            <span className="block text-xs font-medium text-text-primary">メディアをインポート</span>
+            <span className="block text-[10px] text-text-muted">動画・写真・BGM を左パネルから追加</span>
+          </span>
+        </button>
+        <p className="pt-1 text-[10px] leading-relaxed text-text-muted">
+          クリップ配置後はタイムライン上のクリップをクリックして、位置・色・トランジションなどを編集できます。
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function CollapsibleSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(defaultOpen)
@@ -29,7 +90,7 @@ export function InspectorPanel() {
     return (
       <div className="flex h-full flex-col">
         <PanelHeader title="インスペクター" icon={<Icons.Settings size={14} />} />
-        <EmptyState icon={<Icons.Film size={20} />} title="クリップ未選択" description="タイムラインでクリップを選択するとプロパティを編集できます" />
+        <InspectorEmptyState />
       </div>
     )
   }
