@@ -1,6 +1,9 @@
 import type { ExportQuality } from '../engine/exporter'
 
-export type ExportResolution = '1080p' | '720p'
+export type ExportResolution = 'project' | '720p'
+
+/** @deprecated localStorage 互換。読み込み時に project へ正規化 */
+export type LegacyExportResolution = ExportResolution | '1080p'
 
 /** 書き出しダイアログで再利用する名前付き設定 */
 export interface ExportPreset {
@@ -15,6 +18,6 @@ export interface ExportPreset {
 }
 
 export const EXPORT_RESOLUTION_LABELS: Record<ExportResolution, string> = {
-  '1080p': '1920×1080',
+  project: 'プロジェクト解像度',
   '720p': '1280×720',
 }

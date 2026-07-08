@@ -1,5 +1,6 @@
 import type { ExportQuality } from '../engine/exporter'
 import type { ExportPreset, ExportResolution } from '../types/exportPreset'
+import { formatExportResolutionSummary } from './exportResolution'
 import { createId } from './id'
 
 export function buildExportPreset(
@@ -25,7 +26,7 @@ export function buildExportPreset(
 }
 
 export function formatExportPresetSummary(preset: ExportPreset, qualityLabel: string): string {
-  const res = preset.resolution
+  const res = formatExportResolutionSummary(preset.resolution)
   const range = preset.useInOut
     ? `In/Out ${preset.inPoint?.toFixed(1) ?? '—'}–${preset.outPoint?.toFixed(1) ?? '—'}s`
     : '全体'

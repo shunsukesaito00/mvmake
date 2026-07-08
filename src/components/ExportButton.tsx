@@ -5,14 +5,18 @@ import { useToastStore } from '../store/toastStore'
 import { Modal, Btn, ProgressBar } from './ui'
 import { Icons } from './icons'
 import type { ExportPreset, ExportResolution } from '../types/exportPreset'
-import { EXPORT_RESOLUTION_LABELS } from '../types/exportPreset'
 import { deleteExportPreset, loadExportPresets, saveExportPreset } from '../persistence/exportPresets'
 import { buildExportPreset, formatExportPresetSummary } from '../utils/exportPresetUtils'
+import {
+  getExportResolutionLabel,
+  getNativeExportButtonLabel,
+  resolveExportSize,
+} from '../utils/exportResolution'
 
 export function ExportButton() {
   const [showDialog, setShowDialog] = useState(false)
   const [quality, setQuality] = useState<ExportQuality>('standard')
-  const [resolution, setResolution] = useState<ExportResolution>('1080p')
+  const [resolution, setResolution] = useState<ExportResolution>('project')
   const [presetName, setPresetName] = useState('')
   const [presets, setPresets] = useState<ExportPreset[]>([])
   const abortRef = useRef<AbortController | null>(null)
@@ -30,6 +34,9 @@ export function ExportButton() {
   const getProjectDuration = useProjectStore((s) => s.getProjectDuration)
   const showToast = useToastStore((s) => s.showToast)
 
+  const nativeExportLabel = getNativeExportButtonLabel(project.width, project.height)
+  const nativeDimensions = getExportResolutionLabel('project', project.width, project.height)
+
   const hasClips = project.tracks.some((t) => t.clips.length > 0)
   const exportDisabled = isExporting || !hasClips
   const exportTooltip = !hasClips ? 'クリップを追加してから書き出してください' : undefined
@@ -38,7 +45,6 @@ export function ExportButton() {
     if (showDialog) setPresets(loadExportPresets())
   }, [showDialog])
 
-  // 書き出し中のタブクローズ/リロードに確認ダイアログを出す
   useEffect(() => {
     if (!isExporting) return
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -98,11 +104,8 @@ export function ExportButton() {
     const controller = new AbortController()
     abortRef.current = controller
 
-    const exportProject_ = { ...project }
-    if (exportResolution === '720p') {
-      exportProject_.width = 1280
-      exportProject_.height = 720
-    }
+    const { width, height } = resolveExportSize(project.width, project.height, exportResolution)
+    const exportProject_ = { ...project, width, height }
 
     try {
       const blob = await exportProject(exportProject_, exportDuration, setExportProgress, {
@@ -159,6 +162,10 @@ export function ExportButton() {
           </div>
         ) : (
           <div className="space-y-4">
+            <p className="text-[10px] text-text-muted">
+              プロジェクト解像度: {project.width}×{project.height}
+            </p>
+
             <div>
               <p className="mb-2 text-[11px] font-semibold tracking-wider text-accent uppercase">品質</p>
               <div className="space-y-1.5">
@@ -187,11 +194,11 @@ export function ExportButton() {
             <div>
               <p className="mb-2 text-[11px] font-semibold tracking-wider text-accent uppercase">解像度</p>
               <div className="grid grid-cols-2 gap-1.5">
-                {(['1080p', '720p'] as ExportResolution[]).map((res) => (
+                {(['project', '720p'] as ExportResolution[]).map((res) => (
                   <button
                     key={res}
                     type="button"
-                    aria-label={`解像度 ${res}`}
+                    aria-label={`解像度 ${res === 'project' ? 'プロジェクト' : res}`}
                     aria-pressed={resolution === res}
                     onClick={() => setResolution(res)}
                     className={`rounded-xl px-3 py-2.5 text-left ring-1 transition-all ${
@@ -200,8 +207,12 @@ export function ExportButton() {
                         : 'bg-surface-3 ring-border hover:ring-accent/30'
                     }`}
                   >
-                    <span className="block text-sm font-medium text-text-primary">{res}</span>
-                    <span className="font-mono text-[10px] text-text-muted">{EXPORT_RESOLUTION_LABELS[res]}</span>
+                    <span className="block text-sm font-medium text-text-primary">
+                      {res === 'project' ? 'プロジェクト' : '720p'}
+                    </span>
+                    <span className="font-mono text-[10px] text-text-muted">
+                      {getExportResolutionLabel(res, project.width, project.height)}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -268,11 +279,11 @@ export function ExportButton() {
               <div className="space-y-1.5">
                 <button
                   type="button"
-                  onClick={() => handleExport('1080p')}
+                  onClick={() => handleExport('project')}
                   className="flex w-full items-center justify-between rounded-xl bg-surface-3 px-4 py-3 text-left ring-1 ring-border transition-all hover:ring-accent/40"
                 >
-                  <span className="text-sm font-medium text-text-primary">1080p で書き出し</span>
-                  <span className="font-mono text-xs text-text-muted">1920×1080</span>
+                  <span className="text-sm font-medium text-text-primary">{nativeExportLabel}</span>
+                  <span className="font-mono text-xs text-text-muted">{nativeDimensions}</span>
                 </button>
                 <button
                   type="button"

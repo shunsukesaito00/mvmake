@@ -17,22 +17,22 @@ describe('buildExportPreset', () => {
   })
 
   it('In/Out があれば useInOut を true にする', () => {
-    const preset = buildExportPreset('ハイライト', 'standard', '1080p', 2, 10)
+    const preset = buildExportPreset('ハイライト', 'standard', 'project', 2, 10)
     expect(preset.useInOut).toBe(true)
     expect(preset.inPoint).toBe(2)
     expect(preset.outPoint).toBe(10)
   })
 
   it('空名は拒否する', () => {
-    expect(() => buildExportPreset('  ', 'standard', '1080p', null, null)).toThrow('プリセット名')
+    expect(() => buildExportPreset('  ', 'standard', 'project', null, null)).toThrow('プリセット名')
   })
 })
 
 describe('formatExportPresetSummary', () => {
   it('In/Out 範囲を要約に含める', () => {
-    const preset = buildExportPreset('範囲', 'high', '1080p', 1.5, 8)
+    const preset = buildExportPreset('範囲', 'high', 'project', 1.5, 8)
     expect(formatExportPresetSummary(preset, '高品質')).toContain('In/Out')
-    expect(formatExportPresetSummary(preset, '高品質')).toContain('1080p')
+    expect(formatExportPresetSummary(preset, '高品質')).toContain('プロジェクト解像度')
   })
 })
 
@@ -57,7 +57,7 @@ describe('exportPresets persistence', () => {
 
   it('保存・読み込み・削除できる', () => {
     expect(loadExportPresets()).toEqual([])
-    const preset = buildExportPreset('テスト', 'standard', '1080p', null, null)
+    const preset = buildExportPreset('テスト', 'standard', 'project', null, null)
     saveExportPreset(preset)
     expect(loadExportPresets()).toHaveLength(1)
     expect(loadExportPresets()[0].name).toBe('テスト')
@@ -70,5 +70,20 @@ describe('exportPresets persistence', () => {
     const a = buildExportPreset('A', 'light', '720p', null, null)
     replaceExportPresets([a])
     expect(loadExportPresets()).toHaveLength(1)
+  })
+
+  it('旧 1080p プリセットを project に正規化する', () => {
+    store['fable-export-presets'] = JSON.stringify([
+      {
+        id: 'legacy',
+        name: '旧',
+        quality: 'standard',
+        resolution: '1080p',
+        useInOut: false,
+        inPoint: null,
+        outPoint: null,
+      },
+    ])
+    expect(loadExportPresets()[0].resolution).toBe('project')
   })
 })

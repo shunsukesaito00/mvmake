@@ -1,13 +1,21 @@
 import type { ExportPreset } from '../types/exportPreset'
+import { normalizeExportResolution } from '../utils/exportResolution'
 
 const STORAGE_KEY = 'fable-export-presets'
+
+function normalizePreset(preset: ExportPreset & { resolution?: string }): ExportPreset {
+  return {
+    ...preset,
+    resolution: normalizeExportResolution(preset.resolution ?? 'project'),
+  }
+}
 
 function readRaw(): ExportPreset[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as ExportPreset[]
-    return Array.isArray(parsed) ? parsed : []
+    return Array.isArray(parsed) ? parsed.map(normalizePreset) : []
   } catch {
     return []
   }

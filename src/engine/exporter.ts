@@ -1,4 +1,5 @@
 import { Muxer, ArrayBufferTarget } from 'mp4-muxer'
+import { scaleVideoBitrate } from '../utils/exportResolution'
 import type { Project } from '../types/project'
 import { renderFrame, seekVideosToTime } from './compositor'
 import { mixAudioOffline } from './audioEngine'
@@ -92,7 +93,7 @@ export async function exportProject(
     codec: 'avc1.42E01E',
     width,
     height,
-    bitrate: preset.videoBitrate,
+    bitrate: scaleVideoBitrate(preset.videoBitrate, width, height),
     framerate: fps,
   }
   const videoSupport = await VideoEncoder.isConfigSupported(videoConfig).catch(() => null)
