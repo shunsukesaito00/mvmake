@@ -204,8 +204,15 @@ test('書き出し: プリセットを保存して適用できる', async ({ pag
   await expect(page.getByText('「SNS用」プリセットを保存しました')).toBeVisible()
   await expect(page.getByRole('button', { name: 'SNS用を適用' })).toBeVisible()
 
+  await page.getByRole('button', { name: /高品質/ }).click()
+  await page.getByRole('button', { name: '解像度 1080p' }).click()
+  await expect(page.getByRole('button', { name: /軽量/ })).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'false')
+
   await page.getByRole('button', { name: 'SNS用を適用' }).click()
   await expect(page.getByText('「SNS用」プリセットを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /軽量/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('書き出し: 対応環境ではMP4ダウンロード、非対応環境ではエラー表示(スモーク)', async ({ page }) => {

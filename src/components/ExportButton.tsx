@@ -166,6 +166,7 @@ export function ExportButton() {
                   <button
                     key={key}
                     type="button"
+                    aria-pressed={quality === key}
                     onClick={() => setQuality(key)}
                     className={`flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-left ring-1 transition-all ${
                       quality === key
@@ -191,6 +192,7 @@ export function ExportButton() {
                     key={res}
                     type="button"
                     aria-label={`解像度 ${res}`}
+                    aria-pressed={resolution === res}
                     onClick={() => setResolution(res)}
                     className={`rounded-xl px-3 py-2.5 text-left ring-1 transition-all ${
                       resolution === res
