@@ -2,7 +2,7 @@
 
 ブラウザ完結型のタイムライン動画編集Webアプリ。CapCut / Premiere Pro クラスの編集機能を結婚式ムービー制作向けに最適化。
 
-**デモ**: https://shunchans.github.io/FABLE/
+**デモ**: https://shunsukesaito00.github.io/mvmake/
 
 > 公開には GitHub Pages の有効化が必要です(Settings → Pages → Source を「GitHub Actions」に設定)。
 > デプロイ状況は Actions の「Deploy to GitHub Pages」で確認できます。
