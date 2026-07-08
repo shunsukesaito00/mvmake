@@ -99,6 +99,7 @@ interface ProjectState {
   outPoint: number | null
   showSafeAreas: boolean
   loopPlayback: boolean
+  showPlayHint: boolean
 
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
@@ -112,6 +113,7 @@ interface ProjectState {
   setRippleDelete: (v: boolean) => void
   setShowSafeAreas: (v: boolean) => void
   setLoopPlayback: (v: boolean) => void
+  setShowPlayHint: (v: boolean) => void
   setInPoint: (time: number | null) => void
   setOutPoint: (time: number | null) => void
   clearInOut: () => void
@@ -223,6 +225,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   outPoint: null,
   showSafeAreas: false,
   loopPlayback: false,
+  showPlayHint: false,
 
   setCurrentTime: (time) => set({ currentTime: Math.max(0, time) }),
   setIsPlaying: (playing) => set({ isPlaying: playing }),
@@ -235,6 +238,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setRippleDelete: (v) => set({ rippleDelete: v }),
   setShowSafeAreas: (v) => set({ showSafeAreas: v }),
   setLoopPlayback: (v) => set({ loopPlayback: v }),
+  setShowPlayHint: (v) => set({ showPlayHint: v }),
   setInPoint: (time) => set({ inPoint: time }),
   setOutPoint: (time) => set({ outPoint: time }),
   clearInOut: () => set({ inPoint: null, outPoint: null }),
@@ -774,6 +778,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       outPoint: null,
       past: [],
       future: [],
+      showPlayHint: false,
     })
   },
 
@@ -786,6 +791,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       selectedClipId: null,
       past: [],
       future: [],
+      showPlayHint: false,
     })
   },
 }))

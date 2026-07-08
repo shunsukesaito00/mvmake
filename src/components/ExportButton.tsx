@@ -18,6 +18,10 @@ export function ExportButton() {
   const getProjectDuration = useProjectStore((s) => s.getProjectDuration)
   const showToast = useToastStore((s) => s.showToast)
 
+  const hasClips = project.tracks.some((t) => t.clips.length > 0)
+  const exportDisabled = isExporting || !hasClips
+  const exportTooltip = !hasClips ? 'クリップを追加してから書き出してください' : undefined
+
   // 書き出し中のタブクローズ/リロードに確認ダイアログを出す
   useEffect(() => {
     if (!isExporting) return
@@ -87,10 +91,17 @@ export function ExportButton() {
 
   return (
     <>
-      <Btn variant="accent" onClick={() => setShowDialog(true)} disabled={isExporting} className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
-        <Icons.Export size={14} />
-        {isExporting ? `${Math.round(exportProgress * 100)}%` : '書き出し'}
-      </Btn>
+      <span title={exportTooltip} className="inline-flex">
+        <Btn
+          variant="accent"
+          onClick={() => setShowDialog(true)}
+          disabled={exportDisabled}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs"
+        >
+          <Icons.Export size={14} />
+          {isExporting ? `${Math.round(exportProgress * 100)}%` : '書き出し'}
+        </Btn>
+      </span>
 
       <Modal open={showDialog} onClose={() => !isExporting && setShowDialog(false)} title="MP4書き出し">
         {isExporting ? (

@@ -37,4 +37,5 @@ test('サンプルプロジェクト: オンボーディングから開いて編
   await expect(page.getByRole('button', { name: 'サンプルプロジェクト' })).toBeVisible()
   await expect(page.locator('footer').getByText('Our Story.jpg')).toBeVisible()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+  await expect(page.getByText('▶ 再生してプレビュー')).toBeVisible()
 })

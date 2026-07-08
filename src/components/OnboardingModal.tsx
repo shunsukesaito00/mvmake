@@ -60,6 +60,7 @@ export function OnboardingModal() {
         // 保存に失敗しても編集体験は開始できる
       })
       useProjectStore.getState().loadProject(demo)
+      useProjectStore.getState().setShowPlayHint(true)
       dismiss()
       showToast('サンプルプロジェクトを開きました。再生ボタンでプレビューできます', 'success')
     } catch (err) {

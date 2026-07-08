@@ -16,6 +16,8 @@ export function PreviewPanel() {
   const currentTime = useProjectStore((s) => s.currentTime)
   const isPlaying = useProjectStore((s) => s.isPlaying)
   const showSafeAreas = useProjectStore((s) => s.showSafeAreas)
+  const showPlayHint = useProjectStore((s) => s.showPlayHint)
+  const setShowPlayHint = useProjectStore((s) => s.setShowPlayHint)
   const inPoint = useProjectStore((s) => s.inPoint)
   const outPoint = useProjectStore((s) => s.outPoint)
   const setShowSafeAreas = useProjectStore((s) => s.setShowSafeAreas)
@@ -67,6 +69,18 @@ export function PreviewPanel() {
     return () => observer.disconnect()
   }, [project.width, project.height])
 
+  // サンプルプロジェクト起動後、再生ボタンを数秒間ハイライト
+  useEffect(() => {
+    if (!showPlayHint) return
+    const timer = setTimeout(() => setShowPlayHint(false), 5000)
+    return () => clearTimeout(timer)
+  }, [showPlayHint, setShowPlayHint])
+
+  const handleTogglePlay = () => {
+    setShowPlayHint(false)
+    togglePlay()
+  }
+
   const stepFrame = (dir: -1 | 1) => seek(Math.max(0, Math.min(duration, currentTime + dir / fps)))
 
   return (
@@ -110,9 +124,26 @@ export function PreviewPanel() {
           <span className="text-[10px] font-bold">-1</span>
         </IconButton>
 
-        <IconButton onClick={togglePlay} variant="accent" size="lg" className="mx-1">
-          {isPlaying ? <Icons.Pause size={18} /> : <Icons.Play size={18} />}
-        </IconButton>
+        <div className="relative mx-1">
+          {showPlayHint && (
+            <div
+              role="tooltip"
+              className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 animate-fade-in whitespace-nowrap rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-surface-0 shadow-lg shadow-black/40"
+            >
+              ▶ 再生してプレビュー
+              <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-accent" />
+            </div>
+          )}
+          <IconButton
+            onClick={handleTogglePlay}
+            variant="accent"
+            size="lg"
+            tooltip="再生 (Space)"
+            className={showPlayHint ? 'animate-pulse ring-2 ring-accent ring-offset-2 ring-offset-surface-1' : ''}
+          >
+            {isPlaying ? <Icons.Pause size={18} /> : <Icons.Play size={18} />}
+          </IconButton>
+        </div>
 
         <IconButton onClick={() => stepFrame(1)} tooltip="1フレーム進む" size="sm">
           <span className="text-[10px] font-bold">+1</span>
