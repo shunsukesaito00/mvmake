@@ -55,7 +55,7 @@ export function Slider({ label, value, min, max, step, onChange, format }: {
         <span className="text-[11px] text-text-secondary">{label}</span>
         <span className="text-[11px] tabular-nums text-text-muted">{format ? format(value) : value.toFixed(2)}</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="w-full" />
+      <input type="range" aria-label={label} min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="w-full" />
     </div>
   )
 }

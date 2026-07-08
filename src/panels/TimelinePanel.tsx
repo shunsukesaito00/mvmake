@@ -3,6 +3,9 @@ import { useProjectStore } from '../store/projectStore'
 import type { Clip } from '../types/project'
 import { formatTime, snapTime } from '../utils/time'
 import { clampTrimEnd, clampTrimStart } from '../utils/clipUtils'
+import { updateVolumeKeyframeList, VOLUME_TIMELINE_LANE_HEIGHT, createVolumeKeyframeAt, volumeAtTimelineClick } from '../utils/volumeKeyframesTimeline'
+import { VolumeKeyframesTimeline } from '../components/VolumeKeyframesTimeline'
+import type { AudioClip, VideoClip } from '../types/project'
 import { usePlayback } from '../hooks/usePlayback'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, IconButton } from '../components/ui'
@@ -73,6 +76,7 @@ export function TimelinePanel() {
   const setSelectedClipId = useProjectStore((s) => s.setSelectedClipId)
   const setDragState = useProjectStore((s) => s.setDragState)
   const updateClip = useProjectStore((s) => s.updateClip)
+  const pushHistory = useProjectStore((s) => s.pushHistory)
   const moveClip = useProjectStore((s) => s.moveClip)
   const getSnapPoints = useProjectStore((s) => s.getSnapPoints)
   const toggleTrackMute = useProjectStore((s) => s.toggleTrackMute)
@@ -152,6 +156,18 @@ export function TimelinePanel() {
       const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
       if (!clip) return
       updateClip(dragState.clipId, { duration: clampTrimEnd(clip, snapped - dragState.originalStartTime, mediaAssets), sourceDuration: clampTrimEnd(clip, snapped - dragState.originalStartTime, mediaAssets) })
+    } else if (dragState.mode === 'volumeKeyframe' && dragState.keyframeId != null) {
+      const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
+      if (clip?.type !== 'audio' && clip?.type !== 'video') return
+      const audioClip = clip as AudioClip | VideoClip
+      const keyframes = audioClip.audio.volumeKeyframes
+      if (!keyframes?.length) return
+
+      const volumeDelta = -(e.clientY - dragState.startY) / VOLUME_TIMELINE_LANE_HEIGHT * 2
+      const newTime = Math.max(0, Math.min(clip.duration, (dragState.originalKeyframeTime ?? 0) + dt))
+      const newVolume = Math.max(0, Math.min(2, (dragState.originalKeyframeVolume ?? 1) + volumeDelta))
+      const next = updateVolumeKeyframeList(keyframes, dragState.keyframeId, { time: newTime, volume: newVolume })
+      updateClip(dragState.clipId, { audio: { ...audioClip.audio, volumeKeyframes: next } }, false)
     }
   }, [dragState, pixelsPerSecond, getSnapPoints, updateClip, moveClip, getTrackAtY, tracks, mediaAssets, project.tracks, seek, duration])
 
@@ -198,6 +214,39 @@ export function TimelinePanel() {
     e.stopPropagation()
     e.preventDefault()
     setDragState({ clipId: '', mode: 'playhead', startX: e.clientX, startY: e.clientY, originalStartTime: 0, originalDuration: 0, originalSourceStart: 0, originalTrackId: '', originalTime: useProjectStore.getState().currentTime })
+  }
+
+  const startVolumeKeyframeDrag = (clip: AudioClip | VideoClip, keyframeId: string, keyframeTime: number, keyframeVolume: number, e: React.MouseEvent) => {
+    const track = tracks.find((t) => t.id === clip.trackId)
+    if (track?.locked) return
+    e.stopPropagation()
+    e.preventDefault()
+    pushHistory()
+    setSelectedClipId(clip.id)
+    setDragState({
+      clipId: clip.id,
+      mode: 'volumeKeyframe',
+      keyframeId,
+      originalKeyframeTime: keyframeTime,
+      originalKeyframeVolume: keyframeVolume,
+      startX: e.clientX,
+      startY: e.clientY,
+      originalStartTime: clip.startTime,
+      originalDuration: clip.duration,
+      originalSourceStart: clip.sourceStart,
+      originalTrackId: clip.trackId,
+    })
+  }
+
+  const addVolumeKeyframeOnTimeline = (clip: AudioClip | VideoClip, time: number, volume: number) => {
+    pushHistory()
+    const next = createVolumeKeyframeAt(
+      clip.audio,
+      clip.duration,
+      time,
+      volumeAtTimelineClick(clip.audio, clip.duration, time, volume),
+    )
+    updateClip(clip.id, { audio: { ...clip.audio, volumeKeyframes: next } })
   }
 
   return (
@@ -265,16 +314,27 @@ export function TimelinePanel() {
                   const width = Math.max(clip.duration * pixelsPerSecond, 24)
                   const label = clip.type === 'text' ? clip.text.content : (media?.name ?? clip.type)
                   const isSelected = selectedClipId === clip.id
+                  const hasVolumeKeyframes = (clip.type === 'audio' || clip.type === 'video') && ((clip.audio.volumeKeyframes?.length ?? 0) > 0 || isSelected)
                   return (
                     <div
                       key={clip.id}
-                      className={`absolute top-1.5 bottom-1.5 cursor-grab overflow-hidden rounded-md ${CLIP_STYLES[clip.type]} ${isSelected ? 'clip-selected z-10' : 'ring-1 ring-white/10'} ${track.locked ? 'opacity-50' : ''}`}
+                      className={`absolute top-1.5 bottom-1.5 cursor-grab rounded-md ${CLIP_STYLES[clip.type]} ${isSelected ? 'clip-selected z-10' : 'ring-1 ring-white/10'} ${track.locked ? 'opacity-50' : ''} ${hasVolumeKeyframes ? 'overflow-visible' : 'overflow-hidden'}`}
                       style={{ left, width }}
                       onMouseDown={(e) => startDrag(clip, 'move', e)}
                       onClick={(e) => { e.stopPropagation(); setSelectedClipId(clip.id) }}
                     >
                       {media?.thumbnail && clip.type !== 'audio' && <img src={media.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />}
                       <Waveform data={clip.type === 'audio' ? media?.waveform : undefined} />
+                      {(clip.type === 'audio' || clip.type === 'video') && (
+                        <VolumeKeyframesTimeline
+                          clip={clip}
+                          audio={clip.audio}
+                          widthPx={width}
+                          isSelected={isSelected}
+                          onStartKeyframeDrag={(kf, e) => startVolumeKeyframeDrag(clip, kf.id, kf.time, kf.volume, e)}
+                          onAddKeyframe={(time, volume) => addVolumeKeyframeOnTimeline(clip, time, volume)}
+                        />
+                      )}
                       <div className="relative z-10 truncate px-2 py-1.5 text-[10px] font-semibold text-white drop-shadow-sm">{label}</div>
                       {/* z-20: ラベル行(z-10)より前面に置き、クリップ上端でもトリムを掴めるようにする */}
                       {!track.locked && (

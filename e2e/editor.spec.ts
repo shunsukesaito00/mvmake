@@ -74,6 +74,28 @@ test('インスペクター: 音量キーフレームを追加・編集できる
   await expect(page.getByText('1件', { exact: true })).toBeVisible()
 })
 
+test('タイムライン: 音量キーフレームをドラッグ編集できる', async ({ page }) => {
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'bgm.wav', mimeType: 'audio/wav', buffer: wav })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await page.locator('footer').getByText('bgm.wav').click()
+
+  await page.getByRole('button', { name: '音量キーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).fill('0.2')
+
+  const handle = page.getByRole('button', { name: '音量キーフレーム 1' })
+  await expect(handle).toHaveAttribute('title', /0\.2s/)
+
+  const box = (await handle.boundingBox())!
+  await handle.hover()
+  await page.mouse.down()
+  await page.mouse.move(box.x + 60, box.y - 10, { steps: 8 })
+  await page.mouse.up()
+
+  await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
+})
+
 test('モーダル: 開くと最初の要素にフォーカスし、Escape で閉じる', async ({ page }) => {
   await page.getByTitle('プロジェクト一覧').click()
   await expect(page.getByRole('dialog', { name: 'プロジェクト' })).toBeVisible()
