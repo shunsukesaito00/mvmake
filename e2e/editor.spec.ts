@@ -108,6 +108,44 @@ test('タイムライン: クリップのドラッグ移動', async ({ page }) =
   expect(after.x - before.x).toBeLessThan(180)
 })
 
+test('タイムライン: 右端ハンドルのトリムで長さが短くなる', async ({ page }) => {
+  await addOpeningText(page)
+  const clip = page.locator('footer').getByText('Opening')
+  const before = (await clip.boundingBox())!
+
+  // 回帰ケース: ラベル行と重なる上部の高さ(y+10px)でハンドルを掴む
+  // (かつてラベルがハンドルを覆い「移動」ドラッグになるバグがあった)
+  await page.mouse.move(before.x + before.width - 3, before.y + 10)
+  await page.mouse.down()
+  await page.mouse.move(before.x + before.width - 83, before.y + 10, { steps: 5 })
+  await page.mouse.up()
+
+  // 80px/s なので約1秒短縮。開始位置は変わらない
+  const after = (await clip.boundingBox())!
+  expect(after.x).toBeCloseTo(before.x, 0)
+  expect(before.width - after.width).toBeGreaterThan(60)
+  expect(before.width - after.width).toBeLessThan(100)
+})
+
+test('タイムライン: 左端ハンドルのトリムで開始位置と長さが変わる', async ({ page }) => {
+  await addOpeningText(page)
+  const clip = page.locator('footer').getByText('Opening')
+  const before = (await clip.boundingBox())!
+
+  // 左端ハンドルを右へ 80px (約1秒) ドラッグ
+  await page.mouse.move(before.x + 3, before.y + before.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(before.x + 83, before.y + before.height / 2, { steps: 5 })
+  await page.mouse.up()
+
+  // startTime が約1秒進み、duration が約1秒縮む(右端は動かない)
+  const after = (await clip.boundingBox())!
+  expect(after.x - before.x).toBeGreaterThan(60)
+  expect(after.x - before.x).toBeLessThan(100)
+  expect(before.width - after.width).toBeGreaterThan(60)
+  expect(after.x + after.width).toBeCloseTo(before.x + before.width, 0)
+})
+
 test('タイムライン: Alt+ドラッグでクリップを複製して移動', async ({ page }) => {
   await addOpeningText(page)
   const clips = page.locator('footer').getByText('Opening')

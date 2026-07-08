@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   isCompatibleTrack,
   clampTrimEnd,
+  clampTrimStart,
   trackTypeForClip,
   clipsOverlap,
   resolveClipOverlap,
@@ -39,6 +40,66 @@ describe('clampTrimEnd', () => {
   it('limits duration to source length', () => {
     const clip = { ...baseVideoClip, sourceStart: 8 }
     expect(clampTrimEnd(clip, 5, [videoAsset])).toBe(2)
+  })
+
+  it('enforces minimum duration of 0.2s', () => {
+    expect(clampTrimEnd(baseVideoClip, 0.05, [videoAsset])).toBe(0.2)
+    expect(clampTrimEnd(baseVideoClip, -1, [videoAsset])).toBe(0.2)
+  })
+
+  it('accounts for playback speed against source length', () => {
+    // 速度2xでは素材10秒 → タイムライン上は最大5秒
+    const clip = { ...baseVideoClip, speed: 2 }
+    expect(clampTrimEnd(clip, 8, [videoAsset])).toBe(5)
+  })
+
+  it('does not limit image clips by source length', () => {
+    const imageClip: Clip = {
+      id: 'i1', trackId: 't1', type: 'image', mediaId: 'img1',
+      startTime: 0, duration: 5, sourceStart: 0, sourceDuration: 5,
+      transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+      kenBurns: { enabled: false, startScale: 1, endScale: 1, startX: 0.5, startY: 0.5, endX: 0.5, endY: 0.5 },
+      color: { brightness: 0, contrast: 0, saturation: 0 },
+      crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
+    }
+    expect(clampTrimEnd(imageClip, 60, [])).toBe(60)
+  })
+})
+
+describe('clampTrimStart', () => {
+  it('returns trimmed values within source range', () => {
+    // 先頭を1秒トリム: startTime 0→1, duration 5→4, sourceStart 0→1
+    const result = clampTrimStart(baseVideoClip, 1, 4, 1, [videoAsset])
+    expect(result).toEqual({ startTime: 1, duration: 4, sourceStart: 1, sourceDuration: 4 })
+  })
+
+  it('rejects duration below 0.2s', () => {
+    expect(clampTrimStart(baseVideoClip, 4.9, 0.1, 4.9, [videoAsset])).toBeNull()
+  })
+
+  it('rejects negative sourceStart (extending before source head)', () => {
+    // sourceStart 0 の状態から左へ広げようとした場合
+    expect(clampTrimStart(baseVideoClip, -1, 6, -1, [videoAsset])).toBeNull()
+  })
+
+  it('rejects extension past source tail', () => {
+    // 素材10秒: sourceStart 6 + duration 5 = 11 > 10 ではみ出す
+    const clip = { ...baseVideoClip, sourceStart: 5 }
+    expect(clampTrimStart(clip, 1, 5, 6, [videoAsset])).toBeNull()
+  })
+
+  it('clamps startTime to zero or above', () => {
+    // テキストクリップは素材制約なし。startTime のみ 0 未満にならない
+    const textClip: Clip = {
+      id: 'tx1', trackId: 't3', type: 'text',
+      startTime: 0.5, duration: 4, sourceStart: 0, sourceDuration: 4,
+      text: { content: 'a', fontFamily: 'sans-serif', fontSize: 48, color: '#fff', strokeColor: '#000', strokeWidth: 0, shadowColor: '#000', shadowBlur: 0, textAlign: 'center' },
+      transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+      animation: { type: 'none', duration: 0 },
+    }
+    const result = clampTrimStart(textClip, -0.5, 5, -0.5, [])
+    expect(result?.startTime).toBe(0)
+    expect(result?.sourceStart).toBe(0)
   })
 })
 
