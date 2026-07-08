@@ -48,6 +48,17 @@ test('インスペクター: テキスト内容の編集がタイムラインへ
   await expect(page.locator('footer').getByText('Opening')).toBeHidden()
 })
 
+test('インスペクター: 未選択時のクイックスタートからテキストを追加できる', async ({ page }) => {
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()
+  await expect(page.getByText('新規プロジェクトを作成しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeHidden()
+
+  await expect(page.getByText('クイックスタート')).toBeVisible()
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+})
+
 test('モーダル: 開くと最初の要素にフォーカスし、Escape で閉じる', async ({ page }) => {
   await page.getByTitle('プロジェクト一覧').click()
   await expect(page.getByRole('dialog', { name: 'プロジェクト' })).toBeVisible()
