@@ -76,6 +76,8 @@ npm run screenshot # README用スクリーンショット生成
 main ブランチへの push で `.github/workflows/deploy.yml` が自動実行されます（build → deploy → 公開環境へのスモークE2E）。
 リポジトリの Settings → Pages → Source を「GitHub Actions」に設定してください。
 
+連続 push すると Pages デプロイが競合しやすいため、変更はまとめて push し、Actions で deploy → smoke の完了を確認してから次の push を行ってください。
+
 ## ショートカット
 
 | キー | 操作 |
