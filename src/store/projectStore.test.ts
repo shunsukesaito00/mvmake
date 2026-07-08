@@ -246,3 +246,32 @@ describe('applyTemplate', () => {
     expect(textClips.some((c) => c.type === 'text' && c.text.content === '写真: 新郎 幼少期')).toBe(true)
   })
 })
+
+describe('addSlideshowToGuide', () => {
+  it('写真ガイド区間にスライドショーを配置しガイドクリップを削除する', () => {
+    const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(template)
+
+    useProjectStore.getState().addMediaAsset(imageAsset('img1'))
+    useProjectStore.getState().addMediaAsset(imageAsset('img2'))
+
+    const guide = useProjectStore.getState().project.tracks
+      .find((t) => t.type === 'text')!
+      .clips.find((c) => c.type === 'text' && c.text.content === '写真: 新郎 幼少期')
+    expect(guide).toBeDefined()
+
+    const placed = useProjectStore.getState().addSlideshowToGuide(guide!.id, ['img1', 'img2'], {
+      transitionType: 'crossfade',
+      transitionDuration: 0.6,
+      kenBurns: true,
+    })
+
+    expect(placed).toBe(2)
+    const textClips = useProjectStore.getState().project.tracks.find((t) => t.type === 'text')!.clips
+    expect(textClips.some((c) => c.id === guide!.id)).toBe(false)
+    const videoClips = useProjectStore.getState().project.tracks.find((t) => t.type === 'video')!.clips
+    expect(videoClips).toHaveLength(2)
+    expect(videoClips[0].startTime).toBe(guide!.startTime)
+    expect(videoClips[0].duration).toBeCloseTo(guide!.duration / 2)
+  })
+})

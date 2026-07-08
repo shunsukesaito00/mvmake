@@ -28,6 +28,7 @@ import {
 import { clearMediaCache } from '../engine/compositor'
 import { createId } from '../utils/id'
 import { buildPhotoGuideClips, buildTemplateMarkers, buildTemplateTextClips } from '../utils/weddingTemplate'
+import { computeGuideSlideshowDurationPerImage, isPhotoGuideClip } from '../utils/photoGuide'
 import {
   cloneProject,
   duplicateClip,
@@ -48,6 +49,8 @@ export interface SlideshowOptions {
   transitionDuration: number
   kenBurns: boolean
 }
+
+export type GuideSlideshowOptions = Omit<SlideshowOptions, 'durationPerImage'>
 
 function createDefaultTracks(): Track[] {
   return [
@@ -133,6 +136,7 @@ interface ProjectState {
   removeMediaAsset: (id: string) => void
   addClipFromMedia: (mediaId: string, trackId?: string, startTime?: number) => boolean
   addSlideshow: (mediaIds: string[], options: SlideshowOptions) => number
+  addSlideshowToGuide: (guideClipId: string, mediaIds: string[], options: GuideSlideshowOptions) => number
   addTextClip: (preset: TextPreset, trackId?: string, startTime?: number) => void
   updateClip: (clipId: string, updates: Partial<Clip>, recordHistory?: boolean) => void
   removeClip: (clipId: string, ripple?: boolean) => void
@@ -389,6 +393,64 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         ),
       },
       selectedClipId: null,
+      future: [],
+    }))
+    return newClips.length
+  },
+
+  addSlideshowToGuide: (guideClipId, mediaIds, options) => {
+    const { project } = get()
+    const found = findClip(project, guideClipId)
+    if (!found || !isPhotoGuideClip(found.clip)) return 0
+
+    const guide = found.clip
+    const images = mediaIds
+      .map((id) => project.mediaAssets.find((a) => a.id === id))
+      .filter((a): a is MediaAsset => !!a && a.type === 'image')
+    if (images.length === 0) return 0
+
+    const targetTrack = project.tracks.find((t) => t.type === 'video' && !t.locked)
+    if (!targetTrack) return 0
+
+    get().pushHistory()
+
+    const durationPerImage = computeGuideSlideshowDurationPerImage(guide.duration, images.length)
+    let cursor = guide.startTime
+    const newClips: ImageClip[] = images.map((asset, i) => {
+      const clip: ImageClip = {
+        id: createId(),
+        trackId: targetTrack.id,
+        startTime: cursor,
+        duration: durationPerImage,
+        sourceStart: 0,
+        sourceDuration: durationPerImage,
+        type: 'image',
+        mediaId: asset.id,
+        transform: { ...DEFAULT_TRANSFORM },
+        kenBurns: { ...DEFAULT_KEN_BURNS, enabled: options.kenBurns },
+        color: { ...DEFAULT_COLOR },
+        crop: { ...DEFAULT_CROP },
+        ...DEFAULT_VISUAL_FADE,
+      }
+      if (i > 0 && options.transitionType !== 'none') {
+        clip.transition = { type: options.transitionType, duration: options.transitionDuration }
+      }
+      cursor += durationPerImage
+      return clip
+    })
+
+    const firstClipId = newClips[0]?.id ?? null
+
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((t) => {
+          if (t.id === targetTrack.id) return { ...t, clips: [...t.clips, ...newClips] }
+          if (t.id === found.track.id) return { ...t, clips: t.clips.filter((c) => c.id !== guideClipId) }
+          return t
+        }),
+      },
+      selectedClipId: firstClipId,
       future: [],
     }))
     return newClips.length

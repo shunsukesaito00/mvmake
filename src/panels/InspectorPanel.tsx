@@ -7,7 +7,9 @@ import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../component
 import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
 import { ColorAdjustmentsSection } from '../components/ColorAdjustmentsSection'
 import { VisualFadeSection } from '../components/VisualFadeSection'
+import { PhotoGuideSection } from '../components/PhotoGuideSection'
 import { Icons } from '../components/icons'
+import { isPhotoGuideClip } from '../utils/photoGuide'
 
 function InspectorEmptyState() {
   const addTextClip = useProjectStore((s) => s.addTextClip)
@@ -103,6 +105,8 @@ export function InspectorPanel() {
   }
 
   const typeLabel = selectedClip.type === 'text' ? 'テキスト' : selectedClip.type === 'audio' ? 'オーディオ' : selectedClip.type === 'image' ? '画像' : '動画'
+  const photoGuideClip = selectedClip.type === 'text' && isPhotoGuideClip(selectedClip) ? (selectedClip as TextClip) : null
+  const regularTextClip = selectedClip.type === 'text' && !isPhotoGuideClip(selectedClip) ? selectedClip : null
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -208,53 +212,59 @@ export function InspectorPanel() {
           </>
         )}
 
-        {selectedClip.type === 'text' && (
+        {photoGuideClip && (
+          <CollapsibleSection title="写真ガイド">
+            <PhotoGuideSection clip={photoGuideClip} />
+          </CollapsibleSection>
+        )}
+
+        {regularTextClip && (
           <CollapsibleSection title="テキスト">
             <textarea
               aria-label="テキスト内容"
-              value={(selectedClip as TextClip).text.content}
-              onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, content: e.target.value } })}
+              value={regularTextClip.text.content}
+              onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, content: e.target.value } })}
               placeholder="改行で複数行入力できます"
               className="w-full rounded-lg bg-surface-3 p-2.5 text-sm text-text-primary outline-none ring-1 ring-border focus:ring-accent/50"
               rows={3}
             />
-            <select value={(selectedClip as TextClip).text.fontFamily} onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, fontFamily: e.target.value } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
+            <select value={regularTextClip.text.fontFamily} onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, fontFamily: e.target.value } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
               <option value="Noto Sans JP">Noto Sans JP</option>
               <option value="Noto Serif JP">Noto Serif JP</option>
               <option value="Shippori Mincho">Shippori Mincho</option>
             </select>
-            <select value={(selectedClip as TextClip).text.textAlign} onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, textAlign: e.target.value as TextClip['text']['textAlign'] } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
+            <select value={regularTextClip.text.textAlign} onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, textAlign: e.target.value as TextClip['text']['textAlign'] } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
               <option value="left">左揃え</option>
               <option value="center">中央</option>
               <option value="right">右揃え</option>
             </select>
             <select
               aria-label="縦配置"
-              value={(selectedClip as TextClip).text.verticalAlign ?? 'center'}
-              onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, verticalAlign: e.target.value as TextClip['text']['verticalAlign'] } })}
+              value={regularTextClip.text.verticalAlign ?? 'center'}
+              onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, verticalAlign: e.target.value as TextClip['text']['verticalAlign'] } })}
               className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
             >
               <option value="top">上揃え</option>
               <option value="center">中央</option>
               <option value="bottom">下揃え</option>
             </select>
-            <Slider label="フォントサイズ" value={(selectedClip as TextClip).text.fontSize} min={12} max={120} step={1} onChange={(v) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, fontSize: v } })} format={(v) => `${v}px`} />
+            <Slider label="フォントサイズ" value={regularTextClip.text.fontSize} min={12} max={120} step={1} onChange={(v) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, fontSize: v } })} format={(v) => `${v}px`} />
             <Slider
               label="行間"
-              value={(selectedClip as TextClip).text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT}
+              value={regularTextClip.text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT}
               min={0.8}
               max={2.5}
               step={0.1}
-              onChange={(v) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, lineHeight: v } })}
+              onChange={(v) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, lineHeight: v } })}
               format={(v) => `${v.toFixed(1)}倍`}
             />
-            <Slider label="縁取り" value={(selectedClip as TextClip).text.strokeWidth} min={0} max={10} step={0.5} onChange={(v) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, strokeWidth: v } })} />
-            <Slider label="影のぼかし" value={(selectedClip as TextClip).text.shadowBlur} min={0} max={20} step={1} onChange={(v) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, shadowBlur: v } })} />
+            <Slider label="縁取り" value={regularTextClip.text.strokeWidth} min={0} max={10} step={0.5} onChange={(v) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, strokeWidth: v } })} />
+            <Slider label="影のぼかし" value={regularTextClip.text.shadowBlur} min={0} max={20} step={1} onChange={(v) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, shadowBlur: v } })} />
             <div className="flex gap-3">
-              <label className="flex items-center gap-1.5 text-xs text-text-secondary">文字色<input type="color" value={(selectedClip as TextClip).text.color} onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, color: e.target.value } })} className="h-6 w-8 cursor-pointer border-0 bg-transparent" /></label>
-              <label className="flex items-center gap-1.5 text-xs text-text-secondary">縁色<input type="color" value={(selectedClip as TextClip).text.strokeColor} onChange={(e) => updateClip(selectedClip.id, { text: { ...(selectedClip as TextClip).text, strokeColor: e.target.value } })} className="h-6 w-8 cursor-pointer border-0 bg-transparent" /></label>
+              <label className="flex items-center gap-1.5 text-xs text-text-secondary">文字色<input type="color" value={regularTextClip.text.color} onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, color: e.target.value } })} className="h-6 w-8 cursor-pointer border-0 bg-transparent" /></label>
+              <label className="flex items-center gap-1.5 text-xs text-text-secondary">縁色<input type="color" value={regularTextClip.text.strokeColor} onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, strokeColor: e.target.value } })} className="h-6 w-8 cursor-pointer border-0 bg-transparent" /></label>
             </div>
-            <select value={(selectedClip as TextClip).animation.type} onChange={(e) => updateClip(selectedClip.id, { animation: { ...(selectedClip as TextClip).animation, type: e.target.value as TextClip['animation']['type'] } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
+            <select value={regularTextClip.animation.type} onChange={(e) => updateClip(regularTextClip.id, { animation: { ...regularTextClip.animation, type: e.target.value as TextClip['animation']['type'] } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
               <option value="none">アニメーションなし</option>
               <option value="fadeIn">フェードイン</option>
               <option value="fadeOut">フェードアウト</option>
@@ -262,8 +272,8 @@ export function InspectorPanel() {
               <option value="typewriter">タイプライター</option>
               <option value="scaleIn">スケールイン</option>
             </select>
-            {(selectedClip as TextClip).animation.type !== 'none' && (
-              <Slider label="アニメーション長" value={(selectedClip as TextClip).animation.duration} min={0.2} max={3} step={0.1} onChange={(v) => updateClip(selectedClip.id, { animation: { ...(selectedClip as TextClip).animation, duration: v } })} format={(v) => `${v.toFixed(1)}秒`} />
+            {regularTextClip.animation.type !== 'none' && (
+              <Slider label="アニメーション長" value={regularTextClip.animation.duration} min={0.2} max={3} step={0.1} onChange={(v) => updateClip(regularTextClip.id, { animation: { ...regularTextClip.animation, duration: v } })} format={(v) => `${v.toFixed(1)}秒`} />
             )}
           </CollapsibleSection>
         )}

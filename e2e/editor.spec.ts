@@ -318,6 +318,32 @@ test('テンプレート: 構造化テンプレートで章マーカーと写真
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
 })
 
+test('写真ガイド: 選択区間にスライドショーを配置できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'guide-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'guide-b.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+
+  await page.locator('footer').getByText('写真: 新郎 幼少期').click()
+  await expect(page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' })).toBeVisible()
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText('2枚の写真をガイド区間に配置しました')).toBeVisible()
+
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeHidden()
+  await expect(page.locator('footer').getByText('guide-a.png')).toBeVisible()
+  await expect(page.locator('footer').getByText('guide-b.png')).toBeVisible()
+})
+
 test('書き出し: 対応環境ではMP4ダウンロード、非対応環境ではエラー表示(スモーク)', async ({ page }) => {
   test.setTimeout(180_000)
 
