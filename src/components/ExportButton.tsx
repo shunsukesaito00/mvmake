@@ -4,23 +4,39 @@ import { exportProject, isWebCodecsSupported, QUALITY_PRESETS, type ExportQualit
 import { useToastStore } from '../store/toastStore'
 import { Modal, Btn, ProgressBar } from './ui'
 import { Icons } from './icons'
+import type { ExportPreset, ExportResolution } from '../types/exportPreset'
+import { EXPORT_RESOLUTION_LABELS } from '../types/exportPreset'
+import { deleteExportPreset, loadExportPresets, saveExportPreset } from '../persistence/exportPresets'
+import { buildExportPreset, formatExportPresetSummary } from '../utils/exportPresetUtils'
 
 export function ExportButton() {
   const [showDialog, setShowDialog] = useState(false)
   const [quality, setQuality] = useState<ExportQuality>('standard')
+  const [resolution, setResolution] = useState<ExportResolution>('1080p')
+  const [presetName, setPresetName] = useState('')
+  const [presets, setPresets] = useState<ExportPreset[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
   const project = useProjectStore((s) => s.project)
   const isExporting = useProjectStore((s) => s.isExporting)
   const exportProgress = useProjectStore((s) => s.exportProgress)
+  const inPoint = useProjectStore((s) => s.inPoint)
+  const outPoint = useProjectStore((s) => s.outPoint)
   const setIsExporting = useProjectStore((s) => s.setIsExporting)
   const setExportProgress = useProjectStore((s) => s.setExportProgress)
+  const setInPoint = useProjectStore((s) => s.setInPoint)
+  const setOutPoint = useProjectStore((s) => s.setOutPoint)
+  const clearInOut = useProjectStore((s) => s.clearInOut)
   const getProjectDuration = useProjectStore((s) => s.getProjectDuration)
   const showToast = useToastStore((s) => s.showToast)
 
   const hasClips = project.tracks.some((t) => t.clips.length > 0)
   const exportDisabled = isExporting || !hasClips
   const exportTooltip = !hasClips ? 'クリップを追加してから書き出してください' : undefined
+
+  useEffect(() => {
+    if (showDialog) setPresets(loadExportPresets())
+  }, [showDialog])
 
   // 書き出し中のタブクローズ/リロードに確認ダイアログを出す
   useEffect(() => {
@@ -32,7 +48,34 @@ export function ExportButton() {
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [isExporting])
 
-  const handleExport = async (resolution: '1080p' | '720p') => {
+  const handleSavePreset = () => {
+    try {
+      const preset = buildExportPreset(presetName, quality, resolution, inPoint, outPoint)
+      setPresets(saveExportPreset(preset))
+      setPresetName('')
+      showToast(`「${preset.name}」プリセットを保存しました`, 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '保存に失敗しました', 'error')
+    }
+  }
+
+  const handleApplyPreset = (preset: ExportPreset) => {
+    setQuality(preset.quality)
+    setResolution(preset.resolution)
+    if (preset.useInOut) {
+      setInPoint(preset.inPoint)
+      setOutPoint(preset.outPoint)
+    } else {
+      clearInOut()
+    }
+    showToast(`「${preset.name}」プリセットを適用しました`, 'info')
+  }
+
+  const handleDeletePreset = (id: string) => {
+    setPresets(deleteExportPreset(id))
+  }
+
+  const handleExport = async (exportResolution: ExportResolution) => {
     if (!isWebCodecsSupported()) {
       showToast('書き出しには Chrome / Edge / Safari が必要です', 'error')
       return
@@ -56,7 +99,7 @@ export function ExportButton() {
     abortRef.current = controller
 
     const exportProject_ = { ...project }
-    if (resolution === '720p') {
+    if (exportResolution === '720p') {
       exportProject_.width = 1280
       exportProject_.height = 720
     }
@@ -122,6 +165,7 @@ export function ExportButton() {
                 {(Object.entries(QUALITY_PRESETS) as [ExportQuality, typeof QUALITY_PRESETS[ExportQuality]][]).map(([key, preset]) => (
                   <button
                     key={key}
+                    type="button"
                     onClick={() => setQuality(key)}
                     className={`flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-left ring-1 transition-all ${
                       quality === key
@@ -141,12 +185,98 @@ export function ExportButton() {
 
             <div>
               <p className="mb-2 text-[11px] font-semibold tracking-wider text-accent uppercase">解像度</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {(['1080p', '720p'] as ExportResolution[]).map((res) => (
+                  <button
+                    key={res}
+                    type="button"
+                    aria-label={`解像度 ${res}`}
+                    onClick={() => setResolution(res)}
+                    className={`rounded-xl px-3 py-2.5 text-left ring-1 transition-all ${
+                      resolution === res
+                        ? 'bg-accent-muted ring-accent/40'
+                        : 'bg-surface-3 ring-border hover:ring-accent/30'
+                    }`}
+                  >
+                    <span className="block text-sm font-medium text-text-primary">{res}</span>
+                    <span className="font-mono text-[10px] text-text-muted">{EXPORT_RESOLUTION_LABELS[res]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-[11px] font-semibold tracking-wider text-accent uppercase">書き出しプリセット</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={presetName}
+                  onChange={(e) => setPresetName(e.target.value)}
+                  placeholder="プリセット名"
+                  className="min-w-0 flex-1 rounded-lg bg-surface-3 px-3 py-2 text-xs text-text-primary outline-none ring-1 ring-border focus:ring-accent/50"
+                />
+                <Btn variant="default" className="shrink-0 text-xs" onClick={handleSavePreset}>
+                  プリセット保存
+                </Btn>
+              </div>
+              {(inPoint !== null || outPoint !== null) && (
+                <p className="mt-1.5 text-[10px] text-text-muted">
+                  現在の In/Out ({inPoint?.toFixed(1) ?? '—'}–{outPoint?.toFixed(1) ?? '—'}s) も保存されます
+                </p>
+              )}
+              {presets.length > 0 ? (
+                <ul className="mt-2 max-h-36 space-y-1.5 overflow-y-auto">
+                  {presets.map((preset) => (
+                    <li
+                      key={preset.id}
+                      className="flex items-center gap-2 rounded-lg bg-surface-3 px-2 py-2 ring-1 ring-border"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium text-text-primary">{preset.name}</p>
+                        <p className="truncate text-[10px] text-text-muted">
+                          {formatExportPresetSummary(preset, QUALITY_PRESETS[preset.quality].label)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={`${preset.name}を適用`}
+                        onClick={() => handleApplyPreset(preset)}
+                        className="shrink-0 rounded-md px-2 py-1 text-[10px] font-medium text-accent hover:bg-accent-muted"
+                      >
+                        適用
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`${preset.name}を削除`}
+                        onClick={() => handleDeletePreset(preset.id)}
+                        className="shrink-0 rounded-md px-1.5 py-1 text-[10px] text-text-muted hover:text-danger"
+                      >
+                        <Icons.X size={12} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-[10px] text-text-muted">保存した設定を名前付きで呼び出せます</p>
+              )}
+            </div>
+
+            <div>
+              <p className="mb-2 text-[11px] font-semibold tracking-wider text-accent uppercase">書き出し</p>
               <div className="space-y-1.5">
-                <button onClick={() => handleExport('1080p')} className="flex w-full items-center justify-between rounded-xl bg-surface-3 px-4 py-3 text-left ring-1 ring-border transition-all hover:ring-accent/40">
+                <button
+                  type="button"
+                  onClick={() => handleExport('1080p')}
+                  className="flex w-full items-center justify-between rounded-xl bg-surface-3 px-4 py-3 text-left ring-1 ring-border transition-all hover:ring-accent/40"
+                >
                   <span className="text-sm font-medium text-text-primary">1080p で書き出し</span>
                   <span className="font-mono text-xs text-text-muted">1920×1080</span>
                 </button>
-                <button onClick={() => handleExport('720p')} className="flex w-full items-center justify-between rounded-xl bg-surface-3 px-4 py-3 text-left ring-1 ring-border transition-all hover:ring-accent/40">
+                <button
+                  type="button"
+                  onClick={() => handleExport('720p')}
+                  className="flex w-full items-center justify-between rounded-xl bg-surface-3 px-4 py-3 text-left ring-1 ring-border transition-all hover:ring-accent/40"
+                >
                   <span className="text-sm font-medium text-text-primary">720p で書き出し</span>
                   <span className="font-mono text-xs text-text-muted">1280×720</span>
                 </button>

@@ -193,6 +193,21 @@ test('タイムライン: Alt+ドラッグでクリップを複製して移動',
   await expect(clips).toHaveCount(1)
 })
 
+test('書き出し: プリセットを保存して適用できる', async ({ page }) => {
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+
+  await page.getByRole('button', { name: /軽量/ }).click()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await page.getByPlaceholder('プリセット名').fill('SNS用')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「SNS用」プリセットを保存しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'SNS用を適用' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'SNS用を適用' }).click()
+  await expect(page.getByText('「SNS用」プリセットを適用しました')).toBeVisible()
+})
+
 test('書き出し: 対応環境ではMP4ダウンロード、非対応環境ではエラー表示(スモーク)', async ({ page }) => {
   test.setTimeout(180_000)
 
