@@ -9,6 +9,8 @@ import {
   DEFAULT_KEN_BURNS,
   DEFAULT_TRANSFORM,
   DEFAULT_TEXT_LINE_HEIGHT,
+  DEFAULT_TEXT_BACKGROUND_PADDING,
+  DEFAULT_TEXT_BACKGROUND_RADIUS,
   DEFAULT_VISUAL_FADE,
   type ImageClip,
   type MediaAsset,
@@ -477,6 +479,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       textAlign: preset.text.textAlign ?? 'center',
       lineHeight: preset.text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT,
       verticalAlign: preset.text.verticalAlign ?? 'center',
+      backgroundColor: preset.text.backgroundColor ?? '',
+      backgroundPadding: preset.text.backgroundPadding ?? DEFAULT_TEXT_BACKGROUND_PADDING,
+      backgroundRadius: preset.text.backgroundRadius ?? DEFAULT_TEXT_BACKGROUND_RADIUS,
     }
 
     const clip: TextClip = {

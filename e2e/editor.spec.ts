@@ -68,6 +68,17 @@ test('インスペクター: テキストの行間と縦配置を設定できる
   await expect(page.getByLabel('縦配置')).toHaveValue('top')
 })
 
+test('インスペクター: テキストに字幕帯を設定できる', async ({ page }) => {
+  await addOpeningText(page)
+
+  await page.getByRole('checkbox', { name: '字幕帯' }).check()
+  await expect(page.getByRole('slider', { name: '背景余白' })).toBeVisible()
+  await expect(page.getByRole('slider', { name: '角丸' })).toBeVisible()
+
+  await page.getByRole('slider', { name: '背景余白' }).fill('20')
+  await expect(page.getByRole('slider', { name: '背景余白' })).toHaveValue('20')
+})
+
 test('インスペクター: 未選択時のクイックスタートからテキストを追加できる', async ({ page }) => {
   await page.getByTitle('プロジェクト一覧').click()
   await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()

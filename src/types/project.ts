@@ -72,6 +72,12 @@ export interface TextStyle {
   lineHeight: number
   /** transform.y を基準としたテキストブロックの縦配置 */
   verticalAlign: TextVerticalAlign
+  /** 空文字のとき背景なし */
+  backgroundColor: string
+  /** 背景の内側余白(px、1920 基準) */
+  backgroundPadding: number
+  /** 背景の角丸(px、1920 基準) */
+  backgroundRadius: number
 }
 
 export interface ClipAnimation {
@@ -222,6 +228,9 @@ export const DEFAULT_TRANSFORM: Transform = {
 }
 
 export const DEFAULT_TEXT_LINE_HEIGHT = 1.2
+export const DEFAULT_TEXT_BACKGROUND_PADDING = 16
+export const DEFAULT_TEXT_BACKGROUND_RADIUS = 8
+export const SUBTITLE_BAND_COLOR = 'rgba(0, 0, 0, 0.6)'
 
 export const DEFAULT_COLOR: ColorAdjustments = {
   brightness: 0,
@@ -426,6 +435,9 @@ function normalizeClip(clip: Clip): Clip {
         ...clip.text,
         lineHeight: clip.text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT,
         verticalAlign: clip.text.verticalAlign ?? 'center',
+        backgroundColor: clip.text.backgroundColor ?? '',
+        backgroundPadding: clip.text.backgroundPadding ?? DEFAULT_TEXT_BACKGROUND_PADDING,
+        backgroundRadius: clip.text.backgroundRadius ?? DEFAULT_TEXT_BACKGROUND_RADIUS,
       },
     }
   }

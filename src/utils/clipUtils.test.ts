@@ -97,7 +97,7 @@ describe('clampTrimStart', () => {
     const textClip: Clip = {
       id: 'tx1', trackId: 't3', type: 'text',
       startTime: 0.5, duration: 4, sourceStart: 0, sourceDuration: 4,
-      text: { content: 'a', fontFamily: 'sans-serif', fontSize: 48, color: '#fff', strokeColor: '#000', strokeWidth: 0, shadowColor: '#000', shadowBlur: 0, textAlign: 'center', lineHeight: 1.2, verticalAlign: 'center' },
+      text: { content: 'a', fontFamily: 'sans-serif', fontSize: 48, color: '#fff', strokeColor: '#000', strokeWidth: 0, shadowColor: '#000', shadowBlur: 0, textAlign: 'center', lineHeight: 1.2, verticalAlign: 'center', backgroundColor: '', backgroundPadding: 16, backgroundRadius: 8 },
       transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
       animation: { type: 'none', duration: 0 },
     }

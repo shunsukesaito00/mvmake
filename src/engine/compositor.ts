@@ -9,6 +9,7 @@ import type {
   VideoClip,
 } from '../types/project'
 import { getTextLineHeight, getTextLineYPositions, splitTextLines } from '../utils/textLayout'
+import { drawTextBackground } from '../utils/textBackground'
 import { getVisualFadeMultiplier } from '../utils/visualFade'
 
 interface RenderLayer {
@@ -383,6 +384,9 @@ function drawTextClip(ctx: CanvasRenderingContext2D, clip: TextClip, canvasW: nu
       lineHeight: text.lineHeight,
       verticalAlign: text.verticalAlign,
     })
+
+    drawTextBackground(ctx, text, lines, lineYs, x, fontSize, canvasW)
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       if (!line) continue

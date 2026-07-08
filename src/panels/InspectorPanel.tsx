@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import type { AudioClip, ImageClip, TextClip, Transform, VideoClip } from '../types/project'
-import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_TEXT_LINE_HEIGHT, TEXT_PRESETS } from '../types/project'
+import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_TEXT_LINE_HEIGHT, DEFAULT_TEXT_BACKGROUND_PADDING, DEFAULT_TEXT_BACKGROUND_RADIUS, SUBTITLE_BAND_COLOR, TEXT_PRESETS } from '../types/project'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
 import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
@@ -264,6 +264,57 @@ export function InspectorPanel() {
               <label className="flex items-center gap-1.5 text-xs text-text-secondary">文字色<input type="color" value={regularTextClip.text.color} onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, color: e.target.value } })} className="h-6 w-8 cursor-pointer border-0 bg-transparent" /></label>
               <label className="flex items-center gap-1.5 text-xs text-text-secondary">縁色<input type="color" value={regularTextClip.text.strokeColor} onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, strokeColor: e.target.value } })} className="h-6 w-8 cursor-pointer border-0 bg-transparent" /></label>
             </div>
+            <label className="flex items-center gap-2 text-xs text-text-secondary">
+              <input
+                type="checkbox"
+                aria-label="字幕帯"
+                checked={Boolean(regularTextClip.text.backgroundColor)}
+                onChange={(e) =>
+                  updateClip(regularTextClip.id, {
+                    text: {
+                      ...regularTextClip.text,
+                      backgroundColor: e.target.checked
+                        ? regularTextClip.text.backgroundColor || SUBTITLE_BAND_COLOR
+                        : '',
+                    },
+                  })
+                }
+                className="accent-accent"
+              />
+              字幕帯（半透明背景）
+            </label>
+            {regularTextClip.text.backgroundColor && (
+              <>
+                <label className="flex items-center gap-1.5 text-xs text-text-secondary">
+                  背景色
+                  <input
+                    type="color"
+                    aria-label="字幕帯の背景色"
+                    value={regularTextClip.text.backgroundColor.startsWith('#') ? regularTextClip.text.backgroundColor : '#000000'}
+                    onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, backgroundColor: e.target.value } })}
+                    className="h-6 w-8 cursor-pointer border-0 bg-transparent"
+                  />
+                </label>
+                <Slider
+                  label="背景余白"
+                  value={regularTextClip.text.backgroundPadding ?? DEFAULT_TEXT_BACKGROUND_PADDING}
+                  min={0}
+                  max={40}
+                  step={1}
+                  onChange={(v) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, backgroundPadding: v } })}
+                  format={(v) => `${v}px`}
+                />
+                <Slider
+                  label="角丸"
+                  value={regularTextClip.text.backgroundRadius ?? DEFAULT_TEXT_BACKGROUND_RADIUS}
+                  min={0}
+                  max={24}
+                  step={1}
+                  onChange={(v) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, backgroundRadius: v } })}
+                  format={(v) => `${v}px`}
+                />
+              </>
+            )}
             <select value={regularTextClip.animation.type} onChange={(e) => updateClip(regularTextClip.id, { animation: { ...regularTextClip.animation, type: e.target.value as TextClip['animation']['type'] } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
               <option value="none">アニメーションなし</option>
               <option value="fadeIn">フェードイン</option>

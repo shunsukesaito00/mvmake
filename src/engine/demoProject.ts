@@ -5,6 +5,8 @@ import {
   DEFAULT_VISUAL_FADE,
   DEFAULT_TRANSFORM,
   DEFAULT_TEXT_LINE_HEIGHT,
+  DEFAULT_TEXT_BACKGROUND_PADDING,
+  DEFAULT_TEXT_BACKGROUND_RADIUS,
   type ImageClip,
   type MediaAsset,
   normalizeProject,
@@ -126,6 +128,9 @@ function textClipFromPreset(presetId: string, trackId: string, startTime: number
       textAlign: preset.text.textAlign ?? 'center',
       lineHeight: preset.text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT,
       verticalAlign: preset.text.verticalAlign ?? 'center',
+      backgroundColor: preset.text.backgroundColor ?? '',
+      backgroundPadding: preset.text.backgroundPadding ?? DEFAULT_TEXT_BACKGROUND_PADDING,
+      backgroundRadius: preset.text.backgroundRadius ?? DEFAULT_TEXT_BACKGROUND_RADIUS,
     },
     // 画像側の中央タイトルと重ならないよう下部(ローワーサード)に配置する
     transform: { ...DEFAULT_TRANSFORM, y: 0.8 },
