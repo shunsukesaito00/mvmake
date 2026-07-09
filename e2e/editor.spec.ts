@@ -878,3 +878,25 @@ test('タイムラインズーム: 選択クリップへズームとフィット
   const afterFit = Number((await zoomLabel.textContent())?.replace('px/s', '') ?? '0')
   expect(afterFit).toBeLessThan(afterZoom)
 })
+
+test('プロジェクト設定: プリセットを保存して適用できる', async ({ page }) => {
+  await addOpeningText(page)
+
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: /縦型 9:16/ }).click()
+  await page.getByLabel('設定プリセット名').fill('縦型婚礼')
+  await page.getByRole('button', { name: '設定プリセット保存' }).click()
+  await expect(page.getByText('「縦型婚礼」設定を保存しました')).toBeVisible()
+
+  await page.getByRole('button', { name: /正方形/ }).click()
+  await page.getByRole('dialog').getByRole('button', { name: '適用', exact: true }).click()
+
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: '縦型婚礼を適用' }).click()
+  await expect(page.getByText('「縦型婚礼」設定を適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /縦型 9:16/ })).toHaveClass(/accent/)
+
+  await page.getByRole('dialog').getByRole('button', { name: '適用', exact: true }).click()
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByText('プロジェクト解像度: 1080×1920')).toBeVisible()
+})

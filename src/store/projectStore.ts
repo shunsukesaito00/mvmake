@@ -49,7 +49,9 @@ import {
   trackTypeForClip,
 } from '../utils/clipUtils'
 import { getProjectDuration, sanitizeMediaDuration } from '../utils/time'
+import type { ProjectSettingsPreset } from '../types/projectSettingsPreset'
 import type { UserProjectTemplate } from '../types/userProjectTemplate'
+import { snapshotFromProjectSettingsPreset } from '../utils/projectSettingsPresetUtils'
 import { applyUserProjectTemplateToTracks } from '../utils/userProjectTemplate'
 import { loadTimelinePixelsPerSecond, saveTimelinePixelsPerSecond } from '../persistence/timelineZoom'
 import { clampTimelinePixelsPerSecond } from '../utils/timelineZoom'
@@ -176,6 +178,7 @@ interface ProjectState {
   toggleTrackMute: (trackId: string) => void
   toggleTrackLock: (trackId: string) => void
   setProjectSettings: (settings: { width?: number; height?: number; fps?: number }) => void
+  applyProjectSettingsPreset: (preset: ProjectSettingsPreset) => void
   applyTemplate: (template: ProjectTemplate) => void
   applyUserProjectTemplate: (template: UserProjectTemplate) => void
   createProjectFromUserTemplate: (template: UserProjectTemplate) => void
@@ -929,6 +932,22 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     get().pushHistory()
     set((state) => ({
       project: { ...state.project, ...settings },
+      future: [],
+    }))
+  },
+
+  applyProjectSettingsPreset: (preset) => {
+    get().pushHistory()
+    const snapshot = snapshotFromProjectSettingsPreset(preset)
+    set((state) => ({
+      project: {
+        ...state.project,
+        width: snapshot.width,
+        height: snapshot.height,
+        fps: snapshot.fps,
+      },
+      rippleDelete: snapshot.rippleDelete,
+      loopPlayback: snapshot.loopPlayback,
       future: [],
     }))
   },

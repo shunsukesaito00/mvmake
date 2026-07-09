@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { RESOLUTION_PRESETS } from '../types/project'
+import type { ProjectSettingsPreset } from '../types/projectSettingsPreset'
 import { Modal, Btn, Slider } from './ui'
+import { ProjectSettingsPresetsSection } from './ProjectSettingsPresetsSection'
 
 interface ProjectSettingsModalProps {
   open: boolean
@@ -11,6 +13,7 @@ interface ProjectSettingsModalProps {
 export function ProjectSettingsModal({ open, onClose }: ProjectSettingsModalProps) {
   const project = useProjectStore((s) => s.project)
   const setProjectSettings = useProjectStore((s) => s.setProjectSettings)
+  const applyProjectSettingsPreset = useProjectStore((s) => s.applyProjectSettingsPreset)
   const rippleDelete = useProjectStore((s) => s.rippleDelete)
   const setRippleDelete = useProjectStore((s) => s.setRippleDelete)
   const loopPlayback = useProjectStore((s) => s.loopPlayback)
@@ -18,9 +21,18 @@ export function ProjectSettingsModal({ open, onClose }: ProjectSettingsModalProp
 
   const [fps, setFps] = useState(project.fps)
 
+  useEffect(() => {
+    if (open) setFps(project.fps)
+  }, [open, project.fps])
+
   const handleSave = () => {
     setProjectSettings({ fps })
     onClose()
+  }
+
+  const handleApplyPreset = (preset: ProjectSettingsPreset) => {
+    applyProjectSettingsPreset(preset)
+    setFps(preset.fps)
   }
 
   return (
@@ -58,6 +70,17 @@ export function ProjectSettingsModal({ open, onClose }: ProjectSettingsModalProp
             In/Out点間をループ再生
           </label>
         </div>
+
+        <ProjectSettingsPresetsSection
+          settings={{
+            width: project.width,
+            height: project.height,
+            fps,
+            rippleDelete,
+            loopPlayback,
+          }}
+          onApply={handleApplyPreset}
+        />
       </div>
 
       <div className="mt-5 flex gap-2">
