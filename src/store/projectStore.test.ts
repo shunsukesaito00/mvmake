@@ -323,6 +323,41 @@ describe('clearBatchTransitions', () => {
   })
 })
 
+describe('importSrtSubtitles', () => {
+  const srt = `1
+00:00:01,000 --> 00:00:03,000
+字幕A
+
+2
+00:00:04,000 --> 00:00:06,000
+字幕B`
+
+  it('SRT からテキストクリップを一括生成する', () => {
+    const count = useProjectStore.getState().importSrtSubtitles(srt)
+    expect(count).toBe(2)
+
+    const textClips = getTrackClips(TRACK_TEXT)
+    expect(textClips).toHaveLength(2)
+    expect(textClips[0]?.startTime).toBe(1)
+    expect(textClips[0]?.duration).toBe(2)
+    expect(textClips[0]?.type).toBe('text')
+    if (textClips[0]?.type === 'text') {
+      expect(textClips[0].text.content).toBe('字幕A')
+    }
+  })
+
+  it('不正な SRT は 0 を返す', () => {
+    expect(useProjectStore.getState().importSrtSubtitles('invalid')).toBe(0)
+  })
+
+  it('undo でインポート前に戻せる', () => {
+    useProjectStore.getState().importSrtSubtitles(srt)
+    expect(getTrackClips(TRACK_TEXT)).toHaveLength(2)
+    useProjectStore.getState().undo()
+    expect(getTrackClips(TRACK_TEXT)).toHaveLength(0)
+  })
+})
+
 describe('applyTemplate', () => {
   it('構造化テンプレートで章マーカーと写真ガイドを配置する', () => {
     const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!

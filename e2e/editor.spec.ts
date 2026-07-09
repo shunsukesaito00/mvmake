@@ -624,3 +624,24 @@ test('インスペクター: 画像クリップのメディアを差し替えで
   await expect(page.locator('footer').getByText('photo-b.png')).toBeVisible()
   await expect(page.locator('footer').getByText('photo-a.png')).toBeHidden()
 })
+
+test('テキスト: SRT 字幕ファイルをインポートしてクリップを生成できる', async ({ page }) => {
+  const srt = `1
+00:00:01,000 --> 00:00:03,500
+乾杯のご挨拶
+
+2
+00:00:05,000 --> 00:00:08,000
+ありがとうございました`
+
+  await page.getByTitle('テキスト').click()
+  await page.setInputFiles('input[aria-label="SRT 字幕ファイル"]', {
+    name: 'subtitles.srt',
+    mimeType: 'application/x-subrip',
+    buffer: Buffer.from(srt, 'utf-8'),
+  })
+
+  await expect(page.getByText('2件の字幕クリップをインポートしました')).toBeVisible()
+  await expect(page.locator('footer').getByText('乾杯のご挨拶')).toBeVisible()
+  await expect(page.locator('footer').getByText('ありがとうございました')).toBeVisible()
+})

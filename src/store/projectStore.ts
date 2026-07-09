@@ -30,6 +30,7 @@ import {
 import { clearMediaCache } from '../engine/compositor'
 import { createId } from '../utils/id'
 import { buildPhotoGuideClips, buildTemplateMarkers, buildTemplateTextClips } from '../utils/weddingTemplate'
+import { buildTextClipsFromSrtCues, parseSrt } from '../utils/srtParser'
 import { computeGuideSlideshowDurationPerImage, isPhotoGuideClip } from '../utils/photoGuide'
 import { getMarkerChapterRanges } from '../utils/markerExport'
 import { collectBatchTransitionClipIds, collectBatchTransitionRemovalClipIds, type BatchTransitionScope } from '../utils/batchTransition'
@@ -147,6 +148,7 @@ interface ProjectState {
   addSlideshow: (mediaIds: string[], options: SlideshowOptions) => number
   addSlideshowToGuide: (guideClipId: string, mediaIds: string[], options: GuideSlideshowOptions) => number
   addTextClip: (preset: TextPreset, trackId?: string, startTime?: number) => void
+  importSrtSubtitles: (content: string, trackId?: string) => number
   updateClip: (clipId: string, updates: Partial<Clip>, recordHistory?: boolean) => void
   replaceClipMedia: (clipId: string, newMediaId: string) => boolean
   removeClip: (clipId: string, ripple?: boolean) => void
@@ -534,6 +536,33 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       selectedClipId: clip.id,
       future: [],
     }))
+  },
+
+  importSrtSubtitles: (content, trackId) => {
+    const cues = parseSrt(content)
+    if (cues.length === 0) return 0
+
+    const { project } = get()
+    const textTrack =
+      project.tracks.find((t) => t.id === trackId && t.type === 'text' && !t.locked) ??
+      project.tracks.find((t) => t.type === 'text' && !t.locked)
+    if (!textTrack) return 0
+
+    get().pushHistory()
+    const clips = buildTextClipsFromSrtCues(cues, textTrack.id)
+
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((t) =>
+          t.id === textTrack.id ? { ...t, clips: [...t.clips, ...clips] } : t,
+        ),
+      },
+      selectedClipId: clips[clips.length - 1]?.id ?? null,
+      future: [],
+    }))
+
+    return clips.length
   },
 
   updateClip: (clipId, updates, recordHistory = false) => {
