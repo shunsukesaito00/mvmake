@@ -162,6 +162,17 @@ test('インスペクター: 音量を正規化できる', async ({ page }) => {
   await expect(volumeSlider).toHaveValue('2')
 })
 
+test('インスペクター: トランスフォームキーフレームを追加・編集できる', async ({ page }) => {
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await page.locator('footer').getByText('Opening').click()
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+  await expect(page.getByText('1件', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
+})
+
 test('インスペクター: 音量キーフレームを追加・編集できる', async ({ page }) => {
   const wav = makeSilentWav(0.5)
   await page.setInputFiles('input[accept*="audio"]', { name: 'bgm.wav', mimeType: 'audio/wav', buffer: wav })

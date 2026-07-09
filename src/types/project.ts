@@ -100,6 +100,16 @@ export interface VolumeKeyframe {
   volume: number
 }
 
+/** クリップ内ローカル時間(秒)での transform キーフレーム（opacity はベース transform を使用） */
+export interface TransformKeyframe {
+  id: string
+  time: number
+  x: number
+  y: number
+  scale: number
+  rotation: number
+}
+
 /** BGMダッキング: 動画クリップの音声がある区間で自動的に音量を下げる */
 export interface DuckingSettings {
   enabled: boolean
@@ -127,6 +137,7 @@ export interface VideoClip extends BaseClip {
   type: 'video'
   mediaId: string
   transform: Transform
+  transformKeyframes?: TransformKeyframe[]
   transition?: Transition
   audio: AudioSettings
   speed: number
@@ -140,6 +151,7 @@ export interface ImageClip extends BaseClip {
   type: 'image'
   mediaId: string
   transform: Transform
+  transformKeyframes?: TransformKeyframe[]
   kenBurns: KenBurns
   transition?: Transition
   color: ColorAdjustments
@@ -160,6 +172,7 @@ export interface TextClip extends BaseClip {
   type: 'text'
   text: TextStyle
   transform: Transform
+  transformKeyframes?: TransformKeyframe[]
   animation: ClipAnimation
 }
 

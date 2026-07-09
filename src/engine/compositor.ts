@@ -6,12 +6,20 @@ import type {
   MediaAsset,
   Project,
   TextClip,
+  Transform,
   VideoClip,
 } from '../types/project'
 import { getTextLineHeight, getTextLineYPositions, splitTextLines } from '../utils/textLayout'
 import { drawTextBackground } from '../utils/textBackground'
 import { getVisualFadeMultiplier } from '../utils/visualFade'
 import { buildCanvasFontString } from '../utils/googleFonts'
+import { getTransformAtLocalTime } from '../utils/transformKeyframes'
+
+type VisualTransformClip = VideoClip | ImageClip | TextClip
+
+function resolveClipTransform(clip: VisualTransformClip, localTime: number): Transform {
+  return getTransformAtLocalTime(clip.transform, clip.transformKeyframes, localTime, clip.duration)
+}
 
 interface RenderLayer {
   clip: Clip
@@ -223,11 +231,13 @@ function applyKenBurns(
   canvasW: number,
   canvasH: number,
   localProgress: number,
+  localTime: number,
 ) {
   const kb = clip.kenBurns
-  const scale = kb.enabled ? kb.startScale + (kb.endScale - kb.startScale) * localProgress : clip.transform.scale
-  const cx = kb.enabled ? kb.startX + (kb.endX - kb.startX) * localProgress : clip.transform.x
-  const cy = kb.enabled ? kb.startY + (kb.endY - kb.startY) * localProgress : clip.transform.y
+  const resolved = kb.enabled ? clip.transform : resolveClipTransform(clip, localTime)
+  const scale = kb.enabled ? kb.startScale + (kb.endScale - kb.startScale) * localProgress : resolved.scale
+  const cx = kb.enabled ? kb.startX + (kb.endX - kb.startX) * localProgress : resolved.x
+  const cy = kb.enabled ? kb.startY + (kb.endY - kb.startY) * localProgress : resolved.y
 
   const imgAspect = img.width / img.height
   const canvasAspect = canvasW / canvasH
@@ -289,18 +299,21 @@ function drawMediaClip(
   const localTime = time - clip.startTime
   const localProgress = clip.duration > 0 ? localTime / clip.duration : 0
   const color = clip.color
+  const transform = clip.type === 'image' && clip.kenBurns.enabled
+    ? clip.transform
+    : resolveClipTransform(clip, localTime)
 
   ctx.save()
   ctx.globalAlpha = opacity
   applyColorFilter(ctx, color)
 
-  drawWithTransform(ctx, clip.transform, canvasW, canvasH, transitionType, transitionProgress, () => {
+  drawWithTransform(ctx, transform, canvasW, canvasH, transitionType, transitionProgress, () => {
     if (clip.type === 'video') {
       const video = getVideoElement(asset)
       const sourceTime = getVideoSourceTime(clip, localTime)
       if (Math.abs(video.currentTime - sourceTime) > 0.05) video.currentTime = sourceTime
 
-      const scale = clip.transform.scale
+      const scale = transform.scale
       const vw = asset.width ?? video.videoWidth
       const vh = asset.height ?? video.videoHeight
       const imgAspect = vw / vh
@@ -314,15 +327,15 @@ function drawMediaClip(
         drawW = canvasW * scale
         drawH = drawW / imgAspect
       }
-      const x = clip.transform.x * canvasW - drawW / 2
-      const y = clip.transform.y * canvasH - drawH / 2
+      const x = transform.x * canvasW - drawW / 2
+      const y = transform.y * canvasH - drawH / 2
 
       if (video.readyState >= 2) {
         drawWithCrop(ctx, video, vw, vh, x, y, drawW, drawH, clip.crop)
       }
     } else {
       const img = getImageElement(asset)
-      if (img.complete) applyKenBurns(ctx, clip, img, canvasW, canvasH, localProgress)
+      if (img.complete) applyKenBurns(ctx, clip, img, canvasW, canvasH, localProgress, localTime)
     }
   })
 
@@ -346,7 +359,9 @@ function getFontString(text: TextClip['text'], fontSize: number, canvasW: number
 }
 
 function drawTextClip(ctx: CanvasRenderingContext2D, clip: TextClip, canvasW: number, canvasH: number, opacity: number, time: number) {
-  const { text, transform } = clip
+  const { text } = clip
+  const localTime = time - clip.startTime
+  const transform = resolveClipTransform(clip, localTime)
   const animType = clip.animation.type
   const progress = getTextAnimProgress(clip, time)
 

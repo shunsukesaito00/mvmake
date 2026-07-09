@@ -12,6 +12,7 @@ import { MarkerInspectorSection } from '../components/MarkerInspectorSection'
 import { TextStylePresetsSection } from '../components/TextStylePresetsSection'
 import { ClipMediaReplaceSection } from '../components/ClipMediaReplaceSection'
 import { AudioNormalizeSection } from '../components/AudioNormalizeSection'
+import { TransformKeyframesSection } from '../components/TransformKeyframesSection'
 import { GOOGLE_FONT_OPTIONS } from '../utils/googleFonts'
 import { Icons } from '../components/icons'
 import { isPhotoGuideClip } from '../utils/photoGuide'
@@ -152,13 +153,23 @@ export function InspectorPanel() {
         )}
 
         {'transform' in selectedClip && (
-          <CollapsibleSection title="位置・変形">
-            <Slider label="X" value={selectedClip.transform.x} min={0} max={1} step={0.01} onChange={(v) => handleTransformChange({ x: v })} />
-            <Slider label="Y" value={selectedClip.transform.y} min={0} max={1} step={0.01} onChange={(v) => handleTransformChange({ y: v })} />
-            <Slider label="スケール" value={selectedClip.transform.scale} min={0.1} max={3} step={0.01} onChange={(v) => handleTransformChange({ scale: v })} />
-            <Slider label="回転" value={selectedClip.transform.rotation} min={-180} max={180} step={1} onChange={(v) => handleTransformChange({ rotation: v })} format={(v) => `${v}°`} />
-            <Slider label="不透明度" value={selectedClip.transform.opacity} min={0} max={1} step={0.01} onChange={(v) => handleTransformChange({ opacity: v })} />
-          </CollapsibleSection>
+          <>
+            <CollapsibleSection title="位置・変形">
+              <Slider label="X" value={selectedClip.transform.x} min={0} max={1} step={0.01} onChange={(v) => handleTransformChange({ x: v })} />
+              <Slider label="Y" value={selectedClip.transform.y} min={0} max={1} step={0.01} onChange={(v) => handleTransformChange({ y: v })} />
+              <Slider label="スケール" value={selectedClip.transform.scale} min={0.1} max={3} step={0.01} onChange={(v) => handleTransformChange({ scale: v })} />
+              <Slider label="回転" value={selectedClip.transform.rotation} min={-180} max={180} step={1} onChange={(v) => handleTransformChange({ rotation: v })} format={(v) => `${v}°`} />
+              <Slider label="不透明度" value={selectedClip.transform.opacity} min={0} max={1} step={0.01} onChange={(v) => handleTransformChange({ opacity: v })} />
+            </CollapsibleSection>
+            <CollapsibleSection title="トランスフォームキーフレーム" defaultOpen={false}>
+              <TransformKeyframesSection
+                clip={selectedClip}
+                transform={selectedClip.transform}
+                transformKeyframes={selectedClip.transformKeyframes}
+                onTransformChange={(patch) => updateClip(selectedClip.id, patch)}
+              />
+            </CollapsibleSection>
+          </>
         )}
 
         {selectedClip.type === 'video' && (

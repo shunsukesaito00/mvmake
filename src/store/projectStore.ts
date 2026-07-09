@@ -91,7 +91,7 @@ function createDefaultProject(): Project {
 
 export interface TimelineDragState {
   clipId: string
-  mode: 'move' | 'trimStart' | 'trimEnd' | 'playhead' | 'volumeKeyframe' | 'marker'
+  mode: 'move' | 'trimStart' | 'trimEnd' | 'playhead' | 'volumeKeyframe' | 'transformKeyframe' | 'marker'
   startX: number
   startY: number
   originalStartTime: number

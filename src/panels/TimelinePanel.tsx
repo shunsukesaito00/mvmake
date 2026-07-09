@@ -10,8 +10,10 @@ import {
   isTimelineTimeVisible,
 } from '../utils/timelineZoom'
 import { updateVolumeKeyframeList, VOLUME_TIMELINE_LANE_HEIGHT, createVolumeKeyframeAt, volumeAtTimelineClick } from '../utils/volumeKeyframesTimeline'
+import { updateTransformKeyframeList } from '../utils/transformKeyframesTimeline'
 import { VolumeKeyframesTimeline } from '../components/VolumeKeyframesTimeline'
-import type { AudioClip, VideoClip } from '../types/project'
+import { TransformKeyframesTimeline } from '../components/TransformKeyframesTimeline'
+import type { AudioClip, ImageClip, TextClip, VideoClip } from '../types/project'
 import { usePlayback } from '../hooks/usePlayback'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, IconButton } from '../components/ui'
@@ -237,6 +239,16 @@ export function TimelinePanel() {
       const newVolume = Math.max(0, Math.min(2, (dragState.originalKeyframeVolume ?? 1) + volumeDelta))
       const next = updateVolumeKeyframeList(keyframes, dragState.keyframeId, { time: newTime, volume: newVolume })
       updateClip(dragState.clipId, { audio: { ...audioClip.audio, volumeKeyframes: next } }, false)
+    } else if (dragState.mode === 'transformKeyframe' && dragState.keyframeId != null) {
+      const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
+      if (clip?.type !== 'video' && clip?.type !== 'image' && clip?.type !== 'text') return
+      const transformClip = clip as VideoClip | ImageClip | TextClip
+      const keyframes = transformClip.transformKeyframes
+      if (!keyframes?.length) return
+
+      const newTime = Math.max(0, Math.min(clip.duration, (dragState.originalKeyframeTime ?? 0) + dt))
+      const next = updateTransformKeyframeList(keyframes, dragState.keyframeId, { time: newTime })
+      updateClip(dragState.clipId, { transformKeyframes: next }, false)
     }
   }, [dragState, pixelsPerSecond, getSnapPoints, updateClip, updateMarker, moveClip, getTrackAtY, tracks, mediaAssets, project.tracks, seek, duration])
 
@@ -337,6 +349,27 @@ export function TimelinePanel() {
     updateClip(clip.id, { audio: { ...clip.audio, volumeKeyframes: next } })
   }
 
+  const startTransformKeyframeDrag = (clip: VideoClip | ImageClip | TextClip, keyframeId: string, keyframeTime: number, e: React.MouseEvent) => {
+    const track = tracks.find((t) => t.id === clip.trackId)
+    if (track?.locked) return
+    e.stopPropagation()
+    e.preventDefault()
+    pushHistory()
+    setSelectedClipId(clip.id)
+    setDragState({
+      clipId: clip.id,
+      mode: 'transformKeyframe',
+      keyframeId,
+      originalKeyframeTime: keyframeTime,
+      startX: e.clientX,
+      startY: e.clientY,
+      originalStartTime: clip.startTime,
+      originalDuration: clip.duration,
+      originalSourceStart: clip.sourceStart,
+      originalTrackId: clip.trackId,
+    })
+  }
+
   return (
     <div className="flex h-full flex-col">
       <PanelHeader title="タイムライン" icon={<Icons.Grid size={14} />}>
@@ -418,10 +451,11 @@ export function TimelinePanel() {
                   const label = clip.type === 'text' ? clip.text.content : (media?.name ?? clip.type)
                   const isSelected = selectedClipId === clip.id
                   const hasVolumeKeyframes = (clip.type === 'audio' || clip.type === 'video') && ((clip.audio.volumeKeyframes?.length ?? 0) > 0 || isSelected)
+                  const hasTransformKeyframes = (clip.type === 'video' || clip.type === 'image' || clip.type === 'text') && (clip.transformKeyframes?.length ?? 0) > 0
                   return (
                     <div
                       key={clip.id}
-                      className={`absolute top-1.5 bottom-1.5 cursor-grab rounded-md ${CLIP_STYLES[clip.type]} ${isSelected ? 'clip-selected z-10' : 'ring-1 ring-white/10'} ${track.locked ? 'opacity-50' : ''} ${hasVolumeKeyframes ? 'overflow-visible' : 'overflow-hidden'}`}
+                      className={`absolute top-1.5 bottom-1.5 cursor-grab rounded-md ${CLIP_STYLES[clip.type]} ${isSelected ? 'clip-selected z-10' : 'ring-1 ring-white/10'} ${track.locked ? 'opacity-50' : ''} ${hasVolumeKeyframes || hasTransformKeyframes ? 'overflow-visible' : 'overflow-hidden'}`}
                       style={{ left, width }}
                       onMouseDown={(e) => startDrag(clip, 'move', e)}
                       onClick={(e) => { e.stopPropagation(); setSelectedClipId(clip.id) }}
@@ -436,6 +470,15 @@ export function TimelinePanel() {
                           isSelected={isSelected}
                           onStartKeyframeDrag={(kf, e) => startVolumeKeyframeDrag(clip, kf.id, kf.time, kf.volume, e)}
                           onAddKeyframe={(time, volume) => addVolumeKeyframeOnTimeline(clip, time, volume)}
+                        />
+                      )}
+                      {(clip.type === 'video' || clip.type === 'image' || clip.type === 'text') && (
+                        <TransformKeyframesTimeline
+                          clip={clip}
+                          transform={clip.transform}
+                          transformKeyframes={clip.transformKeyframes}
+                          widthPx={width}
+                          onStartKeyframeDrag={(kf, e) => startTransformKeyframeDrag(clip, kf.id, kf.time, e)}
                         />
                       )}
                       <div className="relative z-10 truncate px-2 py-1.5 text-[10px] font-semibold text-white drop-shadow-sm">{label}</div>
