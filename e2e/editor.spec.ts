@@ -567,3 +567,25 @@ test('メディア: ナレーション録音をプレビューしてタイムラ
   await expect(page.getByText('ナレーションをタイムラインに配置しました')).toBeVisible()
   await expect(page.locator('footer').getByText(/^narration-/)).toBeVisible()
 })
+
+test('インスペクター: 画像クリップのメディアを差し替えできる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'photo-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'photo-b.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').first().click()
+  await page.locator('footer').getByText('photo-a.png').click()
+
+  await page.getByRole('button', { name: 'メディア' }).click()
+  await page.getByRole('button', { name: 'photo-b.png に差し替え' }).click()
+  await expect(page.getByText('「photo-b.png」に差し替えました')).toBeVisible()
+  await expect(page.locator('footer').getByText('photo-b.png')).toBeVisible()
+  await expect(page.locator('footer').getByText('photo-a.png')).toBeHidden()
+})

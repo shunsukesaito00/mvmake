@@ -3,6 +3,7 @@ import {
   isCompatibleTrack,
   clampTrimEnd,
   clampTrimStart,
+  computeMediaReplacement,
   trackTypeForClip,
   clipsOverlap,
   resolveClipOverlap,
@@ -104,6 +105,50 @@ describe('clampTrimStart', () => {
     const result = clampTrimStart(textClip, -0.5, 5, -0.5, [])
     expect(result?.startTime).toBe(0)
     expect(result?.sourceStart).toBe(0)
+  })
+})
+
+describe('computeMediaReplacement', () => {
+  const shortVideoAsset: MediaAsset = {
+    id: 'v2', name: 'short.mp4', type: 'video', blob: new Blob(), url: 'blob:short', duration: 3,
+  }
+
+  it('画像クリップはタイミングと長さを維持して mediaId のみ変える', () => {
+    const imageClip: Clip = {
+      id: 'i1', trackId: 't1', type: 'image', mediaId: 'img1',
+      startTime: 2, duration: 6, sourceStart: 0, sourceDuration: 6,
+      transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+      kenBurns: { enabled: false, startScale: 1, endScale: 1, startX: 0.5, startY: 0.5, endX: 0.5, endY: 0.5 },
+      color: { brightness: 0, contrast: 0, saturation: 0 },
+      crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
+      fadeIn: 0,
+      fadeOut: 0,
+    }
+    const assets = [
+      { id: 'img1', duration: 5 },
+      { id: 'img2', duration: 5 },
+    ]
+    expect(computeMediaReplacement(imageClip, 'img2', assets)).toEqual({
+      mediaId: 'img2',
+      duration: 6,
+      sourceStart: 0,
+      sourceDuration: 6,
+    })
+  })
+
+  it('動画クリップは短い素材へ差し替えると duration をクランプする', () => {
+    const clip = { ...baseVideoClip, duration: 5, sourceStart: 0, sourceDuration: 5 }
+    const assets = [videoAsset, shortVideoAsset]
+    expect(computeMediaReplacement(clip, 'v2', assets)).toEqual({
+      mediaId: 'v2',
+      duration: 3,
+      sourceStart: 0,
+      sourceDuration: 3,
+    })
+  })
+
+  it('存在しないメディア ID は null', () => {
+    expect(computeMediaReplacement(baseVideoClip, 'missing', [videoAsset])).toBeNull()
   })
 })
 

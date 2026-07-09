@@ -61,6 +61,68 @@ export function clampTrimStart(
   }
 }
 
+export type MediaClip = Extract<Clip, { type: 'video' | 'image' | 'audio' }>
+
+export interface MediaReplacementResult {
+  mediaId: string
+  duration: number
+  sourceStart: number
+  sourceDuration: number
+}
+
+/** クリップのタイミングを維持したまま別メディアへ差し替える際のフィールドを計算 */
+export function computeMediaReplacement(
+  clip: MediaClip,
+  newMediaId: string,
+  mediaAssets: { id: string; duration: number }[],
+): MediaReplacementResult | null {
+  const asset = mediaAssets.find((a) => a.id === newMediaId)
+  if (!asset) return null
+
+  if (clip.type === 'image') {
+    return {
+      mediaId: newMediaId,
+      duration: clip.duration,
+      sourceStart: clip.sourceStart,
+      sourceDuration: clip.sourceDuration,
+    }
+  }
+
+  let sourceStart = clip.sourceStart
+  if (sourceStart >= asset.duration) sourceStart = 0
+
+  const tempClip = { ...clip, mediaId: newMediaId, sourceStart }
+  let duration = clampTrimEnd(tempClip, clip.duration, mediaAssets)
+
+  const trimmed = clampTrimStart(tempClip, clip.startTime, duration, sourceStart, mediaAssets)
+  if (trimmed) {
+    return {
+      mediaId: newMediaId,
+      duration: trimmed.duration,
+      sourceStart: trimmed.sourceStart,
+      sourceDuration: trimmed.sourceDuration,
+    }
+  }
+
+  sourceStart = 0
+  duration = clampTrimEnd({ ...clip, mediaId: newMediaId, sourceStart: 0 }, clip.duration, mediaAssets)
+  const fallback = clampTrimStart(
+    { ...clip, mediaId: newMediaId, sourceStart: 0 },
+    clip.startTime,
+    duration,
+    0,
+    mediaAssets,
+  )
+  if (!fallback) return null
+
+  return {
+    mediaId: newMediaId,
+    duration: fallback.duration,
+    sourceStart: fallback.sourceStart,
+    sourceDuration: fallback.sourceDuration,
+  }
+}
+
 export function duplicateClip(clip: Clip, createId: () => string): Clip {
   const offset = 0.1
   return {

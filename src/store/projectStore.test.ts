@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { useProjectStore } from './projectStore'
 import { PROJECT_TEMPLATES } from '../types/project'
 import type { ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
-import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
+import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
 
 const TRACK_V1 = 'track-v1'
 const TRACK_V2 = 'track-v2'
@@ -33,7 +33,30 @@ function videoClip(id: string, startTime: number, duration: number, overrides: P
   }
 }
 
-function makeProject(clips: VideoClip[] = [], mediaAssets: MediaAsset[] = []): Project {
+function imageClip(id: string, startTime: number, duration: number, overrides: Partial<ImageClip> = {}): ImageClip {
+  return {
+    id,
+    trackId: TRACK_V1,
+    type: 'image',
+    mediaId: 'img1',
+    startTime,
+    duration,
+    sourceStart: 0,
+    sourceDuration: duration,
+    transform: { ...DEFAULT_TRANSFORM },
+    kenBurns: { ...DEFAULT_KEN_BURNS },
+    color: { ...DEFAULT_COLOR },
+    crop: { ...DEFAULT_CROP },
+    ...DEFAULT_VISUAL_FADE,
+    ...overrides,
+  }
+}
+
+function videoAsset(id: string, duration = 10): MediaAsset {
+  return { id, name: `${id}.mp4`, type: 'video', blob: new Blob(), url: `blob:${id}`, duration }
+}
+
+function makeProject(clips: (VideoClip | ImageClip)[] = [], mediaAssets: MediaAsset[] = []): Project {
   return {
     id: 'test-project',
     name: 'テスト',
@@ -361,5 +384,61 @@ describe('marker selection and editing', () => {
 
     expect(useProjectStore.getState().selectedMarkerId).toBeNull()
     expect(useProjectStore.getState().project.markers).toHaveLength(0)
+  })
+})
+
+describe('replaceClipMedia', () => {
+  it('画像クリップのタイミングと長さを維持して別素材に差し替える', () => {
+    setProject(makeProject(
+      [imageClip('c1', 2, 4, { mediaId: 'img1' })],
+      [imageAsset('img1'), imageAsset('img2')],
+    ))
+    useProjectStore.getState().setSelectedClipId('c1')
+
+    const ok = useProjectStore.getState().replaceClipMedia('c1', 'img2')
+    expect(ok).toBe(true)
+
+    const clip = getTrackClips(TRACK_V1)[0] as ImageClip
+    expect(clip.mediaId).toBe('img2')
+    expect(clip.startTime).toBe(2)
+    expect(clip.duration).toBe(4)
+  })
+
+  it('動画クリップは短い素材へ差し替えると duration をクランプする', () => {
+    setProject(makeProject(
+      [videoClip('c1', 1, 8)],
+      [videoAsset('media-v1', 10), videoAsset('media-v2', 3)],
+    ))
+
+    const ok = useProjectStore.getState().replaceClipMedia('c1', 'media-v2')
+    expect(ok).toBe(true)
+
+    const clip = getTrackClips(TRACK_V1)[0] as VideoClip
+    expect(clip.mediaId).toBe('media-v2')
+    expect(clip.startTime).toBe(1)
+    expect(clip.duration).toBe(3)
+  })
+
+  it('型不一致や同一メディアは拒否する', () => {
+    setProject(makeProject(
+      [imageClip('c1', 0, 4, { mediaId: 'img1' })],
+      [imageAsset('img1'), videoAsset('media-v1')],
+    ))
+
+    expect(useProjectStore.getState().replaceClipMedia('c1', 'media-v1')).toBe(false)
+    expect(useProjectStore.getState().replaceClipMedia('c1', 'img1')).toBe(false)
+  })
+
+  it('undo で差し替え前に戻せる', () => {
+    setProject(makeProject(
+      [imageClip('c1', 0, 4, { mediaId: 'img1' })],
+      [imageAsset('img1'), imageAsset('img2')],
+    ))
+
+    useProjectStore.getState().replaceClipMedia('c1', 'img2')
+    expect((getTrackClips(TRACK_V1)[0] as ImageClip).mediaId).toBe('img2')
+
+    useProjectStore.getState().undo()
+    expect((getTrackClips(TRACK_V1)[0] as ImageClip).mediaId).toBe('img1')
   })
 })

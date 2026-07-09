@@ -10,6 +10,7 @@ import { VisualFadeSection } from '../components/VisualFadeSection'
 import { PhotoGuideSection } from '../components/PhotoGuideSection'
 import { MarkerInspectorSection } from '../components/MarkerInspectorSection'
 import { TextStylePresetsSection } from '../components/TextStylePresetsSection'
+import { ClipMediaReplaceSection } from '../components/ClipMediaReplaceSection'
 import { GOOGLE_FONT_OPTIONS } from '../utils/googleFonts'
 import { Icons } from '../components/icons'
 import { isPhotoGuideClip } from '../utils/photoGuide'
@@ -141,6 +142,12 @@ export function InspectorPanel() {
           <Slider label="長さ (秒)" value={selectedClip.duration} min={0.2} max={selectedClip.type === 'image' || selectedClip.type === 'text' ? 60 : 300} step={0.1}
             onChange={(v) => updateClip(selectedClip.id, { duration: v, sourceDuration: v }, true)} />
         </CollapsibleSection>
+
+        {(selectedClip.type === 'video' || selectedClip.type === 'image' || selectedClip.type === 'audio') && (
+          <CollapsibleSection title="メディア" defaultOpen={false}>
+            <ClipMediaReplaceSection clip={selectedClip} />
+          </CollapsibleSection>
+        )}
 
         {'transform' in selectedClip && (
           <CollapsibleSection title="位置・変形">

@@ -35,6 +35,7 @@ import { getMarkerChapterRanges } from '../utils/markerExport'
 import { collectBatchTransitionClipIds, type BatchTransitionScope } from '../utils/batchTransition'
 import {
   cloneProject,
+  computeMediaReplacement,
   duplicateClip,
   findCompatibleTrack,
   getRippleDeleteDelta,
@@ -147,6 +148,7 @@ interface ProjectState {
   addSlideshowToGuide: (guideClipId: string, mediaIds: string[], options: GuideSlideshowOptions) => number
   addTextClip: (preset: TextPreset, trackId?: string, startTime?: number) => void
   updateClip: (clipId: string, updates: Partial<Clip>, recordHistory?: boolean) => void
+  replaceClipMedia: (clipId: string, newMediaId: string) => boolean
   removeClip: (clipId: string, ripple?: boolean) => void
   duplicateSelectedClip: () => void
   /** クリップを同位置に複製して新IDを返す。履歴は呼び出し側で積むこと(Alt+ドラッグ用) */
@@ -547,6 +549,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       },
       ...(recordHistory ? { future: [] } : {}),
     }))
+  },
+
+  replaceClipMedia: (clipId, newMediaId) => {
+    const { project } = get()
+    const found = findClip(project, clipId)
+    if (!found || found.clip.type === 'text') return false
+    if (found.track.locked) return false
+
+    const asset = project.mediaAssets.find((a) => a.id === newMediaId)
+    if (!asset || asset.type !== found.clip.type) return false
+    if (!isCompatibleTrack(asset, found.track)) return false
+    if (found.clip.mediaId === newMediaId) return false
+
+    const updates = computeMediaReplacement(found.clip, newMediaId, project.mediaAssets)
+    if (!updates) return false
+
+    get().pushHistory()
+    get().updateClip(clipId, updates, false)
+    clearMediaCache()
+    return true
   },
 
   removeClip: (clipId, ripple) => {
