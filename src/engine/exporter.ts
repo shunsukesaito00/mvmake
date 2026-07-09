@@ -3,6 +3,7 @@ import { scaleVideoBitrate } from '../utils/exportResolution'
 import type { Project } from '../types/project'
 import { renderFrame, seekVideosToTime } from './compositor'
 import { mixAudioOffline } from './audioEngine'
+import { ensureProjectFontsLoaded } from '../utils/googleFonts'
 
 export function isWebCodecsSupported(): boolean {
   return (
@@ -64,6 +65,9 @@ export async function exportProject(
 
   const { width, height, fps } = project
   const totalFrames = Math.ceil(duration * fps)
+
+  await ensureProjectFontsLoaded(project)
+  checkAborted()
 
   const canvas = document.createElement('canvas')
   canvas.width = width

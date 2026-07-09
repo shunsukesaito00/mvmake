@@ -98,6 +98,15 @@ test('インスペクター: テキストスタイルを保存して適用でき
   await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('80')
 })
 
+test('インスペクター: Google Fonts を 10 種以上から選択できる', async ({ page }) => {
+  await addOpeningText(page)
+
+  const fontSelect = page.getByLabel('フォント', { exact: true })
+  await expect(fontSelect.locator('option')).toHaveCount(12)
+  await fontSelect.selectOption('Zen Old Mincho')
+  await expect(fontSelect).toHaveValue('Zen Old Mincho')
+})
+
 test('インスペクター: 未選択時のクイックスタートからテキストを追加できる', async ({ page }) => {
   await page.getByTitle('プロジェクト一覧').click()
   await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()

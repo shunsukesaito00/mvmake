@@ -11,6 +11,7 @@ import type {
 import { getTextLineHeight, getTextLineYPositions, splitTextLines } from '../utils/textLayout'
 import { drawTextBackground } from '../utils/textBackground'
 import { getVisualFadeMultiplier } from '../utils/visualFade'
+import { buildCanvasFontString } from '../utils/googleFonts'
 
 interface RenderLayer {
   clip: Clip
@@ -328,12 +329,17 @@ function drawMediaClip(
   ctx.restore()
 }
 
-const fontCache = new WeakMap<TextClip['text'], { canvasW: number; font: string }>()
+const fontCache = new WeakMap<TextClip['text'], { canvasW: number; fontFamily: string; fontSize: number; font: string }>()
 
 function getFontString(text: TextClip['text'], fontSize: number, canvasW: number): string {
   let cached = fontCache.get(text)
-  if (!cached || cached.canvasW !== canvasW) {
-    cached = { canvasW, font: `bold ${fontSize}px "${text.fontFamily}", sans-serif` }
+  if (!cached || cached.canvasW !== canvasW || cached.fontFamily !== text.fontFamily || cached.fontSize !== fontSize) {
+    cached = {
+      canvasW,
+      fontFamily: text.fontFamily,
+      fontSize,
+      font: buildCanvasFontString(text.fontFamily, fontSize),
+    }
     fontCache.set(text, cached)
   }
   return cached.font

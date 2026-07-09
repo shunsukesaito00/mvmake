@@ -10,6 +10,7 @@ import { VisualFadeSection } from '../components/VisualFadeSection'
 import { PhotoGuideSection } from '../components/PhotoGuideSection'
 import { MarkerInspectorSection } from '../components/MarkerInspectorSection'
 import { TextStylePresetsSection } from '../components/TextStylePresetsSection'
+import { GOOGLE_FONT_OPTIONS } from '../utils/googleFonts'
 import { Icons } from '../components/icons'
 import { isPhotoGuideClip } from '../utils/photoGuide'
 
@@ -244,10 +245,17 @@ export function InspectorPanel() {
               className="w-full rounded-lg bg-surface-3 p-2.5 text-sm text-text-primary outline-none ring-1 ring-border focus:ring-accent/50"
               rows={3}
             />
-            <select value={regularTextClip.text.fontFamily} onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, fontFamily: e.target.value } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
-              <option value="Noto Sans JP">Noto Sans JP</option>
-              <option value="Noto Serif JP">Noto Serif JP</option>
-              <option value="Shippori Mincho">Shippori Mincho</option>
+            <select
+              aria-label="フォント"
+              value={regularTextClip.text.fontFamily}
+              onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, fontFamily: e.target.value } })}
+              className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+            >
+              {GOOGLE_FONT_OPTIONS.map((font) => (
+                <option key={font.family} value={font.family} style={{ fontFamily: font.family }}>
+                  {font.label}
+                </option>
+              ))}
             </select>
             <select value={regularTextClip.text.textAlign} onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, textAlign: e.target.value as TextClip['text']['textAlign'] } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
               <option value="left">左揃え</option>
