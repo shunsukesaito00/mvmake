@@ -11,6 +11,7 @@ import {
   type MediaSortOrder,
   type MediaTypeFilter,
 } from '../utils/mediaListFilter'
+import { formatBatchTransitionSummary, type BatchTransitionScope } from '../utils/batchTransition'
 
 const LARGE_FILE_BYTES = 500 * 1024 * 1024
 
@@ -20,13 +21,18 @@ function formatBytes(bytes: number): string {
   return `${Math.ceil(bytes / 1024)}KB`
 }
 
+const TRANSITION_OPTIONS: { type: TransitionType; label: string }[] = [
+  { type: 'crossfade', label: 'クロスフェード' },
+  { type: 'fadeBlack', label: 'フェード to 黒' },
+  { type: 'fadeWhite', label: 'フェード to 白' },
+  { type: 'wipe', label: 'ワイプ' },
+  { type: 'slideLeft', label: 'スライド左' },
+  { type: 'slideRight', label: 'スライド右' },
+  { type: 'zoom', label: 'ズーム' },
+]
+
 const SLIDESHOW_TRANSITIONS: { value: TransitionType | 'none'; label: string }[] = [
-  { value: 'crossfade', label: 'クロスフェード' },
-  { value: 'fadeBlack', label: 'フェード to 黒' },
-  { value: 'fadeWhite', label: 'フェード to 白' },
-  { value: 'wipe', label: 'ワイプ' },
-  { value: 'slideLeft', label: 'スライド左' },
-  { value: 'zoom', label: 'ズーム' },
+  ...TRANSITION_OPTIONS.map((t) => ({ value: t.type, label: t.label })),
   { value: 'none', label: 'なし' },
 ]
 
@@ -126,6 +132,9 @@ export function MediaPanel() {
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<MediaTypeFilter>('all')
   const [sortOrder, setSortOrder] = useState<MediaSortOrder>('added')
+  const [batchScope, setBatchScope] = useState<BatchTransitionScope>('selected-track')
+  const [batchType, setBatchType] = useState<TransitionType>('crossfade')
+  const [batchDuration, setBatchDuration] = useState(0.8)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const mediaAssets = useProjectStore((s) => s.project.mediaAssets)
@@ -138,6 +147,7 @@ export function MediaPanel() {
   const addClipFromMedia = useProjectStore((s) => s.addClipFromMedia)
   const addTextClip = useProjectStore((s) => s.addTextClip)
   const setClipTransition = useProjectStore((s) => s.setClipTransition)
+  const applyBatchTransitions = useProjectStore((s) => s.applyBatchTransitions)
   const selectedClip = useProjectStore((s) => s.getSelectedClip())
   const applyTemplate = useProjectStore((s) => s.applyTemplate)
   const addSlideshow = useProjectStore((s) => s.addSlideshow)
@@ -165,6 +175,16 @@ export function MediaPanel() {
     } else {
       showToast('配置できる映像トラックがありません', 'error')
     }
+  }
+
+  const handleBatchTransitionApply = () => {
+    const label = TRANSITION_OPTIONS.find((t) => t.type === batchType)?.label ?? batchType
+    const count = applyBatchTransitions(batchScope, { type: batchType, duration: batchDuration })
+    if (count === 0) {
+      showToast('一括適用できる隣接クリップがありません', 'error')
+      return
+    }
+    showToast(formatBatchTransitionSummary(count, label), 'success')
   }
 
   const handleFiles = useCallback(
@@ -406,15 +426,7 @@ export function MediaPanel() {
               <EmptyState icon={<Icons.Sparkles size={20} />} title="クリップ未選択" description="タイムラインで映像・画像クリップを選択してください" />
             ) : (
               <div className="space-y-1.5">
-                {([
-                  { type: 'crossfade' as const, label: 'クロスフェード' },
-                  { type: 'fadeBlack' as const, label: 'フェード to 黒' },
-                  { type: 'fadeWhite' as const, label: 'フェード to 白' },
-                  { type: 'wipe' as const, label: 'ワイプ' },
-                  { type: 'slideLeft' as const, label: 'スライド左' },
-                  { type: 'slideRight' as const, label: 'スライド右' },
-                  { type: 'zoom' as const, label: 'ズーム' },
-                ]).map(({ type, label }) => (
+                {TRANSITION_OPTIONS.map(({ type, label }) => (
                   <button
                     key={type}
                     onClick={() => { setClipTransition(selectedClip.id, { type, duration: 0.8 }); showToast(`${label}を適用しました`, 'success') }}
@@ -432,6 +444,46 @@ export function MediaPanel() {
                 </button>
               </div>
             )}
+
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="mb-1 text-[11px] font-semibold tracking-wider text-accent uppercase">隣接クリップへ一括適用</p>
+              <p className="mb-3 text-[10px] leading-relaxed text-text-muted">
+                同トラック上で隣接する映像クリップの2枚目以降に適用します
+              </p>
+              <div className="space-y-2">
+                <select
+                  aria-label="一括適用スコープ"
+                  value={batchScope}
+                  onChange={(e) => setBatchScope(e.target.value as BatchTransitionScope)}
+                  className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+                >
+                  <option value="selected-track">選択中クリップのトラック</option>
+                  <option value="all-video-tracks">すべての映像トラック</option>
+                </select>
+                <select
+                  aria-label="一括トランジション種類"
+                  value={batchType}
+                  onChange={(e) => setBatchType(e.target.value as TransitionType)}
+                  className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+                >
+                  {TRANSITION_OPTIONS.map(({ type, label }) => (
+                    <option key={type} value={type}>{label}</option>
+                  ))}
+                </select>
+                <Slider
+                  label="トランジション長"
+                  value={batchDuration}
+                  min={0.2}
+                  max={2}
+                  step={0.1}
+                  onChange={setBatchDuration}
+                  format={(v) => `${v.toFixed(1)}秒`}
+                />
+                <Btn variant="accent" className="w-full text-xs" onClick={handleBatchTransitionApply}>
+                  隣接クリップへ一括適用
+                </Btn>
+              </div>
+            </div>
           </div>
         )}
 

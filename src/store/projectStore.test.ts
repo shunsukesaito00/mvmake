@@ -231,6 +231,43 @@ describe('copy / paste', () => {
   })
 })
 
+describe('applyBatchTransitions', () => {
+  it('隣接クリップに一括でトランジションを適用する', () => {
+    setProject(makeProject([
+      videoClip('c1', 0, 4),
+      videoClip('c2', 4, 4),
+      videoClip('c3', 10, 4),
+    ]))
+
+    const count = useProjectStore.getState().applyBatchTransitions('all-video-tracks', {
+      type: 'crossfade',
+      duration: 0.6,
+    })
+
+    expect(count).toBe(1)
+    const clips = getTrackClips(TRACK_V1) as VideoClip[]
+    expect(clips[1].transition).toEqual({ type: 'crossfade', duration: 0.6 })
+    expect(clips[0].transition).toBeUndefined()
+    expect(clips[2].transition).toBeUndefined()
+  })
+
+  it('selected-track スコープで選択中トラックのみ適用する', () => {
+    setProject(makeProject([
+      videoClip('c1', 0, 4),
+      videoClip('c2', 4, 4),
+    ]))
+    useProjectStore.setState({ selectedClipId: 'c1' })
+
+    const count = useProjectStore.getState().applyBatchTransitions('selected-track', {
+      type: 'wipe',
+      duration: 0.8,
+    })
+
+    expect(count).toBe(1)
+    expect((getTrackClips(TRACK_V1)[1] as VideoClip).transition?.type).toBe('wipe')
+  })
+})
+
 describe('applyTemplate', () => {
   it('構造化テンプレートで章マーカーと写真ガイドを配置する', () => {
     const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
