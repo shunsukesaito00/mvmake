@@ -186,6 +186,23 @@ describe('splitClipAt', () => {
     expect(clips[1].sourceStart).toBe(2)
   })
 
+  it('splits transform keyframes across both clips', () => {
+    setProject(makeProject([videoClip('c1', 0, 4, {
+      transformKeyframes: [
+        { id: 'kf1', time: 0, x: 0.2, y: 0.5, scale: 1, rotation: 0 },
+        { id: 'kf2', time: 2, x: 0.8, y: 0.5, scale: 1, rotation: 0 },
+        { id: 'kf3', time: 4, x: 0.5, y: 0.5, scale: 1, rotation: 0 },
+      ],
+    })]))
+
+    useProjectStore.getState().splitClipAt('c1', 2)
+
+    const clips = getTrackClips(TRACK_V1) as VideoClip[]
+    expect(clips[0].transformKeyframes?.map((kf) => kf.time)).toEqual([0, 2])
+    expect(clips[1].transformKeyframes?.map((kf) => kf.time)).toEqual([0, 2])
+    expect(clips[1].transformKeyframes?.[1].x).toBe(0.5)
+  })
+
   it('does nothing when split point is outside the clip', () => {
     setProject(makeProject([videoClip('c1', 0, 4)]))
     useProjectStore.getState().splitClipAt('c1', 5)

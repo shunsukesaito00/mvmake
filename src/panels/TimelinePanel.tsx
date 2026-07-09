@@ -10,7 +10,7 @@ import {
   isTimelineTimeVisible,
 } from '../utils/timelineZoom'
 import { updateVolumeKeyframeList, VOLUME_TIMELINE_LANE_HEIGHT, createVolumeKeyframeAt, volumeAtTimelineClick } from '../utils/volumeKeyframesTimeline'
-import { updateTransformKeyframeList } from '../utils/transformKeyframesTimeline'
+import { updateTransformKeyframeList, createTransformKeyframeAt, timelineXToTime } from '../utils/transformKeyframesTimeline'
 import { VolumeKeyframesTimeline } from '../components/VolumeKeyframesTimeline'
 import { TransformKeyframesTimeline } from '../components/TransformKeyframesTimeline'
 import type { AudioClip, ImageClip, TextClip, VideoClip } from '../types/project'
@@ -370,6 +370,12 @@ export function TimelinePanel() {
     })
   }
 
+  const addTransformKeyframeOnTimeline = (clip: VideoClip | ImageClip | TextClip, time: number) => {
+    pushHistory()
+    const next = createTransformKeyframeAt(clip.transform, clip.transformKeyframes, clip.duration, time)
+    updateClip(clip.id, { transformKeyframes: next })
+  }
+
   return (
     <div className="flex h-full flex-col">
       <PanelHeader title="タイムライン" icon={<Icons.Grid size={14} />}>
@@ -459,6 +465,14 @@ export function TimelinePanel() {
                       style={{ left, width }}
                       onMouseDown={(e) => startDrag(clip, 'move', e)}
                       onClick={(e) => { e.stopPropagation(); setSelectedClipId(clip.id) }}
+                      onDoubleClick={(e) => {
+                        if (track.locked) return
+                        if (clip.type !== 'video' && clip.type !== 'image' && clip.type !== 'text') return
+                        e.stopPropagation()
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        const localX = Math.max(0, Math.min(width, e.clientX - rect.left))
+                        addTransformKeyframeOnTimeline(clip, timelineXToTime(localX, width, clip.duration))
+                      }}
                     >
                       {media?.thumbnail && clip.type !== 'audio' && <img src={media.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />}
                       <Waveform data={clip.type === 'audio' ? media?.waveform : undefined} />

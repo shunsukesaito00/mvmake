@@ -1,7 +1,9 @@
 import { useRef } from 'react'
 import { getLongestLineLength, getTextBlockHeight, splitTextLines } from '../utils/textLayout'
 import { useProjectStore } from '../store/projectStore'
-import type { Clip, ImageClip, Project, TextClip, VideoClip } from '../types/project'
+import type { Clip, ImageClip, Project, TextClip, Transform, VideoClip } from '../types/project'
+import { getTransformAtLocalTime } from '../utils/transformKeyframes'
+import { upsertTransformKeyframeAt } from '../utils/transformKeyframesTimeline'
 
 type VisualClip = VideoClip | ImageClip | TextClip
 
@@ -56,8 +58,26 @@ export function PreviewOverlay() {
   if (!active) return null
 
   const clip = selectedClip
-  const { transform } = clip
+  const localTime = Math.max(0, Math.min(clip.duration, currentTime - clip.startTime))
+  const hasTransformKeyframes = (clip.transformKeyframes?.length ?? 0) > 0
+  const transform = getTransformAtLocalTime(clip.transform, clip.transformKeyframes, localTime, clip.duration)
   const box = getClipBox(clip, project)
+
+  const applyTransformPatch = (patch: Partial<Pick<Transform, 'x' | 'y' | 'scale' | 'rotation'>>, recordHistory = false) => {
+    if (!hasTransformKeyframes) {
+      updateClip(clip.id, { transform: { ...clip.transform, ...patch } }, recordHistory)
+      return
+    }
+    const current = getTransformAtLocalTime(clip.transform, clip.transformKeyframes, localTime, clip.duration)
+    const next = upsertTransformKeyframeAt(clip.transform, clip.transformKeyframes, clip.duration, localTime, {
+      x: current.x,
+      y: current.y,
+      scale: current.scale,
+      rotation: current.rotation,
+      ...patch,
+    })
+    updateClip(clip.id, { transformKeyframes: next }, recordHistory)
+  }
 
   const beginDrag = (
     e: React.PointerEvent,
@@ -82,12 +102,9 @@ export function PreviewOverlay() {
   const startMove = (e: React.PointerEvent) => {
     const { x, y } = transform
     beginDrag(e, (dx, dy, rect) => {
-      updateClip(clip.id, {
-        transform: {
-          ...clip.transform,
-          x: Math.max(0, Math.min(1, x + dx / rect.width)),
-          y: Math.max(0, Math.min(1, y + dy / rect.height)),
-        },
+      applyTransformPatch({
+        x: Math.max(0, Math.min(1, x + dx / rect.width)),
+        y: Math.max(0, Math.min(1, y + dy / rect.height)),
       })
     })
   }
@@ -102,7 +119,7 @@ export function PreviewOverlay() {
       const dist = Math.hypot(ev.clientX - cx, ev.clientY - cy)
       if (startDist < 4) return
       const next = Math.max(0.1, Math.min(3, startScaleValue * (dist / startDist)))
-      updateClip(clip.id, { transform: { ...clip.transform, scale: next } })
+      applyTransformPatch({ scale: next })
     })
   }
 
@@ -113,9 +130,8 @@ export function PreviewOverlay() {
     beginDrag(e, (_dx, _dy, _rect, ev) => {
       const angle = (Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180) / Math.PI + 90
       const normalized = ((angle + 180) % 360) - 180
-      // Shiftキーで15度スナップ
       const snapped = ev.shiftKey ? Math.round(normalized / 15) * 15 : Math.round(normalized)
-      updateClip(clip.id, { transform: { ...clip.transform, rotation: snapped } })
+      applyTransformPatch({ rotation: snapped })
     })
   }
 

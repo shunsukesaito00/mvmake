@@ -30,9 +30,61 @@ export function createTransformKeyframeAt(
 ): TransformKeyframe[] {
   const localTime = Math.max(0, Math.min(clipDuration, time))
   const resolved = getTransformAtLocalTime(transform, keyframes, localTime, clipDuration)
-  const next = [
-    ...(keyframes ?? []),
-    { id: createId(), time: localTime, x: resolved.x, y: resolved.y, scale: resolved.scale, rotation: resolved.rotation },
-  ]
-  return sortTransformKeyframes(next)
+  return upsertTransformKeyframeAt(transform, keyframes, clipDuration, localTime, {
+    x: resolved.x,
+    y: resolved.y,
+    scale: resolved.scale,
+    rotation: resolved.rotation,
+  })
+}
+
+export const TRANSFORM_KEYFRAME_TIME_EPSILON = 0.05
+
+/** 指定時間付近のキーフレームがあれば更新、なければ追加 */
+export function upsertTransformKeyframeAt(
+  _transform: Transform,
+  keyframes: TransformKeyframe[] | undefined,
+  clipDuration: number,
+  time: number,
+  values: Pick<TransformKeyframe, 'x' | 'y' | 'scale' | 'rotation'>,
+): TransformKeyframe[] {
+  const localTime = Math.max(0, Math.min(clipDuration, time))
+  const list = keyframes ?? []
+  const existing = list.find((kf) => Math.abs(kf.time - localTime) < TRANSFORM_KEYFRAME_TIME_EPSILON)
+  if (existing) {
+    return sortTransformKeyframes(
+      list.map((kf) => (kf.id === existing.id ? { ...kf, ...values, time: localTime } : kf)),
+    )
+  }
+  return sortTransformKeyframes([
+    ...list,
+    { id: createId(), time: localTime, ...values },
+  ])
+}
+
+/** クリップ分割時に transform キーフレームを両側へ再配分 */
+export function splitTransformKeyframes(
+  keyframes: TransformKeyframe[] | undefined,
+  splitOffset: number,
+): { first: TransformKeyframe[] | undefined; second: TransformKeyframe[] | undefined } {
+  if (!keyframes?.length) return { first: undefined, second: undefined }
+
+  const first: TransformKeyframe[] = []
+  const second: TransformKeyframe[] = []
+
+  for (const kf of sortTransformKeyframes(keyframes)) {
+    if (kf.time < splitOffset) {
+      first.push(kf)
+    } else if (kf.time > splitOffset) {
+      second.push({ ...kf, id: createId(), time: kf.time - splitOffset })
+    } else {
+      first.push(kf)
+      second.push({ ...kf, id: createId(), time: 0 })
+    }
+  }
+
+  return {
+    first: first.length ? first : undefined,
+    second: second.length ? second : undefined,
+  }
 }

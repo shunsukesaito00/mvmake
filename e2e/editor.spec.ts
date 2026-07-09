@@ -173,6 +173,14 @@ test('インスペクター: トランスフォームキーフレームを追加
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
 })
 
+test('タイムライン: ダブルクリックでトランスフォームキーフレームを追加できる', async ({ page }) => {
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  const clip = page.locator('footer').getByText('Opening')
+  await clip.click()
+  await clip.dblclick({ position: { x: 20, y: 8 } })
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
+})
+
 test('インスペクター: 音量キーフレームを追加・編集できる', async ({ page }) => {
   const wav = makeSilentWav(0.5)
   await page.setInputFiles('input[accept*="audio"]', { name: 'bgm.wav', mimeType: 'audio/wav', buffer: wav })

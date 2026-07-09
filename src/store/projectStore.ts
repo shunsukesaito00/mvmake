@@ -55,6 +55,7 @@ import { snapshotFromProjectSettingsPreset } from '../utils/projectSettingsPrese
 import { applyUserProjectTemplateToTracks } from '../utils/userProjectTemplate'
 import { loadTimelinePixelsPerSecond, saveTimelinePixelsPerSecond } from '../persistence/timelineZoom'
 import { clampTimelinePixelsPerSecond } from '../utils/timelineZoom'
+import { splitTransformKeyframes } from '../utils/transformKeyframesTimeline'
 
 const MAX_HISTORY = 50
 
@@ -764,11 +765,17 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const secondDuration = clip.duration - splitOffset
     const secondSourceStart = clip.sourceStart + splitOffset * speed
 
+    const splitKeyframes =
+      'transformKeyframes' in clip && clip.transformKeyframes?.length
+        ? splitTransformKeyframes(clip.transformKeyframes, splitOffset)
+        : null
+
     const firstClip: Clip = {
       ...clip,
       duration: firstDuration,
       sourceDuration: firstDuration,
       ...(clip.type === 'video' || clip.type === 'image' ? { transition: undefined } : {}),
+      ...(splitKeyframes ? { transformKeyframes: splitKeyframes.first } : {}),
     }
     const secondClip: Clip = {
       ...clip,
@@ -777,6 +784,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       duration: secondDuration,
       sourceStart: secondSourceStart,
       sourceDuration: secondDuration,
+      ...(splitKeyframes ? { transformKeyframes: splitKeyframes.second } : {}),
     }
 
     set((state) => ({
