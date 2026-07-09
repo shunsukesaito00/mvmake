@@ -1,5 +1,12 @@
 import { useProjectStore } from '../store/projectStore'
-import type { ImageClip, TextClip, Transform, TransformKeyframe, VideoClip } from '../types/project'
+import {
+  TRANSFORM_KEYFRAME_EASING_OPTIONS,
+  type ImageClip,
+  type TextClip,
+  type Transform,
+  type TransformKeyframe,
+  type VideoClip,
+} from '../types/project'
 import { getTransformAtLocalTime, sortTransformKeyframes } from '../utils/transformKeyframes'
 import { createId } from '../utils/id'
 import { Btn, Slider } from './ui'
@@ -75,6 +82,21 @@ export function TransformKeyframesSection({ clip, transform, transformKeyframes,
               onChange={(v) => updateKeyframe(kf.id, { time: v })}
               format={(v) => `${v.toFixed(1)}s`}
             />
+            {index > 0 && (
+              <label className="flex flex-col gap-1 text-xs text-text-secondary">
+                補間イージング
+                <select
+                  aria-label="補間イージング"
+                  value={kf.easing ?? 'linear'}
+                  onChange={(e) => updateKeyframe(kf.id, { easing: e.target.value as TransformKeyframe['easing'] })}
+                  className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+                >
+                  {TRANSFORM_KEYFRAME_EASING_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <Slider label="X" value={kf.x} min={0} max={1} step={0.01} onChange={(v) => updateKeyframe(kf.id, { x: v })} />
             <Slider label="Y" value={kf.y} min={0} max={1} step={0.01} onChange={(v) => updateKeyframe(kf.id, { y: v })} />
             <Slider label="スケール" value={kf.scale} min={0.1} max={3} step={0.01} onChange={(v) => updateKeyframe(kf.id, { scale: v })} />

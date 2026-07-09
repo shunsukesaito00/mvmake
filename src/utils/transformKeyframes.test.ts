@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_TRANSFORM } from '../types/project'
-import { getTransformAtLocalTime, sortTransformKeyframes } from './transformKeyframes'
+import { applyTransformEasing, getTransformAtLocalTime, sortTransformKeyframes } from './transformKeyframes'
+
+describe('applyTransformEasing', () => {
+  it('easeOut は中間点で線形より進む', () => {
+    expect(applyTransformEasing(0.5, 'easeOut')).toBeGreaterThan(0.5)
+    expect(applyTransformEasing(0.5, 'easeIn')).toBeLessThan(0.5)
+    expect(applyTransformEasing(0.5, 'easeInOut')).toBeCloseTo(0.5)
+  })
+})
 
 describe('getTransformAtLocalTime', () => {
   it('キーフレームがなければベース transform を返す', () => {
@@ -26,6 +34,17 @@ describe('getTransformAtLocalTime', () => {
     expect(mid.x).toBeCloseTo(0.5)
     expect(mid.scale).toBeCloseTo(1.5)
     expect(mid.rotation).toBeCloseTo(45)
+  })
+
+  it('easeOut イージングで中間点が線形より進む', () => {
+    const base = DEFAULT_TRANSFORM
+    const keyframes = [
+      { id: '1', time: 0, x: 0, y: 0.5, scale: 1, rotation: 0 },
+      { id: '2', time: 4, x: 1, y: 0.5, scale: 1, rotation: 0, easing: 'easeOut' as const },
+    ]
+    const mid = getTransformAtLocalTime(base, keyframes, 2, 10)
+    expect(mid.x).toBeGreaterThan(0.5)
+    expect(mid.x).toBeCloseTo(0.75)
   })
 })
 

@@ -101,6 +101,15 @@ export interface VolumeKeyframe {
 }
 
 /** クリップ内ローカル時間(秒)での transform キーフレーム（opacity はベース transform を使用） */
+export type TransformKeyframeEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut'
+
+export const TRANSFORM_KEYFRAME_EASING_OPTIONS: { value: TransformKeyframeEasing; label: string }[] = [
+  { value: 'linear', label: '線形' },
+  { value: 'easeIn', label: 'イーズイン' },
+  { value: 'easeOut', label: 'イーズアウト' },
+  { value: 'easeInOut', label: 'イーズインアウト' },
+]
+
 export interface TransformKeyframe {
   id: string
   time: number
@@ -108,6 +117,8 @@ export interface TransformKeyframe {
   y: number
   scale: number
   rotation: number
+  /** 直前のキーフレームからこの点への補間。省略時は linear */
+  easing?: TransformKeyframeEasing
 }
 
 /** BGMダッキング: 動画クリップの音声がある区間で自動的に音量を下げる */

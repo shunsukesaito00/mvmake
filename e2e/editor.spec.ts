@@ -173,6 +173,18 @@ test('インスペクター: トランスフォームキーフレームを追加
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
 })
 
+test('インスペクター: トランスフォームキーフレームのイージングを設定できる', async ({ page }) => {
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await page.locator('footer').getByText('Opening').click()
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await page.getByLabel('補間イージング').selectOption('easeOut')
+  await expect(page.getByLabel('補間イージング')).toHaveValue('easeOut')
+})
+
 test('クリップ分割: 音量キーフレームを両側に再配分する', async ({ page }) => {
   const wav = makeSilentWav(2)
   await page.setInputFiles('input[accept*="audio"]', { name: 'bgm-split.wav', mimeType: 'audio/wav', buffer: wav })
