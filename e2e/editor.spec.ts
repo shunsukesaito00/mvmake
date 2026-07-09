@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { installNarrationRecordingMocks, makeSilentWav, makeTinyWebmVideo } from './helpers'
+import { installNarrationRecordingMocks, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -144,6 +144,22 @@ test('インスペクター: 未選択時のクイックスタートからテキ
   await expect(page.getByText('クイックスタート')).toBeVisible()
   await page.getByRole('button', { name: 'テキストを追加' }).click()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+})
+
+test('インスペクター: 音量を正規化できる', async ({ page }) => {
+  const wav = makeWavWithPeak(0.1, 0.5)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'quiet-bgm.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await page.locator('footer').getByText('quiet-bgm.wav').click()
+
+  const volumeSlider = page.getByRole('slider', { name: '音量' })
+  await expect(volumeSlider).toHaveValue('1')
+
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+  await expect(volumeSlider).toHaveValue('2')
 })
 
 test('インスペクター: 音量キーフレームを追加・編集できる', async ({ page }) => {

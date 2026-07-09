@@ -33,6 +33,11 @@ export async function makeTinyWebmVideo(page: import('@playwright/test').Page): 
 }
 
 export function makeSilentWav(durationSec = 0.5): Buffer {
+  return makeWavWithPeak(0, durationSec)
+}
+
+/** 指定ピーク振幅（0〜1）のモノラル 16bit WAV を生成 */
+export function makeWavWithPeak(peak: number, durationSec = 0.5): Buffer {
   const sampleRate = 44100
   const numSamples = Math.max(1, Math.floor(sampleRate * durationSec))
   const dataSize = numSamples * 2
@@ -50,6 +55,11 @@ export function makeSilentWav(durationSec = 0.5): Buffer {
   buffer.writeUInt16LE(16, 34)
   buffer.write('data', 36)
   buffer.writeUInt32LE(dataSize, 40)
+
+  const sampleValue = Math.round(Math.min(1, Math.max(0, peak)) * 32767)
+  for (let i = 0; i < numSamples; i++) {
+    buffer.writeInt16LE(sampleValue, 44 + i * 2)
+  }
   return buffer
 }
 

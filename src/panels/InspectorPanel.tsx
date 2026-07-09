@@ -11,6 +11,7 @@ import { PhotoGuideSection } from '../components/PhotoGuideSection'
 import { MarkerInspectorSection } from '../components/MarkerInspectorSection'
 import { TextStylePresetsSection } from '../components/TextStylePresetsSection'
 import { ClipMediaReplaceSection } from '../components/ClipMediaReplaceSection'
+import { AudioNormalizeSection } from '../components/AudioNormalizeSection'
 import { GOOGLE_FONT_OPTIONS } from '../utils/googleFonts'
 import { Icons } from '../components/icons'
 import { isPhotoGuideClip } from '../utils/photoGuide'
@@ -91,6 +92,7 @@ function CollapsibleSection({ title, defaultOpen = true, children }: { title: st
 export function InspectorPanel() {
   const selectedMarker = useProjectStore((s) => s.getSelectedMarker())
   const selectedClip = useProjectStore((s) => s.getSelectedClip())
+  const mediaAssets = useProjectStore((s) => s.project.mediaAssets)
   const updateClip = useProjectStore((s) => s.updateClip)
   const removeClip = useProjectStore((s) => s.removeClip)
   const splitClipAt = useProjectStore((s) => s.splitClipAt)
@@ -163,6 +165,13 @@ export function InspectorPanel() {
           <>
             <CollapsibleSection title="動画音声">
               <Slider label="音量" value={(selectedClip as VideoClip).audio.volume} min={0} max={2} step={0.01} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as VideoClip).audio, volume: v } })} />
+              <AudioNormalizeSection
+                asset={mediaAssets.find((a) => a.id === (selectedClip as VideoClip).mediaId)}
+                sourceStart={(selectedClip as VideoClip).sourceStart}
+                sourceDuration={(selectedClip as VideoClip).sourceDuration}
+                audio={(selectedClip as VideoClip).audio}
+                onApply={(audio) => updateClip(selectedClip.id, { audio }, true)}
+              />
             </CollapsibleSection>
             <CollapsibleSection title="音量キーフレーム" defaultOpen={false}>
               <VolumeKeyframesSection
@@ -373,6 +382,13 @@ export function InspectorPanel() {
           <>
             <CollapsibleSection title="オーディオ">
               <Slider label="音量" value={(selectedClip as AudioClip).audio.volume} min={0} max={2} step={0.01} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as AudioClip).audio, volume: v } })} />
+              <AudioNormalizeSection
+                asset={mediaAssets.find((a) => a.id === (selectedClip as AudioClip).mediaId)}
+                sourceStart={(selectedClip as AudioClip).sourceStart}
+                sourceDuration={(selectedClip as AudioClip).sourceDuration}
+                audio={(selectedClip as AudioClip).audio}
+                onApply={(audio) => updateClip(selectedClip.id, { audio }, true)}
+              />
               <Slider label="フェードイン" value={(selectedClip as AudioClip).audio.fadeIn} min={0} max={5} step={0.1} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as AudioClip).audio, fadeIn: v } })} />
               <Slider label="フェードアウト" value={(selectedClip as AudioClip).audio.fadeOut} min={0} max={5} step={0.1} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as AudioClip).audio, fadeOut: v } })} />
               <Slider label="再生速度" value={(selectedClip as AudioClip).speed ?? 1} min={0.5} max={2} step={0.1} onChange={(v) => updateClip(selectedClip.id, { speed: v }, true)} format={(v) => `${v}x`} />
