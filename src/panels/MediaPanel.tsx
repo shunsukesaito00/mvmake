@@ -13,6 +13,7 @@ import {
 } from '../utils/mediaListFilter'
 import { formatBatchTransitionSummary, formatBatchTransitionRemovalSummary, type BatchTransitionScope } from '../utils/batchTransition'
 import { SrtImportSection } from '../components/SrtImportSection'
+import { SrtExportSection } from '../components/SrtExportSection'
 import { NarrationRecorderSection } from '../components/NarrationRecorderSection'
 
 const LARGE_FILE_BYTES = 500 * 1024 * 1024
@@ -425,6 +426,7 @@ export function MediaPanel() {
         {tab === 'text' && (
           <div className="flex-1 overflow-y-auto p-3">
             <SrtImportSection />
+            <SrtExportSection />
             <p className="mb-3 text-[11px] text-text-muted">プリセットをクリックで追加</p>
             <div className="space-y-2">
               {TEXT_PRESETS.map((preset) => (
