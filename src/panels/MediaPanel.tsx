@@ -12,6 +12,7 @@ import {
   type MediaTypeFilter,
 } from '../utils/mediaListFilter'
 import { formatBatchTransitionSummary, type BatchTransitionScope } from '../utils/batchTransition'
+import { NarrationRecorderSection } from '../components/NarrationRecorderSection'
 
 const LARGE_FILE_BYTES = 500 * 1024 * 1024
 
@@ -276,6 +277,8 @@ export function MediaPanel() {
               </Btn>
               <input ref={fileInputRef} type="file" multiple accept="video/*,image/*,audio/*" className="hidden" onChange={(e) => e.target.files && handleFiles(e.target.files)} />
             </div>
+
+            <NarrationRecorderSection />
 
             {mediaAssets.length > 0 && (
               <div className="space-y-2 px-3 pb-2">
