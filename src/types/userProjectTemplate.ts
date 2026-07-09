@@ -33,3 +33,17 @@ export interface UserProjectTemplateSummary {
   clipCount: number
   markerCount: number
 }
+
+export const USER_PROJECT_TEMPLATE_SCHEMA_VERSION = 1
+
+/** `.fable-template.json` の on-disk 形式（id はインポート時に再発行） */
+export interface ExportedUserProjectTemplate {
+  schemaVersion: typeof USER_PROJECT_TEMPLATE_SCHEMA_VERSION
+  label: string
+  description: string
+  width: number
+  height: number
+  fps: number
+  markers: UserProjectTemplate['markers']
+  clipEntries: UserProjectTemplate['clipEntries']
+}

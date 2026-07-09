@@ -825,3 +825,37 @@ test('ユーザーテンプレート: 保存・適用・新規作成', async ({ 
   await expect(page.getByText('「E2E保存テンプレ」テンプレートを適用しました')).toBeVisible()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
 })
+
+test('ユーザーテンプレート: エクスポートとインポート', async ({ page }) => {
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await expect(page.getByText('結婚式フル構成テンプレートを適用しました')).toBeVisible()
+
+  await page.getByLabel('テンプレート名').fill('E2EExportテンプレ')
+  await page.getByRole('button', { name: '現在の構成をテンプレート保存' }).click()
+  await expect(page.getByText('「E2EExportテンプレ」テンプレートを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EExportテンプレをエクスポート' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toContain('.fable-template.json')
+
+  const exportPath = await download.path()
+  if (!exportPath) throw new Error('ダウンロードファイルのパスを取得できません')
+
+  await page.evaluate(() => localStorage.removeItem('fable-user-project-templates'))
+  await page.reload()
+  await expect(page.getByText('FABLE', { exact: true })).toBeVisible()
+
+  await page.getByTitle('テンプレ').click()
+  await expect(page.getByText('保存済みテンプレートはありません')).toBeVisible()
+
+  await page.getByLabel('テンプレートファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EExportテンプレ」テンプレートをインポートしました')).toBeVisible()
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: 'E2EExportテンプレで新規作成' }).click()
+  await expect(page.getByText('「E2EExportテンプレ」で新規プロジェクトを作成しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+  await expect(page.locator('[title="オープニング"]')).toBeVisible()
+})

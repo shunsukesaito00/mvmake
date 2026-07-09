@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { UserProjectTemplate } from '../types/userProjectTemplate'
 import {
   deleteUserProjectTemplate,
+  exportUserProjectTemplateFile,
+  importUserProjectTemplateFromFile,
   loadUserProjectTemplates,
   saveUserProjectTemplate,
 } from '../persistence/userProjectTemplates'
@@ -23,6 +25,7 @@ export function UserProjectTemplatesSection({ mode, onCreate }: UserProjectTempl
   const [templates, setTemplates] = useState<UserProjectTemplate[]>([])
   const [templateName, setTemplateName] = useState('')
   const [templateDescription, setTemplateDescription] = useState('')
+  const importInputRef = useRef<HTMLInputElement>(null)
   const project = useProjectStore((s) => s.project)
   const applyUserProjectTemplate = useProjectStore((s) => s.applyUserProjectTemplate)
   const showToast = useToastStore((s) => s.showToast)
@@ -57,6 +60,32 @@ export function UserProjectTemplatesSection({ mode, onCreate }: UserProjectTempl
     showToast(`「${label}」テンプレートを削除しました`, 'info')
   }
 
+  const handleExport = (template: UserProjectTemplate) => {
+    try {
+      exportUserProjectTemplateFile(template)
+      showToast(`「${template.label}」をエクスポートしました`, 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'エクスポートに失敗しました', 'error')
+    }
+  }
+
+  const handleImportClick = () => {
+    importInputRef.current?.click()
+  }
+
+  const handleImportFile = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      const template = await importUserProjectTemplateFromFile(file)
+      setTemplates(loadUserProjectTemplates())
+      showToast(`「${template.label}」テンプレートをインポートしました`, 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'インポートに失敗しました', 'error')
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = ''
+    }
+  }
+
   return (
     <div className="space-y-3">
       <div className="space-y-2">
@@ -82,6 +111,17 @@ export function UserProjectTemplatesSection({ mode, onCreate }: UserProjectTempl
         <p className="text-[10px] leading-relaxed text-text-muted">
           トラック配置・クリップ・マーカー・解像度/FPS を保存します。メディア素材は含まれず、配置情報のみ復元されます。
         </p>
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".json,.fable-template.json,application/json"
+          aria-label="テンプレートファイルをインポート"
+          className="hidden"
+          onChange={(e) => void handleImportFile(e.target.files?.[0])}
+        />
+        <Btn variant="ghost" className="w-full text-xs" onClick={handleImportClick}>
+          ファイルからインポート
+        </Btn>
       </div>
 
       {templates.length > 0 ? (
@@ -102,6 +142,14 @@ export function UserProjectTemplatesSection({ mode, onCreate }: UserProjectTempl
                     {formatUserProjectTemplateSummary(summary)}
                   </p>
                 </div>
+                <button
+                  type="button"
+                  aria-label={`${template.label}をエクスポート`}
+                  onClick={() => handleExport(template)}
+                  className="shrink-0 rounded-md px-2 py-1 text-[10px] font-medium text-text-secondary hover:bg-surface-2"
+                >
+                  出力
+                </button>
                 <button
                   type="button"
                   aria-label={mode === 'create' ? `${template.label}で新規作成` : `${template.label}を適用`}

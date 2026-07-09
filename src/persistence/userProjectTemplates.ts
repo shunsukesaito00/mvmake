@@ -1,4 +1,12 @@
 import type { UserProjectTemplate } from '../types/userProjectTemplate'
+import { downloadBlob } from './projectFile'
+import {
+  buildExportedUserProjectTemplate,
+  buildUserProjectTemplateExportFilename,
+  parseExportedUserProjectTemplate,
+  serializeExportedUserProjectTemplate,
+  userProjectTemplateFromExport,
+} from '../utils/userProjectTemplateExport'
 
 const STORAGE_KEY = 'fable-user-project-templates'
 
@@ -35,4 +43,35 @@ export function deleteUserProjectTemplate(id: string): UserProjectTemplate[] {
 
 export function replaceUserProjectTemplates(templates: UserProjectTemplate[]): void {
   writeRaw(templates)
+}
+
+export function exportUserProjectTemplateFile(template: UserProjectTemplate): void {
+  const payload = buildExportedUserProjectTemplate(template)
+  const json = serializeExportedUserProjectTemplate(payload)
+  downloadBlob(new Blob([json], { type: 'application/json' }), buildUserProjectTemplateExportFilename(template.label))
+}
+
+export function importUserProjectTemplateFromText(
+  text: string,
+  existing: UserProjectTemplate[] = readRaw(),
+): UserProjectTemplate {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new Error('テンプレートファイルの JSON が読み取れません')
+  }
+
+  const payload = parseExportedUserProjectTemplate(parsed)
+  const template = userProjectTemplateFromExport(
+    payload,
+    existing.map((t) => t.label),
+  )
+  saveUserProjectTemplate(template)
+  return template
+}
+
+export async function importUserProjectTemplateFromFile(file: File): Promise<UserProjectTemplate> {
+  const text = await file.text()
+  return importUserProjectTemplateFromText(text)
 }
