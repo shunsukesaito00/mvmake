@@ -20,63 +20,47 @@ export function makeSilentWav(durationSec = 0.5): Buffer {
   return buffer
 }
 
-/** MediaRecorder / getUserMedia をモックする init スクリプト（ナレーション録音 E2E 用） */
-export const mockNarrationRecordingScript = `
-(() => {
-  function makeSilentWavBlob(durationSec) {
-    const sampleRate = 44100
-    const numSamples = Math.max(1, Math.floor(sampleRate * durationSec))
-    const dataSize = numSamples * 2
-    const buffer = new ArrayBuffer(44 + dataSize)
-    const view = new DataView(buffer)
-    const writeStr = (offset, str) => {
-      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i))
-    }
-    writeStr(0, 'RIFF')
-    view.setUint32(4, 36 + dataSize, true)
-    writeStr(8, 'WAVE')
-    writeStr(12, 'fmt ')
-    view.setUint32(16, 16, true)
-    view.setUint16(20, 1, true)
-    view.setUint16(22, 1, true)
-    view.setUint32(24, sampleRate, true)
-    view.setUint32(28, sampleRate * 2, true)
-    view.setUint16(32, 2, true)
-    view.setUint16(34, 16, true)
-    writeStr(36, 'data')
-    view.setUint32(40, dataSize, true)
-    return new Blob([buffer], { type: 'audio/webm' })
-  }
+/** MediaRecorder / getUserMedia をモックしてナレーション録音 E2E を可能にする */
+export async function installNarrationRecordingMocks(
+  page: import('@playwright/test').Page,
+  wavBuffer: Buffer = makeSilentWav(0.5),
+) {
+  const encoded = wavBuffer.toString('base64')
+  await page.addInitScript((b64: string) => {
+    localStorage.setItem('fable-onboarded', '1')
 
-  navigator.mediaDevices.getUserMedia = async () => {
-    const ctx = new AudioContext()
-    return ctx.createMediaStreamDestination().stream
-  }
+    const binary = atob(b64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    const fakeBlob = () => new Blob([bytes], { type: 'audio/wav' })
 
-  class MockMediaRecorder {
-  constructor(stream) {
-      this.stream = stream
-      this.mimeType = 'audio/webm'
-      this.state = 'inactive'
-      this.ondataavailable = null
-      this.onstop = null
-      this.onerror = null
-      this._startedAt = 0
-    }
-    start() {
-      this.state = 'recording'
-      this._startedAt = Date.now()
-    }
-    stop() {
-      this.state = 'inactive'
-      const durationSec = Math.max(0.2, (Date.now() - this._startedAt) / 1000)
-      const blob = makeSilentWavBlob(durationSec)
-      this.ondataavailable?.({ data: blob })
-      this.onstop?.()
-    }
-    static isTypeSupported() { return true }
-  }
+    class MockMediaRecorder {
+      stream: MediaStream
+      ondataavailable: ((event: BlobEvent) => void) | null = null
+      onstop: (() => void) | null = null
+      state: RecordingState = 'inactive'
 
-  window.MediaRecorder = MockMediaRecorder
-})()
-`
+      constructor(stream: MediaStream) {
+        this.stream = stream
+      }
+
+      start() {
+        this.state = 'recording'
+      }
+
+      stop() {
+        this.state = 'inactive'
+        this.ondataavailable?.({ data: fakeBlob() } as BlobEvent)
+        this.onstop?.()
+      }
+    }
+
+    ;(MockMediaRecorder as unknown as typeof MediaRecorder).isTypeSupported = () => true
+    window.MediaRecorder = MockMediaRecorder as unknown as typeof MediaRecorder
+
+    navigator.mediaDevices.getUserMedia = async () =>
+      ({
+        getTracks: () => [{ stop: () => {} }],
+      }) as MediaStream
+  }, encoded)
+}

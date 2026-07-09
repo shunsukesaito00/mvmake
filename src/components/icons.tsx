@@ -42,7 +42,7 @@ export const Icons = {
   ChevronDown: (p: IconProps) => <Icon {...p}><polyline points="6,9 12,15 18,9" /></Icon>,
   X: (p: IconProps) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>,
   Grid: (p: IconProps) => <Icon {...p}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></Icon>,
-  Marker: (p: IconProps) => <Icon {...p}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></Icon>,
   Mic: (p: IconProps) => <Icon {...p}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></Icon>,
+  Marker: (p: IconProps) => <Icon {...p}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></Icon>,
   SafeArea: (p: IconProps) => <Icon {...p}><rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="4 2" /><rect x="7" y="7" width="10" height="10" rx="1" strokeDasharray="2 2" /></Icon>,
 }

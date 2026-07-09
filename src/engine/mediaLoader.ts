@@ -51,29 +51,27 @@ async function generateThumbnail(
 }
 
 async function generateWaveform(blob: Blob, samples = 100): Promise<number[]> {
+  const arrayBuffer = await blob.arrayBuffer()
+  const audioContext = new AudioContext()
   try {
-    const arrayBuffer = await blob.arrayBuffer()
-    const audioContext = new AudioContext()
-    try {
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0))
-      const channel = audioBuffer.getChannelData(0)
-      const blockSize = Math.floor(channel.length / samples)
-      const waveform: number[] = []
-      for (let i = 0; i < samples; i++) {
-        let sum = 0
-        const start = i * blockSize
-        for (let j = 0; j < blockSize; j++) {
-          sum += Math.abs(channel[start + j] ?? 0)
-        }
-        waveform.push(sum / blockSize)
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0))
+    const channel = audioBuffer.getChannelData(0)
+    const blockSize = Math.floor(channel.length / samples)
+    const waveform: number[] = []
+    for (let i = 0; i < samples; i++) {
+      let sum = 0
+      const start = i * blockSize
+      for (let j = 0; j < blockSize; j++) {
+        sum += Math.abs(channel[start + j] ?? 0)
       }
-      const max = Math.max(...waveform, 0.001)
-      return waveform.map((v) => v / max)
-    } finally {
-      await audioContext.close()
+      waveform.push(sum / blockSize)
     }
+    const max = Math.max(...waveform, 0.001)
+    return waveform.map((v) => v / max)
   } catch {
     return Array(samples).fill(0.1)
+  } finally {
+    await audioContext.close()
   }
 }
 
@@ -173,38 +171,8 @@ export async function loadMediaFiles(files: FileList | File[]): Promise<MediaAss
   return results
 }
 
-/** 録音 Blob などからオーディオ MediaAsset を生成する */
-export async function createAudioAssetFromBlob(
-  blob: Blob,
-  name: string,
-  durationHint?: number,
-): Promise<MediaAsset | null> {
-  const url = URL.createObjectURL(blob)
-  let duration = durationHint ?? 0
-
-  if (!durationHint) {
-    try {
-      duration = await getAudioDuration(url)
-    } catch {
-      URL.revokeObjectURL(url)
-      return null
-    }
-  }
-
-  if (duration < 0.1) {
-    URL.revokeObjectURL(url)
-    return null
-  }
-
-  const waveform = await generateWaveform(blob)
-
-  return {
-    id: createId(),
-    name,
-    type: 'audio',
-    blob,
-    url,
-    duration,
-    waveform,
-  }
+/** 録音 Blob をメディアアセットに変換 */
+export async function createAudioAssetFromBlob(blob: Blob, name: string): Promise<MediaAsset | null> {
+  const file = new File([blob], name, { type: blob.type || 'audio/webm' })
+  return loadMediaFile(file)
 }
