@@ -13,6 +13,13 @@ import {
   resolveExportSize,
 } from '../utils/exportResolution'
 import { formatMarkerChapterRange, getMarkerChapterRanges } from '../utils/markerExport'
+import {
+  buildChapterExportEntries,
+  exportAllChapters,
+  formatBatchExportSummary,
+  sanitizeFileBase,
+  zipMp4Blobs,
+} from '../utils/chapterBatchExport'
 
 export function ExportButton() {
   const [showDialog, setShowDialog] = useState(false)
@@ -20,6 +27,7 @@ export function ExportButton() {
   const [resolution, setResolution] = useState<ExportResolution>('project')
   const [presetName, setPresetName] = useState('')
   const [presets, setPresets] = useState<ExportPreset[]>([])
+  const [batchExportLabel, setBatchExportLabel] = useState('')
   const abortRef = useRef<AbortController | null>(null)
 
   const project = useProjectStore((s) => s.project)
@@ -146,6 +154,68 @@ export function ExportButton() {
     } finally {
       setIsExporting(false)
       setExportProgress(0)
+      setBatchExportLabel('')
+      abortRef.current = null
+    }
+  }
+
+  const handleBatchChapterExport = async () => {
+    if (!isWebCodecsSupported()) {
+      showToast('書き出しには Chrome / Edge / Safari が必要です', 'error')
+      return
+    }
+
+    const entries = buildChapterExportEntries(project.name || 'movie', markerChapters)
+    if (entries.length === 0) {
+      showToast('書き出し可能な章がありません', 'error')
+      return
+    }
+
+    setIsExporting(true)
+    setExportProgress(0)
+    setBatchExportLabel('')
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    const { width, height } = resolveExportSize(project.width, project.height, resolution)
+    const exportProject_ = { ...project, width, height }
+
+    try {
+      const files = await exportAllChapters(
+        async (entry, onChapterProgress) => {
+          setBatchExportLabel(`章「${entry.label}」を書き出し中…`)
+          return exportProject(exportProject_, entry.duration, onChapterProgress, {
+            signal: controller.signal,
+            startTime: entry.start,
+            quality,
+          })
+        },
+        entries,
+        setExportProgress,
+        controller.signal,
+      )
+      setBatchExportLabel('ZIP を作成中…')
+      const zipBlob = await zipMp4Blobs(files)
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${sanitizeFileBase(project.name || 'movie')}_chapters.zip`
+      a.click()
+      URL.revokeObjectURL(url)
+      setShowDialog(false)
+      showToast(`${entries.length} 章を ZIP で書き出しました`, 'success')
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        showToast('書き出しをキャンセルしました', 'info')
+      } else {
+        console.error(err)
+        showToast(err instanceof Error ? err.message : '一括書き出しに失敗しました', 'error')
+      }
+    } finally {
+      setIsExporting(false)
+      setExportProgress(0)
+      setBatchExportLabel('')
       abortRef.current = null
     }
   }
@@ -171,6 +241,9 @@ export function ExportButton() {
             <p className="text-center text-sm text-text-secondary">
               {Math.round(exportProgress * 100)}% 完了
             </p>
+            {batchExportLabel && (
+              <p className="text-center text-xs text-text-muted">{batchExportLabel}</p>
+            )}
             <Btn variant="danger" className="w-full" onClick={() => abortRef.current?.abort()}>
               キャンセル
             </Btn>
@@ -264,6 +337,17 @@ export function ExportButton() {
                     </button>
                   </div>
                 )}
+                <p className="mt-2 text-[10px] text-text-muted">
+                  {formatBatchExportSummary(markerChapters.length)}
+                </p>
+                <Btn
+                  variant="accent"
+                  className="mt-2 w-full text-xs"
+                  aria-label="全章を ZIP で書き出し"
+                  onClick={handleBatchChapterExport}
+                >
+                  全章を ZIP で書き出し ({markerChapters.length} 章)
+                </Btn>
               </div>
             )}
 

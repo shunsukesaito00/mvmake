@@ -386,6 +386,16 @@ test('書き出し: 章マーカー区間を In/Out に設定できる', async (
   await expect(page.getByText('書き出し範囲: 20.0–50.0s')).toBeVisible()
 })
 
+test('書き出し: 章マーカー一括書き出し UI が表示される', async ({ page }) => {
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await page.getByRole('button', { name: '書き出し' }).click()
+
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
+  await expect(page.getByText('5 章を個別 MP4 化して ZIP にまとめます')).toBeVisible()
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toContainText('5 章')
+})
+
 test('マーカー: インスペクターで編集しタイムライン上でドラッグ移動できる', async ({ page }) => {
   await page.getByTitle('テンプレ').click()
   await page.getByRole('button', { name: /結婚式フル構成/ }).click()
