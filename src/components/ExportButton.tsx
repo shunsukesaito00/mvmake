@@ -8,6 +8,12 @@ import type { ExportPreset, ExportResolution } from '../types/exportPreset'
 import { deleteExportPreset, loadExportPresets, saveExportPreset } from '../persistence/exportPresets'
 import { buildExportPreset, formatExportPresetSummary } from '../utils/exportPresetUtils'
 import {
+  estimateExportEta,
+  formatExportError,
+  formatExportProgressLabel,
+  isExportAbortError,
+} from '../utils/exportUx'
+import {
   getExportResolutionLabel,
   getNativeExportButtonLabel,
   resolveExportSize,
@@ -21,14 +27,20 @@ import {
   zipMp4Blobs,
 } from '../utils/chapterBatchExport'
 
+type ExportPanelView = 'form' | 'progress' | 'cancelled' | 'error'
+
 export function ExportButton() {
   const [showDialog, setShowDialog] = useState(false)
+  const [panelView, setPanelView] = useState<ExportPanelView>('form')
+  const [exportErrorDetail, setExportErrorDetail] = useState<string | null>(null)
+  const [etaLabel, setEtaLabel] = useState('残り時間を計算中…')
   const [quality, setQuality] = useState<ExportQuality>('standard')
   const [resolution, setResolution] = useState<ExportResolution>('project')
   const [presetName, setPresetName] = useState('')
   const [presets, setPresets] = useState<ExportPreset[]>([])
   const [batchExportLabel, setBatchExportLabel] = useState('')
   const abortRef = useRef<AbortController | null>(null)
+  const exportStartedAtRef = useRef<number | null>(null)
 
   const project = useProjectStore((s) => s.project)
   const isExporting = useProjectStore((s) => s.isExporting)
@@ -57,6 +69,57 @@ export function ExportButton() {
   useEffect(() => {
     if (showDialog) setPresets(loadExportPresets())
   }, [showDialog])
+
+  useEffect(() => {
+    if (!isExporting || exportStartedAtRef.current === null) return
+    const elapsed = Date.now() - exportStartedAtRef.current
+    setEtaLabel(estimateExportEta(exportProgress, elapsed).label)
+  }, [isExporting, exportProgress])
+
+  const resetExportPanel = () => {
+    setPanelView('form')
+    setExportErrorDetail(null)
+    setBatchExportLabel('')
+    setEtaLabel('残り時間を計算中…')
+    exportStartedAtRef.current = null
+  }
+
+  const beginExport = () => {
+    setPanelView('progress')
+    setExportErrorDetail(null)
+    setExportStartedAt()
+    setIsExporting(true)
+    setExportProgress(0)
+  }
+
+  const setExportStartedAt = () => {
+    exportStartedAtRef.current = Date.now()
+    setEtaLabel('残り時間を計算中…')
+  }
+
+  const finishExport = (err: unknown | null, context: 'single' | 'batch' = 'single') => {
+    setIsExporting(false)
+    setExportProgress(0)
+    setBatchExportLabel('')
+    abortRef.current = null
+    exportStartedAtRef.current = null
+
+    if (err) {
+      const presentation = formatExportError(err, context)
+      if (isExportAbortError(err)) {
+        setPanelView('cancelled')
+        setExportErrorDetail(presentation.detail)
+        showToast(presentation.title, 'info')
+      } else {
+        setPanelView('error')
+        setExportErrorDetail(presentation.detail)
+        showToast(presentation.title, 'error')
+      }
+      return
+    }
+
+    resetExportPanel()
+  }
 
   useEffect(() => {
     if (!isExporting) return
@@ -121,8 +184,7 @@ export function ExportButton() {
       return
     }
 
-    setIsExporting(true)
-    setExportProgress(0)
+    beginExport()
 
     const controller = new AbortController()
     abortRef.current = controller
@@ -130,6 +192,7 @@ export function ExportButton() {
     const { width, height } = resolveExportSize(project.width, project.height, exportResolution)
     const exportProject_ = { ...project, width, height }
 
+    let exportError: unknown = null
     try {
       const blob = await exportProject(exportProject_, exportDuration, setExportProgress, {
         signal: controller.signal,
@@ -145,17 +208,10 @@ export function ExportButton() {
       setShowDialog(false)
       showToast('書き出しが完了しました', 'success')
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        showToast('書き出しをキャンセルしました', 'info')
-      } else {
-        console.error(err)
-        showToast(err instanceof Error ? err.message : '書き出しに失敗しました', 'error')
-      }
+      exportError = err
+      console.error(err)
     } finally {
-      setIsExporting(false)
-      setExportProgress(0)
-      setBatchExportLabel('')
-      abortRef.current = null
+      finishExport(exportError)
     }
   }
 
@@ -171,9 +227,7 @@ export function ExportButton() {
       return
     }
 
-    setIsExporting(true)
-    setExportProgress(0)
-    setBatchExportLabel('')
+    beginExport()
 
     const controller = new AbortController()
     abortRef.current = controller
@@ -181,6 +235,7 @@ export function ExportButton() {
     const { width, height } = resolveExportSize(project.width, project.height, resolution)
     const exportProject_ = { ...project, width, height }
 
+    let exportError: unknown = null
     try {
       const files = await exportAllChapters(
         async (entry, onChapterProgress) => {
@@ -206,17 +261,10 @@ export function ExportButton() {
       setShowDialog(false)
       showToast(`${entries.length} 章を ZIP で書き出しました`, 'success')
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        showToast('書き出しをキャンセルしました', 'info')
-      } else {
-        console.error(err)
-        showToast(err instanceof Error ? err.message : '一括書き出しに失敗しました', 'error')
-      }
+      exportError = err
+      console.error(err)
     } finally {
-      setIsExporting(false)
-      setExportProgress(0)
-      setBatchExportLabel('')
-      abortRef.current = null
+      finishExport(exportError, 'batch')
     }
   }
 
@@ -225,7 +273,10 @@ export function ExportButton() {
       <span title={exportTooltip} className="inline-flex">
         <Btn
           variant="accent"
-          onClick={() => setShowDialog(true)}
+          onClick={() => {
+            if (!isExporting) resetExportPanel()
+            setShowDialog(true)
+          }}
           disabled={exportDisabled}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs"
         >
@@ -234,18 +285,47 @@ export function ExportButton() {
         </Btn>
       </span>
 
-      <Modal open={showDialog} onClose={() => !isExporting && setShowDialog(false)} title="MP4書き出し">
-        {isExporting ? (
-          <div className="space-y-4">
+      <Modal
+        open={showDialog}
+        onClose={() => {
+          if (!isExporting) {
+            resetExportPanel()
+            setShowDialog(false)
+          }
+        }}
+        title="MP4書き出し"
+      >
+        {panelView === 'progress' && isExporting ? (
+          <div className="space-y-4" aria-live="polite">
             <ProgressBar progress={exportProgress} />
             <p className="text-center text-sm text-text-secondary">
-              {Math.round(exportProgress * 100)}% 完了
+              {formatExportProgressLabel(exportProgress, etaLabel)}
             </p>
             {batchExportLabel && (
               <p className="text-center text-xs text-text-muted">{batchExportLabel}</p>
             )}
             <Btn variant="danger" className="w-full" onClick={() => abortRef.current?.abort()}>
               キャンセル
+            </Btn>
+          </div>
+        ) : panelView === 'cancelled' ? (
+          <div className="space-y-4" role="status" aria-label="書き出し結果">
+            <div className="rounded-xl bg-surface-3 p-4 ring-1 ring-border">
+              <p className="text-sm font-medium text-text-primary">書き出しをキャンセルしました</p>
+              <p className="mt-2 text-xs leading-relaxed text-text-muted">{exportErrorDetail}</p>
+            </div>
+            <Btn variant="accent" className="w-full" onClick={resetExportPanel}>
+              設定に戻る
+            </Btn>
+          </div>
+        ) : panelView === 'error' ? (
+          <div className="space-y-4" role="alert" aria-label="書き出しエラー">
+            <div className="rounded-xl bg-red-500/10 p-4 ring-1 ring-red-500/20">
+              <p className="text-sm font-medium text-red-300">書き出しに失敗しました</p>
+              <p className="mt-2 text-xs leading-relaxed text-red-200/90">{exportErrorDetail}</p>
+            </div>
+            <Btn variant="accent" className="w-full" onClick={resetExportPanel}>
+              設定に戻る
             </Btn>
           </div>
         ) : (

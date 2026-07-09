@@ -558,8 +558,32 @@ test('書き出し: 対応環境ではMP4ダウンロード、非対応環境で
     await expect(page.getByText('書き出しが完了しました')).toBeVisible()
   } else {
     await page.getByRole('button', { name: '1080p で書き出し' }).click()
+    await expect(page.getByRole('alert', { name: '書き出しエラー' })).toBeVisible()
     await expect(page.getByText(/エンコードがサポートされていません/)).toBeVisible()
+    await page.getByRole('button', { name: '設定に戻る' }).click()
+    await expect(page.getByRole('button', { name: '1080p で書き出し' })).toBeVisible()
   }
+})
+
+test('書き出し: キャンセル後に設定画面へ戻れる', async ({ page }) => {
+  test.setTimeout(60_000)
+
+  const encodersSupported = await page.evaluate(async () => {
+    if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') return false
+    const v = await VideoEncoder.isConfigSupported({ codec: 'avc1.42E01E', width: 1920, height: 1080, bitrate: 8_000_000, framerate: 30 }).catch(() => null)
+    const a = await AudioEncoder.isConfigSupported({ codec: 'mp4a.40.2', sampleRate: 48000, numberOfChannels: 2, bitrate: 192_000 }).catch(() => null)
+    return Boolean(v?.supported && a?.supported)
+  })
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '1080p で書き出し' }).click()
+  await page.getByRole('button', { name: 'キャンセル' }).click()
+  await expect(page.getByRole('status', { name: '書き出し結果' })).toBeVisible()
+  await expect(page.getByText('書き出しをキャンセルしました')).toBeVisible()
+  await page.getByRole('button', { name: '設定に戻る' }).click()
+  await expect(page.getByRole('button', { name: '1080p で書き出し' })).toBeVisible()
 })
 
 test('ショートカット: Space で再生・停止、Cmd/Ctrl+Z で取り消し', async ({ page }) => {
