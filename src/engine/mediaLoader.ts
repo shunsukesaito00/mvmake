@@ -5,6 +5,7 @@ const IMAGE_DEFAULT_DURATION = 5
 const THUMBNAIL_TIMEOUT_MS = 8_000
 const MAX_WAVEFORM_DECODE_BYTES = 5 * 1024 * 1024
 
+import { sanitizeMediaDuration } from '../utils/time'
 export interface LoadMediaProgress {
   fileIndex: number
   fileTotal: number
@@ -156,7 +157,7 @@ async function getVideoMetadata(url: string): Promise<{ duration: number; width:
     video.onloadedmetadata = () => {
       window.clearTimeout(timer)
       resolve({
-        duration: video.duration,
+        duration: sanitizeMediaDuration(video.duration, IMAGE_DEFAULT_DURATION),
         width: video.videoWidth,
         height: video.videoHeight,
       })
@@ -190,7 +191,7 @@ async function getAudioDuration(url: string): Promise<number> {
 
     audio.onloadedmetadata = () => {
       window.clearTimeout(timer)
-      resolve(audio.duration)
+      resolve(sanitizeMediaDuration(audio.duration, IMAGE_DEFAULT_DURATION))
     }
     audio.onerror = () => {
       window.clearTimeout(timer)

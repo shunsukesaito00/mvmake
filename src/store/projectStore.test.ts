@@ -495,14 +495,44 @@ describe('replaceClipMedia', () => {
     expect(clip.duration).toBe(3)
   })
 
-  it('型不一致や同一メディアは拒否する', () => {
+  it('音声は映像メディアへ差し替えできない', () => {
     setProject(makeProject(
       [imageClip('c1', 0, 4, { mediaId: 'img1' })],
       [imageAsset('img1'), videoAsset('media-v1')],
     ))
 
-    expect(useProjectStore.getState().replaceClipMedia('c1', 'media-v1')).toBe(false)
     expect(useProjectStore.getState().replaceClipMedia('c1', 'img1')).toBe(false)
+  })
+
+  it('画像クリップを動画メディアへ差し替えできる', () => {
+    setProject(makeProject(
+      [imageClip('c1', 1, 6, { mediaId: 'img1' })],
+      [imageAsset('img1'), videoAsset('media-v1', 4)],
+    ))
+
+    const ok = useProjectStore.getState().replaceClipMedia('c1', 'media-v1')
+    expect(ok).toBe(true)
+
+    const clip = getTrackClips(TRACK_V1)[0]
+    expect(clip?.type).toBe('video')
+    expect((clip as VideoClip).mediaId).toBe('media-v1')
+    expect(clip?.startTime).toBe(1)
+    expect(clip?.duration).toBe(4)
+  })
+
+  it('動画クリップを画像メディアへ差し替えできる', () => {
+    setProject(makeProject(
+      [videoClip('c1', 2, 8)],
+      [videoAsset('media-v1', 10), imageAsset('img2')],
+    ))
+
+    const ok = useProjectStore.getState().replaceClipMedia('c1', 'img2')
+    expect(ok).toBe(true)
+
+    const clip = getTrackClips(TRACK_V1)[0]
+    expect(clip?.type).toBe('image')
+    expect((clip as ImageClip).mediaId).toBe('img2')
+    expect(clip?.duration).toBe(8)
   })
 
   it('undo で差し替え前に戻せる', () => {

@@ -4,13 +4,15 @@ import {
   clampTrimEnd,
   clampTrimStart,
   computeMediaReplacement,
+  buildCrossVisualClip,
+  canReplaceClipWithMedia,
   trackTypeForClip,
   clipsOverlap,
   resolveClipOverlap,
   rippleShiftClips,
   getDuckingIntervals,
 } from './clipUtils'
-import type { MediaAsset, Project, Track, VideoClip, Clip } from '../types/project'
+import type { MediaAsset, Project, Track, VideoClip, ImageClip, Clip } from '../types/project'
 
 const videoAsset: MediaAsset = {
   id: 'v1', name: 'test.mp4', type: 'video', blob: new Blob(), url: 'blob:test', duration: 10,
@@ -149,6 +151,68 @@ describe('computeMediaReplacement', () => {
 
   it('存在しないメディア ID は null', () => {
     expect(computeMediaReplacement(baseVideoClip, 'missing', [videoAsset])).toBeNull()
+  })
+})
+
+describe('buildCrossVisualClip', () => {
+  const imageClip: ImageClip = {
+    id: 'i1', trackId: 't1', type: 'image', mediaId: 'img1',
+    startTime: 2, duration: 6, sourceStart: 0, sourceDuration: 6,
+    transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+    kenBurns: { enabled: false, startScale: 1, endScale: 1, startX: 0.5, startY: 0.5, endX: 0.5, endY: 0.5 },
+    color: { brightness: 0, contrast: 0, saturation: 0 },
+    crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
+    fadeIn: 0,
+    fadeOut: 0,
+  }
+
+  it('画像クリップを動画メディアへ差し替える', () => {
+    const assets = [
+      { id: 'img1', duration: 5, type: 'image' as const },
+      { id: 'vid1', duration: 4, type: 'video' as const },
+    ]
+    const clip = buildCrossVisualClip(imageClip, 'vid1', assets)
+    expect(clip?.type).toBe('video')
+    expect(clip && 'mediaId' in clip && clip.mediaId).toBe('vid1')
+    expect(clip?.startTime).toBe(2)
+    expect(clip?.duration).toBe(4)
+  })
+
+  it('動画クリップを画像メディアへ差し替える', () => {
+    const videoClip: VideoClip = {
+      ...baseVideoClip,
+      startTime: 1,
+      duration: 8,
+      sourceStart: 0,
+      sourceDuration: 8,
+    }
+    const assets = [
+      { id: 'v1', duration: 10, type: 'video' as const },
+      { id: 'img1', duration: 5, type: 'image' as const },
+    ]
+    const clip = buildCrossVisualClip(videoClip, 'img1', assets)
+    expect(clip?.type).toBe('image')
+    expect(clip && 'mediaId' in clip && clip.mediaId).toBe('img1')
+    expect(clip?.duration).toBe(8)
+  })
+})
+
+describe('canReplaceClipWithMedia', () => {
+  const imageClipForTest: ImageClip = {
+    id: 'i1', trackId: 't1', type: 'image', mediaId: 'img1',
+    startTime: 0, duration: 4, sourceStart: 0, sourceDuration: 4,
+    transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+    kenBurns: { enabled: false, startScale: 1, endScale: 1, startX: 0.5, startY: 0.5, endX: 0.5, endY: 0.5 },
+    color: { brightness: 0, contrast: 0, saturation: 0 },
+    crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
+    fadeIn: 0,
+    fadeOut: 0,
+  }
+
+  it('映像クリップは動画・画像メディアと差し替え可能', () => {
+    expect(canReplaceClipWithMedia(baseVideoClip, { type: 'image' })).toBe(true)
+    expect(canReplaceClipWithMedia(imageClipForTest, { type: 'video' })).toBe(true)
+    expect(canReplaceClipWithMedia(baseVideoClip, { type: 'audio' })).toBe(false)
   })
 })
 

@@ -35,17 +35,20 @@ import { computeGuideSlideshowDurationPerImage, isPhotoGuideClip } from '../util
 import { getMarkerChapterRanges } from '../utils/markerExport'
 import { collectBatchTransitionClipIds, collectBatchTransitionRemovalClipIds, type BatchTransitionScope } from '../utils/batchTransition'
 import {
+  buildCrossVisualClip,
+  canReplaceClipWithMedia,
   cloneProject,
   computeMediaReplacement,
   duplicateClip,
   findCompatibleTrack,
   getRippleDeleteDelta,
   isCompatibleTrack,
+  isVisualMediaClip,
   resolveClipOverlap,
   rippleShiftClips,
   trackTypeForClip,
 } from '../utils/clipUtils'
-import { getProjectDuration } from '../utils/time'
+import { getProjectDuration, sanitizeMediaDuration } from '../utils/time'
 
 const MAX_HISTORY = 50
 
@@ -192,13 +195,14 @@ function findClip(project: Project, clipId: string): { clip: Clip; track: Track 
 }
 
 function createClipFromMedia(asset: MediaAsset, trackId: string, startTime: number): Clip {
+  const mediaDuration = sanitizeMediaDuration(asset.duration)
   const base = {
     id: createId(),
     trackId,
     startTime,
-    duration: asset.duration,
+    duration: mediaDuration,
     sourceStart: 0,
-    sourceDuration: asset.duration,
+    sourceDuration: mediaDuration,
   }
 
   if (asset.type === 'video') {
@@ -599,15 +603,41 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (found.track.locked) return false
 
     const asset = project.mediaAssets.find((a) => a.id === newMediaId)
-    if (!asset || asset.type !== found.clip.type) return false
+    if (!asset || !canReplaceClipWithMedia(found.clip, asset)) return false
     if (!isCompatibleTrack(asset, found.track)) return false
     if (found.clip.mediaId === newMediaId) return false
 
-    const updates = computeMediaReplacement(found.clip, newMediaId, project.mediaAssets)
-    if (!updates) return false
+    let newClip: Clip
+    if (isVisualMediaClip(found.clip) && (asset.type === 'video' || asset.type === 'image')) {
+      if (asset.type === found.clip.type) {
+        const updates = computeMediaReplacement(found.clip, newMediaId, project.mediaAssets)
+        if (!updates) return false
+        newClip = { ...found.clip, ...updates }
+      } else {
+        const replaced = buildCrossVisualClip(found.clip, newMediaId, project.mediaAssets)
+        if (!replaced) return false
+        newClip = replaced
+      }
+    } else if (found.clip.type === 'audio' && asset.type === 'audio') {
+      const updates = computeMediaReplacement(found.clip, newMediaId, project.mediaAssets)
+      if (!updates) return false
+      newClip = { ...found.clip, ...updates }
+    } else {
+      return false
+    }
 
     get().pushHistory()
-    get().updateClip(clipId, updates, false)
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((track) =>
+          track.id === found.track.id
+            ? { ...track, clips: track.clips.map((clip) => (clip.id === clipId ? newClip : clip)) }
+            : track,
+        ),
+      },
+      future: [],
+    }))
     clearMediaCache()
     return true
   },

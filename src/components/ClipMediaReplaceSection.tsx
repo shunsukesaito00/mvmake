@@ -2,9 +2,16 @@ import { useMemo } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { useToastStore } from '../store/toastStore'
 import type { Clip, MediaAsset } from '../types/project'
+import { getMediaReplaceCandidates } from '../utils/clipUtils'
 import { Icons } from './icons'
 
 type MediaClip = Extract<Clip, { type: 'video' | 'image' | 'audio' }>
+
+const TYPE_LABEL: Record<MediaAsset['type'], string> = {
+  video: '動画',
+  image: '画像',
+  audio: '音声',
+}
 
 export function ClipMediaReplaceSection({ clip }: { clip: MediaClip }) {
   const mediaAssets = useProjectStore((s) => s.project.mediaAssets)
@@ -13,8 +20,8 @@ export function ClipMediaReplaceSection({ clip }: { clip: MediaClip }) {
 
   const currentAsset = mediaAssets.find((a) => a.id === clip.mediaId)
   const candidates = useMemo(
-    () => mediaAssets.filter((a) => a.type === clip.type),
-    [mediaAssets, clip.type],
+    () => getMediaReplaceCandidates(clip, mediaAssets) as MediaAsset[],
+    [clip, mediaAssets],
   )
 
   const handleReplace = (asset: MediaAsset) => {
@@ -31,13 +38,21 @@ export function ClipMediaReplaceSection({ clip }: { clip: MediaClip }) {
     <div className="space-y-2">
       <p className="text-[10px] text-text-muted">
         現在: <span className="text-text-secondary">{currentAsset?.name ?? '不明なメディア'}</span>
+        {clip.type === 'video' || clip.type === 'image' ? (
+          <span className="ml-1 text-text-muted">（映像・画像へ差し替え可）</span>
+        ) : null}
       </p>
       {candidates.length <= 1 ? (
-        <p className="text-[10px] text-text-muted">差し替え先の同種メディアがありません</p>
+        <p className="text-[10px] text-text-muted">
+          {clip.type === 'audio'
+            ? '差し替え先の同種メディアがありません'
+            : '差し替え先の映像・画像メディアがありません'}
+        </p>
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {candidates.map((asset) => {
             const isCurrent = asset.id === clip.mediaId
+            const isCrossType = asset.type !== clip.type
             return (
               <button
                 key={asset.id}
@@ -64,7 +79,9 @@ export function ClipMediaReplaceSection({ clip }: { clip: MediaClip }) {
                 <div className="p-2">
                   <p className="truncate text-[10px] font-medium text-text-primary">{asset.name}</p>
                   <p className="text-[9px] text-text-muted">
-                    {isCurrent ? '使用中' : 'クリックで差し替え'}
+                    {isCurrent
+                      ? '使用中'
+                      : `${TYPE_LABEL[asset.type]}${isCrossType ? 'へ変換' : ''} · クリックで差し替え`}
                   </p>
                 </div>
               </button>

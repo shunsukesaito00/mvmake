@@ -1,4 +1,8 @@
-import type { Clip, Project, Track } from '../types/project'
+import type { Clip, ImageClip, Project, Track, VideoClip } from '../types/project'
+import {
+  DEFAULT_AUDIO,
+  DEFAULT_KEN_BURNS,
+} from '../types/project'
 
 export function isCompatibleTrack(
   asset: { type: string },
@@ -62,6 +66,80 @@ export function clampTrimStart(
 }
 
 export type MediaClip = Extract<Clip, { type: 'video' | 'image' | 'audio' }>
+export type VisualMediaClip = VideoClip | ImageClip
+
+export function isVisualMediaClip(clip: Clip): clip is VisualMediaClip {
+  return clip.type === 'video' || clip.type === 'image'
+}
+
+export function canReplaceClipWithMedia(
+  clip: MediaClip,
+  asset: { type: string },
+): boolean {
+  if (clip.type === 'audio') return asset.type === 'audio'
+  if (clip.type === 'video' || clip.type === 'image') {
+    return asset.type === 'video' || asset.type === 'image'
+  }
+  return false
+}
+
+/** 映像クリップの差し替え候補（同種 + 映像↔画像のクロス差し替え） */
+export function getMediaReplaceCandidates(
+  clip: MediaClip,
+  mediaAssets: Array<{ id: string; type: string }>,
+): Array<{ id: string; type: string }> {
+  return mediaAssets.filter((asset) => canReplaceClipWithMedia(clip, asset))
+}
+
+/** 映像↔画像のクロス差し替えで新しいクリップを構築 */
+export function buildCrossVisualClip(
+  clip: VisualMediaClip,
+  newMediaId: string,
+  mediaAssets: Array<{ id: string; duration: number; type: string }>,
+): VisualMediaClip | null {
+  const asset = mediaAssets.find((a) => a.id === newMediaId)
+  if (!asset || (asset.type !== 'video' && asset.type !== 'image')) return null
+  if (asset.type === clip.type) return null
+
+  const shared = {
+    id: clip.id,
+    trackId: clip.trackId,
+    startTime: clip.startTime,
+    transform: clip.transform,
+    color: clip.color,
+    crop: clip.crop,
+    fadeIn: clip.fadeIn,
+    fadeOut: clip.fadeOut,
+    transition: clip.transition,
+  }
+
+  if (asset.type === 'image') {
+    return {
+      ...shared,
+      type: 'image',
+      mediaId: newMediaId,
+      duration: clip.duration,
+      sourceStart: 0,
+      sourceDuration: clip.duration,
+      kenBurns: clip.type === 'image' ? clip.kenBurns : { ...DEFAULT_KEN_BURNS },
+    } satisfies ImageClip
+  }
+
+  const tempVideo: VideoClip = {
+    ...shared,
+    type: 'video',
+    mediaId: newMediaId,
+    duration: clip.duration,
+    sourceStart: 0,
+    sourceDuration: clip.duration,
+    audio: clip.type === 'video' ? clip.audio : { ...DEFAULT_AUDIO },
+    speed: clip.type === 'video' ? clip.speed : 1,
+  }
+  const updates = computeMediaReplacement(tempVideo, newMediaId, mediaAssets)
+  if (!updates) return null
+  return { ...tempVideo, ...updates } satisfies VideoClip
+}
+
 
 export interface MediaReplacementResult {
   mediaId: string

@@ -729,3 +729,49 @@ test('自動保存: 編集後にインジケータが表示される', async ({ 
 
   await expect(page.getByLabel(/自動保存:/)).toBeVisible({ timeout: 8_000 })
 })
+
+test('インスペクター: 画像クリップを動画メディアへ差し替えできる', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'photo.png', mimeType: 'image/png', buffer: png },
+    { name: 'clip.webm', mimeType: 'video/webm', buffer: webm },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'photo.png' }).click()
+  await page.locator('footer').getByText('photo.png').click()
+
+  await page.getByRole('button', { name: 'メディア' }).click()
+  await page.getByRole('button', { name: 'clip.webm に差し替え' }).click()
+  await expect(page.getByText('「clip.webm」に差し替えました')).toBeVisible()
+  await expect(page.locator('footer').getByText('clip.webm')).toBeVisible()
+  await expect(page.locator('footer').getByText('photo.png')).toBeHidden()
+})
+
+test('インスペクター: 動画クリップを画像メディアへ差し替えできる', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'clip.webm', mimeType: 'video/webm', buffer: webm },
+    { name: 'still.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'clip.webm' }).click()
+  await page.locator('footer').getByText('clip.webm').click()
+
+  await page.getByRole('button', { name: 'メディア' }).click()
+  await page.getByRole('button', { name: 'still.png に差し替え' }).click()
+  await expect(page.getByText('「still.png」に差し替えました')).toBeVisible()
+  await expect(page.locator('footer').getByText('still.png')).toBeVisible()
+  await expect(page.locator('footer').getByText('clip.webm')).toBeHidden()
+})

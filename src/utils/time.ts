@@ -1,3 +1,7 @@
+export function sanitizeMediaDuration(duration: number, fallback = 5): number {
+  return Number.isFinite(duration) && duration > 0 ? duration : fallback
+}
+
 export function formatTime(seconds: number, fps = 30): string {
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
@@ -18,7 +22,8 @@ export function getProjectDuration(tracks: { clips: { startTime: number; duratio
   let max = 0
   for (const track of tracks) {
     for (const clip of track.clips) {
-      max = Math.max(max, clip.startTime + clip.duration)
+      const end = clip.startTime + clip.duration
+      if (Number.isFinite(end)) max = Math.max(max, end)
     }
   }
   return max
