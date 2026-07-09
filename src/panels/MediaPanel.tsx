@@ -18,6 +18,7 @@ import { NarrationRecorderSection } from '../components/NarrationRecorderSection
 import { LARGE_FILE_BYTES, formatStorageUsageLabel } from '../persistence/storageUtils'
 import { formatBytes } from '../utils/formatBytes'
 import { useStorageEstimate } from '../hooks/useStorageEstimate'
+import { UserProjectTemplatesSection } from '../components/UserProjectTemplatesSection'
 
 interface ImportProgress {
   current: number
@@ -601,7 +602,9 @@ export function MediaPanel() {
 
         {tab === 'templates' && (
           <div className="flex-1 overflow-y-auto p-3">
-            <p className="mb-3 text-[11px] text-text-muted">結婚式ムービーテンプレート</p>
+            <p className="mb-2 text-[11px] font-medium text-text-primary">マイテンプレート</p>
+            <UserProjectTemplatesSection mode="apply" />
+            <p className="mb-3 mt-5 text-[11px] text-text-muted">結婚式ムービーテンプレート</p>
             <div className="space-y-2">
               {PROJECT_TEMPLATES.map((tpl) => (
                 <button

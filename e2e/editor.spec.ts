@@ -799,3 +799,29 @@ test('インスペクター: 動画クリップを画像メディアへ差し替
   await expect(page.locator('footer').getByText('still.png')).toBeVisible()
   await expect(page.locator('footer').getByText('clip.webm')).toBeHidden()
 })
+
+test('ユーザーテンプレート: 保存・適用・新規作成', async ({ page }) => {
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await expect(page.getByText('結婚式フル構成テンプレートを適用しました')).toBeVisible()
+
+  await page.getByLabel('テンプレート名').fill('E2E保存テンプレ')
+  await page.getByRole('button', { name: '現在の構成をテンプレート保存' }).click()
+  await expect(page.getByText('「E2E保存テンプレ」テンプレートを保存しました')).toBeVisible()
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()
+  await expect(page.getByText('新規プロジェクトを作成しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeHidden()
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: 'E2E保存テンプレで新規作成' }).click()
+  await expect(page.getByText('「E2E保存テンプレ」で新規プロジェクトを作成しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+  await expect(page.locator('[title="オープニング"]')).toBeVisible()
+
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: 'E2E保存テンプレを適用' }).click()
+  await expect(page.getByText('「E2E保存テンプレ」テンプレートを適用しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+})

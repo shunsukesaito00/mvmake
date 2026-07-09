@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useProjectStore } from './projectStore'
 import { PROJECT_TEMPLATES } from '../types/project'
+import { buildUserProjectTemplate } from '../utils/userProjectTemplate'
 import type { ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
 import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
 
@@ -546,5 +547,38 @@ describe('replaceClipMedia', () => {
 
     useProjectStore.getState().undo()
     expect((getTrackClips(TRACK_V1)[0] as ImageClip).mediaId).toBe('img1')
+  })
+})
+
+describe('user project template', () => {
+  beforeEach(() => {
+    useProjectStore.getState().resetProject()
+  })
+
+  it('applyUserProjectTemplate で構成を現在のプロジェクトへ適用する', () => {
+    const fullTemplate = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(fullTemplate)
+    const template = buildUserProjectTemplate(useProjectStore.getState().project, '保存済み')
+
+    useProjectStore.getState().resetProject()
+    expect(useProjectStore.getState().project.tracks.flatMap((t) => t.clips)).toHaveLength(0)
+
+    useProjectStore.getState().applyUserProjectTemplate(template)
+    const project = useProjectStore.getState().project
+    expect(project.width).toBe(template.width)
+    expect(project.tracks.flatMap((t) => t.clips).length).toBeGreaterThan(0)
+    expect(project.markers?.length).toBe(template.markers.length)
+  })
+
+  it('createProjectFromUserTemplate で新規プロジェクトを作成する', () => {
+    const fullTemplate = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(fullTemplate)
+    const template = buildUserProjectTemplate(useProjectStore.getState().project, '新規用')
+
+    useProjectStore.getState().createProjectFromUserTemplate(template)
+    const project = useProjectStore.getState().project
+    expect(project.name).toBe('新規用')
+    expect(project.mediaAssets).toHaveLength(0)
+    expect(project.tracks.flatMap((t) => t.clips).length).toBeGreaterThan(0)
   })
 })

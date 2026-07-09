@@ -49,6 +49,8 @@ import {
   trackTypeForClip,
 } from '../utils/clipUtils'
 import { getProjectDuration, sanitizeMediaDuration } from '../utils/time'
+import type { UserProjectTemplate } from '../types/userProjectTemplate'
+import { applyUserProjectTemplateToTracks } from '../utils/userProjectTemplate'
 
 const MAX_HISTORY = 50
 
@@ -173,6 +175,8 @@ interface ProjectState {
   toggleTrackLock: (trackId: string) => void
   setProjectSettings: (settings: { width?: number; height?: number; fps?: number }) => void
   applyTemplate: (template: ProjectTemplate) => void
+  applyUserProjectTemplate: (template: UserProjectTemplate) => void
+  createProjectFromUserTemplate: (template: UserProjectTemplate) => void
   addMarker: (time: number, label?: string) => void
   updateMarker: (id: string, updates: Partial<Pick<TimelineMarker, 'label' | 'time'>>, recordHistory?: boolean) => void
   removeMarker: (id: string) => void
@@ -943,6 +947,55 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       },
       future: [],
     }))
+  },
+
+  applyUserProjectTemplate: (template) => {
+    get().pushHistory()
+    const emptyTracks = get().project.tracks.map((track) => ({ ...track, clips: [] }))
+    const { tracks, markers } = applyUserProjectTemplateToTracks(template, emptyTracks)
+    set((state) => ({
+      project: {
+        ...state.project,
+        width: template.width,
+        height: template.height,
+        fps: template.fps,
+        tracks,
+        markers,
+      },
+      selectedClipId: null,
+      selectedMarkerId: null,
+      future: [],
+    }))
+  },
+
+  createProjectFromUserTemplate: (template) => {
+    const { project } = get()
+    for (const asset of project.mediaAssets) URL.revokeObjectURL(asset.url)
+    clearMediaCache()
+    const tracks = createDefaultTracks()
+    const { tracks: nextTracks, markers } = applyUserProjectTemplateToTracks(template, tracks)
+    set({
+      project: normalizeProject({
+        id: createId(),
+        name: template.label,
+        width: template.width,
+        height: template.height,
+        fps: template.fps,
+        tracks: nextTracks,
+        mediaAssets: [],
+        markers,
+      }),
+      currentTime: 0,
+      isPlaying: false,
+      selectedClipId: null,
+      selectedMarkerId: null,
+      clipboard: null,
+      inPoint: null,
+      outPoint: null,
+      past: [],
+      future: [],
+      showPlayHint: false,
+    })
   },
 
   addMarker: (time, label) => {

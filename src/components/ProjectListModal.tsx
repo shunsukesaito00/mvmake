@@ -13,6 +13,8 @@ import { normalizeProject } from '../types/project'
 import { createId } from '../utils/id'
 import { Modal, Btn, IconButton, EmptyState } from './ui'
 import { Icons } from './icons'
+import { UserProjectTemplatesSection } from './UserProjectTemplatesSection'
+import type { UserProjectTemplate } from '../types/userProjectTemplate'
 
 interface ProjectListModalProps {
   open: boolean
@@ -31,6 +33,7 @@ export function ProjectListModal({ open, onClose }: ProjectListModalProps) {
   const currentProjectId = useProjectStore((s) => s.project.id)
   const loadProject = useProjectStore((s) => s.loadProject)
   const resetProject = useProjectStore((s) => s.resetProject)
+  const createProjectFromUserTemplate = useProjectStore((s) => s.createProjectFromUserTemplate)
   const showToast = useToastStore((s) => s.showToast)
 
   const refresh = useCallback(() => {
@@ -51,6 +54,20 @@ export function ProjectListModal({ open, onClose }: ProjectListModalProps) {
       await saveCurrent()
       resetProject()
       showToast('新規プロジェクトを作成しました', 'success')
+      onClose()
+    } catch {
+      showToast('現在のプロジェクトの保存に失敗しました', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleNewFromTemplate = async (template: UserProjectTemplate) => {
+    setBusy(true)
+    try {
+      await saveCurrent()
+      createProjectFromUserTemplate(template)
+      showToast(`「${template.label}」で新規プロジェクトを作成しました`, 'success')
       onClose()
     } catch {
       showToast('現在のプロジェクトの保存に失敗しました', 'error')
@@ -127,6 +144,11 @@ export function ProjectListModal({ open, onClose }: ProjectListModalProps) {
         <Btn variant="accent" className="text-xs" onClick={handleNew} disabled={busy}>
           + 新規プロジェクト
         </Btn>
+      </div>
+
+      <div className="mb-4 rounded-xl bg-surface-2 p-3 ring-1 ring-border">
+        <p className="mb-2 text-xs font-medium text-text-primary">テンプレートから新規作成</p>
+        <UserProjectTemplatesSection mode="create" onCreate={handleNewFromTemplate} />
       </div>
 
       <div className="max-h-[50vh] space-y-1.5 overflow-y-auto">
