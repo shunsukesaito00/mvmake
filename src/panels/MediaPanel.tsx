@@ -1,10 +1,16 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useProjectStore, type SlideshowOptions } from '../store/projectStore'
 import { loadMediaFiles } from '../engine/mediaLoader'
 import { TEXT_PRESETS, PROJECT_TEMPLATES, type TransitionType } from '../types/project'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, Btn, EmptyState, Modal, Slider } from '../components/ui'
 import { Icons } from '../components/icons'
+import {
+  filterAndSortMediaAssets,
+  formatMediaListSummary,
+  type MediaSortOrder,
+  type MediaTypeFilter,
+} from '../utils/mediaListFilter'
 
 const LARGE_FILE_BYTES = 500 * 1024 * 1024
 
@@ -117,9 +123,16 @@ export function MediaPanel() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showSlideshow, setShowSlideshow] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<MediaTypeFilter>('all')
+  const [sortOrder, setSortOrder] = useState<MediaSortOrder>('added')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const mediaAssets = useProjectStore((s) => s.project.mediaAssets)
+  const filteredMediaAssets = useMemo(
+    () => filterAndSortMediaAssets(mediaAssets, searchQuery, typeFilter, sortOrder),
+    [mediaAssets, searchQuery, typeFilter, sortOrder],
+  )
   const addMediaAsset = useProjectStore((s) => s.addMediaAsset)
   const removeMediaAsset = useProjectStore((s) => s.removeMediaAsset)
   const addClipFromMedia = useProjectStore((s) => s.addClipFromMedia)
@@ -244,12 +257,49 @@ export function MediaPanel() {
               <input ref={fileInputRef} type="file" multiple accept="video/*,image/*,audio/*" className="hidden" onChange={(e) => e.target.files && handleFiles(e.target.files)} />
             </div>
 
+            {mediaAssets.length > 0 && (
+              <div className="space-y-2 px-3 pb-2">
+                <input
+                  type="search"
+                  aria-label="メディア検索"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="名前で検索..."
+                  className="w-full rounded-lg bg-surface-3 px-3 py-2 text-xs text-text-primary outline-none ring-1 ring-border focus:ring-accent/50"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    aria-label="メディア種類"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value as MediaTypeFilter)}
+                    className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+                  >
+                    <option value="all">すべて</option>
+                    <option value="video">動画</option>
+                    <option value="image">画像</option>
+                    <option value="audio">音声</option>
+                  </select>
+                  <select
+                    aria-label="メディア並び順"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as MediaSortOrder)}
+                    className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+                  >
+                    <option value="added">追加順</option>
+                    <option value="name">名前順</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
             <div className="flex-1 overflow-y-auto px-3 pb-3">
               {mediaAssets.length === 0 ? (
                 <EmptyState icon={<Icons.Film size={20} />} title="メディアがありません" description="ファイルをインポートしてください" />
+              ) : filteredMediaAssets.length === 0 ? (
+                <EmptyState icon={<Icons.Film size={20} />} title="該当するメディアがありません" description="検索条件や種類フィルタを変更してください" />
               ) : (
                 <div className="grid grid-cols-2 gap-2">
-                  {mediaAssets.map((asset) => {
+                  {filteredMediaAssets.map((asset) => {
                     const isSelected = selectedIds.has(asset.id)
                     return (
                       <div key={asset.id} className={`group relative overflow-hidden rounded-lg bg-surface-3 ring-1 transition-all ${isSelected ? 'ring-accent' : 'ring-border hover:ring-accent/40'}`}>
@@ -301,7 +351,9 @@ export function MediaPanel() {
 
             {mediaAssets.length > 0 && (
               <div className="flex items-center justify-between border-t border-border px-3 py-1.5">
-                <span className="text-[10px] text-text-muted">{mediaAssets.length}件のメディア</span>
+                <span className="text-[10px] text-text-muted">
+                  {formatMediaListSummary(filteredMediaAssets.length, mediaAssets.length)}
+                </span>
                 <span className="font-mono text-[10px] text-text-muted" title="メディア合計サイズ(自動保存にも使用されます)">
                   {formatBytes(mediaAssets.reduce((n, a) => n + a.blob.size, 0))}
                 </span>

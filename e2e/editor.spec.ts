@@ -107,6 +107,34 @@ test('インスペクター: Google Fonts を 10 種以上から選択できる'
   await expect(fontSelect).toHaveValue('Zen Old Mincho')
 })
 
+test('メディア: 検索・種類フィルタ・ソートができる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'zebra.png', mimeType: 'image/png', buffer: png },
+    { name: 'alpha-photo.png', mimeType: 'image/png', buffer: png },
+    { name: 'bgm-theme.wav', mimeType: 'audio/wav', buffer: makeSilentWav() },
+  ])
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible()
+
+  await page.getByLabel('メディア検索').fill('alpha')
+  await expect(page.getByText('1/3件表示')).toBeVisible()
+  await expect(page.getByText('alpha-photo.png')).toBeVisible()
+  await expect(page.getByText('zebra.png')).toBeHidden()
+
+  await page.getByLabel('メディア検索').fill('')
+  await page.getByLabel('メディア種類').selectOption('image')
+  await expect(page.getByText('2/3件表示')).toBeVisible()
+  await expect(page.getByText('bgm-theme.wav')).toBeHidden()
+
+  await page.getByLabel('メディア並び順').selectOption('name')
+  await expect(page.locator('.grid.grid-cols-2 > div').first().getByText('alpha-photo.png')).toBeVisible()
+})
+
 test('インスペクター: 未選択時のクイックスタートからテキストを追加できる', async ({ page }) => {
   await page.getByTitle('プロジェクト一覧').click()
   await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()
