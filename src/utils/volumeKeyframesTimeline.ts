@@ -82,3 +82,30 @@ export function volumeAtTimelineClick(
   const localTime = Math.max(0, Math.min(clipDuration, time))
   return Math.max(0, Math.min(2, volume || getVolumeAtLocalTime(audio, localTime, clipDuration)))
 }
+
+/** クリップ分割時に音量キーフレームを両側へ再配分 */
+export function splitVolumeKeyframes(
+  keyframes: VolumeKeyframe[] | undefined,
+  splitOffset: number,
+): { first: VolumeKeyframe[] | undefined; second: VolumeKeyframe[] | undefined } {
+  if (!keyframes?.length) return { first: undefined, second: undefined }
+
+  const first: VolumeKeyframe[] = []
+  const second: VolumeKeyframe[] = []
+
+  for (const kf of sortVolumeKeyframes(keyframes)) {
+    if (kf.time < splitOffset) {
+      first.push(kf)
+    } else if (kf.time > splitOffset) {
+      second.push({ ...kf, id: createId(), time: kf.time - splitOffset })
+    } else {
+      first.push(kf)
+      second.push({ ...kf, id: createId(), time: 0 })
+    }
+  }
+
+  return {
+    first: first.length ? first : undefined,
+    second: second.length ? second : undefined,
+  }
+}

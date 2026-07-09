@@ -173,6 +173,26 @@ test('インスペクター: トランスフォームキーフレームを追加
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
 })
 
+test('クリップ分割: 音量キーフレームを両側に再配分する', async ({ page }) => {
+  const wav = makeSilentWav(2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'bgm-split.wav', mimeType: 'audio/wav', buffer: wav })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await page.locator('footer').getByText('bgm-split.wav').click()
+
+  await page.getByRole('button', { name: '音量キーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const timeSliders = page.getByRole('slider', { name: '位置 (秒)' })
+  await timeSliders.nth(1).fill('2')
+
+  await page.locator('main input[type="range"]').fill('1')
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  await expect(page.locator('footer').getByText('bgm-split.wav')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: '音量キーフレーム 1' })).toHaveCount(2)
+})
+
 test('タイムライン: ダブルクリックでトランスフォームキーフレームを追加できる', async ({ page }) => {
   await page.getByRole('button', { name: 'テキストを追加' }).click()
   const clip = page.locator('footer').getByText('Opening')

@@ -56,6 +56,7 @@ import { applyUserProjectTemplateToTracks } from '../utils/userProjectTemplate'
 import { loadTimelinePixelsPerSecond, saveTimelinePixelsPerSecond } from '../persistence/timelineZoom'
 import { clampTimelinePixelsPerSecond } from '../utils/timelineZoom'
 import { splitTransformKeyframes } from '../utils/transformKeyframesTimeline'
+import { splitVolumeKeyframes } from '../utils/volumeKeyframesTimeline'
 
 const MAX_HISTORY = 50
 
@@ -769,6 +770,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       'transformKeyframes' in clip && clip.transformKeyframes?.length
         ? splitTransformKeyframes(clip.transformKeyframes, splitOffset)
         : null
+    const splitVolumeKf =
+      (clip.type === 'video' || clip.type === 'audio') && clip.audio.volumeKeyframes?.length
+        ? splitVolumeKeyframes(clip.audio.volumeKeyframes, splitOffset)
+        : null
+    const audioClip = clip.type === 'video' || clip.type === 'audio' ? clip : null
 
     const firstClip: Clip = {
       ...clip,
@@ -776,6 +782,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       sourceDuration: firstDuration,
       ...(clip.type === 'video' || clip.type === 'image' ? { transition: undefined } : {}),
       ...(splitKeyframes ? { transformKeyframes: splitKeyframes.first } : {}),
+      ...(splitVolumeKf && audioClip ? { audio: { ...audioClip.audio, volumeKeyframes: splitVolumeKf.first } } : {}),
     }
     const secondClip: Clip = {
       ...clip,
@@ -785,6 +792,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       sourceStart: secondSourceStart,
       sourceDuration: secondDuration,
       ...(splitKeyframes ? { transformKeyframes: splitKeyframes.second } : {}),
+      ...(splitVolumeKf && audioClip ? { audio: { ...audioClip.audio, volumeKeyframes: splitVolumeKf.second } } : {}),
     }
 
     set((state) => ({

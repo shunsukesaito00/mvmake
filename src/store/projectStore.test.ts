@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { useProjectStore } from './projectStore'
 import { PROJECT_TEMPLATES } from '../types/project'
 import { buildUserProjectTemplate } from '../utils/userProjectTemplate'
-import type { ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
-import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
+import type { AudioClip, ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
+import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
 
 const TRACK_V1 = 'track-v1'
 const TRACK_V2 = 'track-v2'
@@ -57,7 +57,25 @@ function videoAsset(id: string, duration = 10): MediaAsset {
   return { id, name: `${id}.mp4`, type: 'video', blob: new Blob(), url: `blob:${id}`, duration }
 }
 
-function makeProject(clips: (VideoClip | ImageClip)[] = [], mediaAssets: MediaAsset[] = []): Project {
+function audioClip(id: string, startTime: number, duration: number, overrides: Partial<AudioClip> = {}): AudioClip {
+  return {
+    id,
+    trackId: TRACK_BGM,
+    type: 'audio',
+    mediaId: 'media-a1',
+    startTime,
+    duration,
+    sourceStart: 0,
+    sourceDuration: duration,
+    audio: { ...DEFAULT_AUDIO },
+    speed: 1,
+    ducking: { ...DEFAULT_DUCKING },
+    ...overrides,
+  }
+}
+
+function makeProject(clips: (VideoClip | ImageClip | AudioClip)[] = [], mediaAssets: MediaAsset[] = [], trackId = TRACK_V1): Project {
+  const isAudioTrack = trackId === TRACK_BGM
   return {
     id: 'test-project',
     name: 'テスト',
@@ -67,10 +85,10 @@ function makeProject(clips: (VideoClip | ImageClip)[] = [], mediaAssets: MediaAs
     mediaAssets,
     markers: [],
     tracks: [
-      { id: TRACK_V1, name: '映像 1', type: 'video', clips: [...clips], muted: false, locked: false },
+      { id: TRACK_V1, name: '映像 1', type: 'video', clips: isAudioTrack ? [] : [...clips as (VideoClip | ImageClip)[]], muted: false, locked: false },
       { id: TRACK_V2, name: '映像 2', type: 'video', clips: [], muted: false, locked: false },
       { id: TRACK_TEXT, name: 'テキスト', type: 'text', clips: [], muted: false, locked: false },
-      { id: TRACK_BGM, name: 'BGM', type: 'audio', clips: [], muted: false, locked: false },
+      { id: TRACK_BGM, name: 'BGM', type: 'audio', clips: isAudioTrack ? [...clips as AudioClip[]] : [], muted: false, locked: false },
     ],
   }
 }
@@ -201,6 +219,26 @@ describe('splitClipAt', () => {
     expect(clips[0].transformKeyframes?.map((kf) => kf.time)).toEqual([0, 2])
     expect(clips[1].transformKeyframes?.map((kf) => kf.time)).toEqual([0, 2])
     expect(clips[1].transformKeyframes?.[1].x).toBe(0.5)
+  })
+
+  it('splits volume keyframes across both clips', () => {
+    setProject(makeProject([audioClip('c1', 0, 4, {
+      audio: {
+        ...DEFAULT_AUDIO,
+        volumeKeyframes: [
+          { id: 'v1', time: 0, volume: 0.2 },
+          { id: 'v2', time: 2, volume: 1 },
+          { id: 'v3', time: 4, volume: 0.5 },
+        ],
+      },
+    })], [], TRACK_BGM))
+
+    useProjectStore.getState().splitClipAt('c1', 2)
+
+    const clips = getTrackClips(TRACK_BGM) as AudioClip[]
+    expect(clips[0].audio.volumeKeyframes?.map((kf) => kf.time)).toEqual([0, 2])
+    expect(clips[1].audio.volumeKeyframes?.map((kf) => kf.time)).toEqual([0, 2])
+    expect(clips[1].audio.volumeKeyframes?.[1].volume).toBe(0.5)
   })
 
   it('does nothing when split point is outside the clip', () => {

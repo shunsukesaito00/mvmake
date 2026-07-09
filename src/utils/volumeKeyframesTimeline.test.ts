@@ -3,6 +3,7 @@ import {
   buildVolumeCurvePath,
   keyframeToLanePoint,
   laneYToVolume,
+  splitVolumeKeyframes,
   updateVolumeKeyframeList,
   volumeToLaneY,
 } from './volumeKeyframesTimeline'
@@ -48,5 +49,17 @@ describe('volumeKeyframesTimeline', () => {
       { time: 3 },
     )
     expect(next.map((kf) => kf.id)).toEqual(['b', 'a'])
+  })
+
+  it('splitVolumeKeyframes が分割点で両クリップに再配分する', () => {
+    const keyframes = [
+      { id: 'a', time: 0, volume: 0.2 },
+      { id: 'b', time: 2, volume: 1 },
+      { id: 'c', time: 4, volume: 0.5 },
+    ]
+    const { first, second } = splitVolumeKeyframes(keyframes, 2)
+    expect(first?.map((kf) => kf.time)).toEqual([0, 2])
+    expect(second?.map((kf) => kf.time)).toEqual([0, 2])
+    expect(second?.[1].volume).toBe(0.5)
   })
 })
