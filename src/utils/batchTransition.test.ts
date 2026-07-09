@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   collectBatchTransitionClipIds,
+  collectBatchTransitionRemovalClipIds,
   formatBatchTransitionSummary,
+  formatBatchTransitionRemovalSummary,
   getAdjacentTransitionTargets,
 } from './batchTransition'
 import type { ImageClip, Track, VideoClip } from '../types/project'
@@ -67,5 +69,20 @@ describe('batchTransition', () => {
 
   it('formatBatchTransitionSummary', () => {
     expect(formatBatchTransitionSummary(3, 'クロスフェード')).toContain('3件')
+  })
+
+  it('collectBatchTransitionRemovalClipIds はトランジション付きクリップのみ返す', () => {
+    const c1 = imageClip('a1', 0, 3)
+    const c2 = { ...imageClip('a2', 3, 3), transition: { type: 'crossfade' as const, duration: 0.8 } }
+    const c3 = { ...imageClip('a3', 8, 3), transition: { type: 'wipe' as const, duration: 0.5 } }
+    const tracks: Track[] = [
+      makeVideoTrack([c1, c2, c3]),
+      { id: 'track-v2', name: '映像 2', type: 'video', clips: [], muted: false, locked: false },
+    ]
+    expect(collectBatchTransitionRemovalClipIds(tracks, 'all-video-tracks')).toEqual(['a2', 'a3'])
+  })
+
+  it('formatBatchTransitionRemovalSummary', () => {
+    expect(formatBatchTransitionRemovalSummary(2)).toBe('2件のクリップからトランジションを一括削除しました')
   })
 })

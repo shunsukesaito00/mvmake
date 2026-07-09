@@ -43,6 +43,32 @@ export function formatBatchTransitionSummary(count: number, label: string): stri
   return `${count}件のクリップに${label}を一括適用しました`
 }
 
+/** 一括削除対象: 映像トラック上でトランジションを持つ video/image クリップ */
+export function collectBatchTransitionRemovalClipIds(
+  tracks: Track[],
+  scope: BatchTransitionScope,
+  selectedTrackId?: string | null,
+): string[] {
+  const targetTracks =
+    scope === 'selected-track'
+      ? tracks.filter((track) => track.id === selectedTrackId && track.type === 'video')
+      : tracks.filter((track) => track.type === 'video')
+
+  const ids: string[] = []
+  for (const track of targetTracks) {
+    for (const clip of track.clips) {
+      if ((clip.type === 'video' || clip.type === 'image') && clip.transition) {
+        ids.push(clip.id)
+      }
+    }
+  }
+  return ids
+}
+
+export function formatBatchTransitionRemovalSummary(count: number): string {
+  return `${count}件のクリップからトランジションを一括削除しました`
+}
+
 export function isValidBatchTransition(transition: Transition): boolean {
   return transition.duration > 0
 }

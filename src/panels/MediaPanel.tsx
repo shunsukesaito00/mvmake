@@ -11,7 +11,7 @@ import {
   type MediaSortOrder,
   type MediaTypeFilter,
 } from '../utils/mediaListFilter'
-import { formatBatchTransitionSummary, type BatchTransitionScope } from '../utils/batchTransition'
+import { formatBatchTransitionSummary, formatBatchTransitionRemovalSummary, type BatchTransitionScope } from '../utils/batchTransition'
 import { NarrationRecorderSection } from '../components/NarrationRecorderSection'
 
 const LARGE_FILE_BYTES = 500 * 1024 * 1024
@@ -149,6 +149,7 @@ export function MediaPanel() {
   const addTextClip = useProjectStore((s) => s.addTextClip)
   const setClipTransition = useProjectStore((s) => s.setClipTransition)
   const applyBatchTransitions = useProjectStore((s) => s.applyBatchTransitions)
+  const clearBatchTransitions = useProjectStore((s) => s.clearBatchTransitions)
   const selectedClip = useProjectStore((s) => s.getSelectedClip())
   const applyTemplate = useProjectStore((s) => s.applyTemplate)
   const addSlideshow = useProjectStore((s) => s.addSlideshow)
@@ -186,6 +187,15 @@ export function MediaPanel() {
       return
     }
     showToast(formatBatchTransitionSummary(count, label), 'success')
+  }
+
+  const handleBatchTransitionClear = () => {
+    const count = clearBatchTransitions(batchScope)
+    if (count === 0) {
+      showToast('削除できるトランジションがありません', 'error')
+      return
+    }
+    showToast(formatBatchTransitionRemovalSummary(count), 'success')
   }
 
   const handleFiles = useCallback(
@@ -484,6 +494,27 @@ export function MediaPanel() {
                 />
                 <Btn variant="accent" className="w-full text-xs" onClick={handleBatchTransitionApply}>
                   隣接クリップへ一括適用
+                </Btn>
+              </div>
+            </div>
+
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="mb-1 text-[11px] font-semibold tracking-wider text-accent uppercase">トランジション一括削除</p>
+              <p className="mb-3 text-[10px] leading-relaxed text-text-muted">
+                対象トラック上の映像クリップからトランジションをすべて削除します
+              </p>
+              <div className="space-y-2">
+                <select
+                  aria-label="一括削除スコープ"
+                  value={batchScope}
+                  onChange={(e) => setBatchScope(e.target.value as BatchTransitionScope)}
+                  className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+                >
+                  <option value="selected-track">選択中クリップのトラック</option>
+                  <option value="all-video-tracks">すべての映像トラック</option>
+                </select>
+                <Btn variant="danger" className="w-full text-xs" onClick={handleBatchTransitionClear}>
+                  トランジションを一括削除
                 </Btn>
               </div>
             </div>

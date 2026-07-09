@@ -32,7 +32,7 @@ import { createId } from '../utils/id'
 import { buildPhotoGuideClips, buildTemplateMarkers, buildTemplateTextClips } from '../utils/weddingTemplate'
 import { computeGuideSlideshowDurationPerImage, isPhotoGuideClip } from '../utils/photoGuide'
 import { getMarkerChapterRanges } from '../utils/markerExport'
-import { collectBatchTransitionClipIds, type BatchTransitionScope } from '../utils/batchTransition'
+import { collectBatchTransitionClipIds, collectBatchTransitionRemovalClipIds, type BatchTransitionScope } from '../utils/batchTransition'
 import {
   cloneProject,
   computeMediaReplacement,
@@ -162,6 +162,7 @@ interface ProjectState {
     scope: BatchTransitionScope,
     transition: Transition,
   ) => number
+  clearBatchTransitions: (scope: BatchTransitionScope) => number
   toggleTrackMute: (trackId: string) => void
   toggleTrackLock: (trackId: string) => void
   setProjectSettings: (settings: { width?: number; height?: number; fps?: number }) => void
@@ -779,6 +780,37 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             if (!idSet.has(clip.id)) return clip
             if (clip.type !== 'video' && clip.type !== 'image') return clip
             return { ...clip, transition }
+          }),
+        })),
+      },
+      future: [],
+    }))
+    return clipIds.length
+  },
+
+  clearBatchTransitions: (scope) => {
+    const { project, selectedClipId } = get()
+    const selectedTrackId =
+      scope === 'selected-track' && selectedClipId
+        ? findClip(project, selectedClipId)?.track.id ?? null
+        : null
+
+    if (scope === 'selected-track' && !selectedTrackId) return 0
+
+    const clipIds = collectBatchTransitionRemovalClipIds(project.tracks, scope, selectedTrackId)
+    if (clipIds.length === 0) return 0
+
+    const idSet = new Set(clipIds)
+    get().pushHistory()
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((track) => ({
+          ...track,
+          clips: track.clips.map((clip) => {
+            if (!idSet.has(clip.id)) return clip
+            if (clip.type !== 'video' && clip.type !== 'image') return clip
+            return { ...clip, transition: undefined }
           }),
         })),
       },

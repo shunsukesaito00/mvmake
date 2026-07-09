@@ -291,6 +291,38 @@ describe('applyBatchTransitions', () => {
   })
 })
 
+describe('clearBatchTransitions', () => {
+  it('全映像トラックのトランジションを一括削除する', () => {
+    setProject(makeProject([
+      videoClip('c1', 0, 4),
+      videoClip('c2', 4, 4, { transition: { type: 'crossfade', duration: 0.8 } }),
+      videoClip('c3', 10, 4, { transition: { type: 'wipe', duration: 0.6 } }),
+    ]))
+
+    const count = useProjectStore.getState().clearBatchTransitions('all-video-tracks')
+    expect(count).toBe(2)
+
+    const clips = getTrackClips(TRACK_V1) as VideoClip[]
+    expect(clips[1].transition).toBeUndefined()
+    expect(clips[2].transition).toBeUndefined()
+  })
+
+  it('selected-track スコープで選択中トラックのみ削除する', () => {
+    const clipWithTransition = videoClip('c2', 4, 4, { transition: { type: 'crossfade', duration: 0.8 } })
+    setProject(makeProject([videoClip('c1', 0, 4), clipWithTransition]))
+    useProjectStore.setState({ selectedClipId: 'c1' })
+
+    const count = useProjectStore.getState().clearBatchTransitions('selected-track')
+    expect(count).toBe(1)
+    expect((getTrackClips(TRACK_V1)[1] as VideoClip).transition).toBeUndefined()
+  })
+
+  it('トランジションがなければ 0 を返す', () => {
+    setProject(makeProject([videoClip('c1', 0, 4), videoClip('c2', 4, 4)]))
+    expect(useProjectStore.getState().clearBatchTransitions('all-video-tracks')).toBe(0)
+  })
+})
+
 describe('applyTemplate', () => {
   it('構造化テンプレートで章マーカーと写真ガイドを配置する', () => {
     const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!

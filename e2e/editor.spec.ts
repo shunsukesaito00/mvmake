@@ -255,6 +255,41 @@ test('効果: 隣接クリップへトランジションを一括適用できる
   await expect(page.getByText('1件のクリップにクロスフェードを一括適用しました')).toBeVisible()
 })
 
+test('効果: 全映像トラックからトランジションを一括削除できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'clear-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'clear-b.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  const cardA = page.locator('div.group.relative').filter({ hasText: 'clear-a.png' })
+  const cardB = page.locator('div.group.relative').filter({ hasText: 'clear-b.png' })
+  await cardA.hover()
+  await cardA.getByTitle('スライドショー用に選択').click()
+  await cardB.hover()
+  await cardB.getByTitle('スライドショー用に選択').click()
+  await page.getByRole('button', { name: 'スライドショー作成' }).click()
+  await page.getByRole('dialog').locator('select').selectOption('none')
+  await page.getByRole('button', { name: 'タイムラインに追加' }).click()
+  await expect(page.getByText('2枚の写真をタイムラインに配置しました')).toBeVisible()
+
+  await page.getByTitle('効果').click()
+  await page.getByLabel('一括適用スコープ').selectOption('all-video-tracks')
+  await page.getByLabel('一括トランジション種類').selectOption('crossfade')
+  await page.getByRole('button', { name: '隣接クリップへ一括適用' }).click()
+  await expect(page.getByText('1件のクリップにクロスフェードを一括適用しました')).toBeVisible()
+
+  await page.getByLabel('一括削除スコープ').selectOption('all-video-tracks')
+  await page.getByRole('button', { name: 'トランジションを一括削除' }).click()
+  await expect(page.getByText('1件のクリップからトランジションを一括削除しました')).toBeVisible()
+})
+
 test('色調補正: カラールックプリセットを適用できる', async ({ page }) => {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
