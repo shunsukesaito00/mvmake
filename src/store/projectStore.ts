@@ -143,6 +143,7 @@ interface ProjectState {
   canRedo: () => boolean
 
   addMediaAsset: (asset: MediaAsset) => void
+  updateMediaAsset: (id: string, updates: Partial<MediaAsset>) => void
   removeMediaAsset: (id: string) => void
   addClipFromMedia: (mediaId: string, trackId?: string, startTime?: number) => boolean
   addSlideshow: (mediaIds: string[], options: SlideshowOptions) => number
@@ -325,6 +326,16 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   addMediaAsset: (asset) =>
     set((state) => ({
       project: { ...state.project, mediaAssets: [...state.project.mediaAssets, asset] },
+    })),
+
+  updateMediaAsset: (id, updates) =>
+    set((state) => ({
+      project: {
+        ...state.project,
+        mediaAssets: state.project.mediaAssets.map((asset) =>
+          asset.id === id ? { ...asset, ...updates } : asset,
+        ),
+      },
     })),
 
   removeMediaAsset: (id) => {

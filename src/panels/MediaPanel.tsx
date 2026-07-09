@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useProjectStore, type SlideshowOptions } from '../store/projectStore'
-import { loadMediaFiles } from '../engine/mediaLoader'
+import { loadMediaFiles, enrichMediaAsset } from '../engine/mediaLoader'
 import { TEXT_PRESETS, PROJECT_TEMPLATES, type TransitionType } from '../types/project'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, Btn, EmptyState, Modal, Slider } from '../components/ui'
@@ -145,6 +145,7 @@ export function MediaPanel() {
     [mediaAssets, searchQuery, typeFilter, sortOrder],
   )
   const addMediaAsset = useProjectStore((s) => s.addMediaAsset)
+  const updateMediaAsset = useProjectStore((s) => s.updateMediaAsset)
   const removeMediaAsset = useProjectStore((s) => s.removeMediaAsset)
   const addClipFromMedia = useProjectStore((s) => s.addClipFromMedia)
   const addTextClip = useProjectStore((s) => s.addTextClip)
@@ -220,13 +221,21 @@ export function MediaPanel() {
         }
         for (const asset of assets) addMediaAsset(asset)
         showToast(`${assets.length}件のメディアを追加しました`, 'success')
+
+        for (const asset of assets) {
+          void enrichMediaAsset(asset).then((updates) => {
+            if (Object.keys(updates).length > 0) {
+              updateMediaAsset(asset.id, updates)
+            }
+          })
+        }
       } catch {
         showToast('メディアの読み込みに失敗しました', 'error')
       } finally {
         setIsLoading(false)
       }
     },
-    [addMediaAsset, showToast],
+    [addMediaAsset, updateMediaAsset, showToast],
   )
 
   const onDrop = useCallback(

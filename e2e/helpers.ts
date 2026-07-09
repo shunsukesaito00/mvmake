@@ -1,4 +1,37 @@
-/** E2E 用の最小 WAV (PCM mono) を生成 */
+/** E2E 用の最小 WebM 動画をブラウザ内で生成（MediaRecorder + canvas） */
+export async function makeTinyWebmVideo(page: import('@playwright/test').Page): Promise<Buffer> {
+  const bytes = await page.evaluate(async () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 160
+    canvas.height = 90
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#1a1a2e'
+    ctx.fillRect(0, 0, 160, 90)
+
+    const stream = canvas.captureStream(10)
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+      ? 'video/webm;codecs=vp8'
+      : 'video/webm'
+    const recorder = new MediaRecorder(stream, { mimeType })
+    const chunks: Blob[] = []
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data)
+      }
+      recorder.onerror = () => reject(new Error('MediaRecorder failed'))
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }))
+      recorder.start(100)
+      window.setTimeout(() => recorder.stop(), 400)
+    })
+
+    stream.getTracks().forEach((track) => track.stop())
+    return Array.from(new Uint8Array(await blob.arrayBuffer()))
+  })
+
+  return Buffer.from(bytes)
+}
+
 export function makeSilentWav(durationSec = 0.5): Buffer {
   const sampleRate = 44100
   const numSamples = Math.max(1, Math.floor(sampleRate * durationSec))

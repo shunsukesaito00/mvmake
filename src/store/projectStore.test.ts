@@ -358,6 +358,15 @@ describe('importSrtSubtitles', () => {
   })
 })
 
+describe('updateMediaAsset', () => {
+  it('メディアアセットのフィールドを部分更新する', () => {
+    useProjectStore.getState().addMediaAsset(imageAsset('img1'))
+    const id = useProjectStore.getState().project.mediaAssets[0]!.id
+    useProjectStore.getState().updateMediaAsset(id, { thumbnail: 'data:image/jpeg;base64,thumb' })
+    expect(useProjectStore.getState().project.mediaAssets[0]?.thumbnail).toBe('data:image/jpeg;base64,thumb')
+  })
+})
+
 describe('applyTemplate', () => {
   it('構造化テンプレートで章マーカーと写真ガイドを配置する', () => {
     const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
