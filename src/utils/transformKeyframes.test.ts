@@ -18,10 +18,10 @@ describe('getTransformAtLocalTime', () => {
 
   it('1点のキーフレームは全区間でその値', () => {
     const base = DEFAULT_TRANSFORM
-    const keyframes = [{ id: '1', time: 2, x: 0.2, y: 0.8, scale: 2, rotation: 45 }]
+    const keyframes = [{ id: '1', time: 2, x: 0.2, y: 0.8, scale: 2, rotation: 45, opacity: 0.3 }]
     expect(getTransformAtLocalTime(base, keyframes, 0, 10).x).toBe(0.2)
     expect(getTransformAtLocalTime(base, keyframes, 9, 10).rotation).toBe(45)
-    expect(getTransformAtLocalTime(base, keyframes, 5, 10).opacity).toBe(base.opacity)
+    expect(getTransformAtLocalTime(base, keyframes, 5, 10).opacity).toBe(0.3)
   })
 
   it('2点間を線形補間する', () => {
@@ -45,6 +45,16 @@ describe('getTransformAtLocalTime', () => {
     const mid = getTransformAtLocalTime(base, keyframes, 2, 10)
     expect(mid.x).toBeGreaterThan(0.5)
     expect(mid.x).toBeCloseTo(0.75)
+  })
+
+  it('不透明度をキーフレーム間で補間する', () => {
+    const base = DEFAULT_TRANSFORM
+    const keyframes = [
+      { id: '1', time: 0, x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+      { id: '2', time: 2, x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 0 },
+    ]
+    const mid = getTransformAtLocalTime(base, keyframes, 1, 4)
+    expect(mid.opacity).toBeCloseTo(0.5)
   })
 })
 

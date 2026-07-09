@@ -35,6 +35,7 @@ export function createTransformKeyframeAt(
     y: resolved.y,
     scale: resolved.scale,
     rotation: resolved.rotation,
+    opacity: resolved.opacity,
   })
 }
 
@@ -46,7 +47,7 @@ export function upsertTransformKeyframeAt(
   keyframes: TransformKeyframe[] | undefined,
   clipDuration: number,
   time: number,
-  values: Pick<TransformKeyframe, 'x' | 'y' | 'scale' | 'rotation'>,
+  values: Pick<TransformKeyframe, 'x' | 'y' | 'scale' | 'rotation' | 'opacity'>,
 ): TransformKeyframe[] {
   const localTime = Math.max(0, Math.min(clipDuration, time))
   const list = keyframes ?? []

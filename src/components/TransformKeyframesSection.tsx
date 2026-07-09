@@ -35,7 +35,15 @@ export function TransformKeyframesSection({ clip, transform, transformKeyframes,
     const resolved = getTransformAtLocalTime(transform, keyframes, localT, clip.duration)
     updateKeyframes([
       ...keyframes,
-      { id: createId(), time: localT, x: resolved.x, y: resolved.y, scale: resolved.scale, rotation: resolved.rotation },
+      {
+        id: createId(),
+        time: localT,
+        x: resolved.x,
+        y: resolved.y,
+        scale: resolved.scale,
+        rotation: resolved.rotation,
+        opacity: resolved.opacity,
+      },
     ])
   }
 
@@ -58,7 +66,7 @@ export function TransformKeyframesSection({ clip, transform, transformKeyframes,
       </div>
       {keyframes.length === 0 ? (
         <p className="text-[10px] leading-relaxed text-text-muted">
-          再生ヘッド位置(クリップ内)に位置・スケール・回転のキーフレームを追加できます。2点以上で時間変化を作れます。
+          再生ヘッド位置(クリップ内)に位置・スケール・回転・不透明度のキーフレームを追加できます。2点以上で時間変化を作れます。
         </p>
       ) : (
         keyframes.map((kf, index) => (
@@ -108,6 +116,14 @@ export function TransformKeyframesSection({ clip, transform, transformKeyframes,
               step={1}
               onChange={(v) => updateKeyframe(kf.id, { rotation: v })}
               format={(v) => `${v}°`}
+            />
+            <Slider
+              label="不透明度"
+              value={kf.opacity ?? transform.opacity}
+              min={0}
+              max={1}
+              step={0.01}
+              onChange={(v) => updateKeyframe(kf.id, { opacity: v })}
             />
           </div>
         ))

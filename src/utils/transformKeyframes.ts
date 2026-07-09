@@ -8,6 +8,10 @@ function lerp(a: number, b: number, ratio: number): number {
   return a + (b - a) * ratio
 }
 
+function keyframeOpacity(kf: TransformKeyframe, base: Transform): number {
+  return kf.opacity ?? base.opacity
+}
+
 /** 0〜1 の線形進捗をイージング曲線に変換 */
 export function applyTransformEasing(t: number, easing: TransformKeyframeEasing = 'linear'): number {
   const clamped = Math.max(0, Math.min(1, t))
@@ -23,7 +27,7 @@ export function applyTransformEasing(t: number, easing: TransformKeyframeEasing 
   }
 }
 
-/** クリップ内ローカル時間(0〜clipDuration)での transform。キーフレーム間は補間（イージング対応）。opacity はベース値 */
+/** クリップ内ローカル時間(0〜clipDuration)での transform。キーフレーム間は補間（イージング・不透明度対応） */
 export function getTransformAtLocalTime(
   base: Transform,
   keyframes: TransformKeyframe[] | undefined,
@@ -37,12 +41,26 @@ export function getTransformAtLocalTime(
 
   if (t <= sorted[0].time) {
     const kf = sorted[0]
-    return { ...base, x: kf.x, y: kf.y, scale: kf.scale, rotation: kf.rotation }
+    return {
+      ...base,
+      x: kf.x,
+      y: kf.y,
+      scale: kf.scale,
+      rotation: kf.rotation,
+      opacity: keyframeOpacity(kf, base),
+    }
   }
 
   const last = sorted[sorted.length - 1]
   if (t >= last.time) {
-    return { ...base, x: last.x, y: last.y, scale: last.scale, rotation: last.rotation }
+    return {
+      ...base,
+      x: last.x,
+      y: last.y,
+      scale: last.scale,
+      rotation: last.rotation,
+      opacity: keyframeOpacity(last, base),
+    }
   }
 
   for (let i = 0; i < sorted.length - 1; i++) {
@@ -51,7 +69,14 @@ export function getTransformAtLocalTime(
     if (t >= a.time && t <= b.time) {
       const span = b.time - a.time
       if (span <= 0) {
-        return { ...base, x: b.x, y: b.y, scale: b.scale, rotation: b.rotation }
+        return {
+          ...base,
+          x: b.x,
+          y: b.y,
+          scale: b.scale,
+          rotation: b.rotation,
+          opacity: keyframeOpacity(b, base),
+        }
       }
       const ratio = (t - a.time) / span
       const eased = applyTransformEasing(ratio, b.easing ?? 'linear')
@@ -61,6 +86,7 @@ export function getTransformAtLocalTime(
         y: lerp(a.y, b.y, eased),
         scale: lerp(a.scale, b.scale, eased),
         rotation: lerp(a.rotation, b.rotation, eased),
+        opacity: lerp(keyframeOpacity(a, base), keyframeOpacity(b, base), eased),
       }
     }
   }

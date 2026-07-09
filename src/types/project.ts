@@ -100,7 +100,7 @@ export interface VolumeKeyframe {
   volume: number
 }
 
-/** クリップ内ローカル時間(秒)での transform キーフレーム（opacity はベース transform を使用） */
+/** クリップ内ローカル時間(秒)での transform キーフレーム（不透明度キーフレームを含む） */
 export type TransformKeyframeEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut'
 
 export const TRANSFORM_KEYFRAME_EASING_OPTIONS: { value: TransformKeyframeEasing; label: string }[] = [
@@ -117,6 +117,8 @@ export interface TransformKeyframe {
   y: number
   scale: number
   rotation: number
+  /** 不透明度(0〜1)。省略時はベース transform.opacity を使用 */
+  opacity?: number
   /** 直前のキーフレームからこの点への補間。省略時は linear */
   easing?: TransformKeyframeEasing
 }

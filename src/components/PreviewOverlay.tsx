@@ -63,7 +63,7 @@ export function PreviewOverlay() {
   const transform = getTransformAtLocalTime(clip.transform, clip.transformKeyframes, localTime, clip.duration)
   const box = getClipBox(clip, project)
 
-  const applyTransformPatch = (patch: Partial<Pick<Transform, 'x' | 'y' | 'scale' | 'rotation'>>, recordHistory = false) => {
+  const applyTransformPatch = (patch: Partial<Pick<Transform, 'x' | 'y' | 'scale' | 'rotation' | 'opacity'>>, recordHistory = false) => {
     if (!hasTransformKeyframes) {
       updateClip(clip.id, { transform: { ...clip.transform, ...patch } }, recordHistory)
       return
@@ -74,6 +74,7 @@ export function PreviewOverlay() {
       y: current.y,
       scale: current.scale,
       rotation: current.rotation,
+      opacity: current.opacity,
       ...patch,
     })
     updateClip(clip.id, { transformKeyframes: next }, recordHistory)

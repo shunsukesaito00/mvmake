@@ -173,6 +173,19 @@ test('インスペクター: トランスフォームキーフレームを追加
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
 })
 
+test('インスペクター: トランスフォームキーフレームの不透明度を設定できる', async ({ page }) => {
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await page.locator('footer').getByText('Opening').click()
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const opacitySliders = page.getByRole('slider', { name: '不透明度' })
+  await opacitySliders.nth(1).fill('0.4')
+  await expect(opacitySliders.nth(1)).toHaveValue('0.4')
+})
+
 test('インスペクター: トランスフォームキーフレームのイージングを設定できる', async ({ page }) => {
   await page.getByRole('button', { name: 'テキストを追加' }).click()
   await page.locator('footer').getByText('Opening').click()
