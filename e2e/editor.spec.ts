@@ -859,3 +859,22 @@ test('ユーザーテンプレート: エクスポートとインポート', asy
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
   await expect(page.locator('[title="オープニング"]')).toBeVisible()
 })
+
+test('タイムラインズーム: 選択クリップへズームとフィット', async ({ page }) => {
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await expect(page.getByText('結婚式フル構成テンプレートを適用しました')).toBeVisible()
+
+  await page.locator('footer').getByText('Opening').click()
+
+  const zoomLabel = page.getByTestId('timeline-zoom-label')
+  const before = Number((await zoomLabel.textContent())?.replace('px/s', '') ?? '0')
+
+  await page.getByTitle('選択クリップへズーム (Z)').click()
+  const afterZoom = Number((await zoomLabel.textContent())?.replace('px/s', '') ?? '0')
+  expect(afterZoom).toBeGreaterThan(before)
+
+  await page.getByTitle('フィット').click()
+  const afterFit = Number((await zoomLabel.textContent())?.replace('px/s', '') ?? '0')
+  expect(afterFit).toBeLessThan(afterZoom)
+})

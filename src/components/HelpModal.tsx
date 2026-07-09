@@ -21,6 +21,7 @@ const SHORTCUTS = [
   { key: 'Escape', action: '選択解除' },
   { key: 'F', action: 'フルスクリーン' },
   { key: 'G', action: 'セーフエリア表示切替' },
+  { key: 'Z', action: '選択クリップへズーム' },
   { key: '?', action: 'このショートカット一覧を表示' },
 ]
 

@@ -51,6 +51,8 @@ import {
 import { getProjectDuration, sanitizeMediaDuration } from '../utils/time'
 import type { UserProjectTemplate } from '../types/userProjectTemplate'
 import { applyUserProjectTemplateToTracks } from '../utils/userProjectTemplate'
+import { loadTimelinePixelsPerSecond, saveTimelinePixelsPerSecond } from '../persistence/timelineZoom'
+import { clampTimelinePixelsPerSecond } from '../utils/timelineZoom'
 
 const MAX_HISTORY = 50
 
@@ -252,7 +254,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   isPlaying: false,
   selectedClipId: null,
   selectedMarkerId: null,
-  pixelsPerSecond: 80,
+  pixelsPerSecond: loadTimelinePixelsPerSecond() ?? 80,
   dragState: null,
   exportProgress: 0,
   isExporting: false,
@@ -271,7 +273,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setIsPlaying: (playing) => set({ isPlaying: playing }),
   setSelectedClipId: (id) => set({ selectedClipId: id, selectedMarkerId: null }),
   setSelectedMarkerId: (id) => set({ selectedMarkerId: id, selectedClipId: null }),
-  setPixelsPerSecond: (pps) => set({ pixelsPerSecond: Math.max(20, Math.min(300, pps)) }),
+  setPixelsPerSecond: (pps) => {
+    const clamped = clampTimelinePixelsPerSecond(pps)
+    saveTimelinePixelsPerSecond(clamped)
+    set({ pixelsPerSecond: clamped })
+  },
   setDragState: (state) => set({ dragState: state }),
   setExportProgress: (progress) => set({ exportProgress: progress }),
   setIsExporting: (exporting) => set({ isExporting: exporting }),

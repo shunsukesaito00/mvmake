@@ -3,6 +3,12 @@ import { useProjectStore } from '../store/projectStore'
 import type { Clip } from '../types/project'
 import { formatTime, snapTime } from '../utils/time'
 import { clampTrimEnd, clampTrimStart } from '../utils/clipUtils'
+import {
+  computeFitTimelinePixelsPerSecond,
+  computeTimelineScrollLeftForTime,
+  computeZoomToClipPixelsPerSecond,
+  isTimelineTimeVisible,
+} from '../utils/timelineZoom'
 import { updateVolumeKeyframeList, VOLUME_TIMELINE_LANE_HEIGHT, createVolumeKeyframeAt, volumeAtTimelineClick } from '../utils/volumeKeyframesTimeline'
 import { VolumeKeyframesTimeline } from '../components/VolumeKeyframesTimeline'
 import type { AudioClip, VideoClip } from '../types/project'
@@ -66,6 +72,8 @@ export function TimelinePanel() {
   const mediaAssets = project.mediaAssets
   const fps = project.fps
   const pixelsPerSecond = useProjectStore((s) => s.pixelsPerSecond)
+  const currentTime = useProjectStore((s) => s.currentTime)
+  const isPlaying = useProjectStore((s) => s.isPlaying)
   const selectedClipId = useProjectStore((s) => s.selectedClipId)
   const selectedMarkerId = useProjectStore((s) => s.selectedMarkerId)
   const dragState = useProjectStore((s) => s.dragState)
@@ -95,9 +103,61 @@ export function TimelinePanel() {
   const fitToContent = () => {
     const container = containerRef.current
     if (!container || duration <= 0) return
-    const available = container.clientWidth - HEADER_WIDTH - 40
-    setPixelsPerSecond(Math.max(20, Math.min(300, available / duration)))
+    setPixelsPerSecond(computeFitTimelinePixelsPerSecond(duration, container.clientWidth, HEADER_WIDTH))
   }
+
+  const scrollTimelineToTime = useCallback((time: number, pixelsPerSecondOverride?: number) => {
+    const container = containerRef.current
+    if (!container) return
+    const pps = pixelsPerSecondOverride ?? pixelsPerSecond
+    container.scrollLeft = computeTimelineScrollLeftForTime(time, pps, container.clientWidth, HEADER_WIDTH)
+  }, [pixelsPerSecond])
+
+  const scrollPlayheadToCenter = useCallback(() => {
+    scrollTimelineToTime(useProjectStore.getState().currentTime)
+  }, [scrollTimelineToTime])
+
+  const zoomToSelectedClip = useCallback(() => {
+    if (!selectedClipId) {
+      showToast('クリップを選択してください', 'info')
+      return
+    }
+    const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === selectedClipId)
+    const container = containerRef.current
+    if (!clip || !container) return
+
+    const nextPixelsPerSecond = computeZoomToClipPixelsPerSecond(clip.duration, container.clientWidth, HEADER_WIDTH)
+    const centerTime = clip.startTime + clip.duration / 2
+    setPixelsPerSecond(nextPixelsPerSecond)
+    scrollTimelineToTime(centerTime, nextPixelsPerSecond)
+  }, [selectedClipId, project.tracks, scrollTimelineToTime, setPixelsPerSecond, showToast])
+
+  useEffect(() => {
+    if (dragState) return
+    const container = containerRef.current
+    if (!container) return
+
+    if (isPlaying) {
+      scrollTimelineToTime(currentTime)
+      return
+    }
+
+    if (!isTimelineTimeVisible(currentTime, pixelsPerSecond, container.clientWidth, container.scrollLeft, HEADER_WIDTH)) {
+      scrollTimelineToTime(currentTime)
+    }
+  }, [currentTime, isPlaying, pixelsPerSecond, dragState, scrollTimelineToTime])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if ((e.key === 'z' || e.key === 'Z') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        zoomToSelectedClip()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [zoomToSelectedClip])
 
   const getTrackAtY = useCallback((clientY: number): string | null => {
     const container = tracksContainerRef.current
@@ -281,8 +341,10 @@ export function TimelinePanel() {
     <div className="flex h-full flex-col">
       <PanelHeader title="タイムライン" icon={<Icons.Grid size={14} />}>
         <IconButton onClick={fitToContent} tooltip="フィット" size="sm"><Icons.Fit size={13} /></IconButton>
+        <IconButton onClick={zoomToSelectedClip} tooltip="選択クリップへズーム (Z)" size="sm"><Icons.Focus size={13} /></IconButton>
+        <IconButton onClick={scrollPlayheadToCenter} tooltip="再生位置を中央へ" size="sm"><Icons.Locate size={13} /></IconButton>
         <IconButton onClick={() => setPixelsPerSecond(pixelsPerSecond - 20)} tooltip="ズームアウト" size="sm"><Icons.ZoomOut size={13} /></IconButton>
-        <span className="px-1 font-mono text-[10px] text-text-muted">{pixelsPerSecond}px/s</span>
+        <span data-testid="timeline-zoom-label" className="px-1 font-mono text-[10px] text-text-muted">{pixelsPerSecond}px/s</span>
         <IconButton onClick={() => setPixelsPerSecond(pixelsPerSecond + 20)} tooltip="ズームイン" size="sm"><Icons.ZoomIn size={13} /></IconButton>
       </PanelHeader>
 
