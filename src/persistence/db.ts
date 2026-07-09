@@ -82,10 +82,26 @@ function deleteKey(db: IDBDatabase, store: string, key: string): Promise<void> {
   })
 }
 
-export async function saveProject(project: Project): Promise<void> {
-  const db = await openDB()
+export interface SaveProjectProgress {
+  phase: 'media' | 'project' | 'done'
+  mediaIndex: number
+  mediaTotal: number
+}
 
-  for (const asset of project.mediaAssets) {
+function yieldToMainThread(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+export async function saveProject(
+  project: Project,
+  onProgress?: (progress: SaveProjectProgress) => void,
+): Promise<void> {
+  const db = await openDB()
+  const mediaTotal = project.mediaAssets.length
+
+  for (let i = 0; i < project.mediaAssets.length; i++) {
+    const asset = project.mediaAssets[i]!
+    onProgress?.({ phase: 'media', mediaIndex: i + 1, mediaTotal })
     const stored: StoredMedia = {
       id: asset.id,
       name: asset.name,
@@ -98,8 +114,10 @@ export async function saveProject(project: Project): Promise<void> {
       waveform: asset.waveform,
     }
     await put(db, MEDIA_STORE, stored)
+    if (asset.blob.size > 1024 * 1024) await yieldToMainThread()
   }
 
+  onProgress?.({ phase: 'project', mediaIndex: mediaTotal, mediaTotal })
   const storedProject: StoredProject = {
     id: project.id,
     name: project.name,
@@ -112,6 +130,7 @@ export async function saveProject(project: Project): Promise<void> {
     updatedAt: Date.now(),
   }
   await put(db, PROJECT_STORE, storedProject)
+  onProgress?.({ phase: 'done', mediaIndex: mediaTotal, mediaTotal })
   db.close()
 }
 

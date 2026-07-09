@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { enrichMediaAsset, yieldToMainThread } from '../engine/mediaLoader'
+import { enrichMediaAsset, loadMediaFiles, yieldToMainThread } from '../engine/mediaLoader'
 import type { MediaAsset } from '../types/project'
 
 describe('mediaLoader', () => {
@@ -37,5 +37,15 @@ describe('mediaLoader', () => {
       waveform: [0.1, 0.5, 0.2],
     }
     expect(await enrichMediaAsset(asset)).toEqual({})
+  })
+
+  it('loadMediaFiles は進捗コールバックを呼ぶ', async () => {
+    const file = new File([new Uint8Array(8)], 'photo.png', { type: 'image/png' })
+    const progress: string[] = []
+    await loadMediaFiles([file], undefined, (state) => {
+      progress.push(`${state.phase}:${state.fileName}`)
+    })
+    expect(progress.length).toBeGreaterThanOrEqual(2)
+    expect(progress[0]).toContain('photo.png')
   })
 })

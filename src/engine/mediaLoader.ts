@@ -5,6 +5,13 @@ const IMAGE_DEFAULT_DURATION = 5
 const THUMBNAIL_TIMEOUT_MS = 8_000
 const MAX_WAVEFORM_DECODE_BYTES = 5 * 1024 * 1024
 
+export interface LoadMediaProgress {
+  fileIndex: number
+  fileTotal: number
+  fileName: string
+  phase: 'loading' | 'done'
+}
+
 export interface LoadMediaOptions {
   /** サムネイル生成をスキップ（後から enrichMediaAsset で追加） */
   deferThumbnail?: boolean
@@ -266,11 +273,26 @@ export async function enrichMediaAsset(asset: MediaAsset): Promise<Partial<Media
 export async function loadMediaFiles(
   files: FileList | File[],
   options: LoadMediaOptions = { deferThumbnail: true, deferWaveform: true },
+  onProgress?: (progress: LoadMediaProgress) => void,
 ): Promise<MediaAsset[]> {
+  const fileArray = Array.from(files)
   const results: MediaAsset[] = []
-  for (const file of Array.from(files)) {
+  for (let i = 0; i < fileArray.length; i++) {
+    const file = fileArray[i]!
+    onProgress?.({
+      fileIndex: i + 1,
+      fileTotal: fileArray.length,
+      fileName: file.name,
+      phase: 'loading',
+    })
     const asset = await loadMediaFile(file, options)
     if (asset) results.push(asset)
+    onProgress?.({
+      fileIndex: i + 1,
+      fileTotal: fileArray.length,
+      fileName: file.name,
+      phase: 'done',
+    })
     await yieldToMainThread()
   }
   return results

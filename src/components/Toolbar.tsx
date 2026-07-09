@@ -7,6 +7,8 @@ import { ExportButton } from './ExportButton'
 import { ProjectListModal } from './ProjectListModal'
 import { IconButton } from './ui'
 import { Icons } from './icons'
+import { AutoSaveIndicator } from './AutoSaveIndicator'
+import { formatStorageError } from '../persistence/storageUtils'
 import { isWebCodecsSupported } from '../engine/exporter'
 
 interface ToolbarProps {
@@ -99,6 +101,7 @@ export function Toolbar({ onOpenHelp, onOpenSettings }: ToolbarProps) {
         <span className="hidden rounded bg-surface-3 px-1.5 py-0.5 font-mono text-[10px] text-text-muted sm:inline">
           {project.width}×{project.height} · {project.fps}fps
         </span>
+        <AutoSaveIndicator />
       </div>
 
       {/* Center: Edit tools */}
@@ -126,7 +129,7 @@ export function Toolbar({ onOpenHelp, onOpenSettings }: ToolbarProps) {
               <div className="absolute left-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-xl border border-border bg-surface-2 py-1 shadow-xl shadow-black/30 animate-fade-in">
                 {[
                   { label: 'プロジェクト一覧', action: () => { setShowProjects(true); setMenuOpen(false) } },
-                  { label: '保存', action: async () => { setMenuOpen(false); try { await saveProject(useProjectStore.getState().project); showToast('保存しました', 'success') } catch { showToast('保存に失敗しました', 'error') } } },
+                  { label: '保存', action: async () => { setMenuOpen(false); try { await saveProject(useProjectStore.getState().project); showToast('保存しました', 'success') } catch (err) { showToast(formatStorageError(err), 'error') } } },
                   { label: '名前を変更', action: () => { setNameInput(project.name); setEditingName(true); setMenuOpen(false) } },
                 ].map((item) => (
                   <button key={item.label} onClick={item.action} className="block w-full px-3 py-2 text-left text-xs text-text-secondary transition-colors hover:bg-surface-3 hover:text-text-primary">

@@ -702,3 +702,30 @@ test('メディア: 動画をインポートして UI が応答し続ける', as
   // 動画としてリスト登録されていること
   await expect(page.getByText(/video ·/)).toBeVisible()
 })
+
+test('メディア: 複数ファイル取り込みで進捗表示が使われる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'import-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'import-b.png', mimeType: 'image/png', buffer: png },
+    { name: 'import-c.png', mimeType: 'image/png', buffer: png },
+  ])
+
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('import-a.png')).toBeVisible()
+  await expect(page.getByText('import-b.png')).toBeVisible()
+  await expect(page.getByText('import-c.png')).toBeVisible()
+})
+
+test('自動保存: 編集後にインジケータが表示される', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /Opening/ }).first().click()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+
+  await expect(page.getByLabel(/自動保存:/)).toBeVisible({ timeout: 8_000 })
+})

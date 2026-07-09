@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useProjectStore, type SlideshowOptions } from '../store/projectStore'
-import { loadMediaFiles, enrichMediaAsset } from '../engine/mediaLoader'
+import { loadMediaFiles, enrichMediaAsset, type LoadMediaProgress } from '../engine/mediaLoader'
 import { TEXT_PRESETS, PROJECT_TEMPLATES, type TransitionType } from '../types/project'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, Btn, EmptyState, Modal, Slider } from '../components/ui'
@@ -15,13 +15,14 @@ import { formatBatchTransitionSummary, formatBatchTransitionRemovalSummary, type
 import { SrtImportSection } from '../components/SrtImportSection'
 import { SrtExportSection } from '../components/SrtExportSection'
 import { NarrationRecorderSection } from '../components/NarrationRecorderSection'
+import { LARGE_FILE_BYTES, formatStorageUsageLabel } from '../persistence/storageUtils'
+import { formatBytes } from '../utils/formatBytes'
+import { useStorageEstimate } from '../hooks/useStorageEstimate'
 
-const LARGE_FILE_BYTES = 500 * 1024 * 1024
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(2)}GB`
-  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`
-  return `${Math.ceil(bytes / 1024)}KB`
+interface ImportProgress {
+  current: number
+  total: number
+  fileName: string
 }
 
 const TRANSITION_OPTIONS: { type: TransitionType; label: string }[] = [
@@ -130,6 +131,8 @@ export function MediaPanel() {
   const [tab, setTab] = useState<Tab>('media')
   const [isDragging, setIsDragging] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null)
+  const [enrichingIds, setEnrichingIds] = useState<Set<string>>(() => new Set())
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showSlideshow, setShowSlideshow] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -157,6 +160,7 @@ export function MediaPanel() {
   const applyTemplate = useProjectStore((s) => s.applyTemplate)
   const addSlideshow = useProjectStore((s) => s.addSlideshow)
   const showToast = useToastStore((s) => s.showToast)
+  const storageEstimate = useStorageEstimate(mediaAssets.length)
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -214,8 +218,15 @@ export function MediaPanel() {
       }
 
       setIsLoading(true)
+      setImportProgress(null)
       try {
-        const assets = await loadMediaFiles(fileArray)
+        const assets = await loadMediaFiles(fileArray, undefined, (progress: LoadMediaProgress) => {
+          setImportProgress({
+            current: progress.fileIndex,
+            total: progress.fileTotal,
+            fileName: progress.fileName,
+          })
+        })
         if (assets.length === 0) {
           showToast('対応していないファイル形式です', 'error')
           return
@@ -224,16 +235,26 @@ export function MediaPanel() {
         showToast(`${assets.length}件のメディアを追加しました`, 'success')
 
         for (const asset of assets) {
-          void enrichMediaAsset(asset).then((updates) => {
-            if (Object.keys(updates).length > 0) {
-              updateMediaAsset(asset.id, updates)
-            }
-          })
+          setEnrichingIds((prev) => new Set(prev).add(asset.id))
+          void enrichMediaAsset(asset)
+            .then((updates) => {
+              if (Object.keys(updates).length > 0) {
+                updateMediaAsset(asset.id, updates)
+              }
+            })
+            .finally(() => {
+              setEnrichingIds((prev) => {
+                const next = new Set(prev)
+                next.delete(asset.id)
+                return next
+              })
+            })
         }
       } catch {
         showToast('メディアの読み込みに失敗しました', 'error')
       } finally {
         setIsLoading(false)
+        setImportProgress(null)
       }
     },
     [addMediaAsset, updateMediaAsset, showToast],
@@ -291,8 +312,35 @@ export function MediaPanel() {
                 <Icons.Upload size={18} />
               </div>
               <p className="text-center text-xs text-text-secondary">
-                {isLoading ? '読み込み中...' : <>動画・画像・音声を<br />ドラッグ&ドロップ</>}
+                {isLoading && importProgress ? (
+                  <>
+                    読み込み中 ({importProgress.current}/{importProgress.total})
+                    <br />
+                    <span className="text-[10px] text-text-muted">{importProgress.fileName}</span>
+                  </>
+                ) : isLoading ? (
+                  '読み込み中...'
+                ) : (
+                  <>動画・画像・音声を<br />ドラッグ&ドロップ</>
+                )}
               </p>
+              {importProgress && (
+                <div
+                  aria-label="メディア取り込み進捗"
+                  className="mt-2 w-full max-w-xs"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={importProgress.total}
+                  aria-valuenow={importProgress.current}
+                >
+                  <div className="h-1 overflow-hidden rounded-full bg-surface-0">
+                    <div
+                      className="h-full rounded-full bg-accent transition-all duration-200"
+                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
               <Btn variant="ghost" className="mt-2 text-xs" onClick={() => fileInputRef.current?.click()}>
                 ファイルを選択
               </Btn>
@@ -357,6 +405,22 @@ export function MediaPanel() {
                           <div className="aspect-video bg-surface-0">
                             {asset.thumbnail ? (
                               <img src={asset.thumbnail} alt={asset.name} className="h-full w-full object-cover" />
+                            ) : enrichingIds.has(asset.id) && asset.type !== 'audio' ? (
+                              <div
+                                aria-label="サムネイル生成中"
+                                className="flex h-full flex-col items-center justify-center gap-1 text-text-muted"
+                              >
+                                <div className="h-5 w-5 animate-pulse rounded-full bg-accent/30" />
+                                <span className="text-[9px]">サムネ生成中</span>
+                              </div>
+                            ) : enrichingIds.has(asset.id) && asset.type === 'audio' ? (
+                              <div
+                                aria-label="波形生成中"
+                                className="flex h-full flex-col items-center justify-center gap-1 text-text-muted"
+                              >
+                                <div className="h-5 w-5 animate-pulse rounded-full bg-accent/30" />
+                                <span className="text-[9px]">波形生成中</span>
+                              </div>
                             ) : (
                               <div className="flex h-full items-center justify-center text-text-muted">
                                 {asset.type === 'audio' ? <Icons.Music size={24} /> : <Icons.Image size={24} />}
@@ -398,8 +462,9 @@ export function MediaPanel() {
                 <span className="text-[10px] text-text-muted">
                   {formatMediaListSummary(filteredMediaAssets.length, mediaAssets.length)}
                 </span>
-                <span className="font-mono text-[10px] text-text-muted" title="メディア合計サイズ(自動保存にも使用されます)">
+                <span className="font-mono text-[10px] text-text-muted" title="メディア合計サイズ・ブラウザ保存容量">
                   {formatBytes(mediaAssets.reduce((n, a) => n + a.blob.size, 0))}
+                  {storageEstimate ? ` · DB ${formatStorageUsageLabel(storageEstimate)}` : ''}
                 </span>
               </div>
             )}
