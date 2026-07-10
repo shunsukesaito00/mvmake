@@ -13,8 +13,9 @@ import {
   isTimelineTimeVisible,
 } from '../utils/timelineZoom'
 import { updateVolumeKeyframeList, VOLUME_TIMELINE_LANE_HEIGHT, createVolumeKeyframeAt, volumeAtTimelineClick } from '../utils/volumeKeyframesTimeline'
-import { updateSpeedKeyframeList, SPEED_TIMELINE_LANE_HEIGHT, createSpeedKeyframeAt } from '../utils/speedKeyframesTimeline'
+import { updateSpeedKeyframeList, SPEED_TIMELINE_LANE_HEIGHT, createSpeedKeyframeAt, updateSpeedBezierHandle } from '../utils/speedKeyframesTimeline'
 import { SPEED_MAX, SPEED_MIN } from '../utils/speedKeyframes'
+import { getSpeedBezierHandleIn, getSpeedBezierHandleOut } from '../utils/speedKeyframeBezier'
 import {
   updateTransformKeyframeList,
   createTransformKeyframeAt,
@@ -283,6 +284,26 @@ export function TimelinePanel() {
       const newSpeed = Math.max(SPEED_MIN, Math.min(SPEED_MAX, (dragState.originalKeyframeSpeed ?? 1) + speedDelta))
       const next = updateSpeedKeyframeList(keyframes, dragState.keyframeId, { time: newTime, speed: newSpeed })
       updateClip(dragState.clipId, { speedKeyframes: next }, false)
+    } else if (dragState.mode === 'speedBezierHandle' && dragState.keyframeId != null) {
+      const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
+      if (clip?.type !== 'video') return
+      const videoClip = clip as VideoClip
+      const keyframes = videoClip.speedKeyframes
+      if (!keyframes?.length) return
+
+      const timeDelta = dt
+      const valueDelta = -(e.clientY - dragState.startY) / SPEED_TIMELINE_LANE_HEIGHT * (SPEED_MAX - SPEED_MIN)
+      const newTimeOffset = (dragState.originalBezierTimeOffset ?? 0) + timeDelta
+      const newValueOffset = (dragState.originalBezierValueOffset ?? 0) + valueDelta
+      const handleType = dragState.transformBezierHandleType ?? 'in'
+      const next = updateSpeedBezierHandle(
+        keyframes,
+        dragState.keyframeId,
+        handleType,
+        newTimeOffset,
+        newValueOffset,
+      )
+      updateClip(dragState.clipId, { speedKeyframes: next }, false)
     } else if (dragState.mode === 'volumeKeyframe' && dragState.keyframeId != null) {
       const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
       if (clip?.type !== 'audio' && clip?.type !== 'video') return
@@ -497,6 +518,47 @@ export function TimelinePanel() {
     pushHistory()
     const next = createSpeedKeyframeAt(clip, clip.duration, time, speed)
     updateClip(clip.id, { speedKeyframes: next })
+  }
+
+  const startSpeedBezierHandleDrag = (
+    clip: VideoClip,
+    keyframeId: string,
+    handleType: 'in' | 'out',
+    e: React.MouseEvent,
+  ) => {
+    const track = tracks.find((t) => t.id === clip.trackId)
+    if (track?.locked) return
+    const keyframes = clip.speedKeyframes
+    if (!keyframes?.length) return
+    const sorted = [...keyframes].sort((a, b) => a.time - b.time)
+    const index = sorted.findIndex((kf) => kf.id === keyframeId)
+    if (index < 0) return
+    const keyframe = sorted[index]
+    const partner = handleType === 'out' ? sorted[index + 1] : sorted[index - 1]
+    if (!partner) return
+
+    const handle = handleType === 'out'
+      ? getSpeedBezierHandleOut(keyframe, partner)
+      : getSpeedBezierHandleIn(keyframe, partner)
+
+    e.stopPropagation()
+    e.preventDefault()
+    pushHistory()
+    setSelectedClipId(clip.id)
+    setDragState({
+      clipId: clip.id,
+      mode: 'speedBezierHandle',
+      keyframeId,
+      transformBezierHandleType: handleType,
+      originalBezierTimeOffset: handle.timeOffset,
+      originalBezierValueOffset: handle.valueOffset,
+      startX: e.clientX,
+      startY: e.clientY,
+      originalStartTime: clip.startTime,
+      originalDuration: clip.duration,
+      originalSourceStart: clip.sourceStart,
+      originalTrackId: clip.trackId,
+    })
   }
 
   const startVolumeKeyframeDrag = (clip: AudioClip | VideoClip, keyframeId: string, keyframeTime: number, keyframeVolume: number, e: React.MouseEvent) => {
@@ -750,6 +812,7 @@ export function TimelinePanel() {
                           widthPx={width}
                           isSelected={isSelected}
                           onStartKeyframeDrag={(kf, e) => startSpeedKeyframeDrag(clip, kf.id, kf.time, kf.speed, e)}
+                          onStartBezierHandleDrag={(kf, handleType, e) => startSpeedBezierHandleDrag(clip, kf.id, handleType, e)}
                           onAddKeyframe={(time, speed) => addSpeedKeyframeOnTimeline(clip, time, speed)}
                         />
                       )}

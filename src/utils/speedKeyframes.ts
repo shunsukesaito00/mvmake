@@ -1,4 +1,5 @@
 import type { SpeedKeyframe, VideoClip } from '../types/project'
+import { sampleSpeedWithBezier, shouldUseSpeedBezier } from './speedKeyframeBezier'
 
 export const SPEED_MIN = 0.25
 export const SPEED_MAX = 4
@@ -7,7 +8,22 @@ export function sortSpeedKeyframes(keyframes: SpeedKeyframe[]): SpeedKeyframe[] 
   return [...keyframes].sort((a, b) => a.time - b.time)
 }
 
-/** クリップ内ローカル時間(0〜clipDuration)での速度。キーフレーム間は線形補間 */
+function interpolateSpeedAtSegment(
+  start: SpeedKeyframe,
+  end: SpeedKeyframe,
+  localTime: number,
+): number {
+  if (shouldUseSpeedBezier(start, end)) {
+    return sampleSpeedWithBezier(start, end, localTime)
+  }
+
+  const span = end.time - start.time
+  if (span <= 0) return end.speed
+  const ratio = (localTime - start.time) / span
+  return start.speed + (end.speed - start.speed) * ratio
+}
+
+/** クリップ内ローカル時間(0〜clipDuration)での速度。キーフレーム間は線形/ベジェ補間 */
 export function getSpeedAtLocalTime(clip: VideoClip, localTime: number, clipDuration?: number): number {
   const keyframes = clip.speedKeyframes
   const baseSpeed = clip.speed ?? 1
@@ -25,33 +41,28 @@ export function getSpeedAtLocalTime(clip: VideoClip, localTime: number, clipDura
     const a = sorted[i]
     const b = sorted[i + 1]
     if (t >= a.time && t <= b.time) {
-      const span = b.time - a.time
-      if (span <= 0) return b.speed
-      const ratio = (t - a.time) / span
-      return a.speed + (b.speed - a.speed) * ratio
+      return interpolateSpeedAtSegment(a, b, t)
     }
   }
 
   return baseSpeed
 }
 
-/** クリップ先頭(ローカル0)から localTime まで素材内で進んだ秒数（台形積分） */
+/** クリップ先頭(ローカル0)から localTime まで素材内で進んだ秒数（数値積分） */
 export function getSourceOffsetAtLocalTime(clip: VideoClip, localTime: number): number {
   const t = Math.max(0, localTime)
-  const keyframes = clip.speedKeyframes
-  if (!keyframes?.length) return t * (clip.speed ?? 1)
+  if (!clip.speedKeyframes?.length) return t * (clip.speed ?? 1)
 
-  const sorted = sortSpeedKeyframes(keyframes)
-  const breakpoints = [0, ...sorted.map((kf) => kf.time).filter((time) => time > 0 && time < t), t]
-  const points = [...new Set(breakpoints.map((p) => +p.toFixed(6)))].sort((a, b) => a - b)
-
+  const steps = Math.max(16, Math.ceil(t * 32))
   let offset = 0
-  for (let i = 0; i < points.length - 1; i++) {
-    const t0 = points[i]
-    const t1 = points[i + 1]
-    const s0 = getSpeedAtLocalTime(clip, t0)
-    const s1 = getSpeedAtLocalTime(clip, t1)
-    offset += (t1 - t0) * (s0 + s1) / 2
+  let prevT = 0
+  let prevS = getSpeedAtLocalTime(clip, 0)
+  for (let i = 1; i <= steps; i++) {
+    const ti = (i / steps) * t
+    const si = getSpeedAtLocalTime(clip, ti)
+    offset += (ti - prevT) * (prevS + si) / 2
+    prevT = ti
+    prevS = si
   }
 
   return offset
@@ -94,20 +105,14 @@ export function scheduleSpeedAutomation(
     return
   }
 
-  const sorted = sortSpeedKeyframes(clip.speedKeyframes!)
   const endLocal = localOffset + segmentDuration
-  const times = new Set<number>([localOffset, endLocal])
-  for (const kf of sorted) {
-    if (kf.time > localOffset && kf.time < endLocal) times.add(kf.time)
+  const steps = Math.max(8, Math.ceil(segmentDuration * 24))
+  for (let i = 0; i <= steps; i++) {
+    const localT = localOffset + (i / steps) * segmentDuration
+    const speed = getSpeedAtLocalTime(clip, localT)
+    playbackRateParam.setValueAtTime(speed, when + (localT - localOffset))
   }
-  const points = [...times].sort((a, b) => a - b)
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const t0 = points[i]
-    const t1 = points[i + 1]
-    const s0 = getSpeedAtLocalTime(clip, t0)
-    const s1 = getSpeedAtLocalTime(clip, t1)
-    playbackRateParam.setValueAtTime(s0, when + (t0 - localOffset))
-    playbackRateParam.linearRampToValueAtTime(s1, when + (t1 - localOffset))
+  if (segmentDuration > 0) {
+    playbackRateParam.setValueAtTime(getSpeedAtLocalTime(clip, endLocal), when + segmentDuration)
   }
 }

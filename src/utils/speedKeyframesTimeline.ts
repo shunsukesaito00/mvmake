@@ -1,5 +1,13 @@
 import type { SpeedKeyframe, VideoClip } from '../types/project'
 import { createId } from './id'
+import {
+  getSpeedBezierHandleIn,
+  getSpeedBezierHandleOut,
+  patchSpeedBezierHandle,
+  shouldUseSpeedBezier,
+  speedBezierHandleAbsoluteSpeed,
+  speedBezierHandleAbsoluteTime,
+} from './speedKeyframeBezier'
 import { SPEED_MAX, SPEED_MIN, getSpeedAtLocalTime, sortSpeedKeyframes } from './speedKeyframes'
 
 export const SPEED_TIMELINE_LANE_HEIGHT = 24
@@ -27,6 +35,57 @@ export function keyframeToLanePoint(
     x: (keyframe.time / duration) * width,
     y: speedToLaneY(keyframe.speed, laneHeight),
   }
+}
+
+export function bezierHandleToLanePoint(
+  keyframe: SpeedKeyframe,
+  partner: SpeedKeyframe,
+  handleType: 'in' | 'out',
+  clipDuration: number,
+  width: number,
+  laneHeight: number,
+): { x: number; y: number } {
+  const handle = handleType === 'out'
+    ? getSpeedBezierHandleOut(keyframe, partner)
+    : getSpeedBezierHandleIn(keyframe, partner)
+  const time = speedBezierHandleAbsoluteTime(keyframe, handle)
+  const speed = speedBezierHandleAbsoluteSpeed(keyframe, handle)
+  const duration = Math.max(clipDuration, 0.001)
+  return {
+    x: (time / duration) * width,
+    y: speedToLaneY(speed, laneHeight),
+  }
+}
+
+export function updateSpeedBezierHandle(
+  keyframes: SpeedKeyframe[],
+  keyframeId: string,
+  handleType: 'in' | 'out',
+  timeOffset: number,
+  valueOffset: number,
+): SpeedKeyframe[] {
+  const sorted = sortSpeedKeyframes(keyframes)
+  const index = sorted.findIndex((kf) => kf.id === keyframeId)
+  if (index < 0) return keyframes
+
+  const target = sorted[index]
+  const clampedValueOffset = Math.max(
+    SPEED_MIN - target.speed,
+    Math.min(SPEED_MAX - target.speed, valueOffset),
+  )
+  const patched = patchSpeedBezierHandle(target, handleType, timeOffset, clampedValueOffset)
+  const endIndex = handleType === 'out' ? index + 1 : index
+  const withEasing = endIndex < sorted.length && endIndex > 0
+    ? sorted.map((kf, i) => (i === endIndex ? { ...kf, easing: 'bezier' as const } : kf))
+    : sorted
+
+  return sortSpeedKeyframes(
+    withEasing.map((kf) => (kf.id === keyframeId ? patched : kf)),
+  )
+}
+
+export function segmentUsesBezier(start: SpeedKeyframe, end: SpeedKeyframe): boolean {
+  return shouldUseSpeedBezier(start, end)
 }
 
 export function buildSpeedCurvePath(

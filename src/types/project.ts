@@ -187,10 +187,25 @@ export interface VolumeKeyframe {
 }
 
 /** クリップ内ローカル時間(秒)での速度キーフレーム */
+export type SpeedKeyframeEasing = 'linear' | 'bezier'
+
+export const SPEED_KEYFRAME_EASING_OPTIONS: { value: SpeedKeyframeEasing; label: string }[] = [
+  { value: 'linear', label: '線形' },
+  { value: 'bezier', label: 'ベジェ（カスタム）' },
+]
+
+export interface SpeedKeyframeBezierHandles {
+  handleIn?: TransformBezierHandle
+  handleOut?: TransformBezierHandle
+}
+
 export interface SpeedKeyframe {
   id: string
   time: number
   speed: number
+  /** 直前のキーフレームからこの点への補間。省略時は linear */
+  easing?: SpeedKeyframeEasing
+  bezierHandles?: SpeedKeyframeBezierHandles
 }
 
 /** クリップ内ローカル時間(秒)での transform キーフレーム（不透明度キーフレームを含む） */

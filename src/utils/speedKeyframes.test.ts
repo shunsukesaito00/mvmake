@@ -44,6 +44,17 @@ describe('getSpeedAtLocalTime', () => {
     expect(getSpeedAtLocalTime(clip, 0)).toBe(1)
     expect(getSpeedAtLocalTime(clip, 8)).toBe(3)
   })
+
+  it('ベジェ区間は線形と異なる中間値になる', () => {
+    const clip: VideoClip = {
+      ...baseClip,
+      speedKeyframes: [
+        { id: '1', time: 0, speed: 1, bezierHandles: { handleOut: { timeOffset: 1, valueOffset: 2 } } },
+        { id: '2', time: 4, speed: 3, easing: 'bezier' },
+      ],
+    }
+    expect(getSpeedAtLocalTime(clip, 2)).not.toBeCloseTo(2, 1)
+  })
 })
 
 describe('getSourceOffsetAtLocalTime', () => {

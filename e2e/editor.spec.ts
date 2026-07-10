@@ -388,6 +388,33 @@ test('タイムライン: 速度キーフレームをドラッグ編集できる
   await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
 })
 
+test('タイムライン: 速度キーフレームのベジェハンドルをドラッグ編集できる', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  await page.setInputFiles('input[accept*="video"]', { name: 'speed-bezier.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'speed-bezier.webm')
+
+  await page.getByRole('button', { name: '再生速度' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('2')
+  await page.getByLabel('補間イージング').selectOption('bezier')
+
+  const handle = page.getByTestId('speed-bezier-handle-out-1')
+  await expect(handle).toBeVisible()
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 30, box.y - 20, { steps: 10 })
+  await page.mouse.up()
+
+  const newBox = (await handle.boundingBox())!
+  expect(newBox.y).not.toBeCloseTo(box.y, 0)
+})
+
 test('タイムライン: 音量キーフレームをドラッグ編集できる', async ({ page }) => {
   const wav = makeSilentWav(1)
   await page.setInputFiles('input[accept*="audio"]', { name: 'bgm.wav', mimeType: 'audio/wav', buffer: wav })

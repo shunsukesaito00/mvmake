@@ -1,5 +1,6 @@
 import { useProjectStore } from '../store/projectStore'
 import type { SpeedKeyframe, VideoClip } from '../types/project'
+import { SPEED_KEYFRAME_EASING_OPTIONS } from '../types/project'
 import { SPEED_MAX, SPEED_MIN, getSpeedAtLocalTime, sortSpeedKeyframes } from '../utils/speedKeyframes'
 import { createId } from '../utils/id'
 import { Btn, Slider } from './ui'
@@ -87,6 +88,24 @@ export function SpeedKeyframesSection({ clip, onClipChange }: Props) {
               onChange={(v) => updateKeyframe(kf.id, { speed: v })}
               format={(v) => `${v}x`}
             />
+            {index > 0 && (
+              <label className="block space-y-1">
+                補間イージング
+                <select
+                  aria-label="補間イージング"
+                  value={kf.easing ?? 'linear'}
+                  onChange={(e) => updateKeyframe(kf.id, { easing: e.target.value as SpeedKeyframe['easing'] })}
+                  className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+                >
+                  {SPEED_KEYFRAME_EASING_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                {(kf.easing === 'bezier' || kf.bezierHandles) && (
+                  <span className="text-[10px] text-text-muted">タイムラインの丸ハンドルでベジェ曲線を編集できます。</span>
+                )}
+              </label>
+            )}
           </div>
         ))
       )}
