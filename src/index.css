@@ -230,6 +230,20 @@ input[type="range"]::-moz-range-thumb {
   0%, 15% { clip-path: inset(0 100% 0 0); filter: blur(4px); }
   55%, 100% { clip-path: inset(0 0 0 0); filter: blur(0); }
 }
+@keyframes tp-in-candle-glow {
+  0%, 15% { opacity: 0; transform: scale(0.9); }
+  45%, 55% { opacity: 0.9; }
+  85%, 100% { opacity: 0; transform: scale(1.05); }
+}
+@keyframes tp-in-dreamy-blur {
+  0%, 20% { opacity: 0; filter: blur(12px); }
+  70%, 100% { opacity: 1; filter: blur(0); }
+}
+@keyframes tp-in-paper-confetti {
+  0%, 15% { opacity: 0; transform: translateY(-15%) rotate(-6deg); }
+  50%, 65% { opacity: 0.95; }
+  85%, 100% { opacity: 0; transform: translateY(10%) rotate(4deg); }
+}
 
 .animate-pulse-accent {
   animation: pulse-accent 1.5s ease-in-out infinite;

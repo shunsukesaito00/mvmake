@@ -131,6 +131,18 @@ function TransitionPreview({ type }: { type: TransitionType }) {
           style={anim('tp-in-golden-shimmer')}
         />
       )}
+      {type === 'candleGlow' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-amber-300/80 via-orange-200/40 to-transparent"
+          style={anim('tp-in-candle-glow')}
+        />
+      )}
+      {type === 'paperConfetti' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-pink-200/70 via-amber-200/50 to-sky-200/60"
+          style={anim('tp-in-paper-confetti')}
+        />
+      )}
     </div>
   )
 }

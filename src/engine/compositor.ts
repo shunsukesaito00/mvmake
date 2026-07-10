@@ -252,6 +252,24 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
             layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'softWipe' })
             continue
           }
+          case 'candleGlow': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'candleGlow' })
+            continue
+          }
+          case 'dreamyBlur': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time), transitionProgress: progress, transitionType: 'dreamyBlur' })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'dreamyBlur' })
+            continue
+          }
+          case 'paperConfetti': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'paperConfetti' })
+            continue
+          }
           case 'wipe': {
             if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
             layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'wipe' })
@@ -389,7 +407,9 @@ function drawMediaClip(
     ? (1 - transitionProgress) * 16
     : transitionType === 'softFocus' && transitionProgress !== undefined
       ? (1 - easeSmoothstep(transitionProgress)) * 24
-      : undefined
+      : transitionType === 'dreamyBlur' && transitionProgress !== undefined
+        ? (1 - easeSmoothstep(transitionProgress)) * 20
+        : undefined
 
   const parsedLut = resolvedLut ? getParsedLutById(resolvedLut.lutId) : undefined
 
@@ -693,6 +713,34 @@ export async function renderFrame(
         const grad = ctx.createLinearGradient(edge - soft, 0, edge + soft * 0.5, 0)
         grad.addColorStop(0, 'rgba(0, 0, 0, 1)')
         grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'candleGlow' && transitionProgress !== undefined) {
+        const glow = Math.sin(transitionProgress * Math.PI)
+        ctx.save()
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = glow * 0.55
+        const grad = ctx.createRadialGradient(width * 0.5, height * 0.85, width * 0.04, width * 0.5, height * 0.85, width * 0.48)
+        grad.addColorStop(0, 'rgba(255, 210, 110, 0.95)')
+        grad.addColorStop(0.45, 'rgba(255, 170, 70, 0.4)')
+        grad.addColorStop(1, 'rgba(255, 130, 50, 0)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'paperConfetti' && transitionProgress !== undefined) {
+        const burst = Math.sin(transitionProgress * Math.PI)
+        ctx.save()
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = burst * 0.5
+        const grad = ctx.createLinearGradient(0, 0, width, height)
+        grad.addColorStop(0, 'rgba(255, 180, 200, 0.8)')
+        grad.addColorStop(0.25, 'rgba(255, 220, 120, 0.6)')
+        grad.addColorStop(0.5, 'rgba(140, 200, 255, 0.5)')
+        grad.addColorStop(0.75, 'rgba(255, 200, 180, 0.55)')
+        grad.addColorStop(1, 'rgba(200, 255, 180, 0.4)')
         ctx.fillStyle = grad
         ctx.fillRect(0, 0, width, height)
         ctx.restore()

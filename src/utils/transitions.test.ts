@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { TRANSITION_DEFINITIONS, easeSmoothstep } from './transitions'
 
 describe('transitions', () => {
-  it('定義済みトランジションが 20 種', () => {
-    expect(TRANSITION_DEFINITIONS).toHaveLength(20)
+  it('定義済みトランジションが 23 種', () => {
+    expect(TRANSITION_DEFINITIONS).toHaveLength(23)
     expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('dissolve')
     expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('iris')
     expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('fadeWarm')
@@ -15,6 +15,9 @@ describe('transitions', () => {
     expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('petalFall')
     expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('goldenShimmer')
     expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('softWipe')
+    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('candleGlow')
+    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('dreamyBlur')
+    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('paperConfetti')
   })
 
   it('easeSmoothstep が 0〜1 を滑らかに補間する', () => {
