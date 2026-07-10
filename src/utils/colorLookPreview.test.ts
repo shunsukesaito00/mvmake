@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { resolveColorLookPreviewUrl, buildColorLookPreviewStyle } from './colorLookPreview'
+import {
+  applyColorGradeToImageData,
+  buildColorLookPreviewStyle,
+  resolveColorLookPreviewUrl,
+} from './colorLookPreview'
 import type { Project } from '../types/project'
 import { DEFAULT_COLOR } from '../types/project'
 
@@ -41,5 +45,28 @@ describe('colorLookPreview', () => {
       { fadeIn: 2, fadeOut: 0, clipDuration: 4, localTime: 1 },
     )
     expect(style.opacity).toBe(0.5)
+  })
+
+  it('applyColorGradeToImageData が色温度をピクセルに反映する', () => {
+    const imageData = {
+      data: new Uint8ClampedArray([128, 128, 128, 255]),
+      width: 1,
+      height: 1,
+      colorSpace: 'srgb',
+    } as ImageData
+    applyColorGradeToImageData(imageData, { ...DEFAULT_COLOR, temperature: 0.3 })
+    expect(imageData.data[0]).toBeGreaterThan(128)
+    expect(imageData.data[2]).toBeLessThan(128)
+  })
+
+  it('applyColorGradeToImageData がトーンカーブをピクセルに反映する', () => {
+    const imageData = {
+      data: new Uint8ClampedArray([64, 64, 64, 255]),
+      width: 1,
+      height: 1,
+      colorSpace: 'srgb',
+    } as ImageData
+    applyColorGradeToImageData(imageData, { ...DEFAULT_COLOR, midtones: 0.4 })
+    expect(imageData.data[0]).toBeGreaterThan(64)
   })
 })

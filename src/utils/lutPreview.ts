@@ -1,9 +1,12 @@
 import type { ColorAdjustments } from '../types/project'
 import { applyLutToImageData, type ParsedCubeLut } from './cubeLut'
 import { buildColorFilterCss } from './colorFilter'
-import { applyPixelColorGradeAdjustments, isPixelColorGradeActive } from './colorPixelGrade'
-import type { ColorLookPreviewFade } from './colorLookPreview'
-import { getColorLookPreviewOpacity } from './colorLookPreview'
+import {
+  applyColorGradeToImageData,
+  drawColorLookPreviewFallback,
+  getColorLookPreviewOpacity,
+  type ColorLookPreviewFade,
+} from './colorLookPreview'
 
 export const LUT_PREVIEW_MAX_WIDTH = 320
 
@@ -32,13 +35,7 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 }
 
 export function drawLutPreviewFallback(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-  const gradient = ctx.createLinearGradient(0, 0, width, height)
-  gradient.addColorStop(0, '#f5e6d3')
-  gradient.addColorStop(0.35, '#d4a574')
-  gradient.addColorStop(0.7, '#8b6f5c')
-  gradient.addColorStop(1, '#3d2c29')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, width, height)
+  drawColorLookPreviewFallback(ctx, width, height)
 }
 
 export function applyGradedPixelsToImageData(
@@ -48,9 +45,7 @@ export function applyGradedPixelsToImageData(
   color: ColorAdjustments,
 ): void {
   applyLutToImageData(imageData, lut, lutIntensity)
-  if (isPixelColorGradeActive(color)) {
-    applyPixelColorGradeAdjustments(imageData, color)
-  }
+  applyColorGradeToImageData(imageData, color)
 }
 
 export async function renderLutPreviewCanvas(

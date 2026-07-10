@@ -573,6 +573,7 @@ test('色調補正: カラールックプリセットを適用できる', async 
   await clickTimelineClip(page, 'photo.png')
 
   await expect(page.getByLabel('カラールックプレビュー')).toBeVisible()
+  await expect(page.getByLabel('カラールックプレビュー').locator('canvas')).toBeVisible()
   await page.getByRole('button', { name: 'フィルム風ルック', exact: true }).click()
   await expect(page.getByText('「フィルム風」ルックを適用しました')).toBeVisible()
   await expect(page.getByRole('button', { name: 'フィルム風ルック', exact: true })).toHaveAttribute('aria-pressed', 'true')

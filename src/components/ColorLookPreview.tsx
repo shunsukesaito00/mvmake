@@ -1,12 +1,60 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ColorAdjustments } from '../types/project'
 import { COLOR_LOOK_PRESETS } from '../utils/colorLooks'
 import type { ColorLookPreviewFade } from '../utils/colorLookPreview'
-import { buildColorLookPreviewStyle } from '../utils/colorLookPreview'
+import {
+  COLOR_LOOK_PREVIEW_MAX_WIDTH,
+  COLOR_LOOK_SWATCH_MAX_WIDTH,
+  renderColorGradePreviewCanvas,
+} from '../utils/colorLookPreview'
 
-const FALLBACK_PREVIEW_STYLE = {
-  backgroundImage:
-    'linear-gradient(135deg, #f5e6d3 0%, #d4a574 35%, #8b6f5c 70%, #3d2c29 100%)',
+interface CanvasProps {
+  previewImageUrl?: string
+  color: ColorAdjustments
+  previewFade?: ColorLookPreviewFade
+  maxWidth: number
+  className?: string
+  ariaHidden?: boolean
+}
+
+function ColorLookPreviewCanvas({
+  previewImageUrl,
+  color,
+  previewFade,
+  maxWidth,
+  className = 'h-full w-full',
+  ariaHidden,
+}: CanvasProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    let cancelled = false
+
+    void (async () => {
+      await renderColorGradePreviewCanvas(canvas, {
+        imageUrl: previewImageUrl,
+        color,
+        fade: previewFade,
+        maxWidth,
+      })
+      if (cancelled) return
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [previewImageUrl, color, previewFade, maxWidth])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={className}
+      aria-hidden={ariaHidden}
+    />
+  )
 }
 
 interface Props {
@@ -26,24 +74,18 @@ export function ColorLookPreview({
   activePresetId,
   onHoverPreset,
 }: Props) {
-  const mainStyle = buildColorLookPreviewStyle(previewColor, previewFade)
-
   return (
     <div className="space-y-2">
       <div
         className="relative aspect-video overflow-hidden rounded-lg ring-1 ring-border"
         aria-label="カラールックプレビュー"
       >
-        {previewImageUrl ? (
-          <img
-            src={previewImageUrl}
-            alt=""
-            className="h-full w-full object-cover"
-            style={{ filter: mainStyle.filter, opacity: mainStyle.opacity }}
-          />
-        ) : (
-          <div className="h-full w-full" style={{ ...FALLBACK_PREVIEW_STYLE, filter: mainStyle.filter, opacity: mainStyle.opacity }} />
-        )}
+        <ColorLookPreviewCanvas
+          previewImageUrl={previewImageUrl}
+          color={previewColor}
+          previewFade={previewFade}
+          maxWidth={COLOR_LOOK_PREVIEW_MAX_WIDTH}
+        />
         {previewLabel && (
           <span className="absolute right-1.5 bottom-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[9px] text-white/90">
             {previewLabel}
@@ -51,35 +93,29 @@ export function ColorLookPreview({
         )}
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {COLOR_LOOK_PRESETS.map((preset) => {
-          const swatchStyle = buildColorLookPreviewStyle(preset.color, previewFade)
-          return (
-            <button
-              key={`swatch-${preset.id}`}
-              type="button"
-              aria-label={`${preset.label}ルックのプレビュー`}
-              title={preset.description}
-              onMouseEnter={() => onHoverPreset(preset.id)}
-              onMouseLeave={() => onHoverPreset(null)}
-              onFocus={() => onHoverPreset(preset.id)}
-              onBlur={() => onHoverPreset(null)}
-              className={`h-8 w-11 overflow-hidden rounded-md ring-1 transition-all ${
-                activePresetId === preset.id ? 'ring-accent/60' : 'ring-border hover:ring-accent/30'
-              }`}
-            >
-              {previewImageUrl ? (
-                <img
-                  src={previewImageUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  style={{ filter: swatchStyle.filter, opacity: swatchStyle.opacity }}
-                />
-              ) : (
-                <div className="h-full w-full" style={{ ...FALLBACK_PREVIEW_STYLE, filter: swatchStyle.filter, opacity: swatchStyle.opacity }} />
-              )}
-            </button>
-          )
-        })}
+        {COLOR_LOOK_PRESETS.map((preset) => (
+          <button
+            key={`swatch-${preset.id}`}
+            type="button"
+            aria-label={`${preset.label}ルックのプレビュー`}
+            title={preset.description}
+            onMouseEnter={() => onHoverPreset(preset.id)}
+            onMouseLeave={() => onHoverPreset(null)}
+            onFocus={() => onHoverPreset(preset.id)}
+            onBlur={() => onHoverPreset(null)}
+            className={`h-8 w-11 overflow-hidden rounded-md ring-1 transition-all ${
+              activePresetId === preset.id ? 'ring-accent/60' : 'ring-border hover:ring-accent/30'
+            }`}
+          >
+            <ColorLookPreviewCanvas
+              previewImageUrl={previewImageUrl}
+              color={preset.color}
+              previewFade={previewFade}
+              maxWidth={COLOR_LOOK_SWATCH_MAX_WIDTH}
+              ariaHidden
+            />
+          </button>
+        ))}
       </div>
     </div>
   )
