@@ -241,10 +241,78 @@ describe('splitClipAt', () => {
     expect(clips[1].audio.volumeKeyframes?.[1].volume).toBe(0.5)
   })
 
+  it('splits speed keyframes across both clips', () => {
+    setProject(makeProject([videoClip('c1', 0, 4, {
+      speedKeyframes: [
+        { id: 's1', time: 0, speed: 0.5 },
+        { id: 's2', time: 2, speed: 2 },
+        { id: 's3', time: 4, speed: 1 },
+      ],
+    })]))
+
+    useProjectStore.getState().splitClipAt('c1', 2)
+
+    const clips = getTrackClips(TRACK_V1) as VideoClip[]
+    expect(clips[0].speedKeyframes?.map((kf) => kf.time)).toEqual([0, 2])
+    expect(clips[1].speedKeyframes?.map((kf) => kf.time)).toEqual([0, 2])
+    expect(clips[1].speedKeyframes?.[1].speed).toBe(1)
+  })
+
   it('does nothing when split point is outside the clip', () => {
     setProject(makeProject([videoClip('c1', 0, 4)]))
     useProjectStore.getState().splitClipAt('c1', 5)
     expect(getTrackClips(TRACK_V1)).toHaveLength(1)
+  })
+})
+
+describe('slipSelectedClip with keyframes', () => {
+  it('preserves transform keyframes when slipping video', () => {
+    const kfs = [{ id: 'kf1', time: 0.5, x: 0.2, y: 0.5, scale: 1, rotation: 0, opacity: 1 }]
+    setProject(makeProject(
+      [videoClip('c1', 0, 4, { sourceStart: 2, transformKeyframes: kfs })],
+      [videoAsset('media-v1', 30)],
+    ))
+    useProjectStore.setState({ selectedClipId: 'c1' })
+
+    expect(useProjectStore.getState().slipSelectedClip(1)).toBe(true)
+
+    const clip = getTrackClips(TRACK_V1)[0] as VideoClip
+    expect(clip.sourceStart).toBe(3)
+    expect(clip.transformKeyframes).toEqual(kfs)
+  })
+})
+
+describe('slideSelectedClip with keyframes', () => {
+  it('preserves transform keyframes on selected clip', () => {
+    const kfs = [{ id: 'kf1', time: 0.5, x: 0.3, y: 0.5, scale: 1, rotation: 0, opacity: 1 }]
+    setProject(makeProject([
+      videoClip('c1', 0, 4),
+      videoClip('c2', 4, 2, { transformKeyframes: kfs }),
+      videoClip('c3', 6, 3),
+    ], [videoAsset('media-v1', 30)]))
+    useProjectStore.setState({ selectedClipId: 'c2' })
+
+    expect(useProjectStore.getState().slideSelectedClip(0.5)).toBe(true)
+
+    const clip = getTrackClips(TRACK_V1).find((c) => c.id === 'c2') as VideoClip
+    expect(clip.transformKeyframes).toEqual(kfs)
+    expect(clip.startTime).toBe(4.5)
+  })
+})
+
+describe('applyRippleTrimOnTrack with keyframes', () => {
+  it('preserves transform keyframes when shifting subsequent clips', () => {
+    const kfs = [{ id: 'kf1', time: 1, x: 0.2, y: 0.5, scale: 1, rotation: 0, opacity: 1 }]
+    setProject(makeProject([
+      videoClip('c1', 0, 4),
+      videoClip('c2', 4, 3, { transformKeyframes: kfs }),
+    ]))
+
+    useProjectStore.getState().applyRippleTrimOnTrack(TRACK_V1, 'c1', 4, -1)
+
+    const clip = getTrackClips(TRACK_V1).find((c) => c.id === 'c2') as VideoClip
+    expect(clip.startTime).toBe(3)
+    expect(clip.transformKeyframes).toEqual(kfs)
   })
 })
 
