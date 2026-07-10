@@ -41,6 +41,21 @@ describe('colorLookPresetFile', () => {
     expect(items[0].color.brightness).toBeCloseTo(0.08)
   })
 
+  it('rgbCurves 付きプリセットが往復できる', () => {
+    const colorWithRgb = {
+      ...sampleColor,
+      rgbCurves: {
+        ...DEFAULT_COLOR.rgbCurves,
+        r: DEFAULT_COLOR.rgbCurves.r.map((point) => (
+          point.x === 0.5 ? { ...point, y: 0.65 } : { ...point }
+        )),
+      },
+    }
+    const preset = buildUserColorLookPreset('RGB Look', colorWithRgb)
+    const items = parseExportedColorLookPresetFile(buildExportedColorLookPresetFile([preset]))
+    expect(items[0].color.rgbCurves.r.find((p) => p.x === 0.5)?.y).toBeCloseTo(0.65)
+  })
+
   it('インポート時に名前の重複を解決する', () => {
     const item = { name: 'My Look', color: sampleColor }
     const first = colorLookPresetFromImportedItem(item, [])

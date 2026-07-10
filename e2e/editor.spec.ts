@@ -595,6 +595,46 @@ test('色調補正: カラールックプリセットを JSON エクスポート
   await expect(page.getByRole('button', { name: 'E2EColorLookルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
 
+test('色調補正: RGB カーブ変更で組み込みルックの選択が解除される', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-look-photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('slider', { name: 'R カーブ 50%' }).fill('0.7')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('色調補正: RGB カーブ付きルックを保存して再適用できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-save-photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-save-photo.png')
+
+  await page.getByRole('button', { name: 'フィルム風ルック', exact: true }).click()
+  await page.getByRole('slider', { name: 'R カーブ 50%' }).fill('0.65')
+  await page.getByLabel('ルックプリセット名').fill('E2ERgbLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2ERgbLook」ルックを保存しました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  const savedButton = page.getByRole('button', { name: 'E2ERgbLookルック', exact: true })
+  await savedButton.click()
+  await expect(page.getByText('「E2ERgbLook」ルックを適用しました')).toBeVisible()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'フィルム風ルック', exact: true })).toHaveAttribute('aria-pressed', 'false')
+})
+
 test('映像フェード: 画像クリップにフェードインを設定できる', async ({ page }) => {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',

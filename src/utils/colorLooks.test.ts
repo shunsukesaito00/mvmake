@@ -14,6 +14,26 @@ describe('colorLooks', () => {
     )).toBe(true)
   })
 
+  it('rgbCurves が異なれば一致しない', () => {
+    const film = COLOR_LOOK_PRESETS.find((p) => p.id === 'film')!.color
+    const withRgbCurve = {
+      ...film,
+      rgbCurves: {
+        ...film.rgbCurves,
+        r: film.rgbCurves.r.map((point) => (
+          point.x === 0.5 ? { ...point, y: 0.7 } : { ...point }
+        )),
+      },
+    }
+    expect(colorAdjustmentsEqual(film, withRgbCurve)).toBe(false)
+    expect(matchColorLookPreset(withRgbCurve)).toBeNull()
+  })
+
+  it('rgbCurves まで一致すればマッチする', () => {
+    const film = COLOR_LOOK_PRESETS.find((p) => p.id === 'film')!.color
+    expect(matchColorLookPreset({ ...film })).toBe('film')
+  })
+
   it('matchColorLookPreset が一致プリセット id を返す', () => {
     expect(matchColorLookPreset(COLOR_LOOK_PRESETS[2].color)).toBe('film')
     expect(matchColorLookPreset(COLOR_LOOK_PRESETS.find((p) => p.id === 'wedding-warm')!.color)).toBe('wedding-warm')

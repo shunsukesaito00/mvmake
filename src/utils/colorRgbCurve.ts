@@ -47,6 +47,14 @@ export function rgbCurveChannelEqual(a: RgbCurveChannelPoints, b: RgbCurveChanne
   ))
 }
 
+export function rgbCurvesEqual(a: RgbCurves, b: RgbCurves): boolean {
+  return (
+    rgbCurveChannelEqual(a.r, b.r)
+    && rgbCurveChannelEqual(a.g, b.g)
+    && rgbCurveChannelEqual(a.b, b.b)
+  )
+}
+
 export function isRgbCurveChannelActive(points: RgbCurveChannelPoints): boolean {
   return points.some((point) => Math.abs(point.y - point.x) > EPSILON)
 }

@@ -1,6 +1,7 @@
 import type { ColorAdjustments } from '../types/project'
 import type { UserColorLookPreset } from '../types/colorLookPreset'
-import { DEFAULT_COLOR } from '../types/project'
+import { DEFAULT_COLOR, normalizeRgbCurves } from '../types/project'
+import { rgbCurvesEqual } from './colorRgbCurve'
 
 export interface ColorLookPreset {
   id: string
@@ -34,7 +35,8 @@ export function colorAdjustmentsEqual(a: ColorAdjustments, b: ColorAdjustments):
     Math.abs((a.tint ?? 0) - (b.tint ?? 0)) < EPSILON &&
     Math.abs((a.shadows ?? 0) - (b.shadows ?? 0)) < EPSILON &&
     Math.abs((a.midtones ?? 0) - (b.midtones ?? 0)) < EPSILON &&
-    Math.abs((a.highlights ?? 0) - (b.highlights ?? 0)) < EPSILON
+    Math.abs((a.highlights ?? 0) - (b.highlights ?? 0)) < EPSILON &&
+    rgbCurvesEqual(normalizeRgbCurves(a.rgbCurves), normalizeRgbCurves(b.rgbCurves))
   )
 }
 
