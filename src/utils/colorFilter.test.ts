@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_COLOR } from '../types/project'
 import { buildColorFilterCss } from './colorFilter'
 
 describe('colorFilter', () => {
-  const neutral = { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 }
+  const neutral = { ...DEFAULT_COLOR }
 
   it('buildColorFilterCss は補正なしで undefined', () => {
     expect(buildColorFilterCss(neutral)).toBeUndefined()

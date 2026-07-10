@@ -1331,3 +1331,17 @@ test('色調補正: HSL の色温度を設定できる', async ({ page }) => {
   await temperature.fill('0.4')
   await expect(temperature).toHaveValue('0.4')
 })
+
+test('色調補正: トーンカーブのミッドトーンを設定できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'tone-photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'tone-photo.png')
+
+  const midtones = page.getByRole('slider', { name: 'ミッドトーン' })
+  await midtones.fill('0.3')
+  await expect(midtones).toHaveValue('0.3')
+})

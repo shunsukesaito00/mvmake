@@ -154,6 +154,12 @@ export function ColorAdjustmentsSection({
         </div>
       )}
       <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border">
+        <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">トーンカーブ</p>
+        <Slider label="シャドウ" value={color?.shadows ?? DEFAULT_COLOR.shadows} min={-1} max={1} step={0.05} onChange={(v) => updateField('shadows', v)} />
+        <Slider label="ミッドトーン" value={color?.midtones ?? DEFAULT_COLOR.midtones} min={-1} max={1} step={0.05} onChange={(v) => updateField('midtones', v)} />
+        <Slider label="ハイライト" value={color?.highlights ?? DEFAULT_COLOR.highlights} min={-1} max={1} step={0.05} onChange={(v) => updateField('highlights', v)} />
+      </div>
+      <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border">
         <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">HSL 補正</p>
         <Slider label="色相" value={color?.hue ?? DEFAULT_COLOR.hue} min={-1} max={1} step={0.01} format={(v) => `${Math.round(v * 180)}°`} onChange={(v) => updateField('hue', v)} />
         <Slider label="色温度" value={color?.temperature ?? DEFAULT_COLOR.temperature} min={-1} max={1} step={0.05} format={(v) => (v < 0 ? '寒色' : v > 0 ? '暖色' : '標準')} onChange={(v) => updateField('temperature', v)} />

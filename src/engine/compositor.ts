@@ -19,7 +19,7 @@ import { getVideoSourceTimeAtLocalTime, getSpeedAtLocalTime } from '../utils/spe
 import { getAdjustmentColorForVisualTrack, mergeClipColorWithAdjustment } from '../utils/colorAdjustments'
 import { buildColorFilterCss } from '../utils/colorFilter'
 import { applyLutToImageData, getParsedLutById } from '../utils/cubeLut'
-import { applyPixelHslAdjustments, isPixelHslActive } from '../utils/colorHsl'
+import { applyPixelColorGradeAdjustments, isPixelColorGradeActive } from '../utils/colorPixelGrade'
 import { getAdjustmentLutForVisualTrack, resolveClipLut } from '../utils/lutResolve'
 import type { ResolvedLut } from '../utils/lutResolve'
 import { easeSmoothstep } from '../utils/transitions'
@@ -414,7 +414,7 @@ function drawMediaClip(
 
     if (!source || drawW <= 0 || drawH <= 0) return
 
-    const needsPixelGrade = (parsedLut && resolvedLut) || isPixelHslActive(effectiveColor)
+    const needsPixelGrade = (parsedLut && resolvedLut) || isPixelColorGradeActive(effectiveColor)
     if (needsPixelGrade) {
       const temp = getTempCanvas(drawW, drawH)
       const tctx = temp.getContext('2d', { willReadFrequently: true })
@@ -426,8 +426,8 @@ function drawMediaClip(
       if (parsedLut && resolvedLut) {
         applyLutToImageData(imageData, parsedLut, resolvedLut.intensity)
       }
-      if (isPixelHslActive(effectiveColor)) {
-        applyPixelHslAdjustments(imageData, effectiveColor)
+      if (isPixelColorGradeActive(effectiveColor)) {
+        applyPixelColorGradeAdjustments(imageData, effectiveColor)
       }
       tctx.putImageData(imageData, 0, 0)
       applyColorFilter(ctx, effectiveColor, blurPx)

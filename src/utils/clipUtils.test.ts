@@ -14,6 +14,7 @@ import {
   getDuckingIntervals,
 } from './clipUtils'
 import type { MediaAsset, Project, Track, VideoClip, ImageClip, Clip } from '../types/project'
+import { DEFAULT_COLOR } from '../types/project'
 
 const videoAsset: MediaAsset = {
   id: 'v1', name: 'test.mp4', type: 'video', blob: new Blob(), url: 'blob:test', duration: 10,
@@ -27,7 +28,7 @@ const baseVideoClip: VideoClip = {
   startTime: 0, duration: 5, sourceStart: 0, sourceDuration: 5,
   transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
   audio: { volume: 1, fadeIn: 0, fadeOut: 0 },
-  speed: 1, color: { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 },
+  speed: 1, color: { ...DEFAULT_COLOR },
   crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
   fadeIn: 0,
   fadeOut: 0,
@@ -65,7 +66,7 @@ describe('clampTrimEnd', () => {
       startTime: 0, duration: 5, sourceStart: 0, sourceDuration: 5,
       transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
       kenBurns: { enabled: false, startScale: 1, endScale: 1, startX: 0.5, startY: 0.5, endX: 0.5, endY: 0.5 },
-      color: { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 },
+      color: { ...DEFAULT_COLOR },
       crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
       fadeIn: 0,
       fadeOut: 0,
@@ -122,7 +123,7 @@ describe('computeMediaReplacement', () => {
       startTime: 2, duration: 6, sourceStart: 0, sourceDuration: 6,
       transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
       kenBurns: { enabled: false, startScale: 1, endScale: 1, startX: 0.5, startY: 0.5, endX: 0.5, endY: 0.5 },
-      color: { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 },
+      color: { ...DEFAULT_COLOR },
       crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
       fadeIn: 0,
       fadeOut: 0,
@@ -161,7 +162,7 @@ describe('buildCrossVisualClip', () => {
     startTime: 2, duration: 6, sourceStart: 0, sourceDuration: 6,
     transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
     kenBurns: { enabled: false, startScale: 1, endScale: 1, startX: 0.5, startY: 0.5, endX: 0.5, endY: 0.5 },
-    color: { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 },
+    color: { ...DEFAULT_COLOR },
     crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
     fadeIn: 0,
     fadeOut: 0,
@@ -204,7 +205,7 @@ describe('canReplaceClipWithMedia', () => {
     startTime: 0, duration: 4, sourceStart: 0, sourceDuration: 4,
     transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
     kenBurns: { enabled: false, startScale: 1, endScale: 1, startX: 0.5, startY: 0.5, endX: 0.5, endY: 0.5 },
-    color: { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 },
+    color: { ...DEFAULT_COLOR },
     crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
     fadeIn: 0,
     fadeOut: 0,

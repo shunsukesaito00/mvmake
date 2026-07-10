@@ -13,6 +13,9 @@ export function mergeColorAdjustments(base: ColorAdjustments, overlay: ColorAdju
     hue: base.hue + overlay.hue,
     temperature: base.temperature + overlay.temperature,
     tint: base.tint + overlay.tint,
+    shadows: base.shadows + (overlay.shadows ?? 0),
+    midtones: base.midtones + (overlay.midtones ?? 0),
+    highlights: base.highlights + (overlay.highlights ?? 0),
   }
 }
 
@@ -24,6 +27,9 @@ export function isNeutralColorAdjustments(color: ColorAdjustments): boolean {
     && (color.hue ?? 0) === 0
     && (color.temperature ?? 0) === 0
     && (color.tint ?? 0) === 0
+    && (color.shadows ?? 0) === 0
+    && (color.midtones ?? 0) === 0
+    && (color.highlights ?? 0) === 0
   )
 }
 

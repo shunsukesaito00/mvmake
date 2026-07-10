@@ -46,6 +46,12 @@ export interface ColorAdjustments {
   temperature: number
   /** ティント (-1=緑 〜 1=マゼンタ) */
   tint: number
+  /** シャドウ (-1〜1) */
+  shadows: number
+  /** ミッドトーン (-1〜1) */
+  midtones: number
+  /** ハイライト (-1〜1) */
+  highlights: number
 }
 
 export interface LutAsset {
@@ -331,6 +337,9 @@ export const DEFAULT_COLOR: ColorAdjustments = {
   hue: 0,
   temperature: 0,
   tint: 0,
+  shadows: 0,
+  midtones: 0,
+  highlights: 0,
 }
 
 export function normalizeColorAdjustments(color?: Partial<ColorAdjustments>): ColorAdjustments {
@@ -341,6 +350,9 @@ export function normalizeColorAdjustments(color?: Partial<ColorAdjustments>): Co
     hue: color?.hue ?? DEFAULT_COLOR.hue,
     temperature: color?.temperature ?? DEFAULT_COLOR.temperature,
     tint: color?.tint ?? DEFAULT_COLOR.tint,
+    shadows: color?.shadows ?? DEFAULT_COLOR.shadows,
+    midtones: color?.midtones ?? DEFAULT_COLOR.midtones,
+    highlights: color?.highlights ?? DEFAULT_COLOR.highlights,
   }
 }
 

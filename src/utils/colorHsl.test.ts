@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_COLOR } from '../types/project'
 import { applyTemperatureTintToImageData, isPixelHslActive } from './colorHsl'
 
 describe('isPixelHslActive', () => {
   it('is false for neutral color', () => {
-    expect(isPixelHslActive({ brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 })).toBe(false)
+    expect(isPixelHslActive({ ...DEFAULT_COLOR })).toBe(false)
   })
 
   it('is true when temperature is set', () => {
-    expect(isPixelHslActive({ brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0.2, tint: 0 })).toBe(true)
+    expect(isPixelHslActive({ ...DEFAULT_COLOR, temperature: 0.2 })).toBe(true)
   })
 })
 
