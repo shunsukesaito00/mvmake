@@ -1,4 +1,5 @@
 import type { ColorAdjustments } from '../types/project'
+import type { UserColorLookPreset } from '../types/colorLookPreset'
 import { DEFAULT_COLOR } from '../types/project'
 
 export interface ColorLookPreset {
@@ -37,7 +38,12 @@ export function colorAdjustmentsEqual(a: ColorAdjustments, b: ColorAdjustments):
   )
 }
 
-export function matchColorLookPreset(color: ColorAdjustments): string | null {
-  const match = COLOR_LOOK_PRESETS.find((preset) => colorAdjustmentsEqual(color, preset.color))
-  return match?.id ?? null
+export function matchColorLookPreset(
+  color: ColorAdjustments,
+  userPresets: UserColorLookPreset[] = [],
+): string | null {
+  const builtIn = COLOR_LOOK_PRESETS.find((preset) => colorAdjustmentsEqual(color, preset.color))
+  if (builtIn) return builtIn.id
+  const user = userPresets.find((preset) => colorAdjustmentsEqual(color, preset.color))
+  return user?.id ?? null
 }

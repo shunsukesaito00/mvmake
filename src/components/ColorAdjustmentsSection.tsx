@@ -1,14 +1,16 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { LutAsset } from '../types/project'
 import { DEFAULT_LUT_INTENSITY } from '../types/project'
 import type { ColorAdjustments } from '../types/project'
 import { DEFAULT_COLOR } from '../types/project'
+import type { UserColorLookPreset } from '../types/colorLookPreset'
 import { COLOR_LOOK_PRESETS, matchColorLookPreset } from '../utils/colorLooks'
 import type { ColorLookPreviewFade } from '../utils/colorLookPreview'
 import { Slider } from './ui'
 import { useToastStore } from '../store/toastStore'
 import { useProjectStore } from '../store/projectStore'
 import { ColorLookPreview, useColorLookHoverPreview } from './ColorLookPreview'
+import { ColorLookPresetsSection } from './ColorLookPresetsSection'
 import { LutPreview, useLutHoverPreview } from './LutPreview'
 import { RgbCurveGraph } from './RgbCurveGraph'
 
@@ -36,7 +38,8 @@ export function ColorAdjustmentsSection({
   const showToast = useToastStore((s) => s.showToast)
   const importLutFile = useProjectStore((s) => s.importLutFile)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const activePresetId = matchColorLookPreset(color)
+  const [userPresets, setUserPresets] = useState<UserColorLookPreset[]>([])
+  const activePresetId = matchColorLookPreset(color, userPresets)
   const { setHoverPresetId, previewColor, previewLabel } = useColorLookHoverPreview(color)
   const { setHoverLutId, previewLutId, previewLabel: lutPreviewLabel } = useLutHoverPreview(lutId, lutAssets)
 
@@ -45,6 +48,11 @@ export function ColorAdjustmentsSection({
     if (!preset) return
     onChange({ ...preset.color }, true)
     if (preset.id !== 'none') showToast(`「${preset.label}」ルックを適用しました`, 'success')
+  }
+
+  const applyUserPreset = (preset: UserColorLookPreset) => {
+    onChange({ ...preset.color }, true)
+    showToast(`「${preset.name}」ルックを適用しました`, 'success')
   }
 
   const updateField = (field: keyof ColorAdjustments, value: number) => {
@@ -102,6 +110,12 @@ export function ColorAdjustmentsSection({
           ))}
         </div>
       </div>
+      <ColorLookPresetsSection
+        color={color}
+        activePresetId={activePresetId}
+        onApply={applyUserPreset}
+        onPresetsChange={setUserPresets}
+      />
       {onLutChange && (
         <div className="space-y-2 rounded-lg bg-surface-3/60 p-2.5 ring-1 ring-border">
           <div className="flex items-center justify-between gap-2">

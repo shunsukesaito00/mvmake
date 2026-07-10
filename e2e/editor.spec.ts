@@ -508,6 +508,41 @@ test('色調補正: カラールックプリセットを適用できる', async 
   await expect(page.getByRole('button', { name: 'フィルム風ルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
 
+test('色調補正: カラールックプリセットを JSON エクスポート/インポートできる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'photo.png')
+
+  await page.getByRole('button', { name: 'フィルム風ルック', exact: true }).click()
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EColorLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EColorLook」ルックを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EColorLookをエクスポート' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toContain('.fable-color-look-preset.json')
+
+  const exportPath = path.join(test.info().outputDir, 'e2e-color-look-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.getByRole('button', { name: 'E2EColorLookを削除' }).click()
+  await expect(page.getByRole('button', { name: 'E2EColorLookルック', exact: true })).toBeHidden()
+
+  await page.getByLabel('カラールックプリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EColorLook」ルックプリセットをインポートしました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await page.getByRole('button', { name: 'E2EColorLookルック', exact: true }).click()
+  await expect(page.getByText('「E2EColorLook」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'E2EColorLookルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
+
 test('映像フェード: 画像クリップにフェードインを設定できる', async ({ page }) => {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
