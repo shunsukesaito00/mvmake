@@ -24,7 +24,7 @@
 | `src/engine/demoProject.ts` | `createDemoProject()`。Canvas 生成画像+テキストのサンプルプロジェクト(オンボーディングから起動) |
 | `src/persistence/db.ts` | IndexedDB への保存・復元・プロジェクト一覧/複製/削除 |
 | `src/persistence/projectFile.ts` | `.fable` ファイル(JSON+メディアZIP)のエクスポート/インポート |
-| `src/hooks/` | `usePlayback`(再生ループ)、`useAutoSave` / `useProjectRestore`、`usePanelSize`(リサイズ可能レイアウト) |
+| `src/hooks/` | `usePlayback`(再生ループ・`PlaybackProvider` 経由で単一マウント)、`useAutoSave` / `useProjectRestore`、`usePanelSize`(リサイズ可能レイアウト) |
 | `src/utils/` | `createId()`(uuid)、`formatTime` / `snapTime` / `getProjectDuration` |
 | `src/layout/AppLayout.tsx` | 全体レイアウト。メディア(左)・プレビュー(中央)・インスペクタ(右)・タイムライン(下)の 4 ペイン |
 | `src/panels/` | `MediaPanel` / `PreviewPanel` / `InspectorPanel` / `TimelinePanel` |

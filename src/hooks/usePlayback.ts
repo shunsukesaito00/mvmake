@@ -1,12 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { audioEngine } from '../engine/audioEngine'
-import { preloadMedia, syncVideosForPlayback } from '../engine/compositor'
+import { preloadMedia, syncVideosForPlayback, pauseAllVideos } from '../engine/compositor'
 
-export function usePlayback(): {
+export type PlaybackControls = {
   togglePlay: () => void
   seek: (time: number) => void
-} {
+  subscribeFrame: (listener: () => void) => () => void
+}
+
+export function usePlayback(): PlaybackControls {
   // currentTime は購読しない(毎フレーム変わるため、購読すると利用側パネル全体が再レンダリングされる)
   const project = useProjectStore((s) => s.project)
   const isPlaying = useProjectStore((s) => s.isPlaying)
@@ -19,6 +22,7 @@ export function usePlayback(): {
   const playingRef = useRef(isPlaying)
   const projectRef = useRef(project)
   const loopRef = useRef(loopPlayback)
+  const frameListenersRef = useRef(new Set<() => void>())
 
   useEffect(() => {
     projectRef.current = project
@@ -28,29 +32,52 @@ export function usePlayback(): {
   useEffect(() => { playingRef.current = isPlaying }, [isPlaying])
   useEffect(() => { loopRef.current = loopPlayback }, [loopPlayback])
 
+  const notifyFrame = useCallback(() => {
+    for (const listener of frameListenersRef.current) listener()
+  }, [])
+
+  const subscribeFrame = useCallback((listener: () => void) => {
+    frameListenersRef.current.add(listener)
+    return () => { frameListenersRef.current.delete(listener) }
+  }, [])
+
+  const stopPlayback = useCallback((time: number) => {
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = 0
+    audioEngine.pause(time)
+    pauseAllVideos(projectRef.current)
+    syncVideosForPlayback(projectRef.current, time, false)
+  }, [])
+
   const tick = useCallback(() => {
+    if (!playingRef.current) return
+
     const { start, end } = getPlaybackRange()
     const time = audioEngine.getCurrentTime()
 
     if (time >= end) {
       if (loopRef.current && (useProjectStore.getState().inPoint !== null || useProjectStore.getState().outPoint !== null)) {
+        if (!playingRef.current) return
         setCurrentTime(start)
         audioEngine.play(projectRef.current, start)
         syncVideosForPlayback(projectRef.current, start, true)
+        notifyFrame()
         rafRef.current = requestAnimationFrame(tick)
         return
       }
       setIsPlaying(false)
       setCurrentTime(start)
-      audioEngine.stop()
-      syncVideosForPlayback(projectRef.current, start, false)
+      stopPlayback(start)
+      notifyFrame()
       return
     }
 
     setCurrentTime(time)
     syncVideosForPlayback(projectRef.current, time, true)
+    notifyFrame()
+    if (!playingRef.current) return
     rafRef.current = requestAnimationFrame(tick)
-  }, [getPlaybackRange, setCurrentTime, setIsPlaying])
+  }, [getPlaybackRange, setCurrentTime, setIsPlaying, notifyFrame, stopPlayback])
 
   useEffect(() => {
     const now = useProjectStore.getState().currentTime
@@ -61,12 +88,14 @@ export function usePlayback(): {
       syncVideosForPlayback(projectRef.current, from, true)
       rafRef.current = requestAnimationFrame(tick)
     } else {
-      cancelAnimationFrame(rafRef.current)
-      audioEngine.pause(now)
-      syncVideosForPlayback(projectRef.current, now, false)
+      stopPlayback(now)
+      notifyFrame()
     }
-    return () => cancelAnimationFrame(rafRef.current)
-  }, [isPlaying, tick, getPlaybackRange])
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = 0
+    }
+  }, [isPlaying, tick, getPlaybackRange, stopPlayback, notifyFrame])
 
   const togglePlay = useCallback(() => {
     const { start, end } = getPlaybackRange()
@@ -85,9 +114,10 @@ export function usePlayback(): {
       audioEngine.pause(clamped)
       syncVideosForPlayback(projectRef.current, clamped, false)
     }
-  }, [getPlaybackRange, setCurrentTime])
+    notifyFrame()
+  }, [getPlaybackRange, setCurrentTime, notifyFrame])
 
   useEffect(() => () => audioEngine.dispose(), [])
 
-  return { togglePlay, seek }
+  return { togglePlay, seek, subscribeFrame }
 }

@@ -1039,6 +1039,46 @@ test('ショートカット: J/K/L で戻る・停止・再生', async ({ page }
   expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
 })
 
+test('プレビュー: 動画クリップを配置して再生・停止できる', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'playback.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('playback.webm')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  const transport = page.locator('main input[type="range"]').first()
+  const before = parseFloat(await transport.inputValue())
+
+  await page.keyboard.press('Space')
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(before + 0.05)
+
+  await page.keyboard.press('Space')
+  await expect.poll(async () => {
+    const paused = parseFloat(await transport.inputValue())
+    await page.waitForTimeout(400)
+    return Math.abs(parseFloat(await transport.inputValue()) - paused)
+  }, { timeout: 3000 }).toBeLessThan(0.05)
+
+  await page.getByRole('button', { name: '再生 (Space)' }).click()
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(before + 0.05)
+
+  await page.getByRole('button', { name: '再生 (Space)' }).click()
+  const atPause = parseFloat(await transport.inputValue())
+  await page.waitForTimeout(400)
+  expect(Math.abs(parseFloat(await transport.inputValue()) - atPause)).toBeLessThan(0.05)
+
+  await page.keyboard.press('l')
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(atPause + 0.05)
+
+  await page.keyboard.press('k')
+  const atStop = parseFloat(await transport.inputValue())
+  await page.waitForTimeout(400)
+  expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
+})
+
 test('ショートカット: スライド編集で隣接クリップが連動', async ({ page }) => {
   await addOpeningText(page)
   await page.getByTitle('テキスト').click()

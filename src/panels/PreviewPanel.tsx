@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { renderFrame, seekVideosToTime } from '../engine/compositor'
-import { usePlayback } from '../hooks/usePlayback'
+import { usePlaybackControls } from '../contexts/PlaybackContext'
 import { PanelHeader, IconButton, Timecode } from '../components/ui'
 import { Icons } from '../components/icons'
 import { PreviewOverlay } from '../components/PreviewOverlay'
@@ -23,27 +23,27 @@ export function PreviewPanel() {
   const setShowSafeAreas = useProjectStore((s) => s.setShowSafeAreas)
   const getProjectDuration = useProjectStore((s) => s.getProjectDuration)
 
-  const { togglePlay, seek } = usePlayback()
+  const { togglePlay, seek, subscribeFrame } = usePlaybackControls()
   const duration = getProjectDuration()
   const fps = project.fps
 
-  const draw = useCallback(async () => {
+  const drawAtTime = useCallback(async (time: number, playing: boolean) => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    if (!isPlaying) await seekVideosToTime(project, currentTime)
-    await renderFrame(ctx, project, currentTime, { showSafeAreas })
-  }, [project, currentTime, isPlaying, showSafeAreas])
+    if (!playing) await seekVideosToTime(project, time)
+    await renderFrame(ctx, project, time, { showSafeAreas, playing })
+  }, [project, showSafeAreas])
 
-  useEffect(() => { draw() }, [draw])
+  useEffect(() => subscribeFrame(() => {
+    const { currentTime: t, isPlaying: p } = useProjectStore.getState()
+    void drawAtTime(t, p)
+  }), [subscribeFrame, drawAtTime])
+
   useEffect(() => {
-    if (!isPlaying) return
-    let raf: number
-    const loop = () => { draw(); raf = requestAnimationFrame(loop) }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
-  }, [isPlaying, draw])
+    if (!isPlaying) void drawAtTime(currentTime, false)
+  }, [drawAtTime, isPlaying, currentTime])
 
   // ステージ内に収まるcanvas表示サイズをアスペクト比維持で算出(オーバーレイと共有するため明示計算)
   useEffect(() => {

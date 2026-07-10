@@ -1,6 +1,6 @@
 import type { TimelineMarker } from '../types/project'
 import { useProjectStore } from '../store/projectStore'
-import { usePlayback } from '../hooks/usePlayback'
+import { usePlaybackControls } from '../contexts/PlaybackContext'
 import { Btn } from './ui'
 
 interface MarkerInspectorSectionProps {
@@ -13,7 +13,7 @@ export function MarkerInspectorSection({ marker }: MarkerInspectorSectionProps) 
   const removeMarker = useProjectStore((s) => s.removeMarker)
   const setSelectedMarkerId = useProjectStore((s) => s.setSelectedMarkerId)
   const getProjectDuration = useProjectStore((s) => s.getProjectDuration)
-  const { seek } = usePlayback()
+  const { seek } = usePlaybackControls()
 
   const duration = getProjectDuration()
   const frameStep = 1 / fps

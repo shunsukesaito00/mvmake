@@ -29,7 +29,7 @@ import { VolumeKeyframesTimeline } from '../components/VolumeKeyframesTimeline'
 import { SpeedKeyframesTimeline } from '../components/SpeedKeyframesTimeline'
 import { TransformKeyframesTimeline } from '../components/TransformKeyframesTimeline'
 import type { AudioClip, ImageClip, TextClip, VideoClip } from '../types/project'
-import { usePlayback } from '../hooks/usePlayback'
+import { usePlaybackControls } from '../contexts/PlaybackContext'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, IconButton } from '../components/ui'
 import { Icons } from '../components/icons'
@@ -113,7 +113,7 @@ export function TimelinePanel() {
   const removeMarker = useProjectStore((s) => s.removeMarker)
   const showToast = useToastStore((s) => s.showToast)
 
-  const { seek } = usePlayback()
+  const { seek } = usePlaybackControls()
   const duration = getProjectDuration()
   const timelineWidth = Math.max(duration * pixelsPerSecond + 200, 800)
   const mediaMap = new Map(mediaAssets.map((a) => [a.id, a]))

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { AppLayout } from './layout/AppLayout'
 import { ToastContainer } from './components/ToastContainer'
 import { OnboardingModal } from './components/OnboardingModal'
+import { PlaybackProvider } from './contexts/PlaybackContext'
 import { useAutoSave, useProjectRestore } from './hooks/useAutoSave'
 import { useProjectStore } from './store/projectStore'
 import { saveProject } from './persistence/db'
@@ -119,11 +120,11 @@ function App() {
   }, [])
 
   return (
-    <>
+    <PlaybackProvider>
       <AppLayout />
       <ToastContainer />
       <OnboardingModal />
-    </>
+    </PlaybackProvider>
   )
 }
 

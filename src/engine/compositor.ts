@@ -16,7 +16,7 @@ import { drawTextBackground } from '../utils/textBackground'
 import { getMediaVisualOpacityAtTime } from '../utils/visualFade'
 import { buildCanvasFontString } from '../utils/googleFonts'
 import { getTransformAtLocalTime } from '../utils/transformKeyframes'
-import { getVideoSourceTimeAtLocalTime, getSpeedAtLocalTime } from '../utils/speedKeyframes'
+import { getVideoSourceTimeAtLocalTime } from '../utils/speedKeyframes'
 import { getAdjustmentColorForVisualTrack, mergeClipColorWithAdjustment } from '../utils/colorAdjustments'
 import { buildColorFilterCss } from '../utils/colorFilter'
 import { applyLutToImageData, getParsedLutById } from '../utils/cubeLut'
@@ -440,6 +440,7 @@ function drawMediaClip(
   resolvedLut: ResolvedLut | null,
   transitionType?: string,
   transitionProgress?: number,
+  skipVideoSeek = false,
 ) {
   const localTime = time - clip.startTime
   const localProgress = clip.duration > 0 ? localTime / clip.duration : 0
@@ -474,7 +475,7 @@ function drawMediaClip(
     if (clip.type === 'video') {
       const video = getVideoElement(asset)
       const sourceTime = getVideoSourceTime(clip, localTime)
-      if (Math.abs(video.currentTime - sourceTime) > 0.05) video.currentTime = sourceTime
+      if (!skipVideoSeek && Math.abs(video.currentTime - sourceTime) > 0.05) video.currentTime = sourceTime
 
       const scale = transform.scale
       const vw = asset.width ?? video.videoWidth
@@ -647,7 +648,7 @@ export async function renderFrame(
   ctx: CanvasRenderingContext2D,
   project: Project,
   time: number,
-  options?: { showSafeAreas?: boolean },
+  options?: { showSafeAreas?: boolean; playing?: boolean },
 ): Promise<void> {
   const { width, height } = project
   ctx.fillStyle = '#000'
@@ -668,7 +669,7 @@ export async function renderFrame(
         if (asset) {
           const effectiveColor = mergeClipColorWithAdjustment(clip.color, adjustmentColor)
           const resolvedLut = resolveClipLut(clip, adjustmentLut)
-          drawMediaClip(ctx, clip, asset, time, width, height, opacity, effectiveColor, resolvedLut, transitionType, transitionProgress)
+          drawMediaClip(ctx, clip, asset, time, width, height, opacity, effectiveColor, resolvedLut, transitionType, transitionProgress, options?.playing)
         }
       } else if (clip.type === 'text') {
         drawTextClip(ctx, clip, width, height, opacity, time, adjustmentColor)
@@ -950,8 +951,17 @@ export async function seekVideosToTime(project: Project, time: number): Promise<
   await Promise.all(promises)
 }
 
-export async function syncVideosForPlayback(project: Project, time: number, playing: boolean): Promise<void> {
+export function pauseAllVideos(project: Project): void {
+  for (const asset of project.mediaAssets) {
+    if (asset.type !== 'video') continue
+    const video = getVideoElement(asset)
+    if (!video.paused) video.pause()
+  }
+}
+
+export function syncVideosForPlayback(project: Project, time: number, playing: boolean): void {
   const assetMap = getAssetMap(project)
+  const frameSlop = 1 / Math.max(project.fps, 1)
 
   for (const track of project.tracks) {
     if (track.muted) continue
@@ -961,13 +971,11 @@ export async function syncVideosForPlayback(project: Project, time: number, play
       if (!asset) continue
       const video = getVideoElement(asset)
       const inRange = time >= clip.startTime && time < clip.startTime + clip.duration
-      const speed = getSpeedAtLocalTime(clip, time - clip.startTime)
 
       if (inRange && playing) {
         const sourceTime = getVideoSourceTime(clip, time - clip.startTime)
-        if (Math.abs(video.currentTime - sourceTime) > 0.15) video.currentTime = sourceTime
-        video.playbackRate = speed
-        if (video.paused) await video.play().catch(() => {})
+        if (Math.abs(video.currentTime - sourceTime) > frameSlop) video.currentTime = sourceTime
+        if (!video.paused) video.pause()
       } else {
         if (!video.paused) video.pause()
       }
