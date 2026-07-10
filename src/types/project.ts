@@ -89,12 +89,24 @@ export interface ClipAnimation {
   duration: number
 }
 
+export interface AudioEqSettings {
+  enabled: boolean
+  /** 低域ゲイン (dB) */
+  lowGain: number
+  /** 中域ゲイン (dB) */
+  midGain: number
+  /** 高域ゲイン (dB) */
+  highGain: number
+}
+
 export interface AudioSettings {
   volume: number
   fadeIn: number
   fadeOut: number
   /** クリップ先頭からの秒数と音量(0〜2)。未設定時は volume を一定値として使用 */
   volumeKeyframes?: VolumeKeyframe[]
+  /** 3バンド EQ（低域/中域/高域）。未設定時は無効 */
+  eq?: AudioEqSettings
 }
 
 /** クリップ内ローカル時間(秒)での音量キーフレーム */
@@ -317,6 +329,13 @@ export const DEFAULT_AUDIO: AudioSettings = {
   volume: 1,
   fadeIn: 0,
   fadeOut: 0,
+}
+
+export const DEFAULT_AUDIO_EQ: AudioEqSettings = {
+  enabled: false,
+  lowGain: 0,
+  midGain: 0,
+  highGain: 0,
 }
 
 export const DEFAULT_DUCKING: DuckingSettings = {

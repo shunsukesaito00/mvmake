@@ -2,6 +2,7 @@ import type { AudioClip, MediaAsset, Project, VideoClip } from '../types/project
 import { getAudioClipsFromProject, getDuckingIntervals } from '../utils/clipUtils'
 import { scheduleVolumeAutomation } from '../utils/volumeKeyframes'
 import { getSourceOffsetAtLocalTime, scheduleSpeedAutomation } from '../utils/speedKeyframes'
+import { connectEqChain } from '../utils/audioEq'
 
 interface DuckingSchedule {
   intervals: Array<{ start: number; end: number }>
@@ -106,7 +107,9 @@ class AudioEngine {
 
     scheduleVolumeAutomation(clipGain.gain, when, localOffset, timelineDuration, clip.duration, audio)
 
-    source.connect(clipGain)
+    const eqChain = connectEqChain(this.context!, audio.eq)
+    source.connect(eqChain.input)
+    eqChain.output.connect(clipGain)
 
     if (ducking && ducking.intervals.length > 0) {
       const duckGain = this.context!.createGain()
@@ -204,7 +207,9 @@ export async function mixAudioOffline(project: Project, duration: number, sample
         scheduleSpeedAutomation(source.playbackRate, when, 0, clip.duration, videoClip!)
       }
 
-      source.connect(gain)
+      const eqChain = connectEqChain(offline, audio.eq)
+      source.connect(eqChain.input)
+      eqChain.output.connect(gain)
 
       const audioClip = !isVideo ? (clip as AudioClip) : null
       if (audioClip?.ducking?.enabled && duckingIntervals.length > 0) {

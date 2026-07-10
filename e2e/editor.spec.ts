@@ -1211,3 +1211,19 @@ test('効果タブ: 調整レイヤーを追加できる', async ({ page }) => {
   await expect(page.getByText('調整レイヤーを追加しました')).toBeVisible()
   await expect(page.locator('footer').getByText('調整レイヤー')).toBeVisible()
 })
+
+test('インスペクター: オーディオ EQ を設定できる', async ({ page }) => {
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'eq-bgm.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'eq-bgm.wav')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  await page.getByLabel('イコライザーを有効化').check()
+  await page.getByRole('slider', { name: '低域' }).fill('3')
+
+  await expect(page.getByRole('slider', { name: '低域' })).toHaveValue('3')
+  await expect(page.getByLabel('イコライザーを有効化')).toBeChecked()
+})
