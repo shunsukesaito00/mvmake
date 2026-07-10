@@ -247,6 +247,29 @@ test('タイムライン: トランスフォームキーフレームをドラッ
   await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
 })
 
+test('タイムライン: トランスフォームキーフレームのベジェハンドルをドラッグ編集できる', async ({ page }) => {
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('2')
+  await page.getByLabel('補間イージング').selectOption('bezier')
+
+  const handle = page.getByTestId('transform-bezier-handle-out-1')
+  await expect(handle).toBeVisible()
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 30, box.y - 20, { steps: 10 })
+  await page.mouse.up()
+
+  const newBox = (await handle.boundingBox())!
+  expect(newBox.y).not.toBeCloseTo(box.y, 0)
+})
+
 test('プレビュー: 不透明度ハンドルで transform キーフレームを更新できる', async ({ page }) => {
   await page.getByRole('button', { name: 'テキストを追加' }).click()
   await clickTimelineClip(page, 'Opening')

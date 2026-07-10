@@ -5,11 +5,13 @@ import {
   TRANSFORM_TIMELINE_PROPERTIES,
   TRANSFORM_TIMELINE_PROPERTY_LABELS,
   TRANSFORM_TIMELINE_TAB_HEIGHT,
+  bezierHandleToLanePoint,
   buildTransformPropertyCurvePath,
   formatTransformKeyframeTitle,
   keyframeToLanePoint,
   keyframePropertyValue,
   laneYToProperty,
+  segmentUsesBezier,
   type TransformTimelineProperty,
 } from '../utils/transformKeyframesTimeline'
 
@@ -28,6 +30,12 @@ interface Props {
     propertyValue: number,
     e: React.MouseEvent,
   ) => void
+  onStartBezierHandleDrag: (
+    keyframe: TransformKeyframe,
+    handleType: 'in' | 'out',
+    property: TransformTimelineProperty,
+    e: React.MouseEvent,
+  ) => void
   onAddKeyframe: (time: number, property: TransformTimelineProperty, value: number) => void
 }
 
@@ -39,6 +47,7 @@ export function TransformKeyframesTimeline({
   isSelected,
   bottomOffset = 0,
   onStartKeyframeDrag,
+  onStartBezierHandleDrag,
   onAddKeyframe,
 }: Props) {
   const [selectedProperty, setSelectedProperty] = useState<TransformTimelineProperty>('opacity')
@@ -108,6 +117,20 @@ export function TransformKeyframesTimeline({
         preserveAspectRatio="none"
         onDoubleClick={handleDoubleClick}
       >
+        {keyframes.length >= 2 && keyframes.slice(0, -1).map((start, index) => {
+          const end = keyframes[index + 1]
+          if (!segmentUsesBezier(start, end, selectedProperty)) return null
+          const p0 = keyframeToLanePoint(start, transform, clip.duration, widthPx, laneHeight, selectedProperty)
+          const p3 = keyframeToLanePoint(end, transform, clip.duration, widthPx, laneHeight, selectedProperty)
+          const p1 = bezierHandleToLanePoint(start, end, 'out', transform, clip.duration, widthPx, laneHeight, selectedProperty)
+          const p2 = bezierHandleToLanePoint(end, start, 'in', transform, clip.duration, widthPx, laneHeight, selectedProperty)
+          return (
+            <g key={`${start.id}-${end.id}`}>
+              <line x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y} stroke="rgba(56,189,248,0.35)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              <line x1={p3.x} y1={p3.y} x2={p2.x} y2={p2.y} stroke="rgba(56,189,248,0.35)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            </g>
+          )
+        })}
         {keyframes.length >= 2 && curvePath && (
           <path
             d={curvePath}
@@ -132,22 +155,56 @@ export function TransformKeyframesTimeline({
       </svg>
       {keyframes.map((kf, index) => {
         const { x, y } = keyframeToLanePoint(kf, transform, clip.duration, widthPx, laneHeight, selectedProperty)
+        const prev = index > 0 ? keyframes[index - 1] : null
+        const next = index < keyframes.length - 1 ? keyframes[index + 1] : null
+        const showHandleIn = !!prev
+        const showHandleOut = !!next
+        const handleInPoint = prev
+          ? bezierHandleToLanePoint(kf, prev, 'in', transform, clip.duration, widthPx, laneHeight, selectedProperty)
+          : null
+        const handleOutPoint = next
+          ? bezierHandleToLanePoint(kf, next, 'out', transform, clip.duration, widthPx, laneHeight, selectedProperty)
+          : null
+
         return (
-          <button
-            key={kf.id}
-            type="button"
-            aria-label={`トランスフォームキーフレーム ${index + 1}`}
-            title={formatTransformKeyframeTitle(kf, transform, selectedProperty)}
-            className="pointer-events-auto absolute z-[21] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-grab border border-white/80 bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)] active:cursor-grabbing"
-            style={{ left: x, top: y + TRANSFORM_TIMELINE_TAB_HEIGHT }}
-            onMouseDown={(e) => onStartKeyframeDrag(
-              kf,
-              selectedPropertyRef.current,
-              keyframePropertyValue(kf, transform, selectedPropertyRef.current),
-              e,
+          <div key={kf.id}>
+            {showHandleIn && handleInPoint && (
+              <button
+                type="button"
+                data-testid={`transform-bezier-handle-in-${index + 1}`}
+                aria-label={`ベジェハンドル（入） ${index + 1}`}
+                className="pointer-events-auto absolute z-[21] h-2 w-2 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-sky-200/80 bg-sky-300/90 active:cursor-grabbing"
+                style={{ left: handleInPoint.x, top: handleInPoint.y + TRANSFORM_TIMELINE_TAB_HEIGHT }}
+                onMouseDown={(e) => onStartBezierHandleDrag(kf, 'in', selectedPropertyRef.current, e)}
+                onClick={(e) => e.stopPropagation()}
+              />
             )}
-            onClick={(e) => e.stopPropagation()}
-          />
+            {showHandleOut && handleOutPoint && (
+              <button
+                type="button"
+                data-testid={`transform-bezier-handle-out-${index + 1}`}
+                aria-label={`ベジェハンドル（出） ${index + 1}`}
+                className="pointer-events-auto absolute z-[21] h-2 w-2 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-sky-200/80 bg-sky-300/90 active:cursor-grabbing"
+                style={{ left: handleOutPoint.x, top: handleOutPoint.y + TRANSFORM_TIMELINE_TAB_HEIGHT }}
+                onMouseDown={(e) => onStartBezierHandleDrag(kf, 'out', selectedPropertyRef.current, e)}
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
+            <button
+              type="button"
+              aria-label={`トランスフォームキーフレーム ${index + 1}`}
+              title={formatTransformKeyframeTitle(kf, transform, selectedProperty)}
+              className="pointer-events-auto absolute z-[22] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-grab border border-white/80 bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)] active:cursor-grabbing"
+              style={{ left: x, top: y + TRANSFORM_TIMELINE_TAB_HEIGHT }}
+              onMouseDown={(e) => onStartKeyframeDrag(
+                kf,
+                selectedPropertyRef.current,
+                keyframePropertyValue(kf, transform, selectedPropertyRef.current),
+                e,
+              )}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         )
       })}
     </div>

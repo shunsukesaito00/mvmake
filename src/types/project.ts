@@ -194,14 +194,31 @@ export interface SpeedKeyframe {
 }
 
 /** クリップ内ローカル時間(秒)での transform キーフレーム（不透明度キーフレームを含む） */
-export type TransformKeyframeEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut'
+export type TransformKeyframeEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'bezier'
 
 export const TRANSFORM_KEYFRAME_EASING_OPTIONS: { value: TransformKeyframeEasing; label: string }[] = [
   { value: 'linear', label: '線形' },
   { value: 'easeIn', label: 'イーズイン' },
   { value: 'easeOut', label: 'イーズアウト' },
   { value: 'easeInOut', label: 'イーズインアウト' },
+  { value: 'bezier', label: 'ベジェ（カスタム）' },
 ]
+
+/** キーフレームからの時間・値オフセット（ベジェ制御点） */
+export interface TransformBezierHandle {
+  timeOffset: number
+  valueOffset: number
+}
+
+export type TransformKeyframeProperty = 'opacity' | 'x' | 'y' | 'scale' | 'rotation'
+
+export type TransformKeyframeBezierHandles = Partial<Record<
+  TransformKeyframeProperty,
+  {
+    handleIn?: TransformBezierHandle
+    handleOut?: TransformBezierHandle
+  }
+>>
 
 export interface TransformKeyframe {
   id: string
@@ -214,6 +231,8 @@ export interface TransformKeyframe {
   opacity?: number
   /** 直前のキーフレームからこの点への補間。省略時は linear */
   easing?: TransformKeyframeEasing
+  /** 属性ごとのベジェハンドル（タイムライン上で編集） */
+  bezierHandles?: TransformKeyframeBezierHandles
 }
 
 /** BGMダッキング: 動画クリップの音声がある区間で自動的に音量を下げる */

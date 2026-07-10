@@ -110,7 +110,7 @@ function createDefaultProject(): Project {
 
 export interface TimelineDragState {
   clipId: string
-  mode: 'move' | 'trimStart' | 'trimEnd' | 'slip' | 'slide' | 'playhead' | 'volumeKeyframe' | 'speedKeyframe' | 'transformKeyframe' | 'marker'
+  mode: 'move' | 'trimStart' | 'trimEnd' | 'slip' | 'slide' | 'playhead' | 'volumeKeyframe' | 'speedKeyframe' | 'transformKeyframe' | 'transformBezierHandle' | 'marker'
   startX: number
   startY: number
   originalStartTime: number
@@ -125,6 +125,9 @@ export interface TimelineDragState {
   originalKeyframeOpacity?: number
   transformKeyframeProperty?: TransformTimelineProperty
   originalKeyframePropertyValue?: number
+  transformBezierHandleType?: 'in' | 'out'
+  originalBezierTimeOffset?: number
+  originalBezierValueOffset?: number
   markerId?: string
   slideSnapshot?: SlideSnapshot
 }

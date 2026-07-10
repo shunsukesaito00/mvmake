@@ -1,6 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_TRANSFORM } from '../types/project'
+import {
+  cubicBezierComponent,
+  defaultBezierHandleIn,
+  defaultBezierHandleOut,
+  sampleCubicBezierYAtX,
+  samplePropertyWithBezier,
+} from './transformKeyframeBezier'
 import { applyTransformEasing, getTransformAtLocalTime, sortTransformKeyframes } from './transformKeyframes'
+
+describe('cubicBezierComponent', () => {
+  it('端点で p0 / p3 を返す', () => {
+    expect(cubicBezierComponent(0, 0.3, 0.7, 1, 0)).toBe(0)
+    expect(cubicBezierComponent(0, 0.3, 0.7, 1, 1)).toBe(1)
+  })
+})
+
+describe('sampleCubicBezierYAtX', () => {
+  it('線形ベジェは中間点で線形補間と一致する', () => {
+    const y = sampleCubicBezierYAtX(0, 4 / 3, 8 / 3, 4, 2, 0, 2 / 3, 4 / 3, 2)
+    expect(y).toBeCloseTo(1)
+  })
+})
 
 describe('applyTransformEasing', () => {
   it('easeOut は中間点で線形より進む', () => {
@@ -47,6 +68,57 @@ describe('getTransformAtLocalTime', () => {
     expect(mid.x).toBeCloseTo(0.75)
   })
 
+  it('ベジェハンドルで不透明度がカーブ補間される', () => {
+    const base = DEFAULT_TRANSFORM
+    const keyframes = [
+      {
+        id: '1',
+        time: 0,
+        x: 0.5,
+        y: 0.5,
+        scale: 1,
+        rotation: 0,
+        opacity: 1,
+        bezierHandles: {
+          opacity: { handleOut: defaultBezierHandleOut(4) },
+        },
+      },
+      {
+        id: '2',
+        time: 4,
+        x: 0.5,
+        y: 0.5,
+        scale: 1,
+        rotation: 0,
+        opacity: 0,
+        easing: 'bezier' as const,
+        bezierHandles: {
+          opacity: { handleIn: defaultBezierHandleIn(4) },
+        },
+      },
+    ]
+    const linearMid = 0.5
+    const curvedMid = getTransformAtLocalTime(base, keyframes, 2, 4).opacity
+    expect(curvedMid).toBeCloseTo(linearMid)
+
+    const eased = getTransformAtLocalTime(base, keyframes.map((kf, i) => (
+      i === 0
+        ? {
+            ...kf,
+            bezierHandles: {
+              opacity: { handleOut: { timeOffset: 4 / 3, valueOffset: -0.5 } },
+            },
+          }
+        : {
+            ...kf,
+            bezierHandles: {
+              opacity: { handleIn: { timeOffset: -4 / 3, valueOffset: 0 } },
+            },
+          }
+    )), 2, 4).opacity
+    expect(eased).toBeLessThan(0.5)
+  })
+
   it('不透明度をキーフレーム間で補間する', () => {
     const base = DEFAULT_TRANSFORM
     const keyframes = [
@@ -55,6 +127,33 @@ describe('getTransformAtLocalTime', () => {
     ]
     const mid = getTransformAtLocalTime(base, keyframes, 1, 4)
     expect(mid.opacity).toBeCloseTo(0.5)
+  })
+})
+
+describe('samplePropertyWithBezier', () => {
+  it('カスタムハンドルで値が曲線的に変化する', () => {
+    const base = DEFAULT_TRANSFORM
+    const start = {
+      id: '1',
+      time: 0,
+      x: 0,
+      y: 0.5,
+      scale: 1,
+      rotation: 0,
+      bezierHandles: { x: { handleOut: { timeOffset: 1.33, valueOffset: 0.4 } } },
+    }
+    const end = {
+      id: '2',
+      time: 4,
+      x: 1,
+      y: 0.5,
+      scale: 1,
+      rotation: 0,
+      easing: 'bezier' as const,
+      bezierHandles: { x: { handleIn: { timeOffset: -1.33, valueOffset: 0 } } },
+    }
+    const mid = samplePropertyWithBezier(start, end, 'x', base, 2)
+    expect(mid).toBeGreaterThan(0.5)
   })
 })
 

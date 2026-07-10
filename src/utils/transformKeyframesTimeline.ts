@@ -1,6 +1,14 @@
 import type { Transform, TransformKeyframe } from '../types/project'
 import { createId } from './id'
 import { getTransformAtLocalTime, sortTransformKeyframes } from './transformKeyframes'
+import {
+  bezierHandleAbsoluteTime,
+  bezierHandleAbsoluteValue,
+  getBezierHandleIn,
+  getBezierHandleOut,
+  patchBezierHandle,
+  shouldUseBezierForProperty,
+} from './transformKeyframeBezier'
 
 export const TRANSFORM_TIMELINE_LANE_HEIGHT = 24
 export const TRANSFORM_TIMELINE_TAB_HEIGHT = 14
@@ -150,6 +158,59 @@ export function keyframeToLanePoint(
     x: keyframeToTimelineX(keyframe, clipDuration, width),
     y: propertyToLaneY(keyframePropertyValue(keyframe, base, property), property, laneHeight),
   }
+}
+
+export function bezierHandleToLanePoint(
+  keyframe: TransformKeyframe,
+  partner: TransformKeyframe,
+  handleType: 'in' | 'out',
+  base: Transform,
+  clipDuration: number,
+  width: number,
+  laneHeight: number,
+  property: TransformTimelineProperty,
+): { x: number; y: number } {
+  const handle = handleType === 'out'
+    ? getBezierHandleOut(keyframe, partner, property)
+    : getBezierHandleIn(keyframe, partner, property)
+  const time = bezierHandleAbsoluteTime(keyframe, handle)
+  const value = bezierHandleAbsoluteValue(keyframe, property, base, handle)
+  return {
+    x: (time / Math.max(clipDuration, 0.001)) * width,
+    y: propertyToLaneY(value, property, laneHeight),
+  }
+}
+
+export function updateTransformBezierHandle(
+  keyframes: TransformKeyframe[],
+  keyframeId: string,
+  handleType: 'in' | 'out',
+  property: TransformTimelineProperty,
+  timeOffset: number,
+  valueOffset: number,
+): TransformKeyframe[] {
+  const sorted = sortTransformKeyframes(keyframes)
+  const index = sorted.findIndex((kf) => kf.id === keyframeId)
+  if (index < 0) return keyframes
+
+  const target = sorted[index]
+  const patched = patchBezierHandle(target, property, handleType, timeOffset, valueOffset)
+  const endIndex = handleType === 'out' ? index + 1 : index
+  const withEasing = endIndex < sorted.length && endIndex > 0
+    ? sorted.map((kf, i) => (i === endIndex ? { ...kf, easing: 'bezier' as const } : kf))
+    : sorted
+
+  return sortTransformKeyframes(
+    withEasing.map((kf) => (kf.id === keyframeId ? patched : kf)),
+  )
+}
+
+export function segmentUsesBezier(
+  start: TransformKeyframe,
+  end: TransformKeyframe,
+  property: TransformTimelineProperty,
+): boolean {
+  return shouldUseBezierForProperty(start, end, property)
 }
 
 /** 選択属性の補間に沿った SVG path (M/L) */

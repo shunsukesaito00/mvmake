@@ -20,8 +20,10 @@ import {
   createTransformKeyframeAt,
   TRANSFORM_TIMELINE_LANE_HEIGHT,
   applyTransformPropertyLaneDelta,
+  updateTransformBezierHandle,
   type TransformTimelineProperty,
 } from '../utils/transformKeyframesTimeline'
+import { getBezierHandleIn, getBezierHandleOut } from '../utils/transformKeyframeBezier'
 import { VolumeKeyframesTimeline } from '../components/VolumeKeyframesTimeline'
 import { SpeedKeyframesTimeline } from '../components/SpeedKeyframesTimeline'
 import { TransformKeyframesTimeline } from '../components/TransformKeyframesTimeline'
@@ -328,6 +330,41 @@ export function TimelinePanel() {
       )
       const next = updateTransformKeyframeList(keyframes, dragState.keyframeId, { time: newTime, [property]: newValue })
       updateClip(dragState.clipId, { transformKeyframes: next }, false)
+    } else if (dragState.mode === 'transformBezierHandle' && dragState.keyframeId != null) {
+      const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
+      if (clip?.type !== 'video' && clip?.type !== 'image' && clip?.type !== 'text') return
+      const transformClip = clip as VideoClip | ImageClip | TextClip
+      const keyframes = transformClip.transformKeyframes
+      if (!keyframes?.length) return
+
+      const property = dragState.transformKeyframeProperty ?? 'opacity'
+      const timeDelta = dt
+      const valueDelta = -(e.clientY - dragState.startY) / TRANSFORM_TIMELINE_LANE_HEIGHT
+      const { min, max } = (() => {
+        switch (property) {
+          case 'opacity':
+          case 'x':
+          case 'y':
+            return { min: 0, max: 1 }
+          case 'scale':
+            return { min: 0.1, max: 3 }
+          case 'rotation':
+            return { min: -180, max: 180 }
+        }
+      })()
+      const valueRange = max - min
+      const newTimeOffset = (dragState.originalBezierTimeOffset ?? 0) + timeDelta
+      const newValueOffset = (dragState.originalBezierValueOffset ?? 0) + valueDelta * valueRange
+      const handleType = dragState.transformBezierHandleType ?? 'in'
+      const next = updateTransformBezierHandle(
+        keyframes,
+        dragState.keyframeId,
+        handleType,
+        property,
+        newTimeOffset,
+        newValueOffset,
+      )
+      updateClip(dragState.clipId, { transformKeyframes: next }, false)
     }
   }, [dragState, pixelsPerSecond, getSnapPoints, updateClip, updateMarker, moveClip, getTrackAtY, tracks, mediaAssets, project.tracks, seek, duration])
 
@@ -543,6 +580,49 @@ export function TimelinePanel() {
     updateClip(clip.id, { transformKeyframes: next })
   }
 
+  const startTransformBezierHandleDrag = (
+    clip: VideoClip | ImageClip | TextClip,
+    keyframeId: string,
+    handleType: 'in' | 'out',
+    property: TransformTimelineProperty,
+    e: React.MouseEvent,
+  ) => {
+    const track = tracks.find((t) => t.id === clip.trackId)
+    if (track?.locked) return
+    const keyframes = clip.transformKeyframes
+    if (!keyframes?.length) return
+    const sorted = [...keyframes].sort((a, b) => a.time - b.time)
+    const index = sorted.findIndex((kf) => kf.id === keyframeId)
+    if (index < 0) return
+    const keyframe = sorted[index]
+    const partner = handleType === 'out' ? sorted[index + 1] : sorted[index - 1]
+    if (!partner) return
+
+    const handle = handleType === 'out'
+      ? getBezierHandleOut(keyframe, partner, property)
+      : getBezierHandleIn(keyframe, partner, property)
+
+    e.stopPropagation()
+    e.preventDefault()
+    pushHistory()
+    setSelectedClipId(clip.id)
+    setDragState({
+      clipId: clip.id,
+      mode: 'transformBezierHandle',
+      keyframeId,
+      transformKeyframeProperty: property,
+      transformBezierHandleType: handleType,
+      originalBezierTimeOffset: handle.timeOffset,
+      originalBezierValueOffset: handle.valueOffset,
+      startX: e.clientX,
+      startY: e.clientY,
+      originalStartTime: clip.startTime,
+      originalDuration: clip.duration,
+      originalSourceStart: clip.sourceStart,
+      originalTrackId: clip.trackId,
+    })
+  }
+
   return (
     <div className="flex h-full flex-col">
       <PanelHeader title="タイムライン" icon={<Icons.Grid size={14} />}>
@@ -684,6 +764,13 @@ export function TimelinePanel() {
                             kf.time,
                             property,
                             value,
+                            e,
+                          )}
+                          onStartBezierHandleDrag={(kf, handleType, property, e) => startTransformBezierHandleDrag(
+                            clip,
+                            kf.id,
+                            handleType,
+                            property,
                             e,
                           )}
                           onAddKeyframe={(time, property, value) => addTransformKeyframeOnTimeline(clip, time, property, value)}

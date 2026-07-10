@@ -103,6 +103,9 @@ export function TransformKeyframesSection({ clip, transform, transformKeyframes,
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
+                {(kf.easing === 'bezier' || kf.bezierHandles) && (
+                  <span className="text-[10px] text-text-muted">タイムラインの丸ハンドルでベジェ曲線を編集できます。</span>
+                )}
               </label>
             )}
             <Slider label="X" value={kf.x} min={0} max={1} step={0.01} onChange={(v) => updateKeyframe(kf.id, { x: v })} />
