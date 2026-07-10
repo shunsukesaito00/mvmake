@@ -45,12 +45,12 @@ export function VolumeKeyframesTimeline({
 
   return (
     <div
-      className="absolute right-0 bottom-0 left-0 z-[15] pointer-events-none"
+      className={`absolute right-0 bottom-0 left-0 pointer-events-none ${keyframes.length > 0 ? 'z-[20]' : 'z-[15]'}`}
       style={{ height: laneHeight }}
       aria-hidden={!keyframes.length}
     >
       <svg
-        className="pointer-events-auto h-full w-full overflow-visible"
+        className={(keyframes.length > 0 || isSelected) ? 'pointer-events-auto h-full w-full overflow-visible' : 'pointer-events-none h-full w-full overflow-visible'}
         viewBox={`0 0 ${widthPx} ${laneHeight}`}
         preserveAspectRatio="none"
         onDoubleClick={handleDoubleClick}
@@ -85,7 +85,7 @@ export function VolumeKeyframesTimeline({
             type="button"
             aria-label={`音量キーフレーム ${index + 1}`}
             title={`${kf.time.toFixed(1)}s · ${Math.round(kf.volume * 100)}%`}
-            className="pointer-events-auto absolute z-[16] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-white/80 bg-accent shadow-[0_0_6px_rgba(201,169,110,0.8)] active:cursor-grabbing"
+            className="pointer-events-auto absolute z-[21] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-white/80 bg-accent shadow-[0_0_6px_rgba(201,169,110,0.8)] active:cursor-grabbing"
             style={{ left: x, top: y }}
             onMouseDown={(e) => onStartKeyframeDrag(kf, e)}
             onClick={(e) => e.stopPropagation()}

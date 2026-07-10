@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { makeSilentWav } from './helpers'
+import { makeSilentWav, clickTimelineClip } from './helpers'
 
 test('基本フロー: 起動 → オンボーディング → テキスト追加 → タイムライン確認', async ({ page }) => {
   // './' は baseURL のサブパス(本番の /mvmake/ など)を保持する
@@ -51,7 +51,7 @@ test('音量キーフレーム: オーディオクリップでキーフレーム
   await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
 
   await page.getByTitle('クリックで再生位置に追加').click()
-  await page.locator('footer').getByText('bgm.wav').click()
+  await clickTimelineClip(page, 'bgm.wav')
 
   await page.getByRole('button', { name: '音量キーフレーム' }).click()
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()

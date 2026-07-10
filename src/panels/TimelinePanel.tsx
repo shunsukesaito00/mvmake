@@ -10,7 +10,7 @@ import {
   isTimelineTimeVisible,
 } from '../utils/timelineZoom'
 import { updateVolumeKeyframeList, VOLUME_TIMELINE_LANE_HEIGHT, createVolumeKeyframeAt, volumeAtTimelineClick } from '../utils/volumeKeyframesTimeline'
-import { updateTransformKeyframeList, createTransformKeyframeAt, timelineXToTime } from '../utils/transformKeyframesTimeline'
+import { updateTransformKeyframeList, createTransformKeyframeAt, TRANSFORM_TIMELINE_LANE_HEIGHT } from '../utils/transformKeyframesTimeline'
 import { VolumeKeyframesTimeline } from '../components/VolumeKeyframesTimeline'
 import { TransformKeyframesTimeline } from '../components/TransformKeyframesTimeline'
 import type { AudioClip, ImageClip, TextClip, VideoClip } from '../types/project'
@@ -54,7 +54,7 @@ function Playhead({ pixelsPerSecond, trackCount, onMouseDown }: {
 function Waveform({ data }: { data?: number[] }) {
   if (!data) return null
   return (
-    <svg className="absolute inset-0 h-full w-full opacity-30" preserveAspectRatio="none">
+    <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-30" preserveAspectRatio="none">
       {data.map((v, i) => (
         <rect key={i} x={`${(i / data.length) * 100}%`} y={`${50 - (v * 80) / 2}%`} width={`${100 / data.length}%`} height={`${v * 80}%`} fill="white" />
       ))}
@@ -246,8 +246,10 @@ export function TimelinePanel() {
       const keyframes = transformClip.transformKeyframes
       if (!keyframes?.length) return
 
+      const opacityDelta = -(e.clientY - dragState.startY) / TRANSFORM_TIMELINE_LANE_HEIGHT
       const newTime = Math.max(0, Math.min(clip.duration, (dragState.originalKeyframeTime ?? 0) + dt))
-      const next = updateTransformKeyframeList(keyframes, dragState.keyframeId, { time: newTime })
+      const newOpacity = Math.max(0, Math.min(1, (dragState.originalKeyframeOpacity ?? 1) + opacityDelta))
+      const next = updateTransformKeyframeList(keyframes, dragState.keyframeId, { time: newTime, opacity: newOpacity })
       updateClip(dragState.clipId, { transformKeyframes: next }, false)
     }
   }, [dragState, pixelsPerSecond, getSnapPoints, updateClip, updateMarker, moveClip, getTrackAtY, tracks, mediaAssets, project.tracks, seek, duration])
@@ -349,7 +351,13 @@ export function TimelinePanel() {
     updateClip(clip.id, { audio: { ...clip.audio, volumeKeyframes: next } })
   }
 
-  const startTransformKeyframeDrag = (clip: VideoClip | ImageClip | TextClip, keyframeId: string, keyframeTime: number, e: React.MouseEvent) => {
+  const startTransformKeyframeDrag = (
+    clip: VideoClip | ImageClip | TextClip,
+    keyframeId: string,
+    keyframeTime: number,
+    keyframeOpacity: number,
+    e: React.MouseEvent,
+  ) => {
     const track = tracks.find((t) => t.id === clip.trackId)
     if (track?.locked) return
     e.stopPropagation()
@@ -361,6 +369,7 @@ export function TimelinePanel() {
       mode: 'transformKeyframe',
       keyframeId,
       originalKeyframeTime: keyframeTime,
+      originalKeyframeOpacity: keyframeOpacity,
       startX: e.clientX,
       startY: e.clientY,
       originalStartTime: clip.startTime,
@@ -370,9 +379,9 @@ export function TimelinePanel() {
     })
   }
 
-  const addTransformKeyframeOnTimeline = (clip: VideoClip | ImageClip | TextClip, time: number) => {
+  const addTransformKeyframeOnTimeline = (clip: VideoClip | ImageClip | TextClip, time: number, opacity: number) => {
     pushHistory()
-    const next = createTransformKeyframeAt(clip.transform, clip.transformKeyframes, clip.duration, time)
+    const next = createTransformKeyframeAt(clip.transform, clip.transformKeyframes, clip.duration, time, opacity)
     updateClip(clip.id, { transformKeyframes: next })
   }
 
@@ -457,7 +466,8 @@ export function TimelinePanel() {
                   const label = clip.type === 'text' ? clip.text.content : (media?.name ?? clip.type)
                   const isSelected = selectedClipId === clip.id
                   const hasVolumeKeyframes = (clip.type === 'audio' || clip.type === 'video') && ((clip.audio.volumeKeyframes?.length ?? 0) > 0 || isSelected)
-                  const hasTransformKeyframes = (clip.type === 'video' || clip.type === 'image' || clip.type === 'text') && (clip.transformKeyframes?.length ?? 0) > 0
+                  const hasTransformKeyframes = (clip.type === 'video' || clip.type === 'image' || clip.type === 'text') && ((clip.transformKeyframes?.length ?? 0) > 0 || isSelected)
+                  const transformLaneBottom = hasVolumeKeyframes ? VOLUME_TIMELINE_LANE_HEIGHT : 0
                   return (
                     <div
                       key={clip.id}
@@ -465,16 +475,8 @@ export function TimelinePanel() {
                       style={{ left, width }}
                       onMouseDown={(e) => startDrag(clip, 'move', e)}
                       onClick={(e) => { e.stopPropagation(); setSelectedClipId(clip.id) }}
-                      onDoubleClick={(e) => {
-                        if (track.locked) return
-                        if (clip.type !== 'video' && clip.type !== 'image' && clip.type !== 'text') return
-                        e.stopPropagation()
-                        const rect = e.currentTarget.getBoundingClientRect()
-                        const localX = Math.max(0, Math.min(width, e.clientX - rect.left))
-                        addTransformKeyframeOnTimeline(clip, timelineXToTime(localX, width, clip.duration))
-                      }}
                     >
-                      {media?.thumbnail && clip.type !== 'audio' && <img src={media.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />}
+                      {media?.thumbnail && clip.type !== 'audio' && <img src={media.thumbnail} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25" />}
                       <Waveform data={clip.type === 'audio' ? media?.waveform : undefined} />
                       {(clip.type === 'audio' || clip.type === 'video') && (
                         <VolumeKeyframesTimeline
@@ -492,10 +494,19 @@ export function TimelinePanel() {
                           transform={clip.transform}
                           transformKeyframes={clip.transformKeyframes}
                           widthPx={width}
-                          onStartKeyframeDrag={(kf, e) => startTransformKeyframeDrag(clip, kf.id, kf.time, e)}
+                          isSelected={isSelected}
+                          bottomOffset={transformLaneBottom}
+                          onStartKeyframeDrag={(kf, e) => startTransformKeyframeDrag(
+                            clip,
+                            kf.id,
+                            kf.time,
+                            kf.opacity ?? clip.transform.opacity,
+                            e,
+                          )}
+                          onAddKeyframe={(time, opacity) => addTransformKeyframeOnTimeline(clip, time, opacity)}
                         />
                       )}
-                      <div className="relative z-10 truncate px-2 py-1.5 text-[10px] font-semibold text-white drop-shadow-sm">{label}</div>
+                      <div className="pointer-events-none relative z-10 truncate px-2 py-1.5 text-[10px] font-semibold text-white drop-shadow-sm">{label}</div>
                       {/* z-20: ラベル行(z-10)より前面に置き、クリップ上端でもトリムを掴めるようにする */}
                       {!track.locked && (
                         <>

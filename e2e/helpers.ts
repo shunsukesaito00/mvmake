@@ -107,3 +107,12 @@ export async function installNarrationRecordingMocks(
       }) as MediaStream
   }, encoded)
 }
+
+/** タイムライン上のクリップ本体（ラベルは pointer-events-none のため .cursor-grab を使う） */
+export function timelineClip(page: import('@playwright/test').Page, name: string | RegExp) {
+  return page.locator('footer .cursor-grab').filter({ hasText: name })
+}
+
+export async function clickTimelineClip(page: import('@playwright/test').Page, name: string | RegExp) {
+  await timelineClip(page, name).click()
+}

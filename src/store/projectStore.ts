@@ -104,6 +104,7 @@ export interface TimelineDragState {
   keyframeId?: string
   originalKeyframeTime?: number
   originalKeyframeVolume?: number
+  originalKeyframeOpacity?: number
   markerId?: string
 }
 

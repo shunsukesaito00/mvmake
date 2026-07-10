@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { installNarrationRecordingMocks, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak } from './helpers'
+import { installNarrationRecordingMocks, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -152,7 +152,7 @@ test('インスペクター: 音量を正規化できる', async ({ page }) => {
   await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
 
   await page.getByTitle('クリックで再生位置に追加').click()
-  await page.locator('footer').getByText('quiet-bgm.wav').click()
+  await clickTimelineClip(page, 'quiet-bgm.wav')
 
   const volumeSlider = page.getByRole('slider', { name: '音量' })
   await expect(volumeSlider).toHaveValue('1')
@@ -164,7 +164,7 @@ test('インスペクター: 音量を正規化できる', async ({ page }) => {
 
 test('インスペクター: トランスフォームキーフレームを追加・編集できる', async ({ page }) => {
   await page.getByRole('button', { name: 'テキストを追加' }).click()
-  await page.locator('footer').getByText('Opening').click()
+  await clickTimelineClip(page, 'Opening')
 
   await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()
@@ -175,7 +175,7 @@ test('インスペクター: トランスフォームキーフレームを追加
 
 test('インスペクター: トランスフォームキーフレームの不透明度を設定できる', async ({ page }) => {
   await page.getByRole('button', { name: 'テキストを追加' }).click()
-  await page.locator('footer').getByText('Opening').click()
+  await clickTimelineClip(page, 'Opening')
 
   await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()
@@ -188,7 +188,7 @@ test('インスペクター: トランスフォームキーフレームの不透
 
 test('インスペクター: トランスフォームキーフレームのイージングを設定できる', async ({ page }) => {
   await page.getByRole('button', { name: 'テキストを追加' }).click()
-  await page.locator('footer').getByText('Opening').click()
+  await clickTimelineClip(page, 'Opening')
 
   await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()
@@ -202,7 +202,7 @@ test('クリップ分割: 音量キーフレームを両側に再配分する', 
   const wav = makeSilentWav(2)
   await page.setInputFiles('input[accept*="audio"]', { name: 'bgm-split.wav', mimeType: 'audio/wav', buffer: wav })
   await page.getByTitle('クリックで再生位置に追加').click()
-  await page.locator('footer').getByText('bgm-split.wav').click()
+  await clickTimelineClip(page, 'bgm-split.wav')
 
   await page.getByRole('button', { name: '音量キーフレーム' }).click()
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()
@@ -218,12 +218,50 @@ test('クリップ分割: 音量キーフレームを両側に再配分する', 
   await expect(page.getByRole('button', { name: '音量キーフレーム 1' })).toHaveCount(2)
 })
 
-test('タイムライン: ダブルクリックでトランスフォームキーフレームを追加できる', async ({ page }) => {
-  await page.getByRole('button', { name: 'テキストを追加' }).click()
-  const clip = page.locator('footer').getByText('Opening')
-  await clip.click()
-  await clip.dblclick({ position: { x: 20, y: 8 } })
+test('タイムライン: レーンをダブルクリックでトランスフォームキーフレームを追加できる', async ({ page }) => {
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+  await page.getByTestId('transform-opacity-lane').dblclick({ position: { x: 40, y: 12 } })
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
+})
+
+test('タイムライン: トランスフォームキーフレームをドラッグ編集できる', async ({ page }) => {
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).fill('0.2')
+
+  const handle = page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })
+  await expect(handle).toHaveAttribute('title', /0\.2s/)
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 60, box.y - 8, { steps: 8 })
+  await page.mouse.up()
+
+  await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
+})
+
+test('プレビュー: 不透明度ハンドルで transform キーフレームを更新できる', async ({ page }) => {
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const opacityHandle = page.getByTitle(/不透明度 .*上下ドラッグ/)
+  await expect(opacityHandle).toBeVisible()
+
+  const box = (await opacityHandle.boundingBox())!
+  await opacityHandle.hover()
+  await page.mouse.down()
+  await page.mouse.move(box.x, box.y + 40, { steps: 6 })
+  await page.mouse.up()
+
+  await expect(opacityHandle).not.toHaveAttribute('title', /不透明度 100%/)
 })
 
 test('インスペクター: 音量キーフレームを追加・編集できる', async ({ page }) => {
@@ -232,7 +270,7 @@ test('インスペクター: 音量キーフレームを追加・編集できる
   await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
 
   await page.getByTitle('クリックで再生位置に追加').click()
-  await page.locator('footer').getByText('bgm.wav').click()
+  await clickTimelineClip(page, 'bgm.wav')
 
   await page.getByRole('button', { name: '音量キーフレーム' }).click()
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()
@@ -244,7 +282,7 @@ test('タイムライン: 音量キーフレームをドラッグ編集できる
   const wav = makeSilentWav(1)
   await page.setInputFiles('input[accept*="audio"]', { name: 'bgm.wav', mimeType: 'audio/wav', buffer: wav })
   await page.getByTitle('クリックで再生位置に追加').click()
-  await page.locator('footer').getByText('bgm.wav').click()
+  await clickTimelineClip(page, 'bgm.wav')
 
   await page.getByRole('button', { name: '音量キーフレーム' }).click()
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()
@@ -254,7 +292,7 @@ test('タイムライン: 音量キーフレームをドラッグ編集できる
   await expect(handle).toHaveAttribute('title', /0\.2s/)
 
   const box = (await handle.boundingBox())!
-  await handle.hover()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
   await page.mouse.move(box.x + 60, box.y - 10, { steps: 8 })
   await page.mouse.up()
@@ -294,7 +332,7 @@ test('トランジション: 画像クリップへの適用フロー', async ({ 
 
   // クリックで再生位置(0秒)にクリップ追加 → タイムラインに出る
   await page.getByTitle('クリックで再生位置に追加').click()
-  const clip = page.locator('footer').getByText('photo.png')
+  const clip = timelineClip(page, 'photo.png')
   await expect(clip).toBeVisible()
 
   // クリップを選択して効果タブからクロスフェードを適用
@@ -377,7 +415,7 @@ test('色調補正: カラールックプリセットを適用できる', async 
   )
   await page.setInputFiles('input[accept*="image"]', { name: 'photo.png', mimeType: 'image/png', buffer: png })
   await page.getByTitle('クリックで再生位置に追加').click()
-  await page.locator('footer').getByText('photo.png').click()
+  await clickTimelineClip(page, 'photo.png')
 
   await page.getByRole('button', { name: 'フィルム風ルック' }).click()
   await expect(page.getByText('「フィルム風」ルックを適用しました')).toBeVisible()
@@ -391,7 +429,7 @@ test('映像フェード: 画像クリップにフェードインを設定でき
   )
   await page.setInputFiles('input[accept*="image"]', { name: 'photo.png', mimeType: 'image/png', buffer: png })
   await page.getByTitle('クリックで再生位置に追加').click()
-  await page.locator('footer').getByText('photo.png').click()
+  await clickTimelineClip(page, 'photo.png')
 
   await page.getByRole('button', { name: 'フェード' }).click()
   const fadeIn = page.getByRole('slider', { name: 'フェードイン' })
@@ -547,7 +585,7 @@ test('写真ガイド: 選択区間にスライドショーを配置できる', 
   await page.getByTitle('テンプレ').click()
   await page.getByRole('button', { name: /結婚式フル構成/ }).click()
 
-  await page.locator('footer').getByText('写真: 新郎 幼少期').click()
+  await clickTimelineClip(page, '写真: 新郎 幼少期')
   await expect(page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' })).toBeVisible()
   await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
   await expect(page.getByText('2枚の写真をガイド区間に配置しました')).toBeVisible()
@@ -589,26 +627,33 @@ test('マーカー: インスペクターで編集しタイムライン上でド
   expect(markerId).toBeTruthy()
   await expect(page.locator('aside').getByText('章マーカー', { exact: true })).toBeVisible()
 
-  const labelInput = page.locator('input[type="text"]').first()
+  const labelInput = page.getByRole('textbox', { name: 'マーカーラベル' })
   await labelInput.fill('新郎パート')
+  await expect(labelInput).toHaveValue('新郎パート')
   await expect(page.locator(`[data-marker-id="${markerId}"]`)).toHaveAttribute('title', '新郎パート')
 
-  const timeInput = page.locator('input[type="number"]').first()
-  await timeInput.fill('25')
-  await expect(page.locator('aside').getByText('25.0s')).toBeVisible()
-
   const markerHandle = page.locator(`[data-marker-id="${markerId}"]`)
+  await expect(markerHandle).toHaveAttribute('title', '新郎パート')
+
+  const timeInput = page.getByRole('spinbutton', { name: 'マーカー時刻' })
+  const initialTime = Number(await timeInput.inputValue())
+  const nudgedTime = initialTime + 5
+  await timeInput.fill(String(nudgedTime))
+  await timeInput.press('Tab')
+  await expect(timeInput).toHaveValue(String(nudgedTime))
+
+  await markerHandle.scrollIntoViewIfNeeded()
   const box = await markerHandle.boundingBox()
   expect(box).toBeTruthy()
   const startX = box!.x + box!.width / 2
   const startY = box!.y + box!.height / 2
   await page.mouse.move(startX, startY)
   await page.mouse.down()
-  await page.mouse.move(startX + 80, startY)
+  await page.waitForTimeout(50)
+  await page.mouse.move(startX + 160, startY, { steps: 12 })
   await page.mouse.up()
 
-  const movedTime = Number(await timeInput.inputValue())
-  expect(movedTime).toBeGreaterThan(25)
+  await expect.poll(async () => Number(await timeInput.inputValue())).toBeGreaterThan(nudgedTime)
 })
 
 test('書き出し: 対応環境ではMP4ダウンロード、非対応環境ではエラー表示(スモーク)', async ({ page }) => {
@@ -720,7 +765,7 @@ test('インスペクター: 画像クリップのメディアを差し替えで
   await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
 
   await page.getByTitle('クリックで再生位置に追加').first().click()
-  await page.locator('footer').getByText('photo-a.png').click()
+  await clickTimelineClip(page, 'photo-a.png')
 
   await page.getByRole('button', { name: 'メディア' }).click()
   await page.getByRole('button', { name: 'photo-b.png に差し替え' }).click()
@@ -848,7 +893,7 @@ test('インスペクター: 画像クリップを動画メディアへ差し替
   await expect(page.getByText('2件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
 
   await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'photo.png' }).click()
-  await page.locator('footer').getByText('photo.png').click()
+  await clickTimelineClip(page, 'photo.png')
 
   await page.getByRole('button', { name: 'メディア' }).click()
   await page.getByRole('button', { name: 'clip.webm に差し替え' }).click()
@@ -871,7 +916,7 @@ test('インスペクター: 動画クリップを画像メディアへ差し替
   await expect(page.getByText('2件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
 
   await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'clip.webm' }).click()
-  await page.locator('footer').getByText('clip.webm').click()
+  await clickTimelineClip(page, 'clip.webm')
 
   await page.getByRole('button', { name: 'メディア' }).click()
   await page.getByRole('button', { name: 'still.png に差し替え' }).click()
@@ -945,7 +990,7 @@ test('タイムラインズーム: 選択クリップへズームとフィット
   await page.getByRole('button', { name: /結婚式フル構成/ }).click()
   await expect(page.getByText('結婚式フル構成テンプレートを適用しました')).toBeVisible()
 
-  await page.locator('footer').getByText('Opening').click()
+  await clickTimelineClip(page, 'Opening')
 
   const zoomLabel = page.getByTestId('timeline-zoom-label')
   const before = Number((await zoomLabel.textContent())?.replace('px/s', '') ?? '0')

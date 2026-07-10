@@ -2,7 +2,7 @@ import type { Transform, TransformKeyframe } from '../types/project'
 import { createId } from './id'
 import { getTransformAtLocalTime, sortTransformKeyframes } from './transformKeyframes'
 
-export const TRANSFORM_TIMELINE_LANE_HEIGHT = 16
+export const TRANSFORM_TIMELINE_LANE_HEIGHT = 24
 
 export function keyframeToTimelineX(keyframe: TransformKeyframe, clipDuration: number, width: number): number {
   const duration = Math.max(clipDuration, 0.001)
@@ -12,6 +12,58 @@ export function keyframeToTimelineX(keyframe: TransformKeyframe, clipDuration: n
 export function timelineXToTime(x: number, width: number, clipDuration: number): number {
   const duration = Math.max(clipDuration, 0.001)
   return Math.max(0, Math.min(clipDuration, (x / width) * duration))
+}
+
+export function keyframeOpacityValue(keyframe: TransformKeyframe, base: Transform): number {
+  return keyframe.opacity ?? base.opacity
+}
+
+export function opacityToLaneY(opacity: number, laneHeight: number): number {
+  const clamped = Math.max(0, Math.min(1, opacity))
+  return laneHeight - clamped * laneHeight
+}
+
+export function laneYToOpacity(y: number, laneHeight: number): number {
+  const clampedY = Math.max(0, Math.min(laneHeight, y))
+  return (laneHeight - clampedY) / laneHeight
+}
+
+export function keyframeToLanePoint(
+  keyframe: TransformKeyframe,
+  base: Transform,
+  clipDuration: number,
+  width: number,
+  laneHeight: number,
+): { x: number; y: number } {
+  return {
+    x: keyframeToTimelineX(keyframe, clipDuration, width),
+    y: opacityToLaneY(keyframeOpacityValue(keyframe, base), laneHeight),
+  }
+}
+
+/** 不透明度補間に沿った SVG path (M/L) */
+export function buildTransformOpacityCurvePath(
+  transform: Transform,
+  keyframes: TransformKeyframe[] | undefined,
+  clipDuration: number,
+  width: number,
+  laneHeight: number,
+): string {
+  if (!keyframes?.length || width <= 0 || laneHeight <= 0) return ''
+
+  const duration = Math.max(clipDuration, 0.001)
+  const samples = Math.max(2, Math.min(80, Math.ceil(width / 3)))
+  const parts: string[] = []
+
+  for (let i = 0; i <= samples; i++) {
+    const localTime = (i / samples) * duration
+    const opacity = getTransformAtLocalTime(transform, keyframes, localTime, duration).opacity
+    const x = (localTime / duration) * width
+    const y = opacityToLaneY(opacity, laneHeight)
+    parts.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`)
+  }
+
+  return parts.join(' ')
 }
 
 export function updateTransformKeyframeList(
@@ -27,15 +79,19 @@ export function createTransformKeyframeAt(
   keyframes: TransformKeyframe[] | undefined,
   clipDuration: number,
   time: number,
+  opacity?: number,
 ): TransformKeyframe[] {
   const localTime = Math.max(0, Math.min(clipDuration, time))
   const resolved = getTransformAtLocalTime(transform, keyframes, localTime, clipDuration)
+  const resolvedOpacity = opacity != null
+    ? Math.max(0, Math.min(1, opacity))
+    : resolved.opacity
   return upsertTransformKeyframeAt(transform, keyframes, clipDuration, localTime, {
     x: resolved.x,
     y: resolved.y,
     scale: resolved.scale,
     rotation: resolved.rotation,
-    opacity: resolved.opacity,
+    opacity: resolvedOpacity,
   })
 }
 

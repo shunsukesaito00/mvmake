@@ -1,9 +1,45 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_TRANSFORM } from '../types/project'
 import {
+  buildTransformOpacityCurvePath,
+  createTransformKeyframeAt,
+  keyframeToLanePoint,
+  laneYToOpacity,
+  opacityToLaneY,
   splitTransformKeyframes,
   upsertTransformKeyframeAt,
 } from './transformKeyframesTimeline'
+
+describe('transform timeline lane', () => {
+  it('不透明度とレーンYを相互変換する', () => {
+    expect(opacityToLaneY(1, 24)).toBe(0)
+    expect(opacityToLaneY(0, 24)).toBe(24)
+    expect(laneYToOpacity(12, 24)).toBeCloseTo(0.5)
+  })
+
+  it('キーフレームをレーン座標へ変換する', () => {
+    const kf = { id: 'a', time: 2, x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 0.25 }
+    const point = keyframeToLanePoint(kf, DEFAULT_TRANSFORM, 4, 100, 24)
+    expect(point.x).toBe(50)
+    expect(point.y).toBe(opacityToLaneY(0.25, 24))
+  })
+
+  it('不透明度カーブ path を生成する', () => {
+    const keyframes = [
+      { id: 'a', time: 0, x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+      { id: 'b', time: 2, x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 0 },
+    ]
+    const path = buildTransformOpacityCurvePath(DEFAULT_TRANSFORM, keyframes, 2, 40, 24)
+    expect(path.startsWith('M')).toBe(true)
+    expect(path.includes('L')).toBe(true)
+  })
+
+  it('ダブルクリック追加時に不透明度を指定できる', () => {
+    const next = createTransformKeyframeAt(DEFAULT_TRANSFORM, undefined, 4, 1, 0.3)
+    expect(next).toHaveLength(1)
+    expect(next[0].opacity).toBe(0.3)
+  })
+})
 
 describe('upsertTransformKeyframeAt', () => {
   it('近い時間のキーフレームがあれば更新する', () => {

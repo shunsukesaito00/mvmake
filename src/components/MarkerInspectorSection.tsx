@@ -27,6 +27,7 @@ export function MarkerInspectorSection({ marker }: MarkerInspectorSectionProps) 
           <span className="text-[10px] font-semibold tracking-wider text-text-muted uppercase">ラベル</span>
           <input
             type="text"
+            aria-label="マーカーラベル"
             value={marker.label}
             onChange={(e) => updateMarker(marker.id, { label: e.target.value }, true)}
             className="w-full rounded-lg bg-surface-3 px-2.5 py-1.5 text-xs text-text-primary ring-1 ring-border focus:ring-accent/50 focus:outline-none"
@@ -37,6 +38,7 @@ export function MarkerInspectorSection({ marker }: MarkerInspectorSectionProps) 
           <span className="text-[10px] font-semibold tracking-wider text-text-muted uppercase">時刻 (秒)</span>
           <input
             type="number"
+            aria-label="マーカー時刻"
             min={0}
             max={duration}
             step={frameStep}

@@ -81,8 +81,8 @@ export function PreviewOverlay() {
   }
 
   const beginDrag = (
-    e: React.PointerEvent,
-    onMove: (dx: number, dy: number, rect: DOMRect, ev: PointerEvent) => void,
+    e: React.MouseEvent,
+    onMove: (dx: number, dy: number, rect: DOMRect, ev: MouseEvent) => void,
   ) => {
     e.preventDefault()
     e.stopPropagation()
@@ -91,16 +91,16 @@ export function PreviewOverlay() {
     const startY = e.clientY
     useProjectStore.getState().pushHistory()
 
-    const handleMove = (ev: PointerEvent) => onMove(ev.clientX - startX, ev.clientY - startY, rect, ev)
+    const handleMove = (ev: MouseEvent) => onMove(ev.clientX - startX, ev.clientY - startY, rect, ev)
     const handleUp = () => {
-      window.removeEventListener('pointermove', handleMove)
-      window.removeEventListener('pointerup', handleUp)
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleUp)
     }
-    window.addEventListener('pointermove', handleMove)
-    window.addEventListener('pointerup', handleUp)
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', handleUp)
   }
 
-  const startMove = (e: React.PointerEvent) => {
+  const startMove = (e: React.MouseEvent) => {
     const { x, y } = transform
     beginDrag(e, (dx, dy, rect) => {
       applyTransformPatch({
@@ -110,7 +110,7 @@ export function PreviewOverlay() {
     })
   }
 
-  const startScale = (e: React.PointerEvent) => {
+  const startScale = (e: React.MouseEvent) => {
     const rect = rootRef.current!.getBoundingClientRect()
     const cx = rect.left + transform.x * rect.width
     const cy = rect.top + transform.y * rect.height
@@ -124,7 +124,7 @@ export function PreviewOverlay() {
     })
   }
 
-  const startRotate = (e: React.PointerEvent) => {
+  const startRotate = (e: React.MouseEvent) => {
     const rect = rootRef.current!.getBoundingClientRect()
     const cx = rect.left + transform.x * rect.width
     const cy = rect.top + transform.y * rect.height
@@ -133,6 +133,14 @@ export function PreviewOverlay() {
       const normalized = ((angle + 180) % 360) - 180
       const snapped = ev.shiftKey ? Math.round(normalized / 15) * 15 : Math.round(normalized)
       applyTransformPatch({ rotation: snapped })
+    })
+  }
+
+  const startOpacity = (e: React.MouseEvent) => {
+    const startOpacityValue = transform.opacity
+    beginDrag(e, (_dx, dy, rect) => {
+      const next = Math.max(0, Math.min(1, startOpacityValue - dy / rect.height))
+      applyTransformPatch({ opacity: next })
     })
   }
 
@@ -149,22 +157,30 @@ export function PreviewOverlay() {
           height: `${box.h * 100}%`,
           transform: `rotate(${transform.rotation}deg)`,
         }}
-        onPointerDown={startMove}
+        onMouseDown={startMove}
       >
         <div className="absolute inset-0 border border-accent/90 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]" />
 
         {/* スケールハンドル(四隅) */}
-        <div className={`${handleClass} -top-1.5 -left-1.5 cursor-nwse-resize`} onPointerDown={startScale} />
-        <div className={`${handleClass} -top-1.5 -right-1.5 cursor-nesw-resize`} onPointerDown={startScale} />
-        <div className={`${handleClass} -bottom-1.5 -left-1.5 cursor-nesw-resize`} onPointerDown={startScale} />
-        <div className={`${handleClass} -bottom-1.5 -right-1.5 cursor-nwse-resize`} onPointerDown={startScale} />
+        <div className={`${handleClass} -top-1.5 -left-1.5 cursor-nwse-resize`} onMouseDown={startScale} />
+        <div className={`${handleClass} -top-1.5 -right-1.5 cursor-nesw-resize`} onMouseDown={startScale} />
+        <div className={`${handleClass} -bottom-1.5 -left-1.5 cursor-nesw-resize`} onMouseDown={startScale} />
+        <div className={`${handleClass} -bottom-1.5 -right-1.5 cursor-nwse-resize`} onMouseDown={startScale} />
 
         {/* 回転ハンドル(上部) */}
         <div className="pointer-events-none absolute -top-6 left-1/2 h-6 w-px -translate-x-1/2 bg-accent/60" />
         <div
           className="pointer-events-auto absolute -top-8 left-1/2 h-3 w-3 -translate-x-1/2 cursor-grab rounded-full border-2 border-accent bg-surface-0 hover:scale-125 transition-transform"
-          onPointerDown={startRotate}
+          onMouseDown={startRotate}
           title="ドラッグで回転 (Shift: 15°スナップ)"
+        />
+
+        {/* 不透明度ハンドル(下部) */}
+        <div className="pointer-events-none absolute -bottom-6 left-1/2 h-6 w-px -translate-x-1/2 bg-sky-400/60" />
+        <div
+          className="pointer-events-auto absolute -bottom-8 left-1/2 h-3 w-3 -translate-x-1/2 cursor-ns-resize rounded-full border-2 border-sky-400 bg-surface-0 hover:scale-125 transition-transform"
+          onMouseDown={startOpacity}
+          title={`不透明度 ${Math.round(transform.opacity * 100)}% — 上下ドラッグで調整`}
         />
       </div>
     </div>
