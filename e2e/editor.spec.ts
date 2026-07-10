@@ -1548,6 +1548,12 @@ test('テキスト: MG エレガントネームプリセットを追加できる
   await expect(page.locator('footer').getByText('Taro & Hanako')).toBeVisible()
 })
 
+test('テキスト: MG スパークル誓いプリセットを追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'MG: スパークル誓い' }).click()
+  await expect(page.locator('footer').getByText('I Do')).toBeVisible()
+})
+
 test('テキスト: MG プリセットをカスタムキーフレームに変換できる', async ({ page }) => {
   await page.getByTitle('テキスト').click()
   await page.getByRole('button', { name: 'MG: タイトルリビール' }).click()

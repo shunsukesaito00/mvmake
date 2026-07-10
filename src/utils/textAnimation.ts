@@ -14,6 +14,9 @@ export const TEXT_ANIMATION_LABELS: Record<TextAnimationType, string> = {
   motionElegant: 'MG: エレガント',
   motionCurtain: 'MG: カーテン',
   motionGlow: 'MG: グローイン',
+  motionSparkle: 'MG: スパークル',
+  motionRibbon: 'MG: リボン',
+  motionHeartbeat: 'MG: ハートビート',
   keyframes: 'カスタム（キーフレーム）',
 }
 
@@ -25,6 +28,9 @@ const MOTION_TEXT_ANIMATIONS = new Set<TextAnimationType>([
   'motionElegant',
   'motionCurtain',
   'motionGlow',
+  'motionSparkle',
+  'motionRibbon',
+  'motionHeartbeat',
 ])
 
 const FADE_IN_TYPES = new Set<TextAnimationType>([
@@ -138,6 +144,17 @@ export function computeTextAnimationState(
       break
     case 'motionGlow':
       state.scale = 1.12 - 0.12 * eased
+      break
+    case 'motionSparkle':
+      state.offsetY = -(1 - eased) * lineHeightPx * 0.6
+      state.scale = 1.18 - 0.18 * eased
+      break
+    case 'motionRibbon':
+      state.offsetX = (1 - eased) * canvasW * 0.1
+      state.scale = 0.9 + 0.1 * eased
+      break
+    case 'motionHeartbeat':
+      state.scale = 0.82 + 0.18 * eased + Math.sin(eased * Math.PI) * 0.1
       break
     default:
       break

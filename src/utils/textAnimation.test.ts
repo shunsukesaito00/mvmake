@@ -110,6 +110,28 @@ describe('computeTextAnimationState', () => {
     const state = computeTextAnimationState(clip, 0, 1920, 48)
     expect(state.scale).toBeGreaterThan(1)
   })
+
+  it('sparkles in from above for motionSparkle', () => {
+    const clip = makeTextClip('motionSparkle')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetY).toBeLessThan(0)
+    expect(state.scale).toBeGreaterThan(1)
+  })
+
+  it('slides in from right for motionRibbon', () => {
+    const clip = makeTextClip('motionRibbon')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetX).toBeGreaterThan(0)
+    expect(state.scale).toBeLessThan(1)
+  })
+
+  it('pulses scale for motionHeartbeat', () => {
+    const clip = makeTextClip('motionHeartbeat')
+    const start = computeTextAnimationState(clip, 0, 1920, 48)
+    const mid = computeTextAnimationState(clip, 0.5, 1920, 48)
+    expect(start.scale).toBeLessThan(1)
+    expect(mid.scale).toBeGreaterThan(0.95)
+  })
 })
 
 describe('isMotionTextAnimation', () => {
@@ -118,6 +140,9 @@ describe('isMotionTextAnimation', () => {
     expect(isMotionTextAnimation('motionElegant')).toBe(true)
     expect(isMotionTextAnimation('motionCurtain')).toBe(true)
     expect(isMotionTextAnimation('motionGlow')).toBe(true)
+    expect(isMotionTextAnimation('motionSparkle')).toBe(true)
+    expect(isMotionTextAnimation('motionRibbon')).toBe(true)
+    expect(isMotionTextAnimation('motionHeartbeat')).toBe(true)
     expect(isMotionTextAnimation('fadeIn')).toBe(false)
   })
 })

@@ -32,6 +32,9 @@ export type TextAnimationType =
   | 'motionElegant'
   | 'motionCurtain'
   | 'motionGlow'
+  | 'motionSparkle'
+  | 'motionRibbon'
+  | 'motionHeartbeat'
   | 'keyframes'
   | 'none'
 
@@ -1152,6 +1155,78 @@ export const TEXT_PRESETS: TextPreset[] = [
     transform: { x: 0.5, y: 0.44 },
     duration: 4,
     animation: { type: 'scaleIn', duration: 0.75 },
+  },
+  {
+    id: 'motion-sparkle-vows',
+    label: 'MG: スパークル誓い',
+    category: 'subtitle',
+    text: {
+      content: 'I Do',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 72,
+      color: '#ffffff',
+      strokeColor: '#2c2c2c',
+      strokeWidth: 2,
+      shadowColor: 'rgba(255, 230, 180, 0.7)',
+      shadowBlur: 20,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: '',
+      backgroundPadding: 16,
+      backgroundRadius: 8,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.5, y: 0.46 },
+    duration: 4,
+    animation: { type: 'motionSparkle', duration: 0.8 },
+  },
+  {
+    id: 'motion-ribbon-toast',
+    label: 'MG: リボントースト',
+    category: 'lowerThird',
+    text: {
+      content: 'Toast & Cheers',
+      fontFamily: 'Noto Serif JP',
+      fontSize: 34,
+      color: '#f5e6d3',
+      strokeColor: '#1a1a1a',
+      strokeWidth: 0,
+      shadowColor: 'rgba(0,0,0,0.45)',
+      shadowBlur: 6,
+      textAlign: 'left',
+      verticalAlign: 'bottom',
+      backgroundColor: SUBTITLE_BAND_COLOR,
+      backgroundPadding: 20,
+      backgroundRadius: 6,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.32, y: 0.9 },
+    duration: 5,
+    animation: { type: 'motionRibbon', duration: 0.85 },
+  },
+  {
+    id: 'motion-heartbeat-love',
+    label: 'MG: ハートビート',
+    category: 'subtitle',
+    text: {
+      content: 'With All My Love',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 50,
+      color: '#ffffff',
+      strokeColor: '#1a1a1a',
+      strokeWidth: 0,
+      shadowColor: 'rgba(255, 180, 180, 0.55)',
+      shadowBlur: 16,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.25)',
+      backgroundPadding: 24,
+      backgroundRadius: 12,
+      lineHeight: 1.25,
+    },
+    transform: { x: 0.5, y: 0.42 },
+    duration: 4,
+    animation: { type: 'motionHeartbeat', duration: 0.9 },
   },
 ]
 

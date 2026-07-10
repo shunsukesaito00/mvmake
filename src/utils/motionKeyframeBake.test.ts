@@ -66,6 +66,12 @@ describe('bakeMotionPresetToKeyframes', () => {
     expect(keyframes[0].y).toBeGreaterThan(keyframes[1].y)
     expect(keyframes[0].scale).toBeLessThan(keyframes[1].scale)
   })
+
+  it('offsets ribbon motion on X', () => {
+    const clip = makeTextClip('motionRibbon')
+    const keyframes = bakeMotionPresetToKeyframes(clip)
+    expect(keyframes[0].x).toBeGreaterThan(keyframes[1].x)
+  })
 })
 
 describe('applyBakedMotionKeyframes', () => {
