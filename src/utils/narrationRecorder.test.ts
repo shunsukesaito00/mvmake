@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildNarrationFileName,
+  canRetryNarrationError,
+  classifyGetUserMediaError,
   extensionForMimeType,
   formatRecordingElapsed,
   mergeRecordedChunks,
@@ -39,5 +41,21 @@ describe('narrationRecorder', () => {
     expect(formatRecordingElapsed(0)).toBe('0:00')
     expect(formatRecordingElapsed(65.4)).toBe('1:05')
     expect(formatRecordingElapsed(125)).toBe('2:05')
+  })
+
+  it('classifyGetUserMediaError が権限拒否を分類する', () => {
+    const error = classifyGetUserMediaError(new DOMException('denied', 'NotAllowedError'))
+    expect(error.code).toBe('permission_denied')
+    expect(error.title).toContain('許可')
+  })
+
+  it('classifyGetUserMediaError がデバイス未検出を分類する', () => {
+    const error = classifyGetUserMediaError(new DOMException('not found', 'NotFoundError'))
+    expect(error.code).toBe('no_device')
+  })
+
+  it('canRetryNarrationError は unsupported のみ再試行不可', () => {
+    expect(canRetryNarrationError('permission_denied')).toBe(true)
+    expect(canRetryNarrationError('unsupported')).toBe(false)
   })
 })

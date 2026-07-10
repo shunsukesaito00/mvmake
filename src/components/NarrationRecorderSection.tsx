@@ -4,17 +4,57 @@ import { useProjectStore } from '../store/projectStore'
 import { useToastStore } from '../store/toastStore'
 import {
   buildNarrationFileName,
+  canRetryNarrationError,
+  classifyGetUserMediaError,
   formatRecordingElapsed,
   isNarrationRecordingSupported,
   mergeRecordedChunks,
+  narrationEmptyRecordingError,
+  narrationRecorderRuntimeError,
+  narrationUnsupportedError,
   pickRecorderMimeType,
+  type NarrationRecorderErrorInfo,
   type NarrationRecorderStatus,
 } from '../utils/narrationRecorder'
-import { Btn } from './ui'
+import { Btn, Modal } from './ui'
 import { Icons } from './icons'
 
 function stopStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((track) => track.stop())
+}
+
+function NarrationRecorderErrorPanel({
+  error,
+  onRetry,
+  onShowHelp,
+}: {
+  error: NarrationRecorderErrorInfo
+  onRetry: () => void
+  onShowHelp: () => void
+}) {
+  return (
+    <div
+      role="alert"
+      aria-live="polite"
+      className="mb-2 space-y-2 rounded-lg bg-danger/10 p-2.5 ring-1 ring-danger/25"
+    >
+      <p className="text-[11px] font-semibold text-danger">{error.title}</p>
+      <p className="text-[10px] leading-relaxed text-text-secondary">{error.message}</p>
+      <p className="text-[10px] leading-relaxed text-text-muted">{error.guidance}</p>
+      <div className="flex flex-wrap gap-2">
+        {canRetryNarrationError(error.code) && (
+          <Btn variant="accent" className="text-xs" onClick={onRetry}>
+            再試行
+          </Btn>
+        )}
+        {(error.code === 'permission_denied' || error.code === 'no_device' || error.code === 'device_busy') && (
+          <Btn variant="ghost" className="text-xs" onClick={onShowHelp}>
+            権限の確認方法
+          </Btn>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export function NarrationRecorderSection() {
@@ -23,6 +63,8 @@ export function NarrationRecorderSection() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null)
   const [isPlacing, setIsPlacing] = useState(false)
+  const [errorInfo, setErrorInfo] = useState<NarrationRecorderErrorInfo | null>(null)
+  const [showHelpModal, setShowHelpModal] = useState(false)
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -35,6 +77,11 @@ export function NarrationRecorderSection() {
   const showToast = useToastStore((s) => s.showToast)
 
   const supported = isNarrationRecordingSupported()
+
+  const reportError = (error: NarrationRecorderErrorInfo) => {
+    setErrorInfo(error)
+    showToast(error.title, 'error')
+  }
 
   const clearPreview = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -64,9 +111,11 @@ export function NarrationRecorderSection() {
 
   const handleStart = async () => {
     if (!supported) {
-      showToast('このブラウザではマイク録音に対応していません', 'error')
+      reportError(narrationUnsupportedError())
       return
     }
+
+    setErrorInfo(null)
 
     try {
       clearPreview()
@@ -92,7 +141,7 @@ export function NarrationRecorderSection() {
         }
 
         if (!blob || blob.size === 0) {
-          showToast('録音データが空です', 'error')
+          reportError(narrationEmptyRecordingError())
           resetRecording()
           return
         }
@@ -105,7 +154,7 @@ export function NarrationRecorderSection() {
       }
 
       recorder.onerror = () => {
-        showToast('録音中にエラーが発生しました', 'error')
+        reportError(narrationRecorderRuntimeError())
         resetRecording()
       }
 
@@ -116,10 +165,15 @@ export function NarrationRecorderSection() {
       timerRef.current = window.setInterval(() => {
         setElapsed((Date.now() - startedAtRef.current) / 1000)
       }, 200)
-    } catch {
-      showToast('マイクへのアクセスが拒否されました', 'error')
+    } catch (err) {
+      reportError(classifyGetUserMediaError(err))
       resetRecording()
     }
+  }
+
+  const handleRetry = () => {
+    setErrorInfo(null)
+    void handleStart()
   }
 
   const handleStop = () => {
@@ -129,6 +183,7 @@ export function NarrationRecorderSection() {
   }
 
   const handleDiscard = () => {
+    setErrorInfo(null)
     resetRecording()
   }
 
@@ -160,62 +215,95 @@ export function NarrationRecorderSection() {
     }
   }
 
-  if (!supported) {
-    return (
-      <div className="mx-3 mb-3 rounded-xl bg-surface-3 p-3 ring-1 ring-border">
-        <p className="text-[11px] font-semibold text-text-primary">ナレーション録音</p>
-        <p className="mt-1 text-[10px] text-text-muted">このブラウザではマイク録音に対応していません</p>
-      </div>
-    )
-  }
+  const displayError = !supported ? narrationUnsupportedError() : errorInfo
 
   return (
-    <div className="mx-3 mb-3 rounded-xl bg-surface-3 p-3 ring-1 ring-border">
-      <div className="mb-2 flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-muted text-accent">
-          <Icons.Mic size={14} />
-        </span>
-        <div>
-          <p className="text-[11px] font-semibold text-text-primary">ナレーション録音</p>
-          <p className="text-[10px] text-text-muted">マイク入力を録音して BGM トラックへ配置</p>
+    <>
+      <div className="mx-3 mb-3 rounded-xl bg-surface-3 p-3 ring-1 ring-border">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-muted text-accent">
+            <Icons.Mic size={14} />
+          </span>
+          <div>
+            <p className="text-[11px] font-semibold text-text-primary">ナレーション録音</p>
+            <p className="text-[10px] text-text-muted">マイク入力を録音して BGM トラックへ配置</p>
+          </div>
+        </div>
+
+        {displayError && status === 'idle' && (
+          <NarrationRecorderErrorPanel
+            error={displayError}
+            onRetry={handleRetry}
+            onShowHelp={() => setShowHelpModal(true)}
+          />
+        )}
+
+        {supported && status === 'recording' && (
+          <p className="mb-2 font-mono text-xs text-accent" aria-live="polite">
+            録音中 {formatRecordingElapsed(elapsed)}
+          </p>
+        )}
+
+        {supported && status === 'recorded' && previewUrl && (
+          <div className="mb-2 space-y-2">
+            <p className="text-[10px] text-text-muted">プレビュー ({formatRecordingElapsed(elapsed)})</p>
+            <audio controls src={previewUrl} className="w-full" aria-label="録音プレビュー" />
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {supported && status === 'idle' && (
+            <Btn variant="accent" className="text-xs" onClick={handleStart}>
+              録音開始
+            </Btn>
+          )}
+          {supported && status === 'recording' && (
+            <Btn variant="danger" className="text-xs" onClick={handleStop}>
+              停止
+            </Btn>
+          )}
+          {supported && status === 'recorded' && (
+            <>
+              <Btn variant="accent" className="text-xs" disabled={isPlacing} onClick={handlePlace}>
+                タイムラインに配置
+              </Btn>
+              <Btn variant="ghost" className="text-xs" onClick={handleDiscard}>
+                破棄
+              </Btn>
+            </>
+          )}
         </div>
       </div>
 
-      {status === 'recording' && (
-        <p className="mb-2 font-mono text-xs text-accent" aria-live="polite">
-          録音中 {formatRecordingElapsed(elapsed)}
-        </p>
-      )}
-
-      {status === 'recorded' && previewUrl && (
-        <div className="mb-2 space-y-2">
-          <p className="text-[10px] text-text-muted">プレビュー ({formatRecordingElapsed(elapsed)})</p>
-          <audio controls src={previewUrl} className="w-full" aria-label="録音プレビュー" />
+      <Modal open={showHelpModal} onClose={() => setShowHelpModal(false)} title="マイク権限の確認方法">
+        <div className="space-y-3 text-xs leading-relaxed text-text-secondary">
+          <section>
+            <p className="font-semibold text-text-primary">Chrome / Edge</p>
+            <ol className="mt-1 list-decimal space-y-1 pl-4 text-text-muted">
+              <li>アドレスバー左の鍵または設定アイコンをクリック</li>
+              <li>「マイク」を「許可」に変更</li>
+              <li>ページを再読み込みするか「再試行」を押す</li>
+            </ol>
+          </section>
+          <section>
+            <p className="font-semibold text-text-primary">Safari (macOS)</p>
+            <ol className="mt-1 list-decimal space-y-1 pl-4 text-text-muted">
+              <li>メニューバー「Safari → 設定 → Webサイト → マイク」</li>
+              <li>このサイトを「許可」に設定</li>
+              <li>「システム設定 → プライバシーとセキュリティ → マイク」で Safari を許可</li>
+            </ol>
+          </section>
+          <section>
+            <p className="font-semibold text-text-primary">マイクが見つからない場合</p>
+            <p className="mt-1 text-text-muted">
+              マイクやヘッドセットの接続、OS のサウンド入力設定を確認してください。Bluetooth 機器は接続完了後に再試行してください。
+            </p>
+          </section>
+          <Btn variant="accent" className="w-full" onClick={() => setShowHelpModal(false)}>
+            閉じる
+          </Btn>
         </div>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {status === 'idle' && (
-          <Btn variant="accent" className="text-xs" onClick={handleStart}>
-            録音開始
-          </Btn>
-        )}
-        {status === 'recording' && (
-          <Btn variant="danger" className="text-xs" onClick={handleStop}>
-            停止
-          </Btn>
-        )}
-        {status === 'recorded' && (
-          <>
-            <Btn variant="accent" className="text-xs" disabled={isPlacing} onClick={handlePlace}>
-              タイムラインに配置
-            </Btn>
-            <Btn variant="ghost" className="text-xs" onClick={handleDiscard}>
-              破棄
-            </Btn>
-          </>
-        )}
-      </div>
-    </div>
+      </Modal>
+    </>
   )
 }

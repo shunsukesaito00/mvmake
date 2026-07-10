@@ -108,6 +108,33 @@ export async function installNarrationRecordingMocks(
   }, encoded)
 }
 
+/** マイク権限拒否をシミュレート */
+export async function installNarrationPermissionDeniedMock(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('fable-onboarded', '1')
+    class MockMediaRecorder {
+      stream: MediaStream
+      ondataavailable: ((event: BlobEvent) => void) | null = null
+      onstop: (() => void) | null = null
+      state: RecordingState = 'inactive'
+      constructor(stream: MediaStream) {
+        this.stream = stream
+      }
+      start() {
+        this.state = 'recording'
+      }
+      stop() {
+        this.state = 'inactive'
+      }
+    }
+    ;(MockMediaRecorder as unknown as typeof MediaRecorder).isTypeSupported = () => true
+    window.MediaRecorder = MockMediaRecorder as unknown as typeof MediaRecorder
+    navigator.mediaDevices.getUserMedia = async () => {
+      throw new DOMException('Permission denied', 'NotAllowedError')
+    }
+  })
+}
+
 /** タイムライン上のクリップ本体（ラベルは pointer-events-none のため .cursor-grab を使う） */
 export function timelineClip(page: import('@playwright/test').Page, name: string | RegExp) {
   return page.locator('footer .cursor-grab').filter({ hasText: name })

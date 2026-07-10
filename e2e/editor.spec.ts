@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
-import { installNarrationRecordingMocks, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -885,6 +885,19 @@ test('メディア: ナレーション録音をプレビューしてタイムラ
   await page.getByRole('button', { name: 'タイムラインに配置' }).click()
   await expect(page.getByText('ナレーションをタイムラインに配置しました')).toBeVisible()
   await expect(page.locator('footer').getByText(/^narration-/)).toBeVisible()
+})
+
+test('メディア: マイク拒否時に案内と再試行を表示する', async ({ page }) => {
+  await installNarrationPermissionDeniedMock(page)
+  await page.goto('./')
+  await expect(page.getByText('FABLE', { exact: true })).toBeVisible()
+
+  await page.getByTitle('メディア').click()
+  await page.getByRole('button', { name: '録音開始' }).click()
+  await expect(page.getByRole('alert')).toContainText('マイクの使用が許可されていません')
+  await expect(page.getByRole('button', { name: '再試行' })).toBeVisible()
+  await page.getByRole('button', { name: '権限の確認方法' }).click()
+  await expect(page.getByRole('dialog', { name: 'マイク権限の確認方法' })).toBeVisible()
 })
 
 test('インスペクター: 画像クリップのメディアを差し替えできる', async ({ page }) => {
