@@ -270,6 +270,31 @@ test('タイムライン: トランスフォームキーフレームのベジェ
   expect(newBox.y).not.toBeCloseTo(box.y, 0)
 })
 
+test('タイムライン: トランスフォームキーフレームの全属性を同時表示できる', async ({ page }) => {
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('2')
+  await page.getByRole('slider', { name: '不透明度' }).nth(1).fill('0.3')
+  await page.getByRole('slider', { name: 'スケール' }).nth(1).fill('1.5')
+
+  await page.getByTestId('transform-kf-show-all').click()
+  await expect(page.getByTestId('transform-kf-show-all')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('transform-kf-legend')).toBeVisible()
+  await expect(page.getByTestId('transform-kf-curve-opacity')).toBeVisible()
+  await expect(page.getByTestId('transform-kf-curve-scale')).toBeVisible()
+
+  await page.getByTestId('transform-kf-property-x').click()
+  await expect(page.getByTestId('transform-kf-curve-x')).toHaveAttribute('stroke-width', '2')
+
+  await page.getByTestId('transform-kf-show-all').click()
+  await expect(page.getByTestId('transform-kf-curve-opacity')).toBeHidden()
+  await expect(page.getByTestId('transform-kf-curve-scale')).toBeHidden()
+})
+
 test('プレビュー: 不透明度ハンドルで transform キーフレームを更新できる', async ({ page }) => {
   await page.getByRole('button', { name: 'テキストを追加' }).click()
   await clickTimelineClip(page, 'Opening')

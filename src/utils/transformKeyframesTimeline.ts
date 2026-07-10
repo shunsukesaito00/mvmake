@@ -11,7 +11,9 @@ import {
 } from './transformKeyframeBezier'
 
 export const TRANSFORM_TIMELINE_LANE_HEIGHT = 24
+export const TRANSFORM_TIMELINE_EXPANDED_LANE_HEIGHT = 36
 export const TRANSFORM_TIMELINE_TAB_HEIGHT = 14
+export const TRANSFORM_TIMELINE_LEGEND_HEIGHT = 10
 
 export type TransformTimelineProperty = 'opacity' | 'x' | 'y' | 'scale' | 'rotation'
 
@@ -29,6 +31,23 @@ export const TRANSFORM_TIMELINE_PROPERTY_LABELS: Record<TransformTimelinePropert
   y: 'Y',
   scale: 'スケール',
   rotation: '回転',
+}
+
+export const TRANSFORM_TIMELINE_PROPERTY_COLORS: Record<TransformTimelineProperty, string> = {
+  opacity: 'rgba(56,189,248,0.9)',
+  x: 'rgba(52,211,153,0.9)',
+  y: 'rgba(251,191,36,0.9)',
+  scale: 'rgba(167,139,250,0.9)',
+  rotation: 'rgba(251,113,133,0.9)',
+}
+
+export function getTransformTimelineLaneHeight(showAllProperties: boolean): number {
+  return showAllProperties ? TRANSFORM_TIMELINE_EXPANDED_LANE_HEIGHT : TRANSFORM_TIMELINE_LANE_HEIGHT
+}
+
+export function getTransformTimelineTotalHeight(showAllProperties: boolean): number {
+  const legendHeight = showAllProperties ? TRANSFORM_TIMELINE_LEGEND_HEIGHT : 0
+  return TRANSFORM_TIMELINE_TAB_HEIGHT + legendHeight + getTransformTimelineLaneHeight(showAllProperties)
 }
 
 export function getTransformTimelinePropertyRange(property: TransformTimelineProperty): { min: number; max: number } {
@@ -238,6 +257,21 @@ export function buildTransformPropertyCurvePath(
   }
 
   return parts.join(' ')
+}
+
+export function buildAllTransformPropertyCurvePaths(
+  transform: Transform,
+  keyframes: TransformKeyframe[] | undefined,
+  clipDuration: number,
+  width: number,
+  laneHeight: number,
+): { property: TransformTimelineProperty; path: string }[] {
+  if (!keyframes?.length || width <= 0 || laneHeight <= 0) return []
+
+  return TRANSFORM_TIMELINE_PROPERTIES.map((property) => ({
+    property,
+    path: buildTransformPropertyCurvePath(transform, keyframes, clipDuration, width, laneHeight, property),
+  })).filter((entry) => entry.path.length > 0)
 }
 
 /** @deprecated buildTransformPropertyCurvePath を使用 */

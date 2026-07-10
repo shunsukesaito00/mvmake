@@ -3,7 +3,10 @@ import { DEFAULT_TRANSFORM } from '../types/project'
 import {
   buildTransformOpacityCurvePath,
   buildTransformPropertyCurvePath,
+  buildAllTransformPropertyCurvePaths,
   createTransformKeyframeAt,
+  getTransformTimelineLaneHeight,
+  getTransformTimelineTotalHeight,
   keyframeToLanePoint,
   laneYToOpacity,
   laneYToProperty,
@@ -56,6 +59,22 @@ describe('transform timeline lane', () => {
   it('レーンYとスケール値を相互変換する', () => {
     expect(propertyToLaneY(2, 'scale', 24)).toBeLessThan(propertyToLaneY(0.5, 'scale', 24))
     expect(laneYToProperty(12, 'scale', 24)).toBeGreaterThan(0.5)
+  })
+
+  it('全属性カーブ path を生成する', () => {
+    const keyframes = [
+      { id: 'a', time: 0, x: 0, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+      { id: 'b', time: 2, x: 1, y: 0.5, scale: 2, rotation: 90, opacity: 0 },
+    ]
+    const paths = buildAllTransformPropertyCurvePaths(DEFAULT_TRANSFORM, keyframes, 2, 40, 24)
+    expect(paths).toHaveLength(5)
+    expect(paths.map((p) => p.property)).toEqual(['opacity', 'x', 'y', 'scale', 'rotation'])
+  })
+
+  it('全属性表示時はレーン高さが拡張される', () => {
+    expect(getTransformTimelineLaneHeight(false)).toBe(24)
+    expect(getTransformTimelineLaneHeight(true)).toBe(36)
+    expect(getTransformTimelineTotalHeight(true)).toBeGreaterThan(getTransformTimelineTotalHeight(false))
   })
 })
 

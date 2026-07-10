@@ -321,7 +321,8 @@ export function TimelinePanel() {
       if (!keyframes?.length) return
 
       const property = dragState.transformKeyframeProperty ?? 'opacity'
-      const propertyDelta = -(e.clientY - dragState.startY) / TRANSFORM_TIMELINE_LANE_HEIGHT
+      const laneHeight = dragState.transformTimelineLaneHeight ?? TRANSFORM_TIMELINE_LANE_HEIGHT
+      const propertyDelta = -(e.clientY - dragState.startY) / laneHeight
       const newTime = Math.max(0, Math.min(clip.duration, (dragState.originalKeyframeTime ?? 0) + dt))
       const newValue = applyTransformPropertyLaneDelta(
         dragState.originalKeyframePropertyValue ?? dragState.originalKeyframeOpacity ?? 1,
@@ -544,6 +545,7 @@ export function TimelinePanel() {
     keyframeTime: number,
     property: TransformTimelineProperty,
     propertyValue: number,
+    laneHeight: number,
     e: React.MouseEvent,
   ) => {
     const track = tracks.find((t) => t.id === clip.trackId)
@@ -560,6 +562,7 @@ export function TimelinePanel() {
       transformKeyframeProperty: property,
       originalKeyframePropertyValue: propertyValue,
       originalKeyframeOpacity: property === 'opacity' ? propertyValue : undefined,
+      transformTimelineLaneHeight: laneHeight,
       startX: e.clientX,
       startY: e.clientY,
       originalStartTime: clip.startTime,
@@ -758,12 +761,13 @@ export function TimelinePanel() {
                           widthPx={width}
                           isSelected={isSelected}
                           bottomOffset={transformLaneBottom}
-                          onStartKeyframeDrag={(kf, property, value, e) => startTransformKeyframeDrag(
+                          onStartKeyframeDrag={(kf, property, value, laneHeight, e) => startTransformKeyframeDrag(
                             clip,
                             kf.id,
                             kf.time,
                             property,
                             value,
+                            laneHeight,
                             e,
                           )}
                           onStartBezierHandleDrag={(kf, handleType, property, e) => startTransformBezierHandleDrag(

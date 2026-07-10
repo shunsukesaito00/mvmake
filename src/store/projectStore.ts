@@ -128,6 +128,7 @@ export interface TimelineDragState {
   transformBezierHandleType?: 'in' | 'out'
   originalBezierTimeOffset?: number
   originalBezierValueOffset?: number
+  transformTimelineLaneHeight?: number
   markerId?: string
   slideSnapshot?: SlideSnapshot
 }
