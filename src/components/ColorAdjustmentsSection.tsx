@@ -9,6 +9,7 @@ import { Slider } from './ui'
 import { useToastStore } from '../store/toastStore'
 import { useProjectStore } from '../store/projectStore'
 import { ColorLookPreview, useColorLookHoverPreview } from './ColorLookPreview'
+import { LutPreview, useLutHoverPreview } from './LutPreview'
 
 interface Props {
   color: ColorAdjustments
@@ -36,6 +37,7 @@ export function ColorAdjustmentsSection({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const activePresetId = matchColorLookPreset(color)
   const { setHoverPresetId, previewColor, previewLabel } = useColorLookHoverPreview(color)
+  const { setHoverLutId, previewLutId, previewLabel: lutPreviewLabel } = useLutHoverPreview(lutId, lutAssets)
 
   const applyPreset = (presetId: string) => {
     const preset = COLOR_LOOK_PRESETS.find((p) => p.id === presetId)
@@ -71,7 +73,7 @@ export function ColorAdjustmentsSection({
       <div>
         <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-accent uppercase">ルックプリセット</p>
         <p className="mb-2 text-[10px] leading-relaxed text-text-muted">
-          適用順: LUT → 色温度/ティント → 色相/明るさ/コントラスト/彩度。プリセットと LUT は併用できます。
+          適用順: LUT → トーンカーブ → 色温度/ティント → 色相/明るさ/コントラスト/彩度。プリセットと LUT は併用できます。
         </p>
         <div className="flex flex-wrap gap-1.5">
           {COLOR_LOOK_PRESETS.map((preset) => (
@@ -117,6 +119,19 @@ export function ColorAdjustmentsSection({
               }}
             />
           </div>
+          <p className="text-[10px] leading-relaxed text-text-muted">
+            クリップ/サムネイルに LUT を Canvas プレビュー。強度スライダーと色調補正も反映されます。
+          </p>
+          <LutPreview
+            previewImageUrl={previewImageUrl}
+            lutId={previewLutId}
+            lutIntensity={lutIntensity}
+            lutAssets={lutAssets}
+            color={previewColor}
+            previewFade={previewFade}
+            previewLabel={lutPreviewLabel}
+            onHoverLut={setHoverLutId}
+          />
           <label className="block text-[10px] text-text-muted">
             LUT
             <select
@@ -126,6 +141,7 @@ export function ColorAdjustmentsSection({
               onChange={(e) => {
                 const next = e.target.value || undefined
                 onLutChange(next, lutIntensity, true)
+                setHoverLutId(null)
                 if (next) {
                   const asset = lutAssets.find((a) => a.id === next)
                   if (asset) showToast(`「${asset.name}」LUT を適用しました`, 'success')

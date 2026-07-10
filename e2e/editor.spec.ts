@@ -1325,9 +1325,10 @@ test('色調補正: LUT をインポートして適用できる', async ({ page 
   await page.setInputFiles('input[accept*=".cube"]', { name: 'wedding-warm.cube', mimeType: 'text/plain', buffer: cube })
   await expect(page.getByText('「wedding-warm」をインポートしました')).toBeVisible()
 
-  await page.getByLabel('LUT').selectOption({ label: 'wedding-warm (2³)' })
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'wedding-warm (2³)' })
   await expect(page.getByText('「wedding-warm」LUT を適用しました')).toBeVisible()
   await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
+  await expect(page.getByLabel('LUTプレビュー')).toBeVisible()
 })
 
 test('色調補正: HSL の色温度を設定できる', async ({ page }) => {
