@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_COLOR } from '../types/project'
-import { buildUserColorLookPreset, formatColorLookPresetSummary } from './colorLookPresetUtils'
+import { buildUserColorLookPreset, formatColorLookPresetSummary, getColorLookPresetSummaryParts } from './colorLookPresetUtils'
 import {
   buildColorLookPresetExportFilename,
   buildExportedColorLookPresetFile,
@@ -21,6 +21,46 @@ describe('colorLookPresetUtils', () => {
     })
     expect(summary).toContain('明るさ')
     expect(summary).toContain('彩度')
+  })
+
+  it('formatColorLookPresetSummary がトーンカーブを要約する', () => {
+    const summary = formatColorLookPresetSummary({
+      ...DEFAULT_COLOR,
+      midtones: 0.15,
+      highlights: -0.1,
+    })
+    expect(summary).toContain('ミッド')
+    expect(summary).toContain('ハイライト')
+  })
+
+  it('formatColorLookPresetSummary が RGB カーブの active チャンネルを要約する', () => {
+    const summary = formatColorLookPresetSummary({
+      ...DEFAULT_COLOR,
+      rgbCurves: {
+        ...DEFAULT_COLOR.rgbCurves,
+        r: DEFAULT_COLOR.rgbCurves.r.map((point) => (
+          point.x === 0.5 ? { ...point, y: 0.65 } : { ...point }
+        )),
+      },
+    })
+    expect(summary).toContain('RGBカーブ(R)')
+  })
+
+  it('getColorLookPresetSummaryParts が複数項目を収集する', () => {
+    const parts = getColorLookPresetSummaryParts({
+      ...DEFAULT_COLOR,
+      midtones: 0.2,
+      brightness: 0.1,
+      rgbCurves: {
+        ...DEFAULT_COLOR.rgbCurves,
+        g: DEFAULT_COLOR.rgbCurves.g.map((point) => (
+          point.x === 0.75 ? { ...point, y: 0.6 } : { ...point }
+        )),
+      },
+    })
+    expect(parts[0]).toContain('RGBカーブ(G)')
+    expect(parts.some((part) => part.startsWith('ミッド'))).toBe(true)
+    expect(parts.some((part) => part.startsWith('明るさ'))).toBe(true)
   })
 })
 
