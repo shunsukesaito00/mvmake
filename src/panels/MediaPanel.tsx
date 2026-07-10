@@ -96,10 +96,18 @@ function TransitionPreview({ type }: { type: TransitionType }) {
         className="absolute inset-0 bg-gradient-to-br from-sky-500/90 to-indigo-700/90"
         style={anim(TRANSITION_PREVIEW_ANIM[type])}
       />
-      {(type === 'fadeBlack' || type === 'fadeWhite') && (
+      {(type === 'fadeBlack' || type === 'fadeWhite' || type === 'fadeWarm') && (
         <div
-          className={`absolute inset-0 ${type === 'fadeBlack' ? 'bg-black' : 'bg-white'}`}
+          className={`absolute inset-0 ${
+            type === 'fadeBlack' ? 'bg-black' : type === 'fadeWhite' ? 'bg-white' : 'bg-[#F5E6D3]'
+          }`}
           style={anim('tp-flash')}
+        />
+      )}
+      {type === 'lightLeak' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-200/90 to-transparent"
+          style={anim('tp-in-light-leak')}
         />
       )}
     </div>

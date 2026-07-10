@@ -1102,6 +1102,22 @@ test('トランジション: ディゾルブを画像クリップに適用でき
   await expect(page.getByText('ディゾルブを適用しました')).toBeVisible()
 })
 
+test('トランジション: フェード to 暖色を画像クリップに適用できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'warm-a.png', mimeType: 'image/png', buffer: png })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'warm-a.png' }).click()
+  await page.setInputFiles('input[accept*="image"]', { name: 'warm-b.png', mimeType: 'image/png', buffer: png })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'warm-b.png' }).click()
+
+  await clickTimelineClip(page, 'warm-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'フェード to 暖色', exact: true }).click()
+  await expect(page.getByText('フェード to 暖色を適用しました')).toBeVisible()
+})
+
 test('メディア: ナレーション録音をプレビューしてタイムラインに配置できる', async ({ page }) => {
   await installNarrationRecordingMocks(page)
   await page.goto('./')

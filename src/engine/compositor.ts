@@ -201,6 +201,22 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
             else if (progress >= 0.5) layers.push({ clip, opacity: (progress - 0.5) * 2 * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'fadeWhite' })
             continue
           }
+          case 'fadeWarm': {
+            if (progress < 0.5 && prevVisible) layers.push({ clip: prev, opacity: (1 - progress * 2) * getLayerOpacityAtTime(prev, time) })
+            else if (progress >= 0.5) layers.push({ clip, opacity: (progress - 0.5) * 2 * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'fadeWarm' })
+            continue
+          }
+          case 'lightLeak': {
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: progress * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'lightLeak' })
+            continue
+          }
+          case 'softFocus': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'softFocus' })
+            continue
+          }
           case 'wipe': {
             if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
             layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'wipe' })
@@ -286,6 +302,11 @@ function drawWithTransform(
     const s = 0.5 + transitionProgress * 0.5
     ctx.scale(s, s)
   }
+  if (transitionType === 'softFocus' && transitionProgress !== undefined) {
+    const eased = easeSmoothstep(transitionProgress)
+    const s = 0.98 + eased * 0.02
+    ctx.scale(s, s)
+  }
   if (transitionType === 'slideLeft' && transitionProgress !== undefined) {
     ctx.translate(canvasW * (1 - transitionProgress), 0)
   }
@@ -322,7 +343,9 @@ function drawMediaClip(
 
   const blurPx = transitionType === 'blur' && transitionProgress !== undefined
     ? (1 - transitionProgress) * 16
-    : undefined
+    : transitionType === 'softFocus' && transitionProgress !== undefined
+      ? (1 - easeSmoothstep(transitionProgress)) * 24
+      : undefined
 
   const parsedLut = resolvedLut ? getParsedLutById(resolvedLut.lutId) : undefined
 
@@ -550,6 +573,24 @@ export async function renderFrame(
       if (transitionType === 'fadeWhite' && transitionProgress !== undefined && transitionProgress < 0.5) {
         ctx.fillStyle = `rgba(255,255,255,${transitionProgress * 2})`
         ctx.fillRect(0, 0, width, height)
+      }
+      if (transitionType === 'fadeWarm' && transitionProgress !== undefined && transitionProgress < 0.5) {
+        ctx.fillStyle = `rgba(255,245,230,${transitionProgress * 2})`
+        ctx.fillRect(0, 0, width, height)
+      }
+      if (transitionType === 'lightLeak' && transitionProgress !== undefined) {
+        const leak = Math.sin(transitionProgress * Math.PI)
+        ctx.save()
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = leak * 0.55
+        const grad = ctx.createLinearGradient(0, 0, width, height)
+        grad.addColorStop(0, 'rgba(255, 220, 120, 0)')
+        grad.addColorStop(0.4, 'rgba(255, 200, 80, 0.9)')
+        grad.addColorStop(0.6, 'rgba(255, 180, 60, 0.7)')
+        grad.addColorStop(1, 'rgba(255, 220, 120, 0)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
       }
       if (transitionType === 'iris' && transitionProgress !== undefined) {
         ctx.save()
