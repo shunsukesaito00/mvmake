@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { TEXT_PRESETS, TEXT_PRESET_CATEGORY_LABELS } from '../types/project'
 
 describe('TEXT_PRESETS', () => {
-  it('プリセット数が 35 種', () => {
-    expect(TEXT_PRESETS).toHaveLength(35)
+  it('プリセット数が 38 種', () => {
+    expect(TEXT_PRESETS).toHaveLength(38)
   })
 
   it('id が一意', () => {
@@ -22,9 +22,9 @@ describe('TEXT_PRESETS', () => {
     }
   })
 
-  it('ロワーサードが 12 種', () => {
+  it('ロワーサードが 13 種', () => {
     const lowerThirds = TEXT_PRESETS.filter((p) => p.category === 'lowerThird')
-    expect(lowerThirds).toHaveLength(12)
+    expect(lowerThirds).toHaveLength(13)
     expect(lowerThirds.map((p) => p.id)).toEqual([
       'lower-third-names',
       'lower-third-date',
@@ -38,11 +38,12 @@ describe('TEXT_PRESETS', () => {
       'lower-third-ceremony',
       'motion-ribbon-toast',
       'lower-third-cheers',
+      'lower-third-bouquet',
     ])
   })
 
-  it('テロップが 16 種', () => {
-    expect(TEXT_PRESETS.filter((p) => p.category === 'subtitle')).toHaveLength(16)
+  it('テロップが 18 種', () => {
+    expect(TEXT_PRESETS.filter((p) => p.category === 'subtitle')).toHaveLength(18)
   })
 
   it('MG プリセットが 13 種', () => {

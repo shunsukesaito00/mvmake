@@ -1731,6 +1731,12 @@ test('テキスト: MG 花びら舞プリセットを追加できる', async ({ 
   await expect(page.locator('footer').getByText('Petals of Love')).toBeVisible()
 })
 
+test('テキスト: テロップ（ケーキカット）プリセットを追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'テロップ（ケーキカット）' }).click()
+  await expect(page.locator('footer').getByText('Cake Cutting')).toBeVisible()
+})
+
 test('色調補正: LUT をインポートして適用できる', async ({ page }) => {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
