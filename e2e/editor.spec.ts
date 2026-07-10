@@ -1225,6 +1225,22 @@ test('トランジション: キャンドルグローを画像クリップに適
   await expect(page.getByText('キャンドルグローを適用しました')).toBeVisible()
 })
 
+test('トランジション: シルクフェードを画像クリップに適用できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'silk-a.png', mimeType: 'image/png', buffer: png })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'silk-a.png' }).click()
+  await page.setInputFiles('input[accept*="image"]', { name: 'silk-b.png', mimeType: 'image/png', buffer: png })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'silk-b.png' }).click()
+
+  await clickTimelineClip(page, 'silk-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'シルクフェード', exact: true }).click()
+  await expect(page.getByText('シルクフェードを適用しました')).toBeVisible()
+})
+
 test('メディア: ナレーション録音をプレビューしてタイムラインに配置できる', async ({ page }) => {
   await installNarrationRecordingMocks(page)
   await page.goto('./')

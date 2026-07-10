@@ -143,6 +143,24 @@ function TransitionPreview({ type }: { type: TransitionType }) {
           style={anim('tp-in-paper-confetti')}
         />
       )}
+      {type === 'silkFade' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-white/90 via-slate-100/50 to-transparent"
+          style={anim('tp-in-silk-fade')}
+        />
+      )}
+      {type === 'starlight' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-indigo-200/60 via-white/40 to-transparent"
+          style={anim('tp-in-starlight')}
+        />
+      )}
+      {type === 'laceReveal' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-white/80 via-rose-50/40 to-transparent"
+          style={anim('tp-in-lace-reveal')}
+        />
+      )}
     </div>
   )
 }

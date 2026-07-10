@@ -270,6 +270,23 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
             layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'paperConfetti' })
             continue
           }
+          case 'silkFade': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'silkFade' })
+            continue
+          }
+          case 'starlight': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'starlight' })
+            continue
+          }
+          case 'laceReveal': {
+            if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'laceReveal' })
+            continue
+          }
           case 'wipe': {
             if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
             layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'wipe' })
@@ -363,6 +380,11 @@ function drawWithTransform(
   if (transitionType === 'gentleZoom' && transitionProgress !== undefined) {
     const eased = easeSmoothstep(transitionProgress)
     const s = 1.08 - eased * 0.08
+    ctx.scale(s, s)
+  }
+  if (transitionType === 'silkFade' && transitionProgress !== undefined) {
+    const eased = easeSmoothstep(transitionProgress)
+    const s = 1.05 - eased * 0.05
     ctx.scale(s, s)
   }
   if (transitionType === 'petalFall' && transitionProgress !== undefined) {
@@ -741,6 +763,51 @@ export async function renderFrame(
         grad.addColorStop(0.5, 'rgba(140, 200, 255, 0.5)')
         grad.addColorStop(0.75, 'rgba(255, 200, 180, 0.55)')
         grad.addColorStop(1, 'rgba(200, 255, 180, 0.4)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'silkFade' && transitionProgress !== undefined) {
+        const veil = Math.sin(transitionProgress * Math.PI)
+        ctx.save()
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = veil * 0.45
+        const grad = ctx.createLinearGradient(0, 0, 0, height)
+        grad.addColorStop(0, 'rgba(255, 255, 252, 0.95)')
+        grad.addColorStop(0.35, 'rgba(245, 240, 235, 0.55)')
+        grad.addColorStop(0.7, 'rgba(230, 225, 220, 0.15)')
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'starlight' && transitionProgress !== undefined) {
+        const peak = Math.sin(transitionProgress * Math.PI)
+        const twinkle = 0.5 + 0.5 * Math.sin(transitionProgress * Math.PI * 4)
+        ctx.save()
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = peak * twinkle * 0.55
+        const stars = [
+          [0.18, 0.22], [0.42, 0.15], [0.68, 0.28], [0.82, 0.18],
+          [0.25, 0.55], [0.55, 0.48], [0.75, 0.62], [0.35, 0.72],
+        ]
+        for (const [sx, sy] of stars) {
+          const grad = ctx.createRadialGradient(width * sx, height * sy, 0, width * sx, height * sy, width * 0.04)
+          grad.addColorStop(0, 'rgba(255, 255, 255, 1)')
+          grad.addColorStop(0.4, 'rgba(220, 230, 255, 0.6)')
+          grad.addColorStop(1, 'rgba(200, 210, 255, 0)')
+          ctx.fillStyle = grad
+          ctx.fillRect(0, 0, width, height)
+        }
+        ctx.restore()
+      }
+      if (transitionType === 'laceReveal' && transitionProgress !== undefined) {
+        ctx.save()
+        const edge = height * (1 - transitionProgress)
+        const soft = height * 0.16
+        const grad = ctx.createLinearGradient(0, edge - soft, 0, edge + soft * 0.5)
+        grad.addColorStop(0, 'rgba(0, 0, 0, 1)')
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
         ctx.fillStyle = grad
         ctx.fillRect(0, 0, width, height)
         ctx.restore()
