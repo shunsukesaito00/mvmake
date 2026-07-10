@@ -155,6 +155,28 @@ describe('computeTextAnimationState', () => {
     expect(state.offsetY).toBeGreaterThan(0)
     expect(state.scale).toBeLessThan(1)
   })
+
+  it('sways gently for motionBells', () => {
+    const clip = makeTextClip('motionBells')
+    const start = computeTextAnimationState(clip, 0, 1920, 48)
+    const mid = computeTextAnimationState(clip, 0.5, 1920, 48)
+    expect(start.scale).toBeLessThan(1)
+    expect(mid.offsetX).not.toBe(0)
+  })
+
+  it('arcs elegantly for motionWaltz', () => {
+    const clip = makeTextClip('motionWaltz')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetY).toBeLessThan(0)
+    expect(state.scale).toBeLessThan(1)
+  })
+
+  it('rises with blessing glow for motionBlessing', () => {
+    const clip = makeTextClip('motionBlessing')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetY).toBeGreaterThan(0)
+    expect(state.scale).toBeLessThan(1)
+  })
 })
 
 describe('isMotionTextAnimation', () => {
@@ -169,6 +191,9 @@ describe('isMotionTextAnimation', () => {
     expect(isMotionTextAnimation('motionPetals')).toBe(true)
     expect(isMotionTextAnimation('motionShimmer')).toBe(true)
     expect(isMotionTextAnimation('motionVows')).toBe(true)
+    expect(isMotionTextAnimation('motionBells')).toBe(true)
+    expect(isMotionTextAnimation('motionWaltz')).toBe(true)
+    expect(isMotionTextAnimation('motionBlessing')).toBe(true)
     expect(isMotionTextAnimation('fadeIn')).toBe(false)
   })
 })
