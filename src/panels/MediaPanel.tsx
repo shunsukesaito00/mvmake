@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { useProjectStore, type SlideshowOptions } from '../store/projectStore'
 import { loadMediaFiles, enrichMediaAsset, type LoadMediaProgress } from '../engine/mediaLoader'
 import { TEXT_PRESETS, TEXT_PRESET_CATEGORY_LABELS, PROJECT_TEMPLATES, type TransitionType, type TextPreset } from '../types/project'
+import { TRANSITION_DEFINITIONS } from '../utils/transitions'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, Btn, EmptyState, Modal, Slider } from '../components/ui'
 import { Icons } from '../components/icons'
@@ -26,15 +27,7 @@ interface ImportProgress {
   fileName: string
 }
 
-const TRANSITION_OPTIONS: { type: TransitionType; label: string }[] = [
-  { type: 'crossfade', label: 'クロスフェード' },
-  { type: 'fadeBlack', label: 'フェード to 黒' },
-  { type: 'fadeWhite', label: 'フェード to 白' },
-  { type: 'wipe', label: 'ワイプ' },
-  { type: 'slideLeft', label: 'スライド左' },
-  { type: 'slideRight', label: 'スライド右' },
-  { type: 'zoom', label: 'ズーム' },
-]
+const TRANSITION_OPTIONS = TRANSITION_DEFINITIONS
 
 const SLIDESHOW_TRANSITIONS: { value: TransitionType | 'none'; label: string }[] = [
   ...TRANSITION_OPTIONS.map((t) => ({ value: t.type, label: t.label })),
@@ -90,15 +83,9 @@ function SlideshowDialog({ open, onClose, count, onConfirm }: {
   )
 }
 
-const TRANSITION_PREVIEW_ANIM: Record<TransitionType, string> = {
-  crossfade: 'tp-in-fade',
-  fadeBlack: 'tp-in-cut',
-  fadeWhite: 'tp-in-cut',
-  wipe: 'tp-in-wipe',
-  slideLeft: 'tp-in-slide-left',
-  slideRight: 'tp-in-slide-right',
-  zoom: 'tp-in-zoom',
-}
+const TRANSITION_PREVIEW_ANIM: Record<TransitionType, string> = Object.fromEntries(
+  TRANSITION_DEFINITIONS.map((d) => [d.type, d.previewAnim]),
+) as Record<TransitionType, string>
 
 function TransitionPreview({ type }: { type: TransitionType }) {
   const anim = (name: string) => ({ animation: `${name} 2.4s ease-in-out infinite` })

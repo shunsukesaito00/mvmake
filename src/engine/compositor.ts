@@ -14,6 +14,7 @@ import { drawTextBackground } from '../utils/textBackground'
 import { getVisualFadeMultiplier } from '../utils/visualFade'
 import { buildCanvasFontString } from '../utils/googleFonts'
 import { getTransformAtLocalTime } from '../utils/transformKeyframes'
+import { easeSmoothstep } from '../utils/transitions'
 
 type VisualTransformClip = VideoClip | ImageClip | TextClip
 
@@ -158,6 +159,17 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
             layers.push({ clip, opacity: progress * getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'crossfade' })
             continue
           }
+          case 'dissolve': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getClipOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'dissolve' })
+            continue
+          }
+          case 'blur': {
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getClipOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: progress * getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'blur' })
+            continue
+          }
           case 'fadeBlack': {
             if (progress < 0.5 && prevVisible) layers.push({ clip: prev, opacity: (1 - progress * 2) * getClipOpacityAtTime(prev, time) })
             else if (progress >= 0.5) layers.push({ clip, opacity: (progress - 0.5) * 2 * getClipOpacityAtTime(clip, time) })
@@ -183,9 +195,19 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
             layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'slideRight' })
             continue
           }
+          case 'slideUp': {
+            if (prevVisible) layers.push({ clip: prev, opacity: getClipOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'slideUp' })
+            continue
+          }
           case 'zoom': {
             if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getClipOpacityAtTime(prev, time) })
             layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'zoom' })
+            continue
+          }
+          case 'iris': {
+            if (prevVisible) layers.push({ clip: prev, opacity: getClipOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'iris' })
             continue
           }
         }
@@ -284,6 +306,9 @@ function drawWithTransform(
   if (transitionType === 'slideRight' && transitionProgress !== undefined) {
     ctx.translate(-canvasW * (1 - transitionProgress), 0)
   }
+  if (transitionType === 'slideUp' && transitionProgress !== undefined) {
+    ctx.translate(0, canvasH * (1 - transitionProgress))
+  }
 
   ctx.rotate((transform.rotation * Math.PI) / 180)
   ctx.translate(-cx, -cy)
@@ -311,6 +336,11 @@ function drawMediaClip(
   ctx.save()
   ctx.globalAlpha = opacity
   applyColorFilter(ctx, color)
+
+  if (transitionType === 'blur' && transitionProgress !== undefined) {
+    const blurPx = (1 - transitionProgress) * 16
+    if (blurPx > 0.1) ctx.filter = `blur(${blurPx}px)`
+  }
 
   drawWithTransform(ctx, transform, canvasW, canvasH, transitionType, transitionProgress, () => {
     if (clip.type === 'video') {
@@ -462,6 +492,15 @@ export async function renderFrame(
       if (transitionType === 'fadeWhite' && transitionProgress !== undefined && transitionProgress < 0.5) {
         ctx.fillStyle = `rgba(255,255,255,${transitionProgress * 2})`
         ctx.fillRect(0, 0, width, height)
+      }
+      if (transitionType === 'iris' && transitionProgress !== undefined) {
+        ctx.save()
+        ctx.globalCompositeOperation = 'destination-in'
+        const radius = Math.max(width, height) * 0.55 * transitionProgress
+        ctx.beginPath()
+        ctx.arc(width * 0.5, height * 0.5, Math.max(radius, 1), 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
       }
     }
   }

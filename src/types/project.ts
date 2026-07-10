@@ -3,12 +3,16 @@ export type TrackType = 'video' | 'text' | 'audio'
 export type ClipType = 'video' | 'image' | 'audio' | 'text'
 export type TransitionType =
   | 'crossfade'
+  | 'dissolve'
+  | 'blur'
   | 'fadeBlack'
   | 'fadeWhite'
   | 'wipe'
   | 'slideLeft'
   | 'slideRight'
+  | 'slideUp'
   | 'zoom'
+  | 'iris'
 export type TextAnimationType = 'fadeIn' | 'fadeOut' | 'slideUp' | 'typewriter' | 'scaleIn' | 'none'
 
 export interface MediaAsset {

@@ -172,6 +172,22 @@ input[type="range"]::-moz-range-thumb {
   0%, 15% { transform: scale(0.3); opacity: 0; }
   55%, 100% { transform: scale(1); opacity: 1; }
 }
+@keyframes tp-in-dissolve {
+  0%, 20% { opacity: 0; }
+  70%, 100% { opacity: 1; }
+}
+@keyframes tp-in-blur {
+  0%, 15% { opacity: 0; filter: blur(6px); }
+  55%, 100% { opacity: 1; filter: blur(0); }
+}
+@keyframes tp-in-slide-up {
+  0%, 15% { transform: translateY(100%); }
+  55%, 100% { transform: translateY(0); }
+}
+@keyframes tp-in-iris {
+  0%, 15% { clip-path: circle(0% at 50% 50%); }
+  55%, 100% { clip-path: circle(75% at 50% 50%); }
+}
 @keyframes tp-flash {
   0%, 10% { opacity: 0; }
   35% { opacity: 1; }

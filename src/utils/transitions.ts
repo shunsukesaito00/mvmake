@@ -1,0 +1,26 @@
+import type { TransitionType } from '../types/project'
+
+export interface TransitionDefinition {
+  type: TransitionType
+  label: string
+  previewAnim: string
+}
+
+export const TRANSITION_DEFINITIONS: TransitionDefinition[] = [
+  { type: 'crossfade', label: 'クロスフェード', previewAnim: 'tp-in-fade' },
+  { type: 'dissolve', label: 'ディゾルブ', previewAnim: 'tp-in-dissolve' },
+  { type: 'blur', label: 'ブラーディゾルブ', previewAnim: 'tp-in-blur' },
+  { type: 'fadeBlack', label: 'フェード to 黒', previewAnim: 'tp-in-cut' },
+  { type: 'fadeWhite', label: 'フェード to 白', previewAnim: 'tp-in-cut' },
+  { type: 'wipe', label: 'ワイプ', previewAnim: 'tp-in-wipe' },
+  { type: 'slideLeft', label: 'スライド左', previewAnim: 'tp-in-slide-left' },
+  { type: 'slideRight', label: 'スライド右', previewAnim: 'tp-in-slide-right' },
+  { type: 'slideUp', label: 'スライド上', previewAnim: 'tp-in-slide-up' },
+  { type: 'zoom', label: 'ズーム', previewAnim: 'tp-in-zoom' },
+  { type: 'iris', label: 'アイリス', previewAnim: 'tp-in-iris' },
+]
+
+export function easeSmoothstep(t: number): number {
+  const c = Math.max(0, Math.min(1, t))
+  return c * c * (3 - 2 * c)
+}
