@@ -1240,6 +1240,12 @@ test('テキスト: 新規テロップ（入場）を追加できる', async ({ 
   await expect(page.locator('footer').getByText('入場')).toBeVisible()
 })
 
+test('テキスト: MG タイトルリビールプリセットを追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'MG: タイトルリビール' }).click()
+  await expect(page.locator('footer').getByText('Our Wedding Story')).toBeVisible()
+})
+
 test('BGM: ビートマーカーを配置しスナップに使える', async ({ page }) => {
   const wav = makeWavWithPeak(0.2, 4)
   await page.setInputFiles('input[accept*="audio"]', { name: 'beat-bgm.wav', mimeType: 'audio/wav', buffer: wav })

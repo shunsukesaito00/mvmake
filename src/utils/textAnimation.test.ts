@@ -1,0 +1,79 @@
+import { describe, expect, it } from 'vitest'
+import type { TextClip } from '../types/project'
+import { computeTextAnimationState, getTextAnimProgress, getTextOpacity, isMotionTextAnimation } from './textAnimation'
+
+function makeTextClip(animationType: TextClip['animation']['type']): TextClip {
+  return {
+    id: 't1',
+    trackId: 'track',
+    type: 'text',
+    startTime: 0,
+    duration: 5,
+    sourceStart: 0,
+    sourceDuration: 5,
+    text: {
+      content: 'Test',
+      fontFamily: 'Noto Sans JP',
+      fontSize: 48,
+      color: '#fff',
+      strokeColor: '#000',
+      strokeWidth: 0,
+      shadowColor: 'rgba(0,0,0,0.5)',
+      shadowBlur: 0,
+      textAlign: 'center',
+      lineHeight: 1.2,
+      verticalAlign: 'center',
+      backgroundColor: '',
+      backgroundPadding: 16,
+      backgroundRadius: 8,
+    },
+    transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+    animation: { type: animationType, duration: 1 },
+  }
+}
+
+describe('getTextOpacity', () => {
+  it('fades in motion reveal at clip start', () => {
+    const clip = makeTextClip('motionReveal')
+    expect(getTextOpacity(clip, 0)).toBe(0)
+    expect(getTextOpacity(clip, 0.5)).toBeGreaterThan(0)
+    expect(getTextOpacity(clip, 1)).toBe(1)
+  })
+})
+
+describe('computeTextAnimationState', () => {
+  it('combines slide and scale for motionReveal', () => {
+    const clip = makeTextClip('motionReveal')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetY).toBeGreaterThan(0)
+    expect(state.scale).toBeLessThan(1)
+  })
+
+  it('slides from left for motionSlideLeft', () => {
+    const clip = makeTextClip('motionSlideLeft')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetX).toBeLessThan(0)
+  })
+
+  it('settles to identity after animation ends', () => {
+    const clip = makeTextClip('motionPop')
+    const state = computeTextAnimationState(clip, 2, 1920, 48)
+    expect(state.scale).toBe(1)
+    expect(state.offsetX).toBe(0)
+    expect(state.offsetY).toBe(0)
+  })
+})
+
+describe('isMotionTextAnimation', () => {
+  it('detects MG animation types', () => {
+    expect(isMotionTextAnimation('motionReveal')).toBe(true)
+    expect(isMotionTextAnimation('fadeIn')).toBe(false)
+  })
+})
+
+describe('getTextAnimProgress', () => {
+  it('reaches 1 after duration', () => {
+    const clip = makeTextClip('motionDrift')
+    expect(getTextAnimProgress(clip, 1)).toBe(1)
+  })
+})

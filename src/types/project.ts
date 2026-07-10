@@ -13,7 +13,17 @@ export type TransitionType =
   | 'slideUp'
   | 'zoom'
   | 'iris'
-export type TextAnimationType = 'fadeIn' | 'fadeOut' | 'slideUp' | 'typewriter' | 'scaleIn' | 'none'
+export type TextAnimationType =
+  | 'fadeIn'
+  | 'fadeOut'
+  | 'slideUp'
+  | 'typewriter'
+  | 'scaleIn'
+  | 'motionReveal'
+  | 'motionSlideLeft'
+  | 'motionPop'
+  | 'motionDrift'
+  | 'none'
 
 export interface MediaAsset {
   id: string
@@ -790,6 +800,102 @@ export const TEXT_PRESETS: TextPreset[] = [
     transform: { x: 0.5, y: 0.42 },
     duration: 3,
     animation: { type: 'scaleIn', duration: 0.7 },
+  },
+  {
+    id: 'motion-title-reveal',
+    label: 'MG: タイトルリビール',
+    category: 'subtitle',
+    text: {
+      content: 'Our Wedding Story',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 56,
+      color: '#ffffff',
+      strokeColor: '#1a1a1a',
+      strokeWidth: 1,
+      shadowColor: 'rgba(0,0,0,0.5)',
+      shadowBlur: 10,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: '',
+      backgroundPadding: 16,
+      backgroundRadius: 8,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.5, y: 0.4 },
+    duration: 4,
+    animation: { type: 'motionReveal', duration: 0.9 },
+  },
+  {
+    id: 'motion-lower-slide',
+    label: 'MG: ロワーサードスライド',
+    category: 'lowerThird',
+    text: {
+      content: 'Reception Hall  /  18:00',
+      fontFamily: 'Noto Sans JP',
+      fontSize: 30,
+      color: '#f5e6d3',
+      strokeColor: '#000000',
+      strokeWidth: 0,
+      shadowColor: 'rgba(0,0,0,0.4)',
+      shadowBlur: 5,
+      textAlign: 'left',
+      verticalAlign: 'bottom',
+      backgroundColor: SUBTITLE_BAND_COLOR,
+      backgroundPadding: 18,
+      backgroundRadius: 4,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.3, y: 0.9 },
+    duration: 5,
+    animation: { type: 'motionSlideLeft', duration: 0.75 },
+  },
+  {
+    id: 'motion-impact-pop',
+    label: 'MG: インパクトポップ',
+    category: 'subtitle',
+    text: {
+      content: 'Just Married!',
+      fontFamily: 'Noto Serif JP',
+      fontSize: 72,
+      color: '#ffffff',
+      strokeColor: '#2c2c2c',
+      strokeWidth: 2,
+      shadowColor: 'rgba(0,0,0,0.55)',
+      shadowBlur: 14,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: 'rgba(212, 175, 55, 0.25)',
+      backgroundPadding: 24,
+      backgroundRadius: 12,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.5, y: 0.48 },
+    duration: 3,
+    animation: { type: 'motionPop', duration: 0.65 },
+  },
+  {
+    id: 'motion-elegant-drift',
+    label: 'MG: エレガントドリフト',
+    category: 'subtitle',
+    text: {
+      content: 'With Love & Gratitude',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 44,
+      color: '#e8d5b7',
+      strokeColor: '#1a1a1a',
+      strokeWidth: 0,
+      shadowColor: 'rgba(0,0,0,0.45)',
+      shadowBlur: 8,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: '',
+      backgroundPadding: 16,
+      backgroundRadius: 8,
+      lineHeight: 1.3,
+    },
+    transform: { x: 0.5, y: 0.35 },
+    duration: 5,
+    animation: { type: 'motionDrift', duration: 1 },
   },
 ]
 

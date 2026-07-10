@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import type { AdjustmentClip, AudioClip, ImageClip, TextClip, Transform, VideoClip } from '../types/project'
 import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_TEXT_LINE_HEIGHT, DEFAULT_TEXT_BACKGROUND_PADDING, DEFAULT_TEXT_BACKGROUND_RADIUS, SUBTITLE_BAND_COLOR, TEXT_PRESETS } from '../types/project'
+import { TEXT_ANIMATION_LABELS } from '../utils/textAnimation'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
 import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
@@ -478,12 +479,9 @@ export function InspectorPanel() {
               </>
             )}
             <select value={regularTextClip.animation.type} onChange={(e) => updateClip(regularTextClip.id, { animation: { ...regularTextClip.animation, type: e.target.value as TextClip['animation']['type'] } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
-              <option value="none">アニメーションなし</option>
-              <option value="fadeIn">フェードイン</option>
-              <option value="fadeOut">フェードアウト</option>
-              <option value="slideUp">スライドアップ</option>
-              <option value="typewriter">タイプライター</option>
-              <option value="scaleIn">スケールイン</option>
+              {(Object.keys(TEXT_ANIMATION_LABELS) as TextClip['animation']['type'][]).map((type) => (
+                <option key={type} value={type}>{TEXT_ANIMATION_LABELS[type]}</option>
+              ))}
             </select>
             {regularTextClip.animation.type !== 'none' && (
               <Slider label="アニメーション長" value={regularTextClip.animation.duration} min={0.2} max={3} step={0.1} onChange={(v) => updateClip(regularTextClip.id, { animation: { ...regularTextClip.animation, duration: v } })} format={(v) => `${v.toFixed(1)}秒`} />

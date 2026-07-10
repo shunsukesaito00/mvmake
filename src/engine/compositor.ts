@@ -10,6 +10,7 @@ import type {
   VideoClip,
 } from '../types/project'
 import { getTextLineHeight, getTextLineYPositions, splitTextLines } from '../utils/textLayout'
+import { computeTextAnimationState, easeOutCubic, getTextAnimProgress, getTextOpacity } from '../utils/textAnimation'
 import { wrapTextLinesToCanvasWidth } from '../utils/textWrap'
 import { drawTextBackground } from '../utils/textBackground'
 import { getMediaVisualOpacityAtTime } from '../utils/visualFade'
@@ -150,30 +151,6 @@ function applyColorFilter(ctx: CanvasRenderingContext2D, color: ColorAdjustments
   }
 
   ctx.filter = filter
-}
-
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3)
-}
-
-/** クリップ開始からのアニメーション進行度 (0〜1)。アニメ終了後は1 */
-function getTextAnimProgress(clip: TextClip, time: number): number {
-  const duration = Math.max(clip.animation.duration, 0.01)
-  return Math.max(0, Math.min(1, (time - clip.startTime) / duration))
-}
-
-function getTextOpacity(clip: TextClip, time: number): number {
-  let opacity = 1
-  const localTime = time - clip.startTime
-  const animType = clip.animation.type
-  if ((animType === 'fadeIn' || animType === 'slideUp' || animType === 'scaleIn') && localTime < clip.animation.duration) {
-    opacity *= localTime / clip.animation.duration
-  }
-  const remaining = clip.duration - localTime
-  if (animType === 'fadeOut' && remaining < clip.animation.duration) {
-    opacity *= remaining / clip.animation.duration
-  }
-  return opacity
 }
 
 function getTrackLayersAtTime(track: Project['tracks'][0], time: number): RenderLayer[] {
@@ -494,16 +471,14 @@ function drawTextClip(
     const wrappedLines = wrapTextLinesToCanvasWidth(ctx, lines, maxTextWidth)
     ctx.textAlign = text.textAlign
     ctx.textBaseline = 'middle'
-    const x = transform.x * canvasW
-    let y = transform.y * canvasH
+    const lineHeightPx = getTextLineHeight(fontSize, text.lineHeight)
+    const animState = computeTextAnimationState(clip, time, canvasW, lineHeightPx)
+    const x = transform.x * canvasW + animState.offsetX
+    let y = transform.y * canvasH + animState.offsetY
 
-    if (animType === 'slideUp' && progress < 1) {
-      y += (1 - easeOutCubic(progress)) * getTextLineHeight(fontSize, text.lineHeight)
-    }
-    if (animType === 'scaleIn' && progress < 1) {
-      const scale = 0.5 + 0.5 * easeOutCubic(progress)
+    if (animState.scale !== 1) {
       ctx.translate(x, y)
-      ctx.scale(scale, scale)
+      ctx.scale(animState.scale, animState.scale)
       ctx.translate(-x, -y)
     }
 
