@@ -25,6 +25,7 @@ export const GOOGLE_FONT_OPTIONS: GoogleFontOption[] = [
 export const DEFAULT_GOOGLE_FONT = 'Noto Sans JP'
 
 const LINK_ID = 'fable-google-fonts'
+const loadedCatalogFamilies = new Set<string>([DEFAULT_GOOGLE_FONT])
 
 function encodeGoogleFontFamily(family: string): string {
   return encodeURIComponent(family).replace(/%20/g, '+')
@@ -41,7 +42,8 @@ export function buildGoogleFontsStylesheetUrl(
 
 export function injectGoogleFontsStylesheet(families?: string[]): void {
   if (typeof document === 'undefined') return
-  const url = buildGoogleFontsStylesheetUrl(families)
+  const targets = families ?? [...loadedCatalogFamilies]
+  const url = buildGoogleFontsStylesheetUrl(targets)
   let link = document.getElementById(LINK_ID) as HTMLLinkElement | null
   if (!link) {
     link = document.createElement('link')
@@ -54,8 +56,11 @@ export function injectGoogleFontsStylesheet(families?: string[]): void {
 
 export async function ensureGoogleFontsLoaded(families?: string[]): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts) return
-  const targets = families ?? GOOGLE_FONT_OPTIONS.map((f) => f.family)
-  injectGoogleFontsStylesheet(targets)
+  const targets = families ?? [...loadedCatalogFamilies]
+  targets.forEach((family) => {
+    if (isCatalogGoogleFont(family)) loadedCatalogFamilies.add(family)
+  })
+  injectGoogleFontsStylesheet([...loadedCatalogFamilies])
   await Promise.allSettled(
     targets.flatMap((family) => [
       document.fonts.load(`400 16px "${family}"`),
@@ -63,6 +68,12 @@ export async function ensureGoogleFontsLoaded(families?: string[]): Promise<void
     ]),
   )
   await document.fonts.ready
+}
+
+/** カタログフォントを1種類ずつ読み込む（UI 選択時用） */
+export async function ensureGoogleFontFamily(family: string): Promise<void> {
+  if (!isCatalogGoogleFont(family)) return
+  await ensureGoogleFontsLoaded([family])
 }
 
 export function collectProjectFontFamilies(project: Project): string[] {
@@ -78,9 +89,7 @@ export function collectProjectFontFamilies(project: Project): string[] {
 /** 書き出し前にプロジェクト内テキストのフォントを読み込む */
 export async function ensureProjectFontsLoaded(project: Project): Promise<void> {
   const used = collectProjectFontFamilies(project)
-  const catalog = GOOGLE_FONT_OPTIONS.map((f) => f.family)
-  const merged = [...new Set([...catalog, ...used])]
-  await ensureGoogleFontsLoaded(merged)
+  await ensureGoogleFontsLoaded([DEFAULT_GOOGLE_FONT, ...used])
 }
 
 export function isCatalogGoogleFont(family: string): boolean {

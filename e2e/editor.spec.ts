@@ -478,9 +478,10 @@ test('色調補正: カラールックプリセットを適用できる', async 
   await page.getByTitle('クリックで再生位置に追加').click()
   await clickTimelineClip(page, 'photo.png')
 
-  await page.getByRole('button', { name: 'フィルム風ルック' }).click()
+  await expect(page.getByLabel('カラールックプレビュー')).toBeVisible()
+  await page.getByRole('button', { name: 'フィルム風ルック', exact: true }).click()
   await expect(page.getByText('「フィルム風」ルックを適用しました')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'フィルム風ルック' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'フィルム風ルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('映像フェード: 画像クリップにフェードインを設定できる', async ({ page }) => {
@@ -851,7 +852,7 @@ test('色調補正: ウエディング暖色ルックを適用できる', async 
   await page.getByTitle('クリックで再生位置に追加').click()
   await clickTimelineClip(page, 'photo.png')
 
-  await page.getByRole('button', { name: 'ウエディング暖色ルック' }).click()
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
   await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
 })
 
@@ -1201,7 +1202,7 @@ test('調整レイヤー: 追加して色調プリセットを適用できる', 
   await clickTimelineClip(page, '調整レイヤー')
   await expect(page.getByText('調整レイヤー', { exact: true }).first()).toBeVisible()
 
-  await page.getByRole('button', { name: 'ウエディング暖色ルック' }).click()
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
   await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
 })
 

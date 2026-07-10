@@ -16,7 +16,9 @@ import { ClipMediaReplaceSection } from '../components/ClipMediaReplaceSection'
 import { AudioNormalizeSection } from '../components/AudioNormalizeSection'
 import { AudioEqSection } from '../components/AudioEqSection'
 import { TransformKeyframesSection } from '../components/TransformKeyframesSection'
-import { GOOGLE_FONT_OPTIONS } from '../utils/googleFonts'
+import { GOOGLE_FONT_OPTIONS, ensureGoogleFontFamily } from '../utils/googleFonts'
+import { resolveColorLookPreviewUrl } from '../utils/colorLookPreview'
+import type { ColorLookPreviewFade } from '../utils/colorLookPreview'
 import { Icons } from '../components/icons'
 import { isPhotoGuideClip } from '../utils/photoGuide'
 
@@ -113,6 +115,8 @@ function CollapsibleSection({ title, defaultOpen = true, children }: { title: st
 }
 
 export function InspectorPanel() {
+  const project = useProjectStore((s) => s.project)
+  const currentTime = useProjectStore((s) => s.currentTime)
   const selectedMarker = useProjectStore((s) => s.getSelectedMarker())
   const selectedClip = useProjectStore((s) => s.getSelectedClip())
   const mediaAssets = useProjectStore((s) => s.project.mediaAssets)
@@ -120,6 +124,23 @@ export function InspectorPanel() {
   const removeClip = useProjectStore((s) => s.removeClip)
   const splitClipAt = useProjectStore((s) => s.splitClipAt)
   const rippleDelete = useProjectStore((s) => s.rippleDelete)
+  const [fontLoading, setFontLoading] = useState(false)
+
+  const colorLookPreviewUrl = resolveColorLookPreviewUrl(
+    project,
+    mediaAssets,
+    selectedClip?.id ?? null,
+    currentTime,
+  )
+  const colorLookPreviewFade: ColorLookPreviewFade | undefined =
+    selectedClip && (selectedClip.type === 'video' || selectedClip.type === 'image')
+      ? {
+          fadeIn: selectedClip.fadeIn,
+          fadeOut: selectedClip.fadeOut,
+          clipDuration: selectedClip.duration,
+          localTime: Math.max(0, Math.min(selectedClip.duration, currentTime - selectedClip.startTime)),
+        }
+      : undefined
 
   if (selectedMarker) {
     return (
@@ -212,6 +233,7 @@ export function InspectorPanel() {
             <ColorAdjustmentsSection
               color={(selectedClip as AdjustmentClip).color ?? DEFAULT_COLOR}
               onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+              previewImageUrl={colorLookPreviewUrl}
             />
           </CollapsibleSection>
         )}
@@ -251,6 +273,8 @@ export function InspectorPanel() {
               <ColorAdjustmentsSection
                 color={(selectedClip as VideoClip).color ?? DEFAULT_COLOR}
                 onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+                previewImageUrl={colorLookPreviewUrl}
+                previewFade={colorLookPreviewFade}
               />
             </CollapsibleSection>
             <CollapsibleSection title="フェード" defaultOpen={false}>
@@ -284,6 +308,8 @@ export function InspectorPanel() {
               <ColorAdjustmentsSection
                 color={(selectedClip as ImageClip).color ?? DEFAULT_COLOR}
                 onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+                previewImageUrl={colorLookPreviewUrl}
+                previewFade={colorLookPreviewFade}
               />
             </CollapsibleSection>
             <CollapsibleSection title="フェード" defaultOpen={false}>
@@ -328,8 +354,18 @@ export function InspectorPanel() {
             <select
               aria-label="フォント"
               value={regularTextClip.text.fontFamily}
-              onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, fontFamily: e.target.value } })}
-              className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+              disabled={fontLoading}
+              onChange={async (e) => {
+                const family = e.target.value
+                setFontLoading(true)
+                try {
+                  await ensureGoogleFontFamily(family)
+                  updateClip(regularTextClip.id, { text: { ...regularTextClip.text, fontFamily: family } })
+                } finally {
+                  setFontLoading(false)
+                }
+              }}
+              className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border disabled:opacity-60"
             >
               {GOOGLE_FONT_OPTIONS.map((font) => (
                 <option key={font.family} value={font.family} style={{ fontFamily: font.family }}>
@@ -337,6 +373,9 @@ export function InspectorPanel() {
                 </option>
               ))}
             </select>
+            {fontLoading && (
+              <p className="text-[10px] text-text-muted" role="status">フォントを読み込み中…</p>
+            )}
             <select value={regularTextClip.text.textAlign} onChange={(e) => updateClip(regularTextClip.id, { text: { ...regularTextClip.text, textAlign: e.target.value as TextClip['text']['textAlign'] } })} className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border">
               <option value="left">左揃え</option>
               <option value="center">中央</option>

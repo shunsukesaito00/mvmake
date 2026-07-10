@@ -1,17 +1,22 @@
 import type { ColorAdjustments } from '../types/project'
 import { DEFAULT_COLOR } from '../types/project'
 import { COLOR_LOOK_PRESETS, matchColorLookPreset } from '../utils/colorLooks'
+import type { ColorLookPreviewFade } from '../utils/colorLookPreview'
 import { Slider } from './ui'
 import { useToastStore } from '../store/toastStore'
+import { ColorLookPreview, useColorLookHoverPreview } from './ColorLookPreview'
 
 interface Props {
   color: ColorAdjustments
   onChange: (color: ColorAdjustments, recordHistory?: boolean) => void
+  previewImageUrl?: string
+  previewFade?: ColorLookPreviewFade
 }
 
-export function ColorAdjustmentsSection({ color, onChange }: Props) {
+export function ColorAdjustmentsSection({ color, onChange, previewImageUrl, previewFade }: Props) {
   const showToast = useToastStore((s) => s.showToast)
   const activePresetId = matchColorLookPreset(color)
+  const { setHoverPresetId, previewColor, previewLabel } = useColorLookHoverPreview(color)
 
   const applyPreset = (presetId: string) => {
     const preset = COLOR_LOOK_PRESETS.find((p) => p.id === presetId)
@@ -26,6 +31,14 @@ export function ColorAdjustmentsSection({ color, onChange }: Props) {
 
   return (
     <div className="space-y-3">
+      <ColorLookPreview
+        previewImageUrl={previewImageUrl}
+        previewColor={previewColor}
+        previewLabel={previewLabel}
+        previewFade={previewFade}
+        activePresetId={activePresetId}
+        onHoverPreset={setHoverPresetId}
+      />
       <div>
         <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-accent uppercase">ルックプリセット</p>
         <div className="flex flex-wrap gap-1.5">
@@ -37,6 +50,8 @@ export function ColorAdjustmentsSection({ color, onChange }: Props) {
               aria-label={`${preset.label}ルック`}
               title={preset.description}
               onClick={() => applyPreset(preset.id)}
+              onMouseEnter={() => setHoverPresetId(preset.id)}
+              onMouseLeave={() => setHoverPresetId(null)}
               className={`rounded-lg px-2.5 py-1.5 text-[10px] font-medium ring-1 transition-all ${
                 activePresetId === preset.id
                   ? 'bg-accent-muted text-accent ring-accent/40'

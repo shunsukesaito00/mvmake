@@ -60,6 +60,7 @@ import { loadTimelinePixelsPerSecond, saveTimelinePixelsPerSecond } from '../per
 import { clampTimelinePixelsPerSecond } from '../utils/timelineZoom'
 import { splitTransformKeyframes } from '../utils/transformKeyframesTimeline'
 import { splitVolumeKeyframes } from '../utils/volumeKeyframesTimeline'
+import { ensureProjectFontsLoaded } from '../utils/googleFonts'
 import { splitSpeedKeyframes } from '../utils/speedKeyframesTimeline'
 import { getSourceOffsetAtLocalTime } from '../utils/speedKeyframes'
 
@@ -1253,8 +1254,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   loadProject: (project) => {
     clearMediaCache()
+    const normalized = normalizeProject(project)
     set({
-      project: normalizeProject(project),
+      project: normalized,
       currentTime: 0,
       isPlaying: false,
       selectedClipId: null,
@@ -1263,6 +1265,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       future: [],
       showPlayHint: false,
     })
+    ensureProjectFontsLoaded(normalized).catch(console.error)
   },
 }))
 

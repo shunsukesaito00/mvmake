@@ -1,3 +1,8 @@
+import type { VideoClip, ImageClip } from '../types/project'
+import { getTransformAtLocalTime } from './transformKeyframes'
+
+type MediaVisualClip = Pick<VideoClip | ImageClip, 'startTime' | 'duration' | 'fadeIn' | 'fadeOut' | 'transform' | 'transformKeyframes'>
+
 /** クリップ内ローカル時間(0〜clipDuration)での不透明度倍率。fadeIn/fadeOut は秒数 */
 export function getVisualFadeMultiplier(
   localTime: number,
@@ -32,4 +37,16 @@ export function clampVisualFadeValues(
   const inVal = Math.max(0, Math.min(maxFade, fadeIn))
   const outVal = Math.max(0, Math.min(maxFade, fadeOut))
   return { fadeIn: inVal, fadeOut: outVal }
+}
+
+/** transform 不透明度 × 映像フェードを合成（プレビュー・書き出し共通） */
+export function getMediaVisualOpacityAtTime(clip: MediaVisualClip, time: number): number {
+  const localTime = time - clip.startTime
+  const transformOpacity = getTransformAtLocalTime(
+    clip.transform,
+    clip.transformKeyframes,
+    localTime,
+    clip.duration,
+  ).opacity
+  return transformOpacity * getVisualFadeMultiplier(localTime, clip.duration, clip.fadeIn, clip.fadeOut)
 }

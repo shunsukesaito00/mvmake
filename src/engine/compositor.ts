@@ -11,11 +11,12 @@ import type {
 } from '../types/project'
 import { getTextLineHeight, getTextLineYPositions, splitTextLines } from '../utils/textLayout'
 import { drawTextBackground } from '../utils/textBackground'
-import { getVisualFadeMultiplier } from '../utils/visualFade'
+import { getMediaVisualOpacityAtTime } from '../utils/visualFade'
 import { buildCanvasFontString } from '../utils/googleFonts'
 import { getTransformAtLocalTime } from '../utils/transformKeyframes'
 import { getVideoSourceTimeAtLocalTime, getSpeedAtLocalTime } from '../utils/speedKeyframes'
 import { getAdjustmentColorForVisualTrack, mergeClipColorWithAdjustment } from '../utils/colorAdjustments'
+import { buildColorFilterCss } from '../utils/colorFilter'
 import { easeSmoothstep } from '../utils/transitions'
 
 type VisualTransformClip = VideoClip | ImageClip | TextClip
@@ -27,6 +28,13 @@ function resolveClipTransform(clip: VisualTransformClip, localTime: number): Tra
 function getClipOpacityAtTime(clip: VisualTransformClip, time: number): number {
   const localTime = time - clip.startTime
   return resolveClipTransform(clip, localTime).opacity
+}
+
+function getLayerOpacityAtTime(clip: VisualTransformClip, time: number): number {
+  if (clip.type === 'video' || clip.type === 'image') {
+    return getMediaVisualOpacityAtTime(clip, time)
+  }
+  return getClipOpacityAtTime(clip, time)
 }
 
 interface RenderLayer {
@@ -96,18 +104,15 @@ function getVideoSourceTime(clip: VideoClip, localTime: number): number {
 const colorFilterCache = new WeakMap<ColorAdjustments, string>()
 
 function applyColorFilter(ctx: CanvasRenderingContext2D, color: ColorAdjustments) {
-  // 補正なしならフィルタ設定自体をスキップ(filter代入はコストが高い)
-  if (color.brightness === 0 && color.contrast === 0 && color.saturation === 0) return
+  const filter = buildColorFilterCss(color)
+  if (!filter) return
 
-  let filter = colorFilterCache.get(color)
-  if (!filter) {
-    const b = 100 + color.brightness * 50
-    const c = 100 + color.contrast * 50
-    const s = 100 + color.saturation * 100
-    filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`
-    colorFilterCache.set(color, filter)
+  let cached = colorFilterCache.get(color)
+  if (!cached) {
+    cached = filter
+    colorFilterCache.set(color, cached)
   }
-  ctx.filter = filter
+  ctx.filter = cached
 }
 
 function easeOutCubic(t: number): number {
@@ -157,59 +162,59 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
 
         switch (clip.transition.type) {
           case 'crossfade': {
-            if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getClipOpacityAtTime(prev, time) })
-            layers.push({ clip, opacity: progress * getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'crossfade' })
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: progress * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'crossfade' })
             continue
           }
           case 'dissolve': {
             const eased = easeSmoothstep(progress)
-            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getClipOpacityAtTime(prev, time) })
-            layers.push({ clip, opacity: eased * getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'dissolve' })
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'dissolve' })
             continue
           }
           case 'blur': {
-            if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getClipOpacityAtTime(prev, time) })
-            layers.push({ clip, opacity: progress * getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'blur' })
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: progress * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'blur' })
             continue
           }
           case 'fadeBlack': {
-            if (progress < 0.5 && prevVisible) layers.push({ clip: prev, opacity: (1 - progress * 2) * getClipOpacityAtTime(prev, time) })
-            else if (progress >= 0.5) layers.push({ clip, opacity: (progress - 0.5) * 2 * getClipOpacityAtTime(clip, time) })
+            if (progress < 0.5 && prevVisible) layers.push({ clip: prev, opacity: (1 - progress * 2) * getLayerOpacityAtTime(prev, time) })
+            else if (progress >= 0.5) layers.push({ clip, opacity: (progress - 0.5) * 2 * getLayerOpacityAtTime(clip, time) })
             continue
           }
           case 'fadeWhite': {
-            if (progress < 0.5 && prevVisible) layers.push({ clip: prev, opacity: (1 - progress * 2) * getClipOpacityAtTime(prev, time) })
-            else if (progress >= 0.5) layers.push({ clip, opacity: (progress - 0.5) * 2 * getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'fadeWhite' })
+            if (progress < 0.5 && prevVisible) layers.push({ clip: prev, opacity: (1 - progress * 2) * getLayerOpacityAtTime(prev, time) })
+            else if (progress >= 0.5) layers.push({ clip, opacity: (progress - 0.5) * 2 * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'fadeWhite' })
             continue
           }
           case 'wipe': {
-            if (prevVisible) layers.push({ clip: prev, opacity: getClipOpacityAtTime(prev, time) })
-            layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'wipe' })
+            if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'wipe' })
             continue
           }
           case 'slideLeft': {
-            if (prevVisible) layers.push({ clip: prev, opacity: getClipOpacityAtTime(prev, time) })
-            layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'slideLeft' })
+            if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'slideLeft' })
             continue
           }
           case 'slideRight': {
-            if (prevVisible) layers.push({ clip: prev, opacity: getClipOpacityAtTime(prev, time) })
-            layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'slideRight' })
+            if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'slideRight' })
             continue
           }
           case 'slideUp': {
-            if (prevVisible) layers.push({ clip: prev, opacity: getClipOpacityAtTime(prev, time) })
-            layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'slideUp' })
+            if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'slideUp' })
             continue
           }
           case 'zoom': {
-            if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getClipOpacityAtTime(prev, time) })
-            layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'zoom' })
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'zoom' })
             continue
           }
           case 'iris': {
-            if (prevVisible) layers.push({ clip: prev, opacity: getClipOpacityAtTime(prev, time) })
-            layers.push({ clip, opacity: getClipOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'iris' })
+            if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'iris' })
             continue
           }
         }
@@ -217,12 +222,9 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
     }
 
     if (isActive) {
-      let opacity = getClipOpacityAtTime(clip, time)
+      let opacity = getLayerOpacityAtTime(clip, time)
       if (clip.type === 'text') {
         opacity *= getTextOpacity(clip, time)
-      } else if (clip.type === 'video' || clip.type === 'image') {
-        const localTime = time - clip.startTime
-        opacity *= getVisualFadeMultiplier(localTime, clip.duration, clip.fadeIn, clip.fadeOut)
       }
       layers.push({ clip, opacity })
     }
