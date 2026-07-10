@@ -217,6 +217,19 @@ input[type="range"]::-moz-range-thumb {
   0%, 20% { opacity: 0; transform: scale(1.12); }
   70%, 100% { opacity: 1; transform: scale(1); }
 }
+@keyframes tp-in-petal-fall {
+  0%, 15% { opacity: 0; transform: translateY(-20%); }
+  55%, 100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes tp-in-golden-shimmer {
+  0%, 15% { opacity: 0; transform: translateX(-30%); }
+  45%, 55% { opacity: 0.95; }
+  85%, 100% { opacity: 0; transform: translateX(30%); }
+}
+@keyframes tp-in-soft-wipe {
+  0%, 15% { clip-path: inset(0 100% 0 0); filter: blur(4px); }
+  55%, 100% { clip-path: inset(0 0 0 0); filter: blur(0); }
+}
 
 .animate-pulse-accent {
   animation: pulse-accent 1.5s ease-in-out infinite;

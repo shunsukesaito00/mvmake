@@ -119,6 +119,18 @@ function TransitionPreview({ type }: { type: TransitionType }) {
           style={anim('tp-in-film-burn')}
         />
       )}
+      {type === 'petalFall' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-rose-200/80 via-pink-100/40 to-transparent"
+          style={anim('tp-in-petal-fall')}
+        />
+      )}
+      {type === 'goldenShimmer' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/90 to-transparent"
+          style={anim('tp-in-golden-shimmer')}
+        />
+      )}
     </div>
   )
 }

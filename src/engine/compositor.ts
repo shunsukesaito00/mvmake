@@ -235,6 +235,23 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
             layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'gentleZoom' })
             continue
           }
+          case 'petalFall': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'petalFall' })
+            continue
+          }
+          case 'goldenShimmer': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'goldenShimmer' })
+            continue
+          }
+          case 'softWipe': {
+            if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'softWipe' })
+            continue
+          }
           case 'wipe': {
             if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
             layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'wipe' })
@@ -329,6 +346,10 @@ function drawWithTransform(
     const eased = easeSmoothstep(transitionProgress)
     const s = 1.08 - eased * 0.08
     ctx.scale(s, s)
+  }
+  if (transitionType === 'petalFall' && transitionProgress !== undefined) {
+    const eased = easeSmoothstep(transitionProgress)
+    ctx.translate(0, -canvasH * (1 - eased) * 0.04)
   }
   if (transitionType === 'slideLeft' && transitionProgress !== undefined) {
     ctx.translate(canvasW * (1 - transitionProgress), 0)
@@ -635,6 +656,44 @@ export async function renderFrame(
         burnGrad.addColorStop(0.45, 'rgba(255, 120, 35, 0.45)')
         burnGrad.addColorStop(1, 'rgba(255, 70, 0, 0)')
         ctx.fillStyle = burnGrad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'petalFall' && transitionProgress !== undefined) {
+        const petal = Math.sin(transitionProgress * Math.PI)
+        ctx.save()
+        ctx.globalAlpha = petal * 0.5
+        const grad = ctx.createLinearGradient(0, 0, 0, height)
+        grad.addColorStop(0, 'rgba(255, 195, 205, 0.85)')
+        grad.addColorStop(0.45, 'rgba(255, 175, 195, 0.35)')
+        grad.addColorStop(1, 'rgba(255, 220, 230, 0)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'goldenShimmer' && transitionProgress !== undefined) {
+        const peak = Math.sin(transitionProgress * Math.PI)
+        const shimmer = 0.5 + 0.5 * Math.sin(transitionProgress * Math.PI * 3)
+        ctx.save()
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = peak * shimmer * 0.5
+        const grad = ctx.createLinearGradient(0, height * 0.3, width, height * 0.7)
+        grad.addColorStop(0, 'rgba(255, 220, 120, 0)')
+        grad.addColorStop(0.35, 'rgba(255, 210, 90, 0.9)')
+        grad.addColorStop(0.65, 'rgba(255, 190, 60, 0.7)')
+        grad.addColorStop(1, 'rgba(255, 230, 140, 0)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'softWipe' && transitionProgress !== undefined) {
+        ctx.save()
+        const edge = width * (1 - transitionProgress)
+        const soft = width * 0.14
+        const grad = ctx.createLinearGradient(edge - soft, 0, edge + soft * 0.5, 0)
+        grad.addColorStop(0, 'rgba(0, 0, 0, 1)')
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+        ctx.fillStyle = grad
         ctx.fillRect(0, 0, width, height)
         ctx.restore()
       }

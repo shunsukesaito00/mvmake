@@ -1165,6 +1165,22 @@ test('トランジション: フィルムバーンを画像クリップに適用
   await expect(page.getByText('フィルムバーンを適用しました')).toBeVisible()
 })
 
+test('トランジション: 花びら舞を画像クリップに適用できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'petal-a.png', mimeType: 'image/png', buffer: png })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'petal-a.png' }).click()
+  await page.setInputFiles('input[accept*="image"]', { name: 'petal-b.png', mimeType: 'image/png', buffer: png })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'petal-b.png' }).click()
+
+  await clickTimelineClip(page, 'petal-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: '花びら舞', exact: true }).click()
+  await expect(page.getByText('花びら舞を適用しました')).toBeVisible()
+})
+
 test('メディア: ナレーション録音をプレビューしてタイムラインに配置できる', async ({ page }) => {
   await installNarrationRecordingMocks(page)
   await page.goto('./')
