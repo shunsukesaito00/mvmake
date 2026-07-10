@@ -1,10 +1,13 @@
 import type { AudioClip, AudioSettings, VideoClip, VolumeKeyframe } from '../types/project'
 import {
   VOLUME_TIMELINE_LANE_HEIGHT,
+  VOLUME_TIMELINE_MAX,
   buildVolumeCurvePath,
   keyframeToLanePoint,
   laneYToVolume,
+  volumeToLaneY,
 } from '../utils/volumeKeyframesTimeline'
+import { VOLUME_SNAP_LEVELS } from '../utils/keyframeSnap'
 
 type AudioClipLike = VideoClip | AudioClip
 
@@ -57,6 +60,21 @@ export function VolumeKeyframesTimeline({
         preserveAspectRatio="none"
         onDoubleClick={handleDoubleClick}
       >
+        {VOLUME_SNAP_LEVELS.filter((level) => level > 0 && level < VOLUME_TIMELINE_MAX).map((level) => {
+          const y = volumeToLaneY(level, laneHeight)
+          return (
+            <line
+              key={level}
+              x1={0}
+              y1={y}
+              x2={widthPx}
+              y2={y}
+              stroke="rgba(255,255,255,0.12)"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          )
+        })}
         {keyframes.length >= 2 && curvePath && (
           <path
             d={curvePath}

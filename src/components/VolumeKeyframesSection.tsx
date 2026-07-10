@@ -68,9 +68,9 @@ export function VolumeKeyframesSection({ clip, audio, onAudioChange }: Props) {
               value={kf.time}
               min={0}
               max={clip.duration}
-              step={0.1}
+              step={0.05}
               onChange={(v) => updateKeyframe(kf.id, { time: v })}
-              format={(v) => `${v.toFixed(1)}s`}
+              format={(v) => `${v.toFixed(2)}s`}
             />
             <Slider
               label="音量"

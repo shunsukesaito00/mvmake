@@ -2,6 +2,7 @@ import { useCallback, useRef, useEffect, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import type { Clip } from '../types/project'
 import { formatTime, snapTime } from '../utils/time'
+import { snapLocalKeyframeTime, snapVolume } from '../utils/keyframeSnap'
 import { clampTrimEnd, clampTrimStart } from '../utils/clipUtils'
 import {
   computeFitTimelinePixelsPerSecond,
@@ -250,9 +251,27 @@ export function TimelinePanel() {
       const keyframes = audioClip.audio.volumeKeyframes
       if (!keyframes?.length) return
 
-      const volumeDelta = -(e.clientY - dragState.startY) / VOLUME_TIMELINE_LANE_HEIGHT * 2
-      const newTime = Math.max(0, Math.min(clip.duration, (dragState.originalKeyframeTime ?? 0) + dt))
-      const newVolume = Math.max(0, Math.min(2, (dragState.originalKeyframeVolume ?? 1) + volumeDelta))
+      const dx = e.clientX - dragState.startX
+      const dy = e.clientY - dragState.startY
+      const lockAxis = e.shiftKey
+      const dt = lockAxis && Math.abs(dy) > Math.abs(dx) ? 0 : dx / pixelsPerSecond
+      const volumeDelta = lockAxis && Math.abs(dx) >= Math.abs(dy) ? 0 : -(dy) / VOLUME_TIMELINE_LANE_HEIGHT * 2
+
+      const rawLocalTime = Math.max(0, Math.min(clip.duration, (dragState.originalKeyframeTime ?? 0) + dt))
+      const siblingTimes = keyframes
+        .filter((kf) => kf.id !== dragState.keyframeId)
+        .map((kf) => kf.time)
+      const { time: newTime, snapped: timeSnapped } = snapLocalKeyframeTime(
+        rawLocalTime,
+        clip.startTime,
+        clip.duration,
+        getSnapPoints(dragState.clipId),
+        siblingTimes,
+        pixelsPerSecond,
+      )
+      const rawVolume = Math.max(0, Math.min(2, (dragState.originalKeyframeVolume ?? 1) + volumeDelta))
+      const { volume: newVolume } = snapVolume(rawVolume, VOLUME_TIMELINE_LANE_HEIGHT)
+      setSnapGuide(timeSnapped ? clip.startTime + newTime : null)
       const next = updateVolumeKeyframeList(keyframes, dragState.keyframeId, { time: newTime, volume: newVolume })
       updateClip(dragState.clipId, { audio: { ...audioClip.audio, volumeKeyframes: next } }, false)
     } else if (dragState.mode === 'transformKeyframe' && dragState.keyframeId != null) {
@@ -402,12 +421,19 @@ export function TimelinePanel() {
 
   const addVolumeKeyframeOnTimeline = (clip: AudioClip | VideoClip, time: number, volume: number) => {
     pushHistory()
-    const next = createVolumeKeyframeAt(
-      clip.audio,
-      clip.duration,
+    const { time: snappedTime } = snapLocalKeyframeTime(
       time,
-      volumeAtTimelineClick(clip.audio, clip.duration, time, volume),
+      clip.startTime,
+      clip.duration,
+      useProjectStore.getState().getSnapPoints(clip.id),
+      (clip.audio.volumeKeyframes ?? []).map((kf) => kf.time),
+      pixelsPerSecond,
     )
+    const { volume: snappedVolume } = snapVolume(
+      volumeAtTimelineClick(clip.audio, clip.duration, snappedTime, volume),
+      VOLUME_TIMELINE_LANE_HEIGHT,
+    )
+    const next = createVolumeKeyframeAt(clip.audio, clip.duration, snappedTime, snappedVolume)
     updateClip(clip.id, { audio: { ...clip.audio, volumeKeyframes: next } })
   }
 

@@ -21,10 +21,9 @@ import {
 import { formatMarkerChapterRange, getMarkerChapterRanges } from '../utils/markerExport'
 import {
   buildChapterExportEntries,
-  exportAllChapters,
+  exportAllChaptersToZip,
   formatBatchExportSummary,
   sanitizeFileBase,
-  zipMp4Blobs,
 } from '../utils/chapterBatchExport'
 
 type ExportPanelView = 'form' | 'progress' | 'cancelled' | 'error'
@@ -237,7 +236,7 @@ export function ExportButton() {
 
     let exportError: unknown = null
     try {
-      const files = await exportAllChapters(
+      const zipBlob = await exportAllChaptersToZip(
         async (entry, onChapterProgress) => {
           setBatchExportLabel(`章「${entry.label}」を書き出し中…`)
           return exportProject(exportProject_, entry.duration, onChapterProgress, {
@@ -250,8 +249,6 @@ export function ExportButton() {
         setExportProgress,
         controller.signal,
       )
-      setBatchExportLabel('ZIP を作成中…')
-      const zipBlob = await zipMp4Blobs(files)
       const url = URL.createObjectURL(zipBlob)
       const a = document.createElement('a')
       a.href = url

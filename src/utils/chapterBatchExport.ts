@@ -14,6 +14,11 @@ function zipAsync(data: Zippable): Promise<Uint8Array> {
   })
 }
 
+async function zipZippable(zippable: Zippable): Promise<Blob> {
+  const zipped = await zipAsync(zippable)
+  return new Blob([zipped as BlobPart], { type: 'application/zip' })
+}
+
 /** ZIP 内ファイル名に使えない文字を除去 */
 export function sanitizeFileBase(name: string): string {
   return name
@@ -45,8 +50,27 @@ export async function zipMp4Blobs(files: { name: string; blob: Blob }[]): Promis
   for (const file of files) {
     zippable[file.name] = new Uint8Array(await file.blob.arrayBuffer())
   }
-  const zipped = await zipAsync(zippable)
-  return new Blob([zipped as BlobPart], { type: 'application/zip' })
+  return zipZippable(zippable)
+}
+
+/** 各章を順次エクスポートし ZIP 化。章ごとに ZIP へ追加するため中間 Blob 配列を保持しない */
+export async function exportAllChaptersToZip(
+  exportChapter: (entry: ChapterExportEntry, onChapterProgress: (progress: number) => void) => Promise<Blob>,
+  entries: ChapterExportEntry[],
+  onOverallProgress: (progress: number) => void,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const zippable: Zippable = {}
+  for (let i = 0; i < entries.length; i++) {
+    if (signal?.aborted) throw new DOMException('Export cancelled', 'AbortError')
+    const entry = entries[i]
+    const blob = await exportChapter(entry, (chapterProgress) => {
+      onOverallProgress((i + chapterProgress) / entries.length)
+    })
+    zippable[entry.filename] = new Uint8Array(await blob.arrayBuffer())
+  }
+  onOverallProgress(1)
+  return zipZippable(zippable)
 }
 
 /** 各章を順次エクスポートし、全体進捗を 0〜1 で報告 */
