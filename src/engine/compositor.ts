@@ -19,8 +19,8 @@ import { getTransformAtLocalTime } from '../utils/transformKeyframes'
 import { getVideoSourceTimeAtLocalTime } from '../utils/speedKeyframes'
 import { getAdjustmentColorForVisualTrack, mergeClipColorWithAdjustment } from '../utils/colorAdjustments'
 import { buildColorFilterCss } from '../utils/colorFilter'
-import { applyLutToImageData, getParsedLutById } from '../utils/cubeLut'
-import { applyPixelColorGradeAdjustments, isPixelColorGradeActive } from '../utils/colorPixelGrade'
+import { getParsedLutById } from '../utils/cubeLut'
+import { applyCompositorColorStackToImageData, needsCompositorPixelGrade } from '../utils/colorPixelGrade'
 import { getAdjustmentLutForVisualTrack, resolveClipLut } from '../utils/lutResolve'
 import type { ResolvedLut } from '../utils/lutResolve'
 import { easeSmoothstep } from '../utils/transitions'
@@ -530,7 +530,7 @@ function drawMediaClip(
 
     if (!source || drawW <= 0 || drawH <= 0) return
 
-    const needsPixelGrade = (parsedLut && resolvedLut) || isPixelColorGradeActive(effectiveColor)
+    const needsPixelGrade = needsCompositorPixelGrade(effectiveColor, parsedLut && resolvedLut ? { parsed: parsedLut, intensity: resolvedLut.intensity } : null)
     if (needsPixelGrade) {
       const temp = getTempCanvas(drawW, drawH)
       const tctx = temp.getContext('2d', { willReadFrequently: true })
@@ -539,12 +539,11 @@ function drawMediaClip(
       tctx.clearRect(0, 0, temp.width, temp.height)
       drawWithCrop(tctx, source, sw, sh, 0, 0, temp.width, temp.height, clip.crop)
       const imageData = tctx.getImageData(0, 0, temp.width, temp.height)
-      if (parsedLut && resolvedLut) {
-        applyLutToImageData(imageData, parsedLut, resolvedLut.intensity)
-      }
-      if (isPixelColorGradeActive(effectiveColor)) {
-        applyPixelColorGradeAdjustments(imageData, effectiveColor)
-      }
+      applyCompositorColorStackToImageData(
+        imageData,
+        effectiveColor,
+        parsedLut && resolvedLut ? { parsed: parsedLut, intensity: resolvedLut.intensity } : null,
+      )
       tctx.putImageData(imageData, 0, 0)
       applyColorFilter(ctx, effectiveColor, blurPx)
       ctx.drawImage(temp, x, y, drawW, drawH)

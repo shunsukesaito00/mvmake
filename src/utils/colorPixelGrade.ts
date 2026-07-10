@@ -1,4 +1,6 @@
 import type { ColorAdjustments } from '../types/project'
+import type { ParsedCubeLut } from './cubeLut'
+import { applyLutToImageData } from './cubeLut'
 import { applyPixelHslAdjustments, isPixelHslActive } from './colorHsl'
 import { applyPixelRgbCurveAdjustments, isPixelRgbCurvesActive } from './colorRgbCurve'
 import { applyPixelToneCurveAdjustments, isPixelToneCurveActive } from './colorToneCurve'
@@ -18,4 +20,25 @@ export function applyPixelColorGradeAdjustments(imageData: ImageData, color: Col
   if (isPixelHslActive(color)) {
     applyPixelHslAdjustments(imageData, color)
   }
+}
+
+/** compositor.drawMediaClip と同一順序のピクセル色調スタック（LUT → ピクセルグレード） */
+export function applyCompositorColorStackToImageData(
+  imageData: ImageData,
+  color: ColorAdjustments,
+  lut?: { parsed: ParsedCubeLut; intensity: number } | null,
+): void {
+  if (lut) {
+    applyLutToImageData(imageData, lut.parsed, lut.intensity)
+  }
+  if (isPixelColorGradeActive(color)) {
+    applyPixelColorGradeAdjustments(imageData, color)
+  }
+}
+
+export function needsCompositorPixelGrade(
+  color: ColorAdjustments,
+  lut?: { parsed: ParsedCubeLut; intensity: number } | null,
+): boolean {
+  return Boolean(lut) || isPixelColorGradeActive(color)
 }

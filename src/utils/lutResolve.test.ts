@@ -53,6 +53,34 @@ describe('getAdjustmentLutForVisualTrack', () => {
     const lut = getAdjustmentLutForVisualTrack(project, 0, 1)
     expect(lut).toEqual({ lutId: 'lut-adj', intensity: 0.6 })
   })
+
+  it('returns topmost adjustment LUT when multiple layers overlap', () => {
+    const multi: Project = {
+      ...project,
+      tracks: [
+        project.tracks[0],
+        project.tracks[1],
+        {
+          id: 't3',
+          name: '調整下',
+          type: 'video',
+          clips: [{ ...adjustment, id: 'adj-low', lutId: 'lut-low', lutIntensity: 0.3 }],
+          muted: false,
+          locked: false,
+        },
+        {
+          id: 't4',
+          name: '調整上',
+          type: 'video',
+          clips: [{ ...adjustment, id: 'adj-high', lutId: 'lut-high', lutIntensity: 0.9 }],
+          muted: false,
+          locked: false,
+        },
+      ],
+    }
+    const lut = getAdjustmentLutForVisualTrack(multi, 0, 1)
+    expect(lut).toEqual({ lutId: 'lut-high', intensity: 0.9 })
+  })
 })
 
 describe('resolveClipLut', () => {

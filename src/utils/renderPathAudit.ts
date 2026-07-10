@@ -67,11 +67,19 @@ export const COMPOSITOR_BLUR_TRANSITION_TYPES = [
 ] as const satisfies readonly TransitionType[]
 
 export const COLOR_GRADE_RENDER_PATHS = {
-  compositor: 'drawMediaClip → LUT(applyLutToImageData) → applyPixelColorGradeAdjustments → applyColorFilter(ctx.filter)',
+  compositor: 'drawMediaClip → applyCompositorColorStackToImageData(LUT → tone → RGB → temp/tint) → applyColorFilter(ctx.filter)',
   colorLookMiniPreview: 'renderColorGradePreviewCanvas → applyColorGradeToImageData → buildColorFilterCss（CSS filter）',
   lutMiniPreview: 'lutPreview（.cube 適用・Canvas）',
   note: '本編プレビューと書き出しは compositor 経路のみ。インスペクター/LUT ミニプレビューは参照用 UI',
 } as const
+
+/** compositor.drawMediaClip の色調適用順（本編プレビュー・書き出し共通） */
+export const COMPOSITOR_COLOR_STACK_STEPS = [
+  'getAdjustmentColorForVisualTrack + mergeClipColorWithAdjustment',
+  'getAdjustmentLutForVisualTrack + resolveClipLut',
+  'applyCompositorColorStackToImageData（LUT → トーン → RGB → 色温度/ティント）',
+  'applyColorFilter（hue / brightness / contrast / saturate）',
+] as const
 
 export const VISUAL_FADE_PATH = {
   compositor: 'getLayerOpacityAtTime → getMediaVisualOpacityAtTime（visualFade.ts）',

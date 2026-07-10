@@ -1939,6 +1939,48 @@ test('テキスト: テロップ（余興）プリセットを追加できる', 
   await expect(page.locator('footer').getByText('余興')).toBeVisible()
 })
 
+test('色調スタック: 調整レイヤー + ルック + LUT を複合適用できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'stack-photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('stack-photo.png')).toBeVisible()
+
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: '調整レイヤーを追加', exact: true }).click()
+  await expect(page.getByText('調整レイヤーを追加しました')).toBeVisible()
+  await clickTimelineClip(page, '調整レイヤー')
+  await page.getByRole('button', { name: 'ロマンティック夕暮れルック', exact: true }).click()
+  await expect(page.getByText('「ロマンティック夕暮れ」ルックを適用しました')).toBeVisible()
+
+  await clickTimelineClip(page, 'stack-photo.png')
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
+  await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'stack-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await expect(page.getByText('「stack-warm」をインポートしました')).toBeVisible()
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'stack-warm (2³)' })
+  await expect(page.getByText('「stack-warm」LUT を適用しました')).toBeVisible()
+
+  const midtone = page.getByRole('slider', { name: 'ミッドトーン' })
+  await midtone.fill('0.15')
+  await expect(midtone).toHaveValue('0.15')
+  await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
+})
+
 test('色調補正: LUT をインポートして適用できる', async ({ page }) => {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',

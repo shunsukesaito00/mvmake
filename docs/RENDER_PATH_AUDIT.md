@@ -1,6 +1,6 @@
 # プレビュー / 書き出し 描画経路監査
 
-最終更新: 2026-07-11（v1.71.0 / Phase A Q3）
+最終更新: 2026-07-11（v1.73.0 / Phase B Q5 色調スタック追記）
 
 ## 結論
 
@@ -30,9 +30,13 @@
 
 | 用途 | 経路 | 書き出しと一致 |
 |------|------|----------------|
-| 本編プレビュー・書き出し | `drawMediaClip` → LUT → ピクセルグレード → `ctx.filter` | **一致** |
-| ルックミニプレビュー | `renderColorGradePreviewCanvas`（ピクセルグレード + CSS filter） | 参照 UI（静止画サムネ） |
+| 本編プレビュー・書き出し | `drawMediaClip` → `applyCompositorColorStackToImageData` → `applyColorFilter` | **一致** |
+| ルックミニプレビュー | `renderColorGradePreviewCanvas`（ピクセルグレード + CSS filter） | 参照 UI（LUT なし） |
 | LUT ミニプレビュー | `lutPreview.ts` | 参照 UI |
+
+適用順・調整レイヤー合成ルールの詳細: [COLOR_STACK_AUDIT.md](./COLOR_STACK_AUDIT.md)
+
+自動検証: `src/utils/colorStackRegression.test.ts`（複合スタック・極端値）
 
 ルックプリセット適用値は `mergeClipColorWithAdjustment` / `resolveClipLut` 経由で compositor に渡る。
 
@@ -57,3 +61,5 @@
 - `src/engine/exporter.ts` — 書き出しループ
 - `src/panels/PreviewPanel.tsx` — プレビュー
 - `src/utils/renderPathAudit.ts` — 監査用定数・ヘルパー
+- `src/utils/colorPixelGrade.ts` — 色調ピクセルスタック
+- `docs/COLOR_STACK_AUDIT.md` — 色調スタック詳細（Q5）
