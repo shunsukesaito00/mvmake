@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -1077,6 +1077,78 @@ test('プレビュー: 動画クリップを配置して再生・停止できる
   const atStop = parseFloat(await transport.inputValue())
   await page.waitForTimeout(400)
   expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
+})
+
+test('婚礼ゴールデンパス: テンプレ→写真→動画→テロップ→ルック→トランジション→章書き出し→再生停止', async ({ page }) => {
+  test.setTimeout(180_000)
+
+  const webm = await makeTinyWebmVideo(page)
+
+  // 1. 構造化テンプレート適用
+  await applyWeddingFullTemplate(page)
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
+
+  // 2. 写真複数枚をガイド区間へ配置
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'golden-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'golden-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'golden-c.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible()
+  await clickTimelineClip(page, '写真: 新郎 幼少期')
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText('3枚の写真をガイド区間に配置しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('golden-a.png')).toBeVisible()
+
+  // 3. 実動画をタイムラインへ配置
+  await page.setInputFiles('input[accept*="video"]', { name: 'golden-highlight.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.locator('div.group.relative').filter({ hasText: 'golden-highlight.webm' }).getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('golden-highlight.webm')).toBeVisible()
+
+  // 4. テロップ追加（テンプレに無いロワーサード）
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /乾杯/ }).first().click()
+  await expect(page.locator('footer').getByText('乾杯')).toBeVisible()
+
+  // 5. カラールック適用
+  await clickTimelineClip(page, 'golden-a.png')
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
+  await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
+
+  // 6. トランジション適用
+  await timelineClip(page, 'golden-a.png').click()
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'クロスフェード' }).click()
+  await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
+
+  // 7. 章 In/Out 書き出し設定
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '章「新郎プロフィール」を In/Out に設定' }).click()
+  await expect(page.getByText('書き出し範囲: 20.0–50.0s')).toBeVisible()
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
+
+  await page.keyboard.press('Escape')
+
+  // 8. 動画クリップの再生・停止
+  await clickTimelineClip(page, 'golden-highlight.webm')
+  await assertPlaybackStops(page)
+
+  // 9. 対応環境では章 In/Out 範囲の MP4 を検証
+  const encodersSupported = await checkEncodersSupported(page)
+  if (encodersSupported) {
+    await page.getByRole('button', { name: '書き出し' }).click()
+    const downloadPromise = page.waitForEvent('download', { timeout: 150_000 })
+    await page.getByRole('button', { name: '1080p で書き出し' }).click()
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toMatch(/\.mp4$/)
+    const savePath = test.info().outputPath('golden-path-chapter.mp4')
+    await download.saveAs(savePath)
+    const fs = await import('node:fs')
+    expect(fs.statSync(savePath).size).toBeGreaterThan(1000)
+    await expect(page.getByText('書き出しが完了しました')).toBeVisible()
+  }
 })
 
 test('ショートカット: スライド編集で隣接クリップが連動', async ({ page }) => {

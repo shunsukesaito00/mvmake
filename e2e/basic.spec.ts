@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test'
-import { makeSilentWav, clickTimelineClip } from './helpers'
+import {
+  TINY_PNG,
+  applyWeddingFullTemplate,
+  assertPlaybackStops,
+  clickTimelineClip,
+  makeSilentWav,
+  makeTinyWebmVideo,
+  timelineClip,
+} from './helpers'
 
 test('基本フロー: 起動 → オンボーディング → テキスト追加 → タイムライン確認', async ({ page }) => {
   // './' は baseURL のサブパス(本番の /mvmake/ など)を保持する
@@ -56,4 +64,98 @@ test('音量キーフレーム: オーディオクリップでキーフレーム
   await page.getByRole('button', { name: '音量キーフレーム' }).click()
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()
   await expect(page.getByText('キーフレーム 1')).toBeVisible()
+})
+
+test('テンプレート: 結婚式フル構成を適用できる', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
+  await page.goto('./')
+  await applyWeddingFullTemplate(page)
+  await expect(page.locator('[title="オープニング"]')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+})
+
+test('色調: ウエディング暖色ルックを適用できる', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
+  await page.goto('./')
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'look-photo.png')
+
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
+  await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
+})
+
+test('トランジション: クロスフェードを適用できる', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
+  await page.goto('./')
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'tr-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'tr-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  const cardA = page.locator('div.group.relative').filter({ hasText: 'tr-a.png' })
+  const cardB = page.locator('div.group.relative').filter({ hasText: 'tr-b.png' })
+  await cardA.hover()
+  await cardA.getByTitle('スライドショー用に選択').click()
+  await cardB.hover()
+  await cardB.getByTitle('スライドショー用に選択').click()
+  await page.getByRole('button', { name: 'スライドショー作成' }).click()
+  await page.getByRole('dialog').locator('select').selectOption('none')
+  await page.getByRole('button', { name: 'タイムラインに追加' }).click()
+  await expect(page.getByText('2枚の写真をタイムラインに配置しました')).toBeVisible()
+
+  await timelineClip(page, 'tr-a.png').click()
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'クロスフェード' }).click()
+  await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
+})
+
+test('書き出し: ダイアログを開いて1080pボタンを確認', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
+  await page.goto('./')
+
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /Opening/ }).first().click()
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '1080p で書き出し' })).toBeVisible()
+})
+
+test('書き出し: 章マーカー区間を In/Out に設定できる', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
+  await page.goto('./')
+  await applyWeddingFullTemplate(page)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '章「新郎プロフィール」を In/Out に設定' }).click()
+  await expect(page.getByText('「新郎プロフィール」を In/Out に設定しました')).toBeVisible()
+  await expect(page.getByText('書き出し範囲: 20.0–50.0s')).toBeVisible()
+})
+
+test('書き出し: 章 ZIP 書き出し UI を確認', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
+  await page.goto('./')
+  await applyWeddingFullTemplate(page)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
+  await expect(page.getByText('5 章を個別 MP4 化して ZIP にまとめます')).toBeVisible()
+})
+
+test('プレビュー: 動画クリップ配置後に再生停止できる', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
+  await page.goto('./')
+
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'prod-playback.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('prod-playback.webm')).toBeVisible()
+
+  await assertPlaybackStops(page)
 })

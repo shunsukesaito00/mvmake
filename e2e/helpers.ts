@@ -1,3 +1,41 @@
+import { expect } from '@playwright/test'
+
+/** E2E 用 1x1 PNG */
+export const TINY_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  'base64',
+)
+
+export async function applyWeddingFullTemplate(page: import('@playwright/test').Page) {
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await expect(page.getByText('結婚式フル構成テンプレートを適用しました')).toBeVisible()
+}
+
+export async function checkEncodersSupported(page: import('@playwright/test').Page): Promise<boolean> {
+  return page.evaluate(async () => {
+    if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') return false
+    const v = await VideoEncoder.isConfigSupported({ codec: 'avc1.42E01E', width: 1920, height: 1080, bitrate: 8_000_000, framerate: 30 }).catch(() => null)
+    const a = await AudioEncoder.isConfigSupported({ codec: 'mp4a.40.2', sampleRate: 48000, numberOfChannels: 2, bitrate: 192_000 }).catch(() => null)
+    return Boolean(v?.supported && a?.supported)
+  })
+}
+
+/** Space で再生→K で停止し、再生ヘッドが止まること */
+export async function assertPlaybackStops(page: import('@playwright/test').Page) {
+  await page.keyboard.press('Escape')
+  const transport = page.locator('main input[type="range"]').first()
+  const before = parseFloat(await transport.inputValue())
+
+  await page.keyboard.press('Space')
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(before + 0.05)
+
+  await page.keyboard.press('k')
+  const atStop = parseFloat(await transport.inputValue())
+  await page.waitForTimeout(400)
+  expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
+}
+
 /** E2E 用の最小 WebM 動画をブラウザ内で生成（MediaRecorder + canvas） */
 export async function makeTinyWebmVideo(page: import('@playwright/test').Page): Promise<Buffer> {
   const bytes = await page.evaluate(async () => {
