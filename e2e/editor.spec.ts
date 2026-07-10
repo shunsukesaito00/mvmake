@@ -1552,6 +1552,12 @@ test('テキスト: ロワーサード（司会）プリセットを追加でき
   await expect(page.locator('footer').getByText('司会  山田 太郎')).toBeVisible()
 })
 
+test('テキスト: テロップ（指輪交換）プリセットを追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'テロップ（指輪交換）' }).click()
+  await expect(page.locator('footer').getByText('Ring Exchange')).toBeVisible()
+})
+
 test('テキスト: MG タイトルリビールプリセットを追加できる', async ({ page }) => {
   await page.getByTitle('テキスト').click()
   await page.getByRole('button', { name: 'MG: タイトルリビール' }).click()
