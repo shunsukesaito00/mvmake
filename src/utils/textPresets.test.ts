@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { TEXT_PRESETS, TEXT_PRESET_CATEGORY_LABELS } from '../types/project'
 
 describe('TEXT_PRESETS', () => {
-  it('プリセット数が 32 種', () => {
-    expect(TEXT_PRESETS).toHaveLength(32)
+  it('プリセット数が 35 種', () => {
+    expect(TEXT_PRESETS).toHaveLength(35)
   })
 
   it('id が一意', () => {
@@ -41,12 +41,12 @@ describe('TEXT_PRESETS', () => {
     ])
   })
 
-  it('テロップが 14 種', () => {
-    expect(TEXT_PRESETS.filter((p) => p.category === 'subtitle')).toHaveLength(14)
+  it('テロップが 16 種', () => {
+    expect(TEXT_PRESETS.filter((p) => p.category === 'subtitle')).toHaveLength(16)
   })
 
-  it('MG プリセットが 10 種', () => {
+  it('MG プリセットが 13 種', () => {
     const mg = TEXT_PRESETS.filter((p) => p.animation?.type?.startsWith('motion'))
-    expect(mg).toHaveLength(10)
+    expect(mg).toHaveLength(13)
   })
 })

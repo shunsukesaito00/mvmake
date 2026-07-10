@@ -1725,6 +1725,12 @@ test('インスペクター: オーディオノイズ除去を設定できる', 
   await expect(page.getByRole('slider', { name: 'ローパス' })).toBeVisible()
 })
 
+test('テキスト: MG 花びら舞プリセットを追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'MG: 花びら舞' }).click()
+  await expect(page.locator('footer').getByText('Petals of Love')).toBeVisible()
+})
+
 test('色調補正: LUT をインポートして適用できる', async ({ page }) => {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',

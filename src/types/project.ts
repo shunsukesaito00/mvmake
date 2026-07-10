@@ -41,6 +41,9 @@ export type TextAnimationType =
   | 'motionSparkle'
   | 'motionRibbon'
   | 'motionHeartbeat'
+  | 'motionPetals'
+  | 'motionShimmer'
+  | 'motionVows'
   | 'keyframes'
   | 'none'
 
@@ -1233,6 +1236,78 @@ export const TEXT_PRESETS: TextPreset[] = [
     transform: { x: 0.5, y: 0.42 },
     duration: 4,
     animation: { type: 'motionHeartbeat', duration: 0.9 },
+  },
+  {
+    id: 'motion-petals-love',
+    label: 'MG: 花びら舞',
+    category: 'subtitle',
+    text: {
+      content: 'Petals of Love',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 52,
+      color: '#ffffff',
+      strokeColor: '#2c2c2c',
+      strokeWidth: 1,
+      shadowColor: 'rgba(255, 200, 210, 0.55)',
+      shadowBlur: 14,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: '',
+      backgroundPadding: 16,
+      backgroundRadius: 8,
+      lineHeight: 1.25,
+    },
+    transform: { x: 0.5, y: 0.44 },
+    duration: 4,
+    animation: { type: 'motionPetals', duration: 0.9 },
+  },
+  {
+    id: 'motion-shimmer-day',
+    label: 'MG: シマーグロー',
+    category: 'title',
+    text: {
+      content: 'A Shining Day',
+      fontFamily: 'Noto Serif JP',
+      fontSize: 58,
+      color: '#ffffff',
+      strokeColor: '#2c2c2c',
+      strokeWidth: 1,
+      shadowColor: 'rgba(255, 230, 180, 0.6)',
+      shadowBlur: 16,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      backgroundPadding: 22,
+      backgroundRadius: 10,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.5, y: 0.4 },
+    duration: 4,
+    animation: { type: 'motionShimmer', duration: 0.85 },
+  },
+  {
+    id: 'motion-vows-eternal',
+    label: 'MG: 誓いの言葉',
+    category: 'subtitle',
+    text: {
+      content: '永遠の誓い',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 56,
+      color: '#f5e6d3',
+      strokeColor: '#1a1a1a',
+      strokeWidth: 0,
+      shadowColor: 'rgba(0, 0, 0, 0.5)',
+      shadowBlur: 10,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      backgroundPadding: 24,
+      backgroundRadius: 10,
+      lineHeight: 1.3,
+    },
+    transform: { x: 0.5, y: 0.46 },
+    duration: 5,
+    animation: { type: 'motionVows', duration: 1 },
   },
   {
     id: 'subtitle-ring-exchange',

@@ -132,6 +132,29 @@ describe('computeTextAnimationState', () => {
     expect(start.scale).toBeLessThan(1)
     expect(mid.scale).toBeGreaterThan(0.95)
   })
+
+  it('drifts diagonally for motionPetals', () => {
+    const clip = makeTextClip('motionPetals')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetX).toBeLessThan(0)
+    expect(state.offsetY).toBeLessThan(0)
+    expect(state.scale).toBeLessThan(1)
+  })
+
+  it('shimmers with subtle wiggle for motionShimmer', () => {
+    const clip = makeTextClip('motionShimmer')
+    const start = computeTextAnimationState(clip, 0, 1920, 48)
+    const mid = computeTextAnimationState(clip, 0.5, 1920, 48)
+    expect(start.scale).toBeLessThan(1)
+    expect(mid.scale).toBeGreaterThan(0.94)
+  })
+
+  it('rises solemnly for motionVows', () => {
+    const clip = makeTextClip('motionVows')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetY).toBeGreaterThan(0)
+    expect(state.scale).toBeLessThan(1)
+  })
 })
 
 describe('isMotionTextAnimation', () => {
@@ -143,6 +166,9 @@ describe('isMotionTextAnimation', () => {
     expect(isMotionTextAnimation('motionSparkle')).toBe(true)
     expect(isMotionTextAnimation('motionRibbon')).toBe(true)
     expect(isMotionTextAnimation('motionHeartbeat')).toBe(true)
+    expect(isMotionTextAnimation('motionPetals')).toBe(true)
+    expect(isMotionTextAnimation('motionShimmer')).toBe(true)
+    expect(isMotionTextAnimation('motionVows')).toBe(true)
     expect(isMotionTextAnimation('fadeIn')).toBe(false)
   })
 })
