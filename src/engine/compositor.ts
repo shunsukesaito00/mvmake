@@ -10,7 +10,7 @@ import type {
   VideoClip,
 } from '../types/project'
 import { getTextLineHeight, getTextLineYPositions, splitTextLines } from '../utils/textLayout'
-import { computeTextAnimationState, easeOutCubic, getTextAnimProgress, getTextOpacity } from '../utils/textAnimation'
+import { computeTextAnimationState, easeOutCubic, getTextAnimProgress, getTextOpacity, usesCustomTextKeyframes } from '../utils/textAnimation'
 import { wrapTextLinesToCanvasWidth } from '../utils/textWrap'
 import { drawTextBackground } from '../utils/textBackground'
 import { getMediaVisualOpacityAtTime } from '../utils/visualFade'
@@ -237,7 +237,7 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
 
     if (isActive) {
       let opacity = getLayerOpacityAtTime(clip, time)
-      if (clip.type === 'text') {
+      if (clip.type === 'text' && !usesCustomTextKeyframes(clip)) {
         opacity *= getTextOpacity(clip, time)
       }
       layers.push({ clip, opacity })

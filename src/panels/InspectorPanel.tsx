@@ -3,6 +3,7 @@ import { useProjectStore } from '../store/projectStore'
 import type { AdjustmentClip, AudioClip, ImageClip, TextClip, Transform, VideoClip } from '../types/project'
 import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_TEXT_LINE_HEIGHT, DEFAULT_TEXT_BACKGROUND_PADDING, DEFAULT_TEXT_BACKGROUND_RADIUS, SUBTITLE_BAND_COLOR, TEXT_PRESETS } from '../types/project'
 import { TEXT_ANIMATION_LABELS } from '../utils/textAnimation'
+import { applyBakedMotionKeyframes, canBakeMotionToKeyframes } from '../utils/motionKeyframeBake'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
 import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
@@ -123,10 +124,12 @@ export function InspectorPanel() {
   const mediaAssets = useProjectStore((s) => s.project.mediaAssets)
   const lutAssets = useProjectStore((s) => s.project.lutAssets ?? [])
   const updateClip = useProjectStore((s) => s.updateClip)
+  const pushHistory = useProjectStore((s) => s.pushHistory)
   const removeClip = useProjectStore((s) => s.removeClip)
   const splitClipAt = useProjectStore((s) => s.splitClipAt)
   const rippleDelete = useProjectStore((s) => s.rippleDelete)
   const [fontLoading, setFontLoading] = useState(false)
+  const showToast = useToastStore((s) => s.showToast)
 
   const colorLookPreviewUrl = resolveColorLookPreviewUrl(
     project,
@@ -483,7 +486,25 @@ export function InspectorPanel() {
                 <option key={type} value={type}>{TEXT_ANIMATION_LABELS[type]}</option>
               ))}
             </select>
-            {regularTextClip.animation.type !== 'none' && (
+            {canBakeMotionToKeyframes(regularTextClip) && (
+              <Btn
+                variant="default"
+                className="w-full text-xs"
+                onClick={() => {
+                  pushHistory()
+                  updateClip(regularTextClip.id, applyBakedMotionKeyframes(regularTextClip), true)
+                  showToast('MG アニメをカスタムキーフレームに変換しました', 'success')
+                }}
+              >
+                カスタムキーフレームに変換
+              </Btn>
+            )}
+            {regularTextClip.animation.type === 'keyframes' && (
+              <p className="text-[10px] leading-relaxed text-text-muted">
+                トランスフォームキーフレームでモーションを編集できます。手続き型アニメは無効です。
+              </p>
+            )}
+            {regularTextClip.animation.type !== 'none' && regularTextClip.animation.type !== 'keyframes' && (
               <Slider label="アニメーション長" value={regularTextClip.animation.duration} min={0.2} max={3} step={0.1} onChange={(v) => updateClip(regularTextClip.id, { animation: { ...regularTextClip.animation, duration: v } })} format={(v) => `${v.toFixed(1)}秒`} />
             )}
           </CollapsibleSection>

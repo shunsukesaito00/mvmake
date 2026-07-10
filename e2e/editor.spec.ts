@@ -1276,6 +1276,20 @@ test('テキスト: MG タイトルリビールプリセットを追加できる
   await expect(page.locator('footer').getByText('Our Wedding Story')).toBeVisible()
 })
 
+test('テキスト: MG プリセットをカスタムキーフレームに変換できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'MG: タイトルリビール' }).click()
+  await clickTimelineClip(page, 'Our Wedding Story')
+
+  await page.getByRole('button', { name: 'カスタムキーフレームに変換' }).click()
+  await expect(page.getByText('MG アニメをカスタムキーフレームに変換しました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+  await expect(page.getByText('キーフレーム 2')).toBeVisible()
+  await expect(page.locator('select').filter({ hasText: 'カスタム（キーフレーム）' })).toBeVisible()
+})
+
 test('BGM: ビートマーカーを配置しスナップに使える', async ({ page }) => {
   const wav = makeWavWithPeak(0.2, 4)
   await page.setInputFiles('input[accept*="audio"]', { name: 'beat-bgm.wav', mimeType: 'audio/wav', buffer: wav })

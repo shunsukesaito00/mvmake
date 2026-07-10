@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TextClip } from '../types/project'
-import { computeTextAnimationState, getTextAnimProgress, getTextOpacity, isMotionTextAnimation } from './textAnimation'
+import { computeTextAnimationState, getTextAnimProgress, getTextOpacity, isMotionTextAnimation, usesCustomTextKeyframes } from './textAnimation'
 
 function makeTextClip(animationType: TextClip['animation']['type']): TextClip {
   return {
@@ -31,6 +31,29 @@ function makeTextClip(animationType: TextClip['animation']['type']): TextClip {
     animation: { type: animationType, duration: 1 },
   }
 }
+
+describe('usesCustomTextKeyframes', () => {
+  it('is true for keyframes animation type', () => {
+    const clip = makeTextClip('keyframes')
+    expect(usesCustomTextKeyframes(clip)).toBe(true)
+  })
+
+  it('is true when transform keyframes exist', () => {
+    const clip = makeTextClip('motionReveal')
+    clip.transformKeyframes = [{ id: 'k1', time: 0, x: 0.5, y: 0.5, scale: 1, rotation: 0 }]
+    expect(usesCustomTextKeyframes(clip)).toBe(true)
+  })
+
+  it('skips procedural opacity when using custom keyframes', () => {
+    const clip = makeTextClip('keyframes')
+    clip.transformKeyframes = [
+      { id: 'k1', time: 0, x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 0 },
+      { id: 'k2', time: 1, x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
+    ]
+    expect(getTextOpacity(clip, 0)).toBe(1)
+    expect(computeTextAnimationState(clip, 0, 1920, 48).offsetY).toBe(0)
+  })
+})
 
 describe('getTextOpacity', () => {
   it('fades in motion reveal at clip start', () => {

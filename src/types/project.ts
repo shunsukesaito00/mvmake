@@ -23,6 +23,7 @@ export type TextAnimationType =
   | 'motionSlideLeft'
   | 'motionPop'
   | 'motionDrift'
+  | 'keyframes'
   | 'none'
 
 export interface MediaAsset {

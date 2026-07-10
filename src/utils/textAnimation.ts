@@ -11,6 +11,7 @@ export const TEXT_ANIMATION_LABELS: Record<TextAnimationType, string> = {
   motionSlideLeft: 'MG: スライドイン',
   motionPop: 'MG: ポップ',
   motionDrift: 'MG: ドリフト',
+  keyframes: 'カスタム（キーフレーム）',
 }
 
 const FADE_IN_TYPES = new Set<TextAnimationType>([
@@ -41,7 +42,17 @@ export function getTextAnimProgress(clip: TextClip, time: number): number {
   return Math.max(0, Math.min(1, (time - clip.startTime) / duration))
 }
 
+export function isMotionTextAnimation(type: TextAnimationType): boolean {
+  return type === 'motionReveal' || type === 'motionSlideLeft' || type === 'motionPop' || type === 'motionDrift'
+}
+
+/** transform キーフレームでモーションを駆動する場合、手続き型アニメをスキップする */
+export function usesCustomTextKeyframes(clip: TextClip): boolean {
+  return clip.animation.type === 'keyframes' || (clip.transformKeyframes?.length ?? 0) > 0
+}
+
 export function getTextOpacity(clip: TextClip, time: number): number {
+  if (usesCustomTextKeyframes(clip)) return 1
   let opacity = 1
   const localTime = time - clip.startTime
   const animType = clip.animation.type
@@ -69,6 +80,10 @@ export function computeTextAnimationState(
   canvasW: number,
   lineHeightPx: number,
 ): TextAnimationState {
+  if (usesCustomTextKeyframes(clip)) {
+    return { progress: 1, eased: 1, opacity: 1, offsetX: 0, offsetY: 0, scale: 1 }
+  }
+
   const animType = clip.animation.type
   const progress = getTextAnimProgress(clip, time)
   const eased = easeOutCubic(progress)
@@ -109,10 +124,6 @@ export function computeTextAnimationState(
   }
 
   return state
-}
-
-export function isMotionTextAnimation(type: TextAnimationType): boolean {
-  return type === 'motionReveal' || type === 'motionSlideLeft' || type === 'motionPop' || type === 'motionDrift'
 }
 
 export function normalizeClipAnimation(animation?: Partial<ClipAnimation>): ClipAnimation {
