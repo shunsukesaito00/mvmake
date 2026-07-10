@@ -200,6 +200,24 @@ test('インスペクター: トランスフォームキーフレームのイー
   await expect(page.getByLabel('補間イージング')).toHaveValue('easeOut')
 })
 
+test('インスペクター: トランスフォームキーフレームのスケールを数値入力できる', async ({ page }) => {
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+
+  const scaleInput = page.getByRole('spinbutton', { name: 'スケール 数値' })
+  await scaleInput.fill('1.8')
+  await scaleInput.blur()
+  await expect(scaleInput).toHaveValue('1.8')
+
+  await page.getByTestId('transform-graph-property-rotation').click()
+  await expect(page.getByTestId('transform-graph-property-rotation')).toHaveAttribute('aria-pressed', 'true')
+})
+
 test('クリップ分割: 音量キーフレームを両側に再配分する', async ({ page }) => {
   const wav = makeSilentWav(2)
   await page.setInputFiles('input[accept*="audio"]', { name: 'bgm-split.wav', mimeType: 'audio/wav', buffer: wav })

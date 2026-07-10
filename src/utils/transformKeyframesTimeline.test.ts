@@ -6,6 +6,7 @@ import {
   buildAllTransformPropertyCurvePaths,
   createTransformKeyframeAt,
   getTransformTimelineLaneHeight,
+  getTransformTimelinePropertyStep,
   getTransformTimelineTotalHeight,
   keyframeToLanePoint,
   laneYToOpacity,
@@ -17,6 +18,11 @@ import {
 } from './transformKeyframesTimeline'
 
 describe('transform timeline lane', () => {
+  it('属性ごとの step を返す', () => {
+    expect(getTransformTimelinePropertyStep('rotation')).toBe(1)
+    expect(getTransformTimelinePropertyStep('scale')).toBe(0.01)
+  })
+
   it('不透明度とレーンYを相互変換する', () => {
     expect(opacityToLaneY(1, 24)).toBe(0)
     expect(opacityToLaneY(0, 24)).toBe(24)

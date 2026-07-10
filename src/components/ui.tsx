@@ -45,15 +45,50 @@ export function SectionTitle({ children }: { children: ReactNode }) {
   return <p className="text-[11px] font-semibold tracking-wider text-accent uppercase">{children}</p>
 }
 
-export function Slider({ label, value, min, max, step, onChange, format }: {
+export function Slider({ label, value, min, max, step, onChange, format, editable, onInputCommit }: {
   label: string; value: number; min: number; max: number; step: number
   onChange: (v: number) => void; format?: (v: number) => string
+  editable?: boolean
+  onInputCommit?: () => void
 }) {
+  const clamp = (v: number) => Math.max(min, Math.min(max, v))
+
+  const commitInput = (raw: string) => {
+    const parsed = parseFloat(raw)
+    if (!Number.isFinite(parsed)) return
+    const next = clamp(parsed)
+    onChange(next)
+    onInputCommit?.()
+  }
+
   return (
     <div className="space-y-1.5">
-      <div className="flex justify-between">
+      <div className="flex justify-between gap-2">
         <span className="text-[11px] text-text-secondary">{label}</span>
-        <span className="text-[11px] tabular-nums text-text-muted">{format ? format(value) : value.toFixed(2)}</span>
+        {editable ? (
+          <input
+            type="number"
+            aria-label={`${label} 数値`}
+            min={min}
+            max={max}
+            step={step}
+            value={Number(value.toFixed(step < 1 ? 2 : 0))}
+            onChange={(e) => {
+              const parsed = parseFloat(e.target.value)
+              if (Number.isFinite(parsed)) onChange(clamp(parsed))
+            }}
+            onBlur={(e) => commitInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                commitInput((e.target as HTMLInputElement).value)
+                ;(e.target as HTMLInputElement).blur()
+              }
+            }}
+            className="w-16 rounded bg-surface-4 px-1.5 py-0.5 text-right text-[11px] tabular-nums text-text-muted ring-1 ring-border focus:ring-accent/50 focus:outline-none"
+          />
+        ) : (
+          <span className="text-[11px] tabular-nums text-text-muted">{format ? format(value) : value.toFixed(2)}</span>
+        )}
       </div>
       <input type="range" aria-label={label} min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="w-full" />
     </div>

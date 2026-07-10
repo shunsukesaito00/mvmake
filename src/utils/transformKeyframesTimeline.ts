@@ -63,6 +63,15 @@ export function getTransformTimelinePropertyRange(property: TransformTimelinePro
   }
 }
 
+export function getTransformTimelinePropertyStep(property: TransformTimelineProperty): number {
+  switch (property) {
+    case 'rotation':
+      return 1
+    default:
+      return 0.01
+  }
+}
+
 export function getTransformPropertyValue(transform: Transform, property: TransformTimelineProperty): number {
   return transform[property]
 }

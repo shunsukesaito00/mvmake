@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import {
   TRANSFORM_KEYFRAME_EASING_OPTIONS,
@@ -8,7 +9,15 @@ import {
   type VideoClip,
 } from '../types/project'
 import { getTransformAtLocalTime, sortTransformKeyframes } from '../utils/transformKeyframes'
+import {
+  clampTransformTimelinePropertyValue,
+  getTransformTimelinePropertyRange,
+  getTransformTimelinePropertyStep,
+  keyframePropertyValue,
+  type TransformTimelineProperty,
+} from '../utils/transformKeyframesTimeline'
 import { createId } from '../utils/id'
+import { TransformKeyframeGraphEditor } from './TransformKeyframeGraphEditor'
 import { Btn, Slider } from './ui'
 
 type TransformClipLike = VideoClip | ImageClip | TextClip
@@ -24,6 +33,18 @@ export function TransformKeyframesSection({ clip, transform, transformKeyframes,
   const currentTime = useProjectStore((s) => s.currentTime)
   const pushHistory = useProjectStore((s) => s.pushHistory)
   const keyframes = transformKeyframes ?? []
+  const [selectedProperty, setSelectedProperty] = useState<TransformTimelineProperty>('scale')
+  const [selectedKeyframeId, setSelectedKeyframeId] = useState<string | null>(keyframes[0]?.id ?? null)
+
+  useEffect(() => {
+    if (!keyframes.length) {
+      setSelectedKeyframeId(null)
+      return
+    }
+    if (!selectedKeyframeId || !keyframes.some((kf) => kf.id === selectedKeyframeId)) {
+      setSelectedKeyframeId(keyframes[0].id)
+    }
+  }, [keyframes, selectedKeyframeId])
 
   const updateKeyframes = (next: TransformKeyframe[]) => {
     onTransformChange({ transformKeyframes: next.length ? sortTransformKeyframes(next) : undefined })
@@ -33,27 +54,57 @@ export function TransformKeyframesSection({ clip, transform, transformKeyframes,
     pushHistory()
     const localT = Math.max(0, Math.min(clip.duration, currentTime - clip.startTime))
     const resolved = getTransformAtLocalTime(transform, keyframes, localT, clip.duration)
-    updateKeyframes([
-      ...keyframes,
-      {
-        id: createId(),
-        time: localT,
-        x: resolved.x,
-        y: resolved.y,
-        scale: resolved.scale,
-        rotation: resolved.rotation,
-        opacity: resolved.opacity,
-      },
-    ])
+    const next = {
+      id: createId(),
+      time: localT,
+      x: resolved.x,
+      y: resolved.y,
+      scale: resolved.scale,
+      rotation: resolved.rotation,
+      opacity: resolved.opacity,
+    }
+    setSelectedKeyframeId(next.id)
+    updateKeyframes([...keyframes, next])
   }
 
   const updateKeyframe = (id: string, patch: Partial<TransformKeyframe>) => {
     updateKeyframes(keyframes.map((kf) => (kf.id === id ? { ...kf, ...patch } : kf)))
   }
 
+  const commitKeyframeHistory = () => {
+    pushHistory()
+  }
+
   const removeKeyframe = (id: string) => {
     pushHistory()
     updateKeyframes(keyframes.filter((kf) => kf.id !== id))
+  }
+
+  const renderPropertySlider = (
+    kf: TransformKeyframe,
+    property: TransformTimelineProperty,
+    label: string,
+    format?: (v: number) => string,
+  ) => {
+    const { min, max } = getTransformTimelinePropertyRange(property)
+    const step = getTransformTimelinePropertyStep(property)
+    const value = keyframePropertyValue(kf, transform, property)
+    const patchKey = property === 'opacity' ? 'opacity' : property
+
+    return (
+      <Slider
+        key={property}
+        label={label}
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        editable
+        format={format}
+        onChange={(v) => updateKeyframe(kf.id, { [patchKey]: clampTransformTimelinePropertyValue(property, v) })}
+        onInputCommit={commitKeyframeHistory}
+      />
+    )
   }
 
   return (
@@ -69,67 +120,77 @@ export function TransformKeyframesSection({ clip, transform, transformKeyframes,
           再生ヘッド位置(クリップ内)に位置・スケール・回転・不透明度のキーフレームを追加できます。2点以上で時間変化を作れます。
         </p>
       ) : (
-        keyframes.map((kf, index) => (
-          <div key={kf.id} className="space-y-1.5 rounded-lg bg-surface-3 p-2 ring-1 ring-border">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-medium text-text-secondary">キーフレーム {index + 1}</span>
-              <button
-                type="button"
-                onClick={() => removeKeyframe(kf.id)}
-                className="text-[10px] text-danger hover:underline"
+        <>
+          <TransformKeyframeGraphEditor
+            transform={transform}
+            keyframes={keyframes}
+            clipDuration={clip.duration}
+            selectedProperty={selectedProperty}
+            selectedKeyframeId={selectedKeyframeId}
+            onSelectProperty={setSelectedProperty}
+            onSelectKeyframe={setSelectedKeyframeId}
+          />
+          {keyframes.map((kf, index) => {
+            const selected = kf.id === selectedKeyframeId
+            return (
+              <div
+                key={kf.id}
+                className={`space-y-1.5 rounded-lg p-2 ring-1 transition-colors ${
+                  selected ? 'bg-surface-3 ring-sky-400/40' : 'bg-surface-3 ring-border'
+                }`}
+                onClick={() => setSelectedKeyframeId(kf.id)}
               >
-                削除
-              </button>
-            </div>
-            <Slider
-              label="位置 (秒)"
-              value={kf.time}
-              min={0}
-              max={clip.duration}
-              step={0.1}
-              onChange={(v) => updateKeyframe(kf.id, { time: v })}
-              format={(v) => `${v.toFixed(1)}s`}
-            />
-            {index > 0 && (
-              <label className="flex flex-col gap-1 text-xs text-text-secondary">
-                補間イージング
-                <select
-                  aria-label="補間イージング"
-                  value={kf.easing ?? 'linear'}
-                  onChange={(e) => updateKeyframe(kf.id, { easing: e.target.value as TransformKeyframe['easing'] })}
-                  className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
-                >
-                  {TRANSFORM_KEYFRAME_EASING_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-                {(kf.easing === 'bezier' || kf.bezierHandles) && (
-                  <span className="text-[10px] text-text-muted">タイムラインの丸ハンドルでベジェ曲線を編集できます。</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-medium text-text-secondary">キーフレーム {index + 1}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeKeyframe(kf.id)
+                    }}
+                    className="text-[10px] text-danger hover:underline"
+                  >
+                    削除
+                  </button>
+                </div>
+                <Slider
+                  label="位置 (秒)"
+                  value={kf.time}
+                  min={0}
+                  max={clip.duration}
+                  step={0.1}
+                  editable
+                  onChange={(v) => updateKeyframe(kf.id, { time: v })}
+                  onInputCommit={commitKeyframeHistory}
+                  format={(v) => `${v.toFixed(1)}s`}
+                />
+                {index > 0 && (
+                  <label className="flex flex-col gap-1 text-xs text-text-secondary">
+                    補間イージング
+                    <select
+                      aria-label="補間イージング"
+                      value={kf.easing ?? 'linear'}
+                      onChange={(e) => updateKeyframe(kf.id, { easing: e.target.value as TransformKeyframe['easing'] })}
+                      className="w-full rounded-lg bg-surface-3 p-2 text-xs text-text-secondary ring-1 ring-border"
+                    >
+                      {TRANSFORM_KEYFRAME_EASING_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    {(kf.easing === 'bezier' || kf.bezierHandles) && (
+                      <span className="text-[10px] text-text-muted">タイムラインの丸ハンドルでベジェ曲線を編集できます。</span>
+                    )}
+                  </label>
                 )}
-              </label>
-            )}
-            <Slider label="X" value={kf.x} min={0} max={1} step={0.01} onChange={(v) => updateKeyframe(kf.id, { x: v })} />
-            <Slider label="Y" value={kf.y} min={0} max={1} step={0.01} onChange={(v) => updateKeyframe(kf.id, { y: v })} />
-            <Slider label="スケール" value={kf.scale} min={0.1} max={3} step={0.01} onChange={(v) => updateKeyframe(kf.id, { scale: v })} />
-            <Slider
-              label="回転"
-              value={kf.rotation}
-              min={-180}
-              max={180}
-              step={1}
-              onChange={(v) => updateKeyframe(kf.id, { rotation: v })}
-              format={(v) => `${v}°`}
-            />
-            <Slider
-              label="不透明度"
-              value={kf.opacity ?? transform.opacity}
-              min={0}
-              max={1}
-              step={0.01}
-              onChange={(v) => updateKeyframe(kf.id, { opacity: v })}
-            />
-          </div>
-        ))
+                {renderPropertySlider(kf, 'x', 'X')}
+                {renderPropertySlider(kf, 'y', 'Y')}
+                {renderPropertySlider(kf, 'scale', 'スケール')}
+                {renderPropertySlider(kf, 'rotation', '回転', (v) => `${v}°`)}
+                {renderPropertySlider(kf, 'opacity', '不透明度')}
+              </div>
+            )
+          })}
+        </>
       )}
     </div>
   )
