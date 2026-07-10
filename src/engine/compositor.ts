@@ -18,6 +18,9 @@ import { getTransformAtLocalTime } from '../utils/transformKeyframes'
 import { getVideoSourceTimeAtLocalTime, getSpeedAtLocalTime } from '../utils/speedKeyframes'
 import { getAdjustmentColorForVisualTrack, mergeClipColorWithAdjustment } from '../utils/colorAdjustments'
 import { buildColorFilterCss } from '../utils/colorFilter'
+import { applyLutToImageData, getParsedLutById } from '../utils/cubeLut'
+import { getAdjustmentLutForVisualTrack, resolveClipLut } from '../utils/lutResolve'
+import type { ResolvedLut } from '../utils/lutResolve'
 import { easeSmoothstep } from '../utils/transitions'
 
 type VisualTransformClip = VideoClip | ImageClip | TextClip
@@ -104,16 +107,48 @@ function getVideoSourceTime(clip: VideoClip, localTime: number): number {
 
 const colorFilterCache = new WeakMap<ColorAdjustments, string>()
 
-function applyColorFilter(ctx: CanvasRenderingContext2D, color: ColorAdjustments) {
-  const filter = buildColorFilterCss(color)
-  if (!filter) return
+const tempCanvasCache = new Map<string, HTMLCanvasElement>()
 
-  let cached = colorFilterCache.get(color)
-  if (!cached) {
-    cached = filter
-    colorFilterCache.set(color, cached)
+function getTempCanvas(width: number, height: number): HTMLCanvasElement {
+  const w = Math.max(1, Math.ceil(width))
+  const h = Math.max(1, Math.ceil(height))
+  const key = `${w}x${h}`
+  let canvas = tempCanvasCache.get(key)
+  if (!canvas) {
+    canvas = document.createElement('canvas')
+    tempCanvasCache.set(key, canvas)
   }
-  ctx.filter = cached
+  if (canvas.width !== w) canvas.width = w
+  if (canvas.height !== h) canvas.height = h
+  return canvas
+}
+
+function buildCanvasFilter(color: ColorAdjustments, blurPx?: number): string {
+  const parts: string[] = []
+  const colorFilter = buildColorFilterCss(color)
+  if (colorFilter) parts.push(colorFilter)
+  if (blurPx != null && blurPx > 0.1) parts.push(`blur(${blurPx}px)`)
+  return parts.length > 0 ? parts.join(' ') : 'none'
+}
+
+function applyColorFilter(ctx: CanvasRenderingContext2D, color: ColorAdjustments, blurPx?: number) {
+  const filter = buildCanvasFilter(color, blurPx)
+  if (filter === 'none') {
+    ctx.filter = 'none'
+    return
+  }
+
+  if (blurPx == null) {
+    let cached = colorFilterCache.get(color)
+    if (!cached) {
+      cached = filter
+      colorFilterCache.set(color, cached)
+    }
+    ctx.filter = cached
+    return
+  }
+
+  ctx.filter = filter
 }
 
 function easeOutCubic(t: number): number {
@@ -256,38 +291,6 @@ function drawWithCrop(
   }
 }
 
-function applyKenBurns(
-  ctx: CanvasRenderingContext2D,
-  clip: ImageClip,
-  img: HTMLImageElement,
-  canvasW: number,
-  canvasH: number,
-  localProgress: number,
-  localTime: number,
-) {
-  const kb = clip.kenBurns
-  const resolved = kb.enabled ? clip.transform : resolveClipTransform(clip, localTime)
-  const scale = kb.enabled ? kb.startScale + (kb.endScale - kb.startScale) * localProgress : resolved.scale
-  const cx = kb.enabled ? kb.startX + (kb.endX - kb.startX) * localProgress : resolved.x
-  const cy = kb.enabled ? kb.startY + (kb.endY - kb.startY) * localProgress : resolved.y
-
-  const imgAspect = img.width / img.height
-  const canvasAspect = canvasW / canvasH
-  let drawW: number
-  let drawH: number
-  if (imgAspect > canvasAspect) {
-    drawH = canvasH * scale
-    drawW = drawH * imgAspect
-  } else {
-    drawW = canvasW * scale
-    drawH = drawW / imgAspect
-  }
-
-  const x = cx * canvasW - drawW / 2
-  const y = cy * canvasH - drawH / 2
-  drawWithCrop(ctx, img, img.width, img.height, x, y, drawW, drawH, clip.crop)
-}
-
 function drawWithTransform(
   ctx: CanvasRenderingContext2D,
   transform: { x: number; y: number; rotation: number; scale?: number },
@@ -329,6 +332,7 @@ function drawMediaClip(
   canvasH: number,
   opacity: number,
   effectiveColor: ColorAdjustments,
+  resolvedLut: ResolvedLut | null,
   transitionType?: string,
   transitionProgress?: number,
 ) {
@@ -338,16 +342,24 @@ function drawMediaClip(
     ? clip.transform
     : resolveClipTransform(clip, localTime)
 
+  const blurPx = transitionType === 'blur' && transitionProgress !== undefined
+    ? (1 - transitionProgress) * 16
+    : undefined
+
+  const parsedLut = resolvedLut ? getParsedLutById(resolvedLut.lutId) : undefined
+
   ctx.save()
   ctx.globalAlpha = opacity
-  applyColorFilter(ctx, effectiveColor)
-
-  if (transitionType === 'blur' && transitionProgress !== undefined) {
-    const blurPx = (1 - transitionProgress) * 16
-    if (blurPx > 0.1) ctx.filter = `blur(${blurPx}px)`
-  }
 
   drawWithTransform(ctx, transform, canvasW, canvasH, transitionType, transitionProgress, () => {
+    let drawW = 0
+    let drawH = 0
+    let x = 0
+    let y = 0
+    let source: CanvasImageSource | null = null
+    let sw = 0
+    let sh = 0
+
     if (clip.type === 'video') {
       const video = getVideoElement(asset)
       const sourceTime = getVideoSourceTime(clip, localTime)
@@ -358,8 +370,6 @@ function drawMediaClip(
       const vh = asset.height ?? video.videoHeight
       const imgAspect = vw / vh
       const canvasAspect = canvasW / canvasH
-      let drawW: number
-      let drawH: number
       if (imgAspect > canvasAspect) {
         drawH = canvasH * scale
         drawW = drawH * imgAspect
@@ -367,16 +377,59 @@ function drawMediaClip(
         drawW = canvasW * scale
         drawH = drawW / imgAspect
       }
-      const x = transform.x * canvasW - drawW / 2
-      const y = transform.y * canvasH - drawH / 2
+      x = transform.x * canvasW - drawW / 2
+      y = transform.y * canvasH - drawH / 2
 
       if (video.readyState >= 2) {
-        drawWithCrop(ctx, video, vw, vh, x, y, drawW, drawH, clip.crop)
+        source = video
+        sw = vw
+        sh = vh
       }
     } else {
       const img = getImageElement(asset)
-      if (img.complete) applyKenBurns(ctx, clip, img, canvasW, canvasH, localProgress, localTime)
+      if (img.complete) {
+        const kb = clip.kenBurns
+        const resolved = kb.enabled ? clip.transform : resolveClipTransform(clip, localTime)
+        const scale = kb.enabled ? kb.startScale + (kb.endScale - kb.startScale) * localProgress : resolved.scale
+        const cx = kb.enabled ? kb.startX + (kb.endX - kb.startX) * localProgress : resolved.x
+        const cy = kb.enabled ? kb.startY + (kb.endY - kb.startY) * localProgress : resolved.y
+
+        const imgAspect = img.width / img.height
+        const canvasAspect = canvasW / canvasH
+        if (imgAspect > canvasAspect) {
+          drawH = canvasH * scale
+          drawW = drawH * imgAspect
+        } else {
+          drawW = canvasW * scale
+          drawH = drawW / imgAspect
+        }
+        x = cx * canvasW - drawW / 2
+        y = cy * canvasH - drawH / 2
+        source = img
+        sw = img.width
+        sh = img.height
+      }
     }
+
+    if (!source || drawW <= 0 || drawH <= 0) return
+
+    if (parsedLut && resolvedLut) {
+      const temp = getTempCanvas(drawW, drawH)
+      const tctx = temp.getContext('2d', { willReadFrequently: true })
+      if (!tctx) return
+      tctx.setTransform(1, 0, 0, 1, 0, 0)
+      tctx.clearRect(0, 0, temp.width, temp.height)
+      drawWithCrop(tctx, source, sw, sh, 0, 0, temp.width, temp.height, clip.crop)
+      const imageData = tctx.getImageData(0, 0, temp.width, temp.height)
+      applyLutToImageData(imageData, parsedLut, resolvedLut.intensity)
+      tctx.putImageData(imageData, 0, 0)
+      applyColorFilter(ctx, effectiveColor, blurPx)
+      ctx.drawImage(temp, x, y, drawW, drawH)
+      return
+    }
+
+    applyColorFilter(ctx, effectiveColor, blurPx)
+    drawWithCrop(ctx, source, sw, sh, x, y, drawW, drawH, clip.crop)
   })
 
   ctx.restore()
@@ -491,6 +544,7 @@ export async function renderFrame(
   for (let visualTrackIndex = 0; visualTrackIndex < visualTracks.length; visualTrackIndex++) {
     const track = visualTracks[visualTrackIndex]
     const adjustmentColor = getAdjustmentColorForVisualTrack(project, visualTrackIndex, time)
+    const adjustmentLut = getAdjustmentLutForVisualTrack(project, visualTrackIndex, time)
     const layers = getTrackLayersAtTime(track, time)
     for (const layer of layers) {
       const { clip, opacity, transitionType, transitionProgress } = layer
@@ -498,7 +552,8 @@ export async function renderFrame(
         const asset = assetMap.get(clip.mediaId)
         if (asset) {
           const effectiveColor = mergeClipColorWithAdjustment(clip.color, adjustmentColor)
-          drawMediaClip(ctx, clip, asset, time, width, height, opacity, effectiveColor, transitionType, transitionProgress)
+          const resolvedLut = resolveClipLut(clip, adjustmentLut)
+          drawMediaClip(ctx, clip, asset, time, width, height, opacity, effectiveColor, resolvedLut, transitionType, transitionProgress)
         }
       } else if (clip.type === 'text') {
         drawTextClip(ctx, clip, width, height, opacity, time, adjustmentColor)
@@ -551,7 +606,10 @@ export function clearMediaCache(): void {
   for (const el of videoElements.values()) el.src = ''
   videoElements.clear()
   imageElements.clear()
+  tempCanvasCache.clear()
 }
+
+export { preloadProjectLuts } from '../utils/cubeLut'
 
 export async function seekVideosToTime(project: Project, time: number): Promise<void> {
   const assetMap = getAssetMap(project)

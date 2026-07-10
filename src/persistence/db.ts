@@ -1,9 +1,10 @@
-import type { MediaAsset, Project, Track } from '../types/project'
+import type { LutAsset, MediaAsset, Project, Track } from '../types/project'
 
 const DB_NAME = 'fable-editor'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const PROJECT_STORE = 'projects'
 const MEDIA_STORE = 'media'
+const LUT_STORE = 'luts'
 
 interface StoredProject {
   id: string
@@ -13,6 +14,7 @@ interface StoredProject {
   fps: number
   tracks: Track[]
   mediaIds: string[]
+  lutIds?: string[]
   markers?: Project['markers']
   updatedAt: number
 }
@@ -29,6 +31,14 @@ interface StoredMedia {
   waveform?: number[]
 }
 
+interface StoredLut {
+  id: string
+  name: string
+  blob: Blob
+  size: number
+  title?: string
+}
+
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
@@ -39,6 +49,9 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(MEDIA_STORE)) {
         db.createObjectStore(MEDIA_STORE, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(LUT_STORE)) {
+        db.createObjectStore(LUT_STORE, { keyPath: 'id' })
       }
     }
     request.onsuccess = () => resolve(request.result)
@@ -98,6 +111,7 @@ export async function saveProject(
 ): Promise<void> {
   const db = await openDB()
   const mediaTotal = project.mediaAssets.length
+  const lutTotal = project.lutAssets?.length ?? 0
 
   for (let i = 0; i < project.mediaAssets.length; i++) {
     const asset = project.mediaAssets[i]!
@@ -117,6 +131,18 @@ export async function saveProject(
     if (asset.blob.size > 1024 * 1024) await yieldToMainThread()
   }
 
+  for (let i = 0; i < lutTotal; i++) {
+    const lut = project.lutAssets![i]!
+    const stored: StoredLut = {
+      id: lut.id,
+      name: lut.name,
+      blob: lut.blob,
+      size: lut.size,
+      title: lut.title,
+    }
+    await put(db, LUT_STORE, stored)
+  }
+
   onProgress?.({ phase: 'project', mediaIndex: mediaTotal, mediaTotal })
   const storedProject: StoredProject = {
     id: project.id,
@@ -126,6 +152,7 @@ export async function saveProject(
     fps: project.fps,
     tracks: project.tracks,
     mediaIds: project.mediaAssets.map((a) => a.id),
+    lutIds: (project.lutAssets ?? []).map((a) => a.id),
     markers: project.markers ?? [],
     updatedAt: Date.now(),
   }
@@ -136,6 +163,7 @@ export async function saveProject(
 
 async function hydrateProject(db: IDBDatabase, stored: StoredProject): Promise<Project> {
   const mediaAssets: MediaAsset[] = []
+  const lutAssets: LutAsset[] = []
 
   for (const mediaId of stored.mediaIds) {
     const media = await get<StoredMedia>(db, MEDIA_STORE, mediaId)
@@ -155,6 +183,19 @@ async function hydrateProject(db: IDBDatabase, stored: StoredProject): Promise<P
     }
   }
 
+  for (const lutId of stored.lutIds ?? []) {
+    const lut = await get<StoredLut>(db, LUT_STORE, lutId)
+    if (lut) {
+      lutAssets.push({
+        id: lut.id,
+        name: lut.name,
+        blob: lut.blob,
+        size: lut.size,
+        title: lut.title,
+      })
+    }
+  }
+
   return {
     id: stored.id,
     name: stored.name,
@@ -163,6 +204,7 @@ async function hydrateProject(db: IDBDatabase, stored: StoredProject): Promise<P
     fps: stored.fps,
     tracks: stored.tracks as Track[],
     mediaAssets,
+    lutAssets,
     markers: stored.markers ?? [],
   }
 }
@@ -248,12 +290,15 @@ export async function cleanupOrphanMedia(currentProject?: Project): Promise<void
   const allMedia = await getAll<StoredMedia>(db, MEDIA_STORE)
 
   const usedIds = new Set<string>()
+  const usedLutIds = new Set<string>()
   for (const p of allProjects) {
     for (const id of p.mediaIds) usedIds.add(id)
+    for (const id of p.lutIds ?? []) usedLutIds.add(id)
   }
   // 未保存の現行プロジェクト状態も参照中とみなす
   if (currentProject) {
     for (const a of currentProject.mediaAssets) usedIds.add(a.id)
+    for (const a of currentProject.lutAssets ?? []) usedLutIds.add(a.id)
   }
 
   for (const media of allMedia) {
@@ -261,14 +306,22 @@ export async function cleanupOrphanMedia(currentProject?: Project): Promise<void
       await deleteKey(db, MEDIA_STORE, media.id)
     }
   }
+
+  const allLuts = await getAll<StoredLut>(db, LUT_STORE)
+  for (const lut of allLuts) {
+    if (!usedLutIds.has(lut.id)) {
+      await deleteKey(db, LUT_STORE, lut.id)
+    }
+  }
   db.close()
 }
 
 export async function clearStorage(): Promise<void> {
   const db = await openDB()
-  const tx = db.transaction([PROJECT_STORE, MEDIA_STORE], 'readwrite')
+  const tx = db.transaction([PROJECT_STORE, MEDIA_STORE, LUT_STORE], 'readwrite')
   tx.objectStore(PROJECT_STORE).clear()
   tx.objectStore(MEDIA_STORE).clear()
+  tx.objectStore(LUT_STORE).clear()
   await new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error)
@@ -276,4 +329,4 @@ export async function clearStorage(): Promise<void> {
   db.close()
 }
 
-export type { StoredProject, StoredMedia }
+export type { StoredProject, StoredMedia, StoredLut }

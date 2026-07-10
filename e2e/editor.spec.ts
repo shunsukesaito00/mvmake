@@ -1289,3 +1289,31 @@ test('インスペクター: オーディオ EQ を設定できる', async ({ pa
   await expect(page.getByRole('slider', { name: '低域' })).toHaveValue('3')
   await expect(page.getByLabel('イコライザーを有効化')).toBeChecked()
 })
+
+test('色調補正: LUT をインポートして適用できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'lut-photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'lut-photo.png')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'wedding-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await expect(page.getByText('「wedding-warm」をインポートしました')).toBeVisible()
+
+  await page.getByLabel('LUT').selectOption({ label: 'wedding-warm (2³)' })
+  await expect(page.getByText('「wedding-warm」LUT を適用しました')).toBeVisible()
+  await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
+})

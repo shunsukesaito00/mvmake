@@ -42,6 +42,20 @@ export interface ColorAdjustments {
   saturation: number
 }
 
+export interface LutAsset {
+  id: string
+  name: string
+  blob: Blob
+  size: number
+  title?: string
+}
+
+export interface ClipLutSettings {
+  lutId?: string
+  /** 0〜1。未設定時は 1 */
+  lutIntensity?: number
+}
+
 export interface CropSettings {
   enabled: boolean
   x: number
@@ -169,7 +183,7 @@ export interface BaseClip {
   sourceDuration: number
 }
 
-export interface VideoClip extends BaseClip {
+export interface VideoClip extends BaseClip, ClipLutSettings {
   type: 'video'
   mediaId: string
   transform: Transform
@@ -185,7 +199,7 @@ export interface VideoClip extends BaseClip {
   fadeOut: number
 }
 
-export interface ImageClip extends BaseClip {
+export interface ImageClip extends BaseClip, ClipLutSettings {
   type: 'image'
   mediaId: string
   transform: Transform
@@ -215,7 +229,7 @@ export interface TextClip extends BaseClip {
 }
 
 /** 下位トラックへ色調を一括適用する調整レイヤー（映像トラック専用） */
-export interface AdjustmentClip extends BaseClip {
+export interface AdjustmentClip extends BaseClip, ClipLutSettings {
   type: 'adjustment'
   color: ColorAdjustments
 }
@@ -247,6 +261,7 @@ export interface Project {
   fps: number
   tracks: Track[]
   mediaAssets: MediaAsset[]
+  lutAssets?: LutAsset[]
   markers?: TimelineMarker[]
 }
 
@@ -300,6 +315,8 @@ export const DEFAULT_TEXT_LINE_HEIGHT = 1.2
 export const DEFAULT_TEXT_BACKGROUND_PADDING = 16
 export const DEFAULT_TEXT_BACKGROUND_RADIUS = 8
 export const SUBTITLE_BAND_COLOR = 'rgba(0, 0, 0, 0.6)'
+
+export const DEFAULT_LUT_INTENSITY = 1
 
 export const DEFAULT_COLOR: ColorAdjustments = {
   brightness: 0,
@@ -666,6 +683,7 @@ export function normalizeProject(project: Project): Project {
   return {
     ...project,
     markers: project.markers ?? [],
+    lutAssets: project.lutAssets ?? [],
     tracks: project.tracks.map((t) => ({
       ...t,
       muted: t.muted ?? false,

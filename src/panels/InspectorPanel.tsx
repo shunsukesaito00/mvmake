@@ -120,6 +120,7 @@ export function InspectorPanel() {
   const selectedMarker = useProjectStore((s) => s.getSelectedMarker())
   const selectedClip = useProjectStore((s) => s.getSelectedClip())
   const mediaAssets = useProjectStore((s) => s.project.mediaAssets)
+  const lutAssets = useProjectStore((s) => s.project.lutAssets ?? [])
   const updateClip = useProjectStore((s) => s.updateClip)
   const removeClip = useProjectStore((s) => s.removeClip)
   const splitClipAt = useProjectStore((s) => s.splitClipAt)
@@ -233,6 +234,12 @@ export function InspectorPanel() {
             <ColorAdjustmentsSection
               color={(selectedClip as AdjustmentClip).color ?? DEFAULT_COLOR}
               onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+              lutId={(selectedClip as AdjustmentClip).lutId}
+              lutIntensity={(selectedClip as AdjustmentClip).lutIntensity}
+              lutAssets={lutAssets}
+              onLutChange={(nextLutId, nextIntensity, recordHistory) =>
+                updateClip(selectedClip.id, { lutId: nextLutId, lutIntensity: nextIntensity }, recordHistory)
+              }
               previewImageUrl={colorLookPreviewUrl}
             />
           </CollapsibleSection>
@@ -273,6 +280,12 @@ export function InspectorPanel() {
               <ColorAdjustmentsSection
                 color={(selectedClip as VideoClip).color ?? DEFAULT_COLOR}
                 onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+                lutId={(selectedClip as VideoClip).lutId}
+                lutIntensity={(selectedClip as VideoClip).lutIntensity}
+                lutAssets={lutAssets}
+                onLutChange={(nextLutId, nextIntensity, recordHistory) =>
+                  updateClip(selectedClip.id, { lutId: nextLutId, lutIntensity: nextIntensity }, recordHistory)
+                }
                 previewImageUrl={colorLookPreviewUrl}
                 previewFade={colorLookPreviewFade}
               />
@@ -308,6 +321,12 @@ export function InspectorPanel() {
               <ColorAdjustmentsSection
                 color={(selectedClip as ImageClip).color ?? DEFAULT_COLOR}
                 onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+                lutId={(selectedClip as ImageClip).lutId}
+                lutIntensity={(selectedClip as ImageClip).lutIntensity}
+                lutAssets={lutAssets}
+                onLutChange={(nextLutId, nextIntensity, recordHistory) =>
+                  updateClip(selectedClip.id, { lutId: nextLutId, lutIntensity: nextIntensity }, recordHistory)
+                }
                 previewImageUrl={colorLookPreviewUrl}
                 previewFade={colorLookPreviewFade}
               />

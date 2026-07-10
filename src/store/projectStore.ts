@@ -14,6 +14,7 @@ import {
   DEFAULT_TEXT_BACKGROUND_RADIUS,
   DEFAULT_VISUAL_FADE,
   type ImageClip,
+  type LutAsset,
   type MediaAsset,
   normalizeProject,
   type Project,
@@ -58,6 +59,7 @@ import { snapshotFromProjectSettingsPreset } from '../utils/projectSettingsPrese
 import { applyUserProjectTemplateToTracks } from '../utils/userProjectTemplate'
 import { loadTimelinePixelsPerSecond, saveTimelinePixelsPerSecond } from '../persistence/timelineZoom'
 import { clampTimelinePixelsPerSecond } from '../utils/timelineZoom'
+import { parseCubeLut, preloadProjectLuts, primeParsedLutCache, clearParsedLutCache } from '../utils/cubeLut'
 import {
   canSlideClip,
   canSlipClip,
@@ -101,6 +103,7 @@ function createDefaultProject(): Project {
     fps: 30,
     tracks: createDefaultTracks(),
     mediaAssets: [],
+    lutAssets: [],
     markers: [],
   })
 }
@@ -171,6 +174,8 @@ interface ProjectState {
   canRedo: () => boolean
 
   addMediaAsset: (asset: MediaAsset) => void
+  importLutFile: (file: File) => Promise<boolean>
+  removeLutAsset: (id: string) => void
   updateMediaAsset: (id: string, updates: Partial<MediaAsset>) => void
   removeMediaAsset: (id: string) => void
   addClipFromMedia: (mediaId: string, trackId?: string, startTime?: number) => boolean
@@ -369,6 +374,54 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set((state) => ({
       project: { ...state.project, mediaAssets: [...state.project.mediaAssets, asset] },
     })),
+
+  importLutFile: async (file) => {
+    const text = await file.text()
+    const parsed = parseCubeLut(text)
+    if (!parsed) return false
+
+    const asset: LutAsset = {
+      id: createId(),
+      name: file.name.replace(/\.cube$/i, '') || 'LUT',
+      blob: new Blob([text], { type: 'text/plain' }),
+      size: parsed.size,
+      title: parsed.title,
+    }
+    primeParsedLutCache(asset.id, parsed)
+    get().pushHistory()
+    set((state) => ({
+      project: {
+        ...state.project,
+        lutAssets: [...(state.project.lutAssets ?? []), asset],
+      },
+      future: [],
+    }))
+    return true
+  },
+
+  removeLutAsset: (id) => {
+    get().pushHistory()
+    clearParsedLutCache(id)
+    set((state) => ({
+      project: {
+        ...state.project,
+        lutAssets: (state.project.lutAssets ?? []).filter((a) => a.id !== id),
+        tracks: state.project.tracks.map((track) => ({
+          ...track,
+          clips: track.clips.map((clip) => {
+            if (
+              (clip.type === 'video' || clip.type === 'image' || clip.type === 'adjustment')
+              && clip.lutId === id
+            ) {
+              return { ...clip, lutId: undefined, lutIntensity: undefined }
+            }
+            return clip
+          }),
+        })),
+      },
+      future: [],
+    }))
+  },
 
   updateMediaAsset: (id, updates) =>
     set((state) => ({
@@ -1314,6 +1367,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       showPlayHint: false,
     })
     ensureProjectFontsLoaded(normalized).catch(console.error)
+    preloadProjectLuts(normalized.lutAssets ?? []).catch(console.error)
   },
 }))
 
