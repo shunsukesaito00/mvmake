@@ -69,6 +69,15 @@ describe('buildTextClipsFromSrtCues', () => {
     expect(clips[0]?.transform.y).toBe(0.88)
   })
 
+  it('長文の字幕はインポート時に折り返す', () => {
+    const longText = '本日はお越しいただき、誠にありがとうございます。心より感謝申し上げます。'
+    const clips = buildTextClipsFromSrtCues(
+      [{ index: 1, startTime: 0, endTime: 3, text: longText }],
+      'track-text',
+    )
+    expect(clips[0]?.text.content).toContain('\n')
+  })
+
   it('短すぎる表示時間は最小値に丸める', () => {
     const clips = buildTextClipsFromSrtCues(
       [{ index: 1, startTime: 0, endTime: 0.05, text: '短い' }],
@@ -81,5 +90,6 @@ describe('buildTextClipsFromSrtCues', () => {
 describe('formatSrtImportSummary', () => {
   it('インポート件数メッセージを返す', () => {
     expect(formatSrtImportSummary(3)).toBe('3件の字幕クリップをインポートしました')
+    expect(formatSrtImportSummary(2, 'Shift_JIS')).toBe('2件の字幕クリップをインポートしました（Shift_JIS）')
   })
 })

@@ -10,6 +10,7 @@ import type {
   VideoClip,
 } from '../types/project'
 import { getTextLineHeight, getTextLineYPositions, splitTextLines } from '../utils/textLayout'
+import { wrapTextLinesToCanvasWidth } from '../utils/textWrap'
 import { drawTextBackground } from '../utils/textBackground'
 import { getMediaVisualOpacityAtTime } from '../utils/visualFade'
 import { buildCanvasFontString } from '../utils/googleFonts'
@@ -429,6 +430,8 @@ function drawTextClip(
   drawWithTransform(ctx, transform, canvasW, canvasH, undefined, undefined, () => {
     const fontSize = text.fontSize * (canvasW / 1920)
     ctx.font = getFontString(text, fontSize, canvasW)
+    const maxTextWidth = canvasW * 0.88
+    const wrappedLines = wrapTextLinesToCanvasWidth(ctx, lines, maxTextWidth)
     ctx.textAlign = text.textAlign
     ctx.textBaseline = 'middle'
     const x = transform.x * canvasW
@@ -449,15 +452,15 @@ function drawTextClip(
       ctx.shadowBlur = text.shadowBlur * (canvasW / 1920)
     }
 
-    const lineYs = getTextLineYPositions(lines.length, fontSize, y, {
+    const lineYs = getTextLineYPositions(wrappedLines.length, fontSize, y, {
       lineHeight: text.lineHeight,
       verticalAlign: text.verticalAlign,
     })
 
-    drawTextBackground(ctx, text, lines, lineYs, x, fontSize, canvasW)
+    drawTextBackground(ctx, text, wrappedLines, lineYs, x, fontSize, canvasW)
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
+    for (let i = 0; i < wrappedLines.length; i++) {
+      const line = wrappedLines[i]
       if (!line) continue
       if (text.strokeWidth > 0) {
         ctx.strokeStyle = text.strokeColor

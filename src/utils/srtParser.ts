@@ -1,4 +1,5 @@
 import { createId } from './id'
+import { wrapSubtitleText } from './textWrap'
 import {
   DEFAULT_TEXT_BACKGROUND_PADDING,
   DEFAULT_TEXT_BACKGROUND_RADIUS,
@@ -94,7 +95,7 @@ export function buildTextClipsFromSrtCues(cues: SrtCue[], textTrackId: string): 
       type: 'text' as const,
       text: {
         ...DEFAULT_SRT_TEXT_STYLE,
-        content: cue.text,
+        content: wrapSubtitleText(cue.text),
       },
       transform: { ...DEFAULT_TRANSFORM, y: 0.88 },
       animation: { type: 'fadeIn', duration: Math.min(0.3, duration) },
@@ -102,6 +103,8 @@ export function buildTextClipsFromSrtCues(cues: SrtCue[], textTrackId: string): 
   })
 }
 
-export function formatSrtImportSummary(count: number): string {
-  return `${count}件の字幕クリップをインポートしました`
+export function formatSrtImportSummary(count: number, encoding?: string): string {
+  const base = `${count}件の字幕クリップをインポートしました`
+  if (!encoding || encoding === 'utf-8') return base
+  return `${base}（${encoding}）`
 }

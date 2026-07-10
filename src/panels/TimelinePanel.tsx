@@ -2,6 +2,7 @@ import { useCallback, useRef, useEffect, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import type { Clip } from '../types/project'
 import { formatTime, snapTime } from '../utils/time'
+import { formatTimelineTextLabel } from '../utils/textWrap'
 import { snapLocalKeyframeTime, snapVolume } from '../utils/keyframeSnap'
 import { clampTrimEnd, clampTrimStart } from '../utils/clipUtils'
 import {
@@ -558,7 +559,7 @@ export function TimelinePanel() {
                   const left = clip.startTime * pixelsPerSecond
                   const width = Math.max(clip.duration * pixelsPerSecond, 24)
                   const label = clip.type === 'text'
-                    ? clip.text.content
+                    ? formatTimelineTextLabel(clip.text.content)
                     : clip.type === 'adjustment'
                       ? '調整レイヤー'
                       : (media?.name ?? clip.type)

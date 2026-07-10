@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { useToastStore } from '../store/toastStore'
 import { formatSrtImportSummary } from '../utils/srtParser'
+import { formatEncodingLabel, readTextFileWithEncoding } from '../utils/textEncoding'
 import { Btn } from './ui'
 import { Icons } from './icons'
 
@@ -13,13 +14,13 @@ export function SrtImportSection() {
   const handleFileChange = async (file: File | undefined) => {
     if (!file) return
     try {
-      const content = await file.text()
-      const count = importSrtSubtitles(content)
+      const { text, encoding } = await readTextFileWithEncoding(file)
+      const count = importSrtSubtitles(text)
       if (count === 0) {
         showToast('有効な字幕が見つかりませんでした', 'error')
         return
       }
-      showToast(formatSrtImportSummary(count), 'success')
+      showToast(formatSrtImportSummary(count, formatEncodingLabel(encoding)), 'success')
     } catch {
       showToast('SRT ファイルの読み込みに失敗しました', 'error')
     } finally {
@@ -35,7 +36,7 @@ export function SrtImportSection() {
         </span>
         <div>
           <p className="text-[11px] font-semibold text-text-primary">SRT 字幕インポート</p>
-          <p className="text-[10px] text-text-muted">.srt ファイルからテキストクリップを一括生成</p>
+          <p className="text-[10px] text-text-muted">.srt ファイル（UTF-8 / Shift_JIS 等）からテキストクリップを一括生成</p>
         </div>
       </div>
       <input
