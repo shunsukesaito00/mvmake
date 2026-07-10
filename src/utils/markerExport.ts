@@ -1,4 +1,5 @@
 import type { TimelineMarker } from '../types/project'
+import { filterChapterMarkers } from './beatMarkers'
 
 export interface MarkerChapterRange {
   markerId: string
@@ -12,7 +13,7 @@ export function getMarkerChapterRanges(
   markers: TimelineMarker[],
   projectDuration: number,
 ): MarkerChapterRange[] {
-  const sorted = [...markers].sort((a, b) => a.time - b.time)
+  const sorted = filterChapterMarkers(markers).sort((a, b) => a.time - b.time)
   return sorted.map((marker, index) => ({
     markerId: marker.id,
     label: marker.label,

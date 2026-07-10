@@ -429,10 +429,12 @@ export function TimelinePanel() {
               ))}
               {markers.map((m) => {
                 const isSelected = selectedMarkerId === m.id
+                const isBeat = m.type === 'beat'
                 return (
                   <div
                     key={m.id}
                     data-marker-id={m.id}
+                    data-marker-type={isBeat ? 'beat' : 'chapter'}
                     className={`absolute top-0 z-10 h-full cursor-ew-resize ${isSelected ? 'z-30' : ''}`}
                     style={{ left: m.time * pixelsPerSecond - 5, width: 10 }}
                     title={m.label}
@@ -440,8 +442,14 @@ export function TimelinePanel() {
                     onClick={(e) => { e.stopPropagation(); setSelectedMarkerId(m.id) }}
                     onDoubleClick={(e) => { e.stopPropagation(); removeMarker(m.id) }}
                   >
-                    <div className={`absolute top-0 left-1/2 h-full w-0.5 -translate-x-1/2 ${isSelected ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' : 'bg-emerald-500/70'}`} />
-                    <Icons.Marker size={10} className={`absolute -top-0.5 left-1/2 -translate-x-1/2 ${isSelected ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                    <div className={`absolute top-0 left-1/2 h-full w-0.5 -translate-x-1/2 ${isSelected
+                      ? isBeat ? 'bg-fuchsia-400 shadow-[0_0_6px_rgba(232,121,249,0.8)]' : 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]'
+                      : isBeat ? 'bg-fuchsia-500/70' : 'bg-emerald-500/70'
+                    }`} />
+                    <Icons.Marker size={10} className={`absolute -top-0.5 left-1/2 -translate-x-1/2 ${isSelected
+                      ? isBeat ? 'text-fuchsia-400' : 'text-emerald-400'
+                      : isBeat ? 'text-fuchsia-500' : 'text-emerald-500'
+                    }`} />
                   </div>
                 )
               })}

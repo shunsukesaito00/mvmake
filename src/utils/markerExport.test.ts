@@ -20,4 +20,15 @@ describe('markerExport', () => {
     expect(formatMarkerChapterRange({ markerId: 'm2', label: '新郎プロフィール', start: 20, end: 50 }))
       .toBe('新郎プロフィール (20.0–50.0s)')
   })
+
+  it('ビートマーカーを章区間から除外する', () => {
+    const withBeats = [
+      ...markers,
+      { id: 'b1', time: 10, label: 'Beat 1', type: 'beat' as const },
+      { id: 'b2', time: 30, label: 'Beat 2', type: 'beat' as const },
+    ]
+    const ranges = getMarkerChapterRanges(withBeats, 120)
+    expect(ranges).toHaveLength(3)
+    expect(ranges.map((r) => r.start)).toEqual([0, 20, 50])
+  })
 })

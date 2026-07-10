@@ -33,6 +33,7 @@ import { buildPhotoGuideClips, buildTemplateMarkers, buildTemplateTextClips } fr
 import { buildTextClipsFromSrtCues, parseSrt } from '../utils/srtParser'
 import { computeGuideSlideshowDurationPerImage, isPhotoGuideClip } from '../utils/photoGuide'
 import { getMarkerChapterRanges } from '../utils/markerExport'
+import { beatMarkerLabel, countBeatMarkers, generateBeatMarkerTimes } from '../utils/beatMarkers'
 import { collectBatchTransitionClipIds, collectBatchTransitionRemovalClipIds, type BatchTransitionScope } from '../utils/batchTransition'
 import {
   buildCrossVisualClip,
@@ -188,6 +189,8 @@ interface ProjectState {
   applyUserProjectTemplate: (template: UserProjectTemplate) => void
   createProjectFromUserTemplate: (template: UserProjectTemplate) => void
   addMarker: (time: number, label?: string) => void
+  addBeatMarker: (time?: number) => void
+  addBeatMarkersAtInterval: (interval: number) => number
   updateMarker: (id: string, updates: Partial<Pick<TimelineMarker, 'label' | 'time'>>, recordHistory?: boolean) => void
   removeMarker: (id: string) => void
 
@@ -555,8 +558,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       sourceDuration: preset.duration,
       type: 'text',
       text: textStyle,
-      transform: { ...DEFAULT_TRANSFORM },
-      animation: { type: 'fadeIn', duration: 0.8 },
+      transform: { ...DEFAULT_TRANSFORM, ...preset.transform },
+      animation: {
+        type: preset.animation?.type ?? 'fadeIn',
+        duration: preset.animation?.duration ?? 0.8,
+      },
     }
 
     set((state) => ({
@@ -1058,11 +1064,52 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   addMarker: (time, label) => {
     get().pushHistory()
-    const marker: TimelineMarker = { id: createId(), time, label: label ?? `Marker ${time.toFixed(1)}s` }
+    const marker: TimelineMarker = { id: createId(), time, label: label ?? `Marker ${time.toFixed(1)}s`, type: 'chapter' }
     set((state) => ({
       project: { ...state.project, markers: [...(state.project.markers ?? []), marker] },
       future: [],
     }))
+  },
+
+  addBeatMarker: (time) => {
+    const t = time ?? get().currentTime
+    get().pushHistory()
+    const beatIndex = countBeatMarkers(get().project.markers ?? []) + 1
+    const marker: TimelineMarker = { id: createId(), time: t, label: beatMarkerLabel(beatIndex), type: 'beat' }
+    set((state) => ({
+      project: { ...state.project, markers: [...(state.project.markers ?? []), marker] },
+      future: [],
+    }))
+  },
+
+  addBeatMarkersAtInterval: (interval) => {
+    if (interval <= 0) return 0
+    const { project, selectedClipId } = get()
+    let start = 0
+    let end = get().getProjectDuration()
+    if (selectedClipId) {
+      const found = findClip(project, selectedClipId)
+      if (found?.clip.type === 'audio') {
+        start = found.clip.startTime
+        end = found.clip.startTime + found.clip.duration
+      }
+    }
+    const times = generateBeatMarkerTimes(start, end, interval)
+    if (times.length === 0) return 0
+
+    get().pushHistory()
+    const baseIndex = countBeatMarkers(project.markers ?? [])
+    const newMarkers: TimelineMarker[] = times.map((time, i) => ({
+      id: createId(),
+      time,
+      label: beatMarkerLabel(baseIndex + i + 1),
+      type: 'beat' as const,
+    }))
+    set((state) => ({
+      project: { ...state.project, markers: [...(state.project.markers ?? []), ...newMarkers] },
+      future: [],
+    }))
+    return newMarkers.length
   },
 
   removeMarker: (id) => {

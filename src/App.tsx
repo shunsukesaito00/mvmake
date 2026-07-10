@@ -49,7 +49,10 @@ function App() {
       if (e.key === 's' && !e.metaKey && !e.ctrlKey && store.selectedClipId) store.splitClipAt(store.selectedClipId, store.currentTime)
       if (e.key === 'i' || e.key === 'I') store.setInPoint(store.currentTime)
       if (e.key === 'o' || e.key === 'O') store.setOutPoint(store.currentTime)
-      if (e.key === 'm' || e.key === 'M') store.addMarker(store.currentTime)
+      if (e.key === 'm' || e.key === 'M') {
+        if (e.shiftKey) store.addBeatMarker(store.currentTime)
+        else store.addMarker(store.currentTime)
+      }
       if (e.key === 'g' || e.key === 'G') store.setShowSafeAreas(!store.showSafeAreas)
       if (e.key === 'f' || e.key === 'F') {
         const preview = document.querySelector('[data-preview-container]') as HTMLElement | null

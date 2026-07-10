@@ -1070,3 +1070,36 @@ test('プロジェクト設定: プリセットを保存して適用できる', 
   await page.getByRole('button', { name: '書き出し' }).click()
   await expect(page.getByText('プロジェクト解像度: 1080×1920')).toBeVisible()
 })
+
+test('テキスト: ロワーサードプリセットを追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'ロワーサード（名前）' }).click()
+  await expect(page.locator('footer').getByText('Taro & Hanako')).toBeVisible()
+})
+
+test('BGM: ビートマーカーを配置しスナップに使える', async ({ page }) => {
+  const wav = makeWavWithPeak(0.2, 4)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'beat-bgm.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'beat-bgm.wav')
+
+  await page.getByRole('button', { name: 'ビートマーカー' }).click()
+  await page.getByRole('button', { name: 'クリップ内に等間隔配置' }).click()
+  await expect(page.getByText(/件のビートマーカーを配置しました/)).toBeVisible()
+  await expect(page.locator('[data-marker-type="beat"]')).toHaveCount(8)
+
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /Opening/ }).first().click()
+  const clip = page.locator('footer').getByText('Opening')
+  const before = (await clip.boundingBox())!
+
+  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(before.x + before.width / 2 + 70, before.y + before.height / 2, { steps: 6 })
+  await page.mouse.up()
+
+  const after = (await clip.boundingBox())!
+  expect(after.x - before.x).toBeGreaterThan(55)
+  expect(after.x - before.x).toBeLessThan(95)
+})

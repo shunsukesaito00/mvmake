@@ -9,6 +9,7 @@ import { ColorAdjustmentsSection } from '../components/ColorAdjustmentsSection'
 import { VisualFadeSection } from '../components/VisualFadeSection'
 import { PhotoGuideSection } from '../components/PhotoGuideSection'
 import { MarkerInspectorSection } from '../components/MarkerInspectorSection'
+import { BeatMarkerSection } from '../components/BeatMarkerSection'
 import { TextStylePresetsSection } from '../components/TextStylePresetsSection'
 import { ClipMediaReplaceSection } from '../components/ClipMediaReplaceSection'
 import { AudioNormalizeSection } from '../components/AudioNormalizeSection'
@@ -104,7 +105,9 @@ export function InspectorPanel() {
       <div className="flex h-full flex-col overflow-hidden">
         <PanelHeader title="インスペクター" icon={<Icons.Settings size={14} />} />
         <div className="border-b border-border px-3 py-2.5">
-          <p className="text-sm font-semibold text-text-primary">章マーカー</p>
+          <p className="text-sm font-semibold text-text-primary">
+            {selectedMarker.type === 'beat' ? 'ビートマーカー' : '章マーカー'}
+          </p>
           <p className="font-mono text-[10px] text-text-muted">{selectedMarker.time.toFixed(1)}s</p>
         </div>
         <MarkerInspectorSection marker={selectedMarker} />
@@ -422,6 +425,9 @@ export function InspectorPanel() {
                   <Slider label="フェード時間" value={(selectedClip as AudioClip).ducking.fade} min={0.1} max={2} step={0.1} onChange={(v) => updateClip(selectedClip.id, { ducking: { ...(selectedClip as AudioClip).ducking, fade: v } })} format={(v) => `${v.toFixed(1)}秒`} />
                 </>
               )}
+            </CollapsibleSection>
+            <CollapsibleSection title="ビートマーカー" defaultOpen={false}>
+              <BeatMarkerSection clip={selectedClip as AudioClip} />
             </CollapsibleSection>
           </>
         )}

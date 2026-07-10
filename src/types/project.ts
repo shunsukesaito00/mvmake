@@ -204,6 +204,8 @@ export interface TimelineMarker {
   id: string
   time: number
   label: string
+  /** 章マーカー（書き出し区間）または BGM ビート用。省略時は chapter */
+  type?: 'chapter' | 'beat'
 }
 
 export interface Project {
@@ -220,8 +222,18 @@ export interface Project {
 export interface TextPreset {
   id: string
   label: string
+  /** タイトル / ロワーサード / テロップ */
+  category?: 'title' | 'lowerThird' | 'subtitle'
   text: Partial<TextStyle>
   duration: number
+  transform?: Partial<Transform>
+  animation?: Partial<ClipAnimation>
+}
+
+export const TEXT_PRESET_CATEGORY_LABELS: Record<NonNullable<TextPreset['category']>, string> = {
+  title: 'タイトル',
+  lowerThird: 'ロワーサード',
+  subtitle: 'テロップ',
 }
 
 export interface TemplateChapterMarker {
@@ -303,6 +315,7 @@ export const TEXT_PRESETS: TextPreset[] = [
   {
     id: 'opening',
     label: 'Opening',
+    category: 'title',
     text: {
       content: 'Opening',
       fontFamily: 'Shippori Mincho',
@@ -319,6 +332,7 @@ export const TEXT_PRESETS: TextPreset[] = [
   {
     id: 'profile',
     label: '新郎新婦紹介',
+    category: 'title',
     text: {
       content: '新郎新婦紹介',
       fontFamily: 'Noto Serif JP',
@@ -335,6 +349,7 @@ export const TEXT_PRESETS: TextPreset[] = [
   {
     id: 'thankyou',
     label: 'Thank you',
+    category: 'title',
     text: {
       content: 'Thank you',
       fontFamily: 'Shippori Mincho',
@@ -351,6 +366,7 @@ export const TEXT_PRESETS: TextPreset[] = [
   {
     id: 'ending',
     label: 'エンディング',
+    category: 'title',
     text: {
       content: 'エンディング',
       fontFamily: 'Noto Sans JP',
@@ -363,6 +379,141 @@ export const TEXT_PRESETS: TextPreset[] = [
       textAlign: 'center',
     },
     duration: 4,
+  },
+  {
+    id: 'lower-third-names',
+    label: 'ロワーサード（名前）',
+    category: 'lowerThird',
+    text: {
+      content: 'Taro & Hanako',
+      fontFamily: 'Noto Serif JP',
+      fontSize: 42,
+      color: '#ffffff',
+      strokeColor: '#000000',
+      strokeWidth: 1,
+      shadowColor: 'rgba(0,0,0,0.45)',
+      shadowBlur: 6,
+      textAlign: 'left',
+      verticalAlign: 'bottom',
+      backgroundColor: SUBTITLE_BAND_COLOR,
+      backgroundPadding: 20,
+      backgroundRadius: 4,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.28, y: 0.88 },
+    duration: 5,
+    animation: { type: 'slideUp', duration: 0.6 },
+  },
+  {
+    id: 'lower-third-date',
+    label: 'ロワーサード（日付・会場）',
+    category: 'lowerThird',
+    text: {
+      content: '2026.12.24  /  Tokyo Garden',
+      fontFamily: 'Noto Sans JP',
+      fontSize: 28,
+      color: '#f5e6d3',
+      strokeColor: '#1a1a1a',
+      strokeWidth: 0,
+      shadowColor: 'rgba(0,0,0,0.35)',
+      shadowBlur: 4,
+      textAlign: 'left',
+      verticalAlign: 'bottom',
+      backgroundColor: 'rgba(0, 0, 0, 0.45)',
+      backgroundPadding: 16,
+      backgroundRadius: 4,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.32, y: 0.93 },
+    duration: 4,
+    animation: { type: 'fadeIn', duration: 0.5 },
+  },
+  {
+    id: 'section-heading',
+    label: 'セクション見出し',
+    category: 'subtitle',
+    text: {
+      content: 'Chapter 1',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 52,
+      color: '#e8d5b7',
+      strokeColor: '#2c2c2c',
+      strokeWidth: 1,
+      shadowColor: 'rgba(0,0,0,0.4)',
+      shadowBlur: 8,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.5, y: 0.38 },
+    duration: 3,
+    animation: { type: 'fadeIn', duration: 0.5 },
+  },
+  {
+    id: 'catch-copy',
+    label: 'キャッチコピー',
+    category: 'subtitle',
+    text: {
+      content: 'Happily Ever After',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 58,
+      color: '#ffffff',
+      strokeColor: '#000000',
+      strokeWidth: 1,
+      shadowColor: 'rgba(0,0,0,0.5)',
+      shadowBlur: 10,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.5, y: 0.45 },
+    duration: 4,
+    animation: { type: 'fadeIn', duration: 0.8 },
+  },
+  {
+    id: 'guest-message',
+    label: 'ゲストへのメッセージ',
+    category: 'subtitle',
+    text: {
+      content: '本日はお越し頂き\nありがとうございます',
+      fontFamily: 'Noto Serif JP',
+      fontSize: 36,
+      color: '#ffffff',
+      strokeColor: '#000000',
+      strokeWidth: 1,
+      shadowColor: 'rgba(0,0,0,0.45)',
+      shadowBlur: 6,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: SUBTITLE_BAND_COLOR,
+      backgroundPadding: 24,
+      backgroundRadius: 8,
+      lineHeight: 1.4,
+    },
+    transform: { x: 0.5, y: 0.78 },
+    duration: 5,
+    animation: { type: 'slideUp', duration: 0.6 },
+  },
+  {
+    id: 'congratulations',
+    label: 'お祝いメッセージ',
+    category: 'title',
+    text: {
+      content: 'Congratulations',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 68,
+      color: '#ffffff',
+      strokeColor: '#2c2c2c',
+      strokeWidth: 2,
+      shadowColor: 'rgba(0,0,0,0.5)',
+      shadowBlur: 12,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.5, y: 0.5 },
+    duration: 4,
+    animation: { type: 'scaleIn', duration: 0.8 },
   },
 ]
 

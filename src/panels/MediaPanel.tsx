@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useProjectStore, type SlideshowOptions } from '../store/projectStore'
 import { loadMediaFiles, enrichMediaAsset, type LoadMediaProgress } from '../engine/mediaLoader'
-import { TEXT_PRESETS, PROJECT_TEMPLATES, type TransitionType } from '../types/project'
+import { TEXT_PRESETS, TEXT_PRESET_CATEGORY_LABELS, PROJECT_TEMPLATES, type TransitionType, type TextPreset } from '../types/project'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, Btn, EmptyState, Modal, Slider } from '../components/ui'
 import { Icons } from '../components/icons'
@@ -494,20 +494,22 @@ export function MediaPanel() {
             <SrtImportSection />
             <SrtExportSection />
             <p className="mb-3 text-[11px] text-text-muted">プリセットをクリックで追加</p>
-            <div className="space-y-2">
-              {TEXT_PRESETS.map((preset) => (
-                <button
-                  key={preset.id}
-                  onClick={() => addTextClip(preset)}
-                  className="w-full rounded-xl bg-surface-3 p-3 text-left ring-1 ring-border transition-all hover:ring-accent/40"
-                >
-                  <p className="truncate text-sm font-bold" style={{ fontFamily: preset.text.fontFamily, color: preset.text.color }}>
-                    {preset.text.content}
+            {(['title', 'lowerThird', 'subtitle'] as const).map((category) => {
+              const presets = TEXT_PRESETS.filter((p) => (p.category ?? 'title') === category)
+              if (presets.length === 0) return null
+              return (
+                <div key={category} className="mb-4">
+                  <p className="mb-2 text-[10px] font-semibold tracking-wider text-accent uppercase">
+                    {TEXT_PRESET_CATEGORY_LABELS[category]}
                   </p>
-                  <p className="mt-1 text-[10px] text-text-muted">{preset.label}</p>
-                </button>
-              ))}
-            </div>
+                  <div className="space-y-2">
+                    {presets.map((preset) => (
+                      <TextPresetButton key={preset.id} preset={preset} onAdd={() => addTextClip(preset)} />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -621,5 +623,20 @@ export function MediaPanel() {
         )}
       </div>
     </div>
+  )
+}
+
+function TextPresetButton({ preset, onAdd }: { preset: TextPreset; onAdd: () => void }) {
+  const preview = preset.text.content?.split('\n')[0] ?? preset.label
+  return (
+    <button
+      onClick={onAdd}
+      className="w-full rounded-xl bg-surface-3 p-3 text-left ring-1 ring-border transition-all hover:ring-accent/40"
+    >
+      <p className="truncate text-sm font-bold" style={{ fontFamily: preset.text.fontFamily, color: preset.text.color }}>
+        {preview}
+      </p>
+      <p className="mt-1 text-[10px] text-text-muted">{preset.label}</p>
+    </button>
   )
 }
