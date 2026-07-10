@@ -703,16 +703,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     get().pushHistory()
     const clips = buildTextClipsFromSrtCues(cues, textTrack.id)
 
-    set((state) => ({
-      project: {
-        ...state.project,
-        tracks: state.project.tracks.map((t) =>
-          t.id === textTrack.id ? { ...t, clips: [...t.clips, ...clips] } : t,
-        ),
-      },
+    const nextProject = {
+      ...get().project,
+      tracks: get().project.tracks.map((t) =>
+        t.id === textTrack.id ? { ...t, clips: [...t.clips, ...clips] } : t,
+      ),
+    }
+
+    set({
+      project: nextProject,
       selectedClipId: clips[clips.length - 1]?.id ?? null,
       future: [],
-    }))
+    })
+
+    ensureProjectFontsLoaded(nextProject).catch(console.error)
 
     return clips.length
   },

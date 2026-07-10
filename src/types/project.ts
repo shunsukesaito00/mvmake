@@ -1,3 +1,5 @@
+import { normalizeGoogleFontFamily } from '../utils/googleFonts'
+
 export type MediaType = 'video' | 'image' | 'audio'
 export type TrackType = 'video' | 'text' | 'audio'
 export type ClipType = 'video' | 'image' | 'audio' | 'text' | 'adjustment'
@@ -1701,6 +1703,7 @@ function normalizeClip(clip: Clip): Clip {
       ...clip,
       text: {
         ...clip.text,
+        fontFamily: normalizeGoogleFontFamily(clip.text.fontFamily),
         lineHeight: clip.text.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT,
         verticalAlign: clip.text.verticalAlign ?? 'center',
         backgroundColor: clip.text.backgroundColor ?? '',

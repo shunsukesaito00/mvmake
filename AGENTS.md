@@ -23,6 +23,7 @@
 | `src/engine/mediaLoader.ts` | File → `MediaAsset` 変換(duration・サムネイル・波形の抽出) |
 | `src/engine/demoProject.ts` | `createDemoProject()`。Canvas 生成画像+テキストのサンプルプロジェクト(オンボーディングから起動) |
 | `src/engine/stressTestProject.ts` | `createStressTestProject()`。10 分・100 クリップのパフォーマンス計測用プロジェクト |
+| `docs/TEXT_SRT_AUDIT.md` | テキスト・SRT・フォント描画監査（Q8） |
 | `src/persistence/db.ts` | IndexedDB への保存・復元・プロジェクト一覧/複製/削除 |
 | `src/persistence/projectFile.ts` | `.fable` ファイル(JSON+メディアZIP)のエクスポート/インポート |
 | `src/hooks/` | `usePlayback`(再生ループ・`PlaybackProvider` 経由で単一マウント)、`useAutoSave` / `useProjectRestore`、`usePanelSize`(リサイズ可能レイアウト) |

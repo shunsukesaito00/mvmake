@@ -50,4 +50,11 @@ describe('renderPathAudit', () => {
     expect(compositorSource).toContain('default:')
     expect(compositorSource).toContain("transitionType: 'crossfade'")
   })
+
+  it('書き出しは ensureProjectFontsLoaded でフォントをプリロードする', () => {
+    const exporterSource = readFileSync(exporterPath, 'utf8')
+    expect(exporterSource).toContain("from '../utils/googleFonts'")
+    expect(exporterSource).toContain('ensureProjectFontsLoaded(project)')
+    expect(exporterSource).toMatch(/await ensureProjectFontsLoaded/)
+  })
 })

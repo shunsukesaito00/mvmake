@@ -86,10 +86,39 @@ export function collectProjectFontFamilies(project: Project): string[] {
   return [...families]
 }
 
-/** 書き出し前にプロジェクト内テキストのフォントを読み込む */
+export class FontLoadError extends Error {
+  readonly failedFamilies: string[]
+
+  constructor(failedFamilies: string[]) {
+    super(`フォントの読み込みに失敗しました: ${failedFamilies.join(', ')}`)
+    this.name = 'FontLoadError'
+    this.failedFamilies = failedFamilies
+  }
+}
+
+async function loadCatalogFontFamily(family: string): Promise<boolean> {
+  if (typeof document === 'undefined' || !document.fonts) return true
+  if (isCatalogGoogleFont(family)) loadedCatalogFamilies.add(family)
+  injectGoogleFontsStylesheet([...loadedCatalogFamilies])
+  const specs = [`400 16px "${family}"`, `700 16px "${family}"`]
+  await Promise.allSettled(specs.map((spec) => document.fonts.load(spec)))
+  await document.fonts.ready
+  return specs.every((spec) => document.fonts.check(spec))
+}
+
+/** 書き出し前にプロジェクト内テキストのフォントを読み込む（カタログフォントの失敗時は例外） */
 export async function ensureProjectFontsLoaded(project: Project): Promise<void> {
-  const used = collectProjectFontFamilies(project)
-  await ensureGoogleFontsLoaded([DEFAULT_GOOGLE_FONT, ...used])
+  const used = collectProjectFontFamilies(project).map(normalizeGoogleFontFamily)
+  const targets = [...new Set([DEFAULT_GOOGLE_FONT, ...used])]
+  const failed: string[] = []
+
+  for (const family of targets) {
+    if (!isCatalogGoogleFont(family)) continue
+    const ok = await loadCatalogFontFamily(family)
+    if (!ok) failed.push(family)
+  }
+
+  if (failed.length > 0) throw new FontLoadError(failed)
 }
 
 export function isCatalogGoogleFont(family: string): boolean {

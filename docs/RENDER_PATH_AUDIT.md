@@ -1,6 +1,6 @@
 # プレビュー / 書き出し 描画経路監査
 
-最終更新: 2026-07-11（v1.73.0 / Phase B Q5 色調スタック追記）
+最終更新: 2026-07-11（v1.76.0 / Phase B Q8 テキスト・フォント追記）
 
 ## 結論
 
@@ -40,6 +40,17 @@
 
 ルックプリセット適用値は `mergeClipColorWithAdjustment` / `resolveClipLut` 経由で compositor に渡る。
 
+## テキスト / 字幕 / フォント
+
+| 用途 | 経路 | 書き出しと一致 |
+|------|------|----------------|
+| 本編プレビュー・書き出し | `renderFrame` → `drawTextClip`（折り返し・字幕帯・アニメーション） | **一致** |
+| 書き出し前のみ | `ensureProjectFontsLoaded`（カタログフォント検証・失敗時 `FontLoadError`） | 意図的差分 |
+
+折り返し・字幕帯・SRT 往復・フォントロードの詳細: [TEXT_SRT_AUDIT.md](./TEXT_SRT_AUDIT.md)
+
+自動検証: `src/utils/textRenderRegression.test.ts`（長文・字幕帯極端値）、`src/utils/srtRoundTrip.test.ts`
+
 ## 映像フェード（fadeIn / fadeOut）
 
 | 経路 | 関数 |
@@ -52,6 +63,7 @@
 | 項目 | プレビュー | 書き出し |
 |------|------------|----------|
 | セーフエリア | `showSafeAreas` で描画可 | 非表示 |
+| フォントプリロード | 選択時のみ（未ロードはフォールバック表示可） | `ensureProjectFontsLoaded`（失敗時中止） |
 | 再生中の動画シーク | `playing: true` で `renderFrame` 内シーク省略 | 毎フレーム `seekVideosToTime` |
 | ミニプレビュー | CSS / 縮小 Canvas | 対象外 |
 
@@ -63,3 +75,4 @@
 - `src/utils/renderPathAudit.ts` — 監査用定数・ヘルパー
 - `src/utils/colorPixelGrade.ts` — 色調ピクセルスタック
 - `docs/COLOR_STACK_AUDIT.md` — 色調スタック詳細（Q5）
+- `docs/TEXT_SRT_AUDIT.md` — テキスト・SRT・フォント（Q8）

@@ -1524,6 +1524,68 @@ test('テキスト: SRT 字幕をエクスポートできる', async ({ page }) 
   await expect(page.getByText('2件の字幕をSRTでエクスポートしました')).toBeVisible()
 })
 
+test('テキスト: 長文 SRT をインポートして再エクスポートできる', async ({ page }) => {
+  const longText =
+    '本日はお越しいただき、誠にありがとうございます。新郎新婦一同、心より感謝申し上げます。'
+  const srt = `1
+00:00:01,000 --> 00:00:06,500
+${longText}`
+
+  await page.getByTitle('テキスト').click()
+  await page.setInputFiles('input[aria-label="SRT 字幕ファイル"]', {
+    name: 'long-subtitles.srt',
+    mimeType: 'application/x-subrip',
+    buffer: Buffer.from(srt, 'utf-8'),
+  })
+  await expect(page.getByText('1件の字幕クリップをインポートしました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'SRT を保存' }).click()
+  const download = await downloadPromise
+  const path = await download.path()
+  expect(path).toBeTruthy()
+  const exported = await download.createReadStream()
+  const chunks: Buffer[] = []
+  for await (const chunk of exported!) {
+    chunks.push(Buffer.from(chunk))
+  }
+  const content = Buffer.concat(chunks).toString('utf-8')
+  expect(content).toContain('00:00:01,000 --> 00:00:06,500')
+  expect(content).toContain('本日はお越しいただき')
+})
+
+test('テキスト: VTT 字幕をエクスポートできる', async ({ page }) => {
+  const srt = `1
+00:00:01,000 --> 00:00:03,500
+VTT エクスポート確認`
+
+  await page.getByTitle('テキスト').click()
+  await page.setInputFiles('input[aria-label="SRT 字幕ファイル"]', {
+    name: 'vtt-source.srt',
+    mimeType: 'application/x-subrip',
+    buffer: Buffer.from(srt, 'utf-8'),
+  })
+  await expect(page.getByText('1件の字幕クリップをインポートしました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'VTT を保存' }).click()
+  const download = await downloadPromise
+
+  expect(download.suggestedFilename()).toMatch(/\.vtt$/)
+  const path = await download.path()
+  expect(path).toBeTruthy()
+  const exported = await download.createReadStream()
+  const chunks: Buffer[] = []
+  for await (const chunk of exported!) {
+    chunks.push(Buffer.from(chunk))
+  }
+  const content = Buffer.concat(chunks).toString('utf-8')
+  expect(content).toContain('WEBVTT')
+  expect(content).toContain('00:00:01.000 --> 00:00:03.500')
+  expect(content).toContain('VTT エクスポート確認')
+  await expect(page.getByText('1件の字幕をVTTでエクスポートしました')).toBeVisible()
+})
+
 test('メディア: 動画をインポートして UI が応答し続ける', async ({ page }) => {
   const webm = await makeTinyWebmVideo(page)
 
