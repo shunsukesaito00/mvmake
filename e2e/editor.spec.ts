@@ -1423,3 +1423,20 @@ test('色調補正: RGB カーブの R チャンネルを調整できる', async
   await expect(rMid).toHaveValue('0.7')
   await expect(page.getByLabel('RGB カーブ (R)')).toBeVisible()
 })
+
+test('色調補正: RGB カーブに制御点を追加できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-bezier-photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-bezier-photo.png')
+
+  const graph = page.getByLabel('RGB カーブ (R)')
+  const box = await graph.boundingBox()
+  expect(box).not.toBeNull()
+  await graph.dblclick({ position: { x: box!.width * 0.4, y: box!.height * 0.45 } })
+  await page.getByRole('button', { name: '制御点を削除' }).click()
+  await expect(page.getByRole('button', { name: '制御点を削除' })).toHaveCount(0)
+})

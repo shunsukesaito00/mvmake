@@ -63,19 +63,37 @@ export interface ColorAdjustments {
   midtones: number
   /** ハイライト (-1〜1) */
   highlights: number
-  /** RGB 各チャンネルのトーンカーブ（5 制御点の出力値 0〜1） */
+  /** RGB 各チャンネルのトーンカーブ（可変制御点・単調スプライン補間） */
   rgbCurves: RgbCurves
 }
 
-/** 固定入力位置 0 / 0.25 / 0.5 / 0.75 / 1 に対する出力値 */
+export interface RgbCurvePoint {
+  x: number
+  y: number
+}
+
+export type RgbCurveChannelPoints = RgbCurvePoint[]
+
+/** @deprecated 旧形式（固定 X ノットに対する Y 値タプル）。normalizeRgbCurves でマイグレーション */
 export type RgbCurvePoints = [number, number, number, number, number]
 
 export const RGB_CURVE_INPUTS: RgbCurvePoints = [0, 0.25, 0.5, 0.75, 1]
 
+export const RGB_CURVE_MAX_POINTS = 16
+export const RGB_CURVE_MIN_POINT_GAP = 0.02
+
+export const DEFAULT_RGB_CURVE_CHANNEL: RgbCurveChannelPoints = [
+  { x: 0, y: 0 },
+  { x: 0.25, y: 0.25 },
+  { x: 0.5, y: 0.5 },
+  { x: 0.75, y: 0.75 },
+  { x: 1, y: 1 },
+]
+
 export interface RgbCurves {
-  r: RgbCurvePoints
-  g: RgbCurvePoints
-  b: RgbCurvePoints
+  r: RgbCurveChannelPoints
+  g: RgbCurveChannelPoints
+  b: RgbCurveChannelPoints
 }
 
 export type RgbCurveChannel = keyof RgbCurves
@@ -357,9 +375,9 @@ export const SUBTITLE_BAND_COLOR = 'rgba(0, 0, 0, 0.6)'
 export const DEFAULT_LUT_INTENSITY = 1
 
 export const DEFAULT_RGB_CURVES: RgbCurves = {
-  r: [...RGB_CURVE_INPUTS],
-  g: [...RGB_CURVE_INPUTS],
-  b: [...RGB_CURVE_INPUTS],
+  r: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
+  g: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
+  b: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
 }
 
 export const DEFAULT_COLOR: ColorAdjustments = {
@@ -373,27 +391,58 @@ export const DEFAULT_COLOR: ColorAdjustments = {
   midtones: 0,
   highlights: 0,
   rgbCurves: {
-    r: [...RGB_CURVE_INPUTS],
-    g: [...RGB_CURVE_INPUTS],
-    b: [...RGB_CURVE_INPUTS],
+    r: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
+    g: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
+    b: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
   },
 }
 
-export function normalizeRgbCurves(curves?: Partial<RgbCurves>): RgbCurves {
-  const normalizeChannel = (channel?: Partial<RgbCurvePoints>, fallback: RgbCurvePoints = [...RGB_CURVE_INPUTS]): RgbCurvePoints => {
-    if (!channel) return [...fallback]
-    return [
-      channel[0] ?? fallback[0],
-      channel[1] ?? fallback[1],
-      channel[2] ?? fallback[2],
-      channel[3] ?? fallback[3],
-      channel[4] ?? fallback[4],
-    ]
+function clampRgb01(value: number): number {
+  return Math.max(0, Math.min(1, value))
+}
+
+function isLegacyRgbCurveChannel(channel: unknown): channel is Partial<RgbCurvePoints> {
+  return Array.isArray(channel) && channel.length > 0 && typeof channel[0] === 'number'
+}
+
+function isRgbCurvePointChannel(channel: unknown): channel is Partial<RgbCurvePoint>[] {
+  return Array.isArray(channel) && channel.length > 0 && typeof channel[0] === 'object' && channel[0] !== null && 'x' in channel[0]
+}
+
+export function sortRgbCurveChannel(points: RgbCurveChannelPoints): RgbCurveChannelPoints {
+  return [...points]
+    .map((p) => ({ x: clampRgb01(p.x), y: clampRgb01(p.y) }))
+    .sort((a, b) => a.x - b.x)
+}
+
+export function normalizeRgbCurveChannel(channel?: unknown, fallback: RgbCurveChannelPoints = DEFAULT_RGB_CURVE_CHANNEL): RgbCurveChannelPoints {
+  if (!channel) return fallback.map((p) => ({ ...p }))
+
+  if (isLegacyRgbCurveChannel(channel)) {
+    return RGB_CURVE_INPUTS.map((x, index) => ({
+      x,
+      y: clampRgb01(channel[index] ?? x),
+    }))
   }
+
+  if (isRgbCurvePointChannel(channel)) {
+    const sorted = sortRgbCurveChannel(
+      channel.map((p) => ({ x: p.x ?? 0, y: p.y ?? 0 })),
+    )
+    if (sorted.length < 2) return fallback.map((p) => ({ ...p }))
+    sorted[0] = { x: 0, y: clampRgb01(sorted[0].y) }
+    sorted[sorted.length - 1] = { x: 1, y: clampRgb01(sorted[sorted.length - 1].y) }
+    return sorted
+  }
+
+  return fallback.map((p) => ({ ...p }))
+}
+
+export function normalizeRgbCurves(curves?: Partial<RgbCurves>): RgbCurves {
   return {
-    r: normalizeChannel(curves?.r, DEFAULT_RGB_CURVES.r),
-    g: normalizeChannel(curves?.g, DEFAULT_RGB_CURVES.g),
-    b: normalizeChannel(curves?.b, DEFAULT_RGB_CURVES.b),
+    r: normalizeRgbCurveChannel(curves?.r, DEFAULT_RGB_CURVES.r),
+    g: normalizeRgbCurveChannel(curves?.g, DEFAULT_RGB_CURVES.g),
+    b: normalizeRgbCurveChannel(curves?.b, DEFAULT_RGB_CURVES.b),
   }
 }
 
