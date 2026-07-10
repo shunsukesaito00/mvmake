@@ -1103,6 +1103,20 @@ test('色調補正: ウエディング暖色ルックを適用できる', async 
   await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
 })
 
+test('色調補正: ロマンティック夕暮れルックを適用できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'sunset.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'sunset.png')
+
+  await page.getByRole('button', { name: 'ロマンティック夕暮れルック', exact: true }).click()
+  await expect(page.getByText('「ロマンティック夕暮れ」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ロマンティック夕暮れルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
+
 test('トランジション: ディゾルブを画像クリップに適用できる', async ({ page }) => {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',

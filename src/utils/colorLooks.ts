@@ -21,6 +21,9 @@ export const COLOR_LOOK_PRESETS: ColorLookPreset[] = [
   { id: 'garden', label: 'ガーデン', description: '爽やかな緑と自然光', color: { ...DEFAULT_COLOR, brightness: 0.05, contrast: 0.1, saturation: 0.25, temperature: -0.05, tint: -0.08 } },
   { id: 'evening', label: 'イブニング', description: '披露宴の落ち着いた照明', color: { ...DEFAULT_COLOR, brightness: -0.08, contrast: 0.12, saturation: -0.1, temperature: 0.08, tint: 0.03, shadows: -0.08 } },
   { id: 'porcelain', label: 'ポーセリン', description: '肌色を明るく柔らかく', color: { ...DEFAULT_COLOR, brightness: 0.14, contrast: -0.05, saturation: -0.08, temperature: 0.06, tint: 0.06, midtones: 0.1 } },
+  { id: 'romantic-sunset', label: 'ロマンティック夕暮れ', description: '夕焼けのオレンジとローズ', color: { ...DEFAULT_COLOR, brightness: 0.04, contrast: 0.1, saturation: 0.22, temperature: 0.28, tint: 0.08, highlights: 0.1 } },
+  { id: 'classic-monochrome', label: 'クラシックモノトーン', description: '上品なモノクローム調', color: { ...DEFAULT_COLOR, brightness: 0.02, contrast: 0.18, saturation: -0.75, temperature: 0.02 } },
+  { id: 'bouquet-green', label: 'ブーケグリーン', description: 'ブーケと芝生の爽やかな緑', color: { ...DEFAULT_COLOR, brightness: 0.03, contrast: 0.08, saturation: 0.2, temperature: -0.1, tint: -0.15, hue: -0.03 } },
 ]
 
 const EPSILON = 0.001
