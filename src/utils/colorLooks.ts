@@ -27,6 +27,9 @@ export const COLOR_LOOK_PRESETS: ColorLookPreset[] = [
   { id: 'sakura-pink', label: '桜ピンク', description: '春の桜と柔らかなピンク', color: { ...DEFAULT_COLOR, brightness: 0.08, contrast: -0.05, saturation: 0.15, temperature: 0.1, tint: 0.12, highlights: 0.08 } },
   { id: 'night-ceremony', label: 'ナイトセレモニー', description: '夜の式場の落ち着いたトーン', color: { ...DEFAULT_COLOR, brightness: -0.1, contrast: 0.14, saturation: -0.15, temperature: -0.08, tint: 0.02, shadows: -0.12, midtones: -0.05 } },
   { id: 'film-nostalgia', label: 'フィルムノスタルジア', description: '思い出アルバムのフィルム感', color: { ...DEFAULT_COLOR, brightness: -0.02, contrast: 0.12, saturation: -0.35, temperature: 0.1, tint: 0.06, shadows: 0.05, midtones: 0.06 } },
+  { id: 'bridal-white', label: 'ブライダルホワイト', description: 'ドレスと会場の明るいハイキー', color: { ...DEFAULT_COLOR, brightness: 0.15, contrast: -0.08, saturation: -0.12, temperature: 0.04, tint: 0.08, highlights: 0.15, midtones: 0.08 } },
+  { id: 'sunset-rose', label: 'サンセットローズ', description: '夕暮れのローズゴールド', color: { ...DEFAULT_COLOR, brightness: 0.02, contrast: 0.08, saturation: 0.2, temperature: 0.22, tint: 0.15, highlights: 0.06, shadows: -0.04 } },
+  { id: 'vintage-film', label: 'ヴィンテージフィルム', description: '褪せたフィルム写真の温かみ', color: { ...DEFAULT_COLOR, brightness: 0.03, contrast: 0.06, saturation: -0.28, temperature: 0.14, tint: 0.04, shadows: 0.1, midtones: 0.04 } },
 ]
 
 const EPSILON = 0.001
