@@ -1228,6 +1228,18 @@ test('テキスト: ロワーサードプリセットを追加できる', async 
   await expect(page.locator('footer').getByText('Taro & Hanako')).toBeVisible()
 })
 
+test('テキスト: 新規ロワーサード（スピーチ）を追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'ロワーサード（スピーチ）' }).click()
+  await expect(page.locator('footer').getByText('Speech by')).toBeVisible()
+})
+
+test('テキスト: 新規テロップ（入場）を追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'テロップ（入場）' }).click()
+  await expect(page.locator('footer').getByText('入場')).toBeVisible()
+})
+
 test('BGM: ビートマーカーを配置しスナップに使える', async ({ page }) => {
   const wav = makeWavWithPeak(0.2, 4)
   await page.setInputFiles('input[accept*="audio"]', { name: 'beat-bgm.wav', mimeType: 'audio/wav', buffer: wav })
