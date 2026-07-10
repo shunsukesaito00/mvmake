@@ -217,6 +217,24 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
             layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'softFocus' })
             continue
           }
+          case 'crossDissolveWarm': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'crossDissolveWarm' })
+            continue
+          }
+          case 'filmBurn': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time), transitionProgress: progress, transitionType: 'filmBurn' })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'filmBurn' })
+            continue
+          }
+          case 'gentleZoom': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'gentleZoom' })
+            continue
+          }
           case 'wipe': {
             if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
             layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'wipe' })
@@ -305,6 +323,11 @@ function drawWithTransform(
   if (transitionType === 'softFocus' && transitionProgress !== undefined) {
     const eased = easeSmoothstep(transitionProgress)
     const s = 0.98 + eased * 0.02
+    ctx.scale(s, s)
+  }
+  if (transitionType === 'gentleZoom' && transitionProgress !== undefined) {
+    const eased = easeSmoothstep(transitionProgress)
+    const s = 1.08 - eased * 0.08
     ctx.scale(s, s)
   }
   if (transitionType === 'slideLeft' && transitionProgress !== undefined) {
@@ -589,6 +612,29 @@ export async function renderFrame(
         grad.addColorStop(0.6, 'rgba(255, 180, 60, 0.7)')
         grad.addColorStop(1, 'rgba(255, 220, 120, 0)')
         ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'crossDissolveWarm' && transitionProgress !== undefined) {
+        const warm = Math.sin(transitionProgress * Math.PI) * 0.38
+        ctx.fillStyle = `rgba(255, 228, 198, ${warm})`
+        ctx.fillRect(0, 0, width, height)
+      }
+      if (transitionType === 'filmBurn' && transitionProgress !== undefined) {
+        const burn = Math.sin(transitionProgress * Math.PI)
+        ctx.save()
+        const vignette = ctx.createRadialGradient(width / 2, height / 2, width * 0.15, width / 2, height / 2, width * 0.72)
+        vignette.addColorStop(0, 'rgba(0, 0, 0, 0)')
+        vignette.addColorStop(1, `rgba(18, 6, 0, ${burn * 0.75})`)
+        ctx.fillStyle = vignette
+        ctx.fillRect(0, 0, width, height)
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = burn * 0.7
+        const burnGrad = ctx.createRadialGradient(width * 0.5, height * 0.5, width * 0.1, width * 0.5, height * 0.5, width * 0.58)
+        burnGrad.addColorStop(0, 'rgba(255, 190, 70, 0.95)')
+        burnGrad.addColorStop(0.45, 'rgba(255, 120, 35, 0.45)')
+        burnGrad.addColorStop(1, 'rgba(255, 70, 0, 0)')
+        ctx.fillStyle = burnGrad
         ctx.fillRect(0, 0, width, height)
         ctx.restore()
       }

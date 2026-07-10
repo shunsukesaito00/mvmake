@@ -104,10 +104,19 @@ function TransitionPreview({ type }: { type: TransitionType }) {
           style={anim('tp-flash')}
         />
       )}
+      {type === 'crossDissolveWarm' && (
+        <div className="absolute inset-0 bg-[#FFE8CC]" style={anim('tp-flash')} />
+      )}
       {type === 'lightLeak' && (
         <div
           className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-200/90 to-transparent"
           style={anim('tp-in-light-leak')}
+        />
+      )}
+      {type === 'filmBurn' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-amber-200/90 via-orange-500/70 to-black/60"
+          style={anim('tp-in-film-burn')}
         />
       )}
     </div>

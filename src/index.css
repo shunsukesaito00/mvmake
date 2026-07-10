@@ -203,6 +203,20 @@ input[type="range"]::-moz-range-thumb {
   0%, 20% { opacity: 0; filter: blur(10px); transform: scale(0.98); }
   70%, 100% { opacity: 1; filter: blur(0); transform: scale(1); }
 }
+@keyframes tp-in-warm-dissolve {
+  0%, 20% { opacity: 0; }
+  45%, 55% { opacity: 1; }
+  70%, 100% { opacity: 1; }
+}
+@keyframes tp-in-film-burn {
+  0%, 15% { opacity: 0; transform: scale(0.85); }
+  45%, 55% { opacity: 0.95; transform: scale(1.05); }
+  85%, 100% { opacity: 0; transform: scale(1.1); }
+}
+@keyframes tp-in-gentle-zoom {
+  0%, 20% { opacity: 0; transform: scale(1.12); }
+  70%, 100% { opacity: 1; transform: scale(1); }
+}
 
 .animate-pulse-accent {
   animation: pulse-accent 1.5s ease-in-out infinite;
