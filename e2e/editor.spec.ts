@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import path from 'node:path'
 import { installNarrationRecordingMocks, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip } from './helpers'
 
 test.beforeEach(async ({ page }) => {
@@ -737,6 +738,50 @@ test('ショートカット: Space で再生・停止、Cmd/Ctrl+Z で取り消�
   await expect(page.locator('footer').getByText('Opening')).toBeHidden()
 })
 
+test('ショートカット: J/K/L で戻る・停止・再生', async ({ page }) => {
+  await addOpeningText(page)
+  await page.keyboard.press('Escape')
+
+  const transport = page.locator('main input[type="range"]').first()
+  await transport.fill('2')
+  await page.locator('header').getByText('FABLE', { exact: true }).click()
+  const beforeJ = parseFloat(await transport.inputValue())
+  expect(beforeJ).toBeGreaterThan(1)
+
+  await page.keyboard.press('j')
+  await expect.poll(async () => parseFloat(await transport.inputValue())).toBeLessThan(beforeJ - 0.5)
+
+  await page.keyboard.press('l')
+  const atPlay = parseFloat(await transport.inputValue())
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(atPlay + 0.05)
+
+  await page.keyboard.press('k')
+  const atStop = parseFloat(await transport.inputValue())
+  await page.waitForTimeout(400)
+  expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
+})
+
+test('タイムライン: リップルトリムで後続クリップが連動', async ({ page }) => {
+  await addOpeningText(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /Thank you/ }).first().click()
+  await expect(page.locator('footer').getByText('Thank you')).toBeVisible()
+
+  const opening = page.locator('footer').getByText('Opening')
+  const thankYou = page.locator('footer').getByText('Thank you')
+  const thankYouBefore = (await thankYou.boundingBox())!
+
+  const openingBox = (await opening.boundingBox())!
+  await page.mouse.move(openingBox.x + openingBox.width - 3, openingBox.y + openingBox.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(openingBox.x + openingBox.width - 83, openingBox.y + openingBox.height / 2, { steps: 5 })
+  await page.mouse.up()
+
+  const thankYouAfter = (await thankYou.boundingBox())!
+  expect(thankYouAfter.x).toBeLessThan(thankYouBefore.x)
+  expect(thankYouBefore.x - thankYouAfter.x).toBeGreaterThan(60)
+})
+
 test('メディア: ナレーション録音をプレビューしてタイムラインに配置できる', async ({ page }) => {
   await installNarrationRecordingMocks(page)
   await page.goto('./')
@@ -965,8 +1010,8 @@ test('ユーザーテンプレート: エクスポートとインポート', asy
   const download = await downloadPromise
   expect(download.suggestedFilename()).toContain('.fable-template.json')
 
-  const exportPath = await download.path()
-  if (!exportPath) throw new Error('ダウンロードファイルのパスを取得できません')
+  const exportPath = path.join(test.info().outputDir, 'e2e-export-template.json')
+  await download.saveAs(exportPath)
 
   await page.evaluate(() => localStorage.removeItem('fable-user-project-templates'))
   await page.reload()

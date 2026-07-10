@@ -292,6 +292,18 @@ export function rippleShiftClips(clips: Clip[], afterTime: number, delta: number
   })
 }
 
+/** リップルトリム: 同一トラック上でトリムしたクリップより後ろのクリップをずらす */
+export function rippleTrimClipsOnTrack(clips: Clip[], trimmedClipId: string, endBefore: number, delta: number): Clip[] {
+  if (Math.abs(delta) < 0.001) return clips
+  return clips.map((c) => {
+    if (c.id === trimmedClipId) return c
+    if (c.startTime >= endBefore - 0.001) {
+      return { ...c, startTime: Math.max(0, c.startTime + delta) }
+    }
+    return c
+  })
+}
+
 export function getRippleDeleteDelta(clip: Clip): number {
   return -clip.duration
 }

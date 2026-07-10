@@ -10,6 +10,7 @@ import {
   clipsOverlap,
   resolveClipOverlap,
   rippleShiftClips,
+  rippleTrimClipsOnTrack,
   getDuckingIntervals,
 } from './clipUtils'
 import type { MediaAsset, Project, Track, VideoClip, ImageClip, Clip } from '../types/project'
@@ -241,6 +242,31 @@ describe('rippleShiftClips', () => {
     ]
     const shifted = rippleShiftClips(clips, 3, -2)
     expect(shifted[1].startTime).toBe(3)
+  })
+})
+
+describe('rippleTrimClipsOnTrack', () => {
+  it('shifts clips at or after trimmed end by delta', () => {
+    const clips: Clip[] = [
+      { ...baseVideoClip, id: 'c1', startTime: 0, duration: 4 },
+      { ...baseVideoClip, id: 'c2', startTime: 4, duration: 2 },
+      { ...baseVideoClip, id: 'c3', startTime: 7, duration: 1 },
+    ]
+    const trimmed = rippleTrimClipsOnTrack(clips, 'c1', 4, -1)
+    expect(trimmed[0].duration).toBe(4)
+    expect(trimmed[1].startTime).toBe(3)
+    expect(trimmed[2].startTime).toBe(6)
+  })
+
+  it('does not shift clips before trimmed end', () => {
+    const clips: Clip[] = [
+      { ...baseVideoClip, id: 'c1', startTime: 0, duration: 4 },
+      { ...baseVideoClip, id: 'c2', startTime: 2, duration: 1 },
+      { ...baseVideoClip, id: 'c3', startTime: 4, duration: 2 },
+    ]
+    const trimmed = rippleTrimClipsOnTrack(clips, 'c1', 4, -1)
+    expect(trimmed[1].startTime).toBe(2)
+    expect(trimmed[2].startTime).toBe(3)
   })
 })
 

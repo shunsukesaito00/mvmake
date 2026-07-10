@@ -63,7 +63,7 @@ export function ProjectSettingsModal({ open, onClose }: ProjectSettingsModalProp
         <div className="space-y-3">
           <label className="flex items-center gap-2.5 text-sm text-text-secondary">
             <input type="checkbox" checked={rippleDelete} onChange={(e) => setRippleDelete(e.target.checked)} className="accent-accent" />
-            リップル削除
+            リップル編集（削除・トリム）
           </label>
           <label className="flex items-center gap-2.5 text-sm text-text-secondary">
             <input type="checkbox" checked={loopPlayback} onChange={(e) => setLoopPlayback(e.target.checked)} className="accent-accent" />

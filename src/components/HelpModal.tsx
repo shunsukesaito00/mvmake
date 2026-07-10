@@ -7,6 +7,7 @@ interface HelpModalProps {
 
 const SHORTCUTS = [
   { key: 'Space', action: '再生 / 一時停止' },
+  { key: 'J / K / L', action: '1秒戻る / 停止 / 再生（Shift+J: 1フレーム戻る）' },
   { key: '← / →', action: 'フレーム送り' },
   { key: 'Shift + ← / →', action: '1秒送り' },
   { key: 'S', action: '再生位置で分割' },

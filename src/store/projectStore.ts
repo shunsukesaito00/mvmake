@@ -46,6 +46,7 @@ import {
   isVisualMediaClip,
   resolveClipOverlap,
   rippleShiftClips,
+  rippleTrimClipsOnTrack,
   trackTypeForClip,
 } from '../utils/clipUtils'
 import { getProjectDuration, sanitizeMediaDuration } from '../utils/time'
@@ -172,6 +173,7 @@ interface ProjectState {
   pasteClip: () => void
   splitClipAt: (clipId: string, time: number) => void
   moveClip: (clipId: string, trackId: string, startTime: number, recordHistory?: boolean) => void
+  applyRippleTrimOnTrack: (trackId: string, trimmedClipId: string, endBefore: number, delta: number) => void
   setClipTransition: (clipId: string, transition: Transition | undefined) => void
   applyBatchTransitions: (
     scope: BatchTransitionScope,
@@ -836,6 +838,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         })),
       },
       ...(recordHistory ? { future: [] } : {}),
+    }))
+  },
+
+  applyRippleTrimOnTrack: (trackId, trimmedClipId, endBefore, delta) => {
+    if (Math.abs(delta) < 0.001) return
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((track) =>
+          track.id !== trackId
+            ? track
+            : { ...track, clips: rippleTrimClipsOnTrack(track.clips, trimmedClipId, endBefore, delta) },
+        ),
+      },
     }))
   },
 

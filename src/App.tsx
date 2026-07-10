@@ -69,6 +69,23 @@ function App() {
         const step = e.shiftKey ? 1 : 1 / store.project.fps
         store.setCurrentTime(Math.min(store.getProjectDuration(), store.currentTime + step))
       }
+
+      if (e.key === 'k' || e.key === 'K') {
+        e.preventDefault()
+        store.setIsPlaying(false)
+      }
+      if (e.key === 'l' || e.key === 'L') {
+        e.preventDefault()
+        const { start, end } = store.getPlaybackRange()
+        if (store.currentTime >= end) store.setCurrentTime(start)
+        store.setIsPlaying(true)
+      }
+      if (e.key === 'j' || e.key === 'J') {
+        e.preventDefault()
+        store.setIsPlaying(false)
+        const step = e.shiftKey ? 1 / store.project.fps : 1
+        store.setCurrentTime(Math.max(0, store.currentTime - step))
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)

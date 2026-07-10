@@ -255,9 +255,25 @@ export function TimelinePanel() {
   }, [dragState, pixelsPerSecond, getSnapPoints, updateClip, updateMarker, moveClip, getTrackAtY, tracks, mediaAssets, project.tracks, seek, duration])
 
   const handleMouseUp = useCallback(() => {
+    if (dragState) {
+      const { rippleDelete, project, applyRippleTrimOnTrack } = useProjectStore.getState()
+      if (rippleDelete && (dragState.mode === 'trimStart' || dragState.mode === 'trimEnd')) {
+        const track = project.tracks.find((t) => t.clips.some((c) => c.id === dragState.clipId))
+        const clip = track?.clips.find((c) => c.id === dragState.clipId)
+        if (track && clip) {
+          const originalEnd = dragState.originalStartTime + dragState.originalDuration
+          if (dragState.mode === 'trimEnd') {
+            const newEnd = clip.startTime + clip.duration
+            applyRippleTrimOnTrack(track.id, dragState.clipId, originalEnd, newEnd - originalEnd)
+          } else {
+            applyRippleTrimOnTrack(track.id, dragState.clipId, originalEnd, dragState.originalStartTime - clip.startTime)
+          }
+        }
+      }
+    }
     setDragState(null)
     setSnapGuide(null)
-  }, [setDragState])
+  }, [dragState, setDragState])
 
   useEffect(() => {
     if (!dragState) return
