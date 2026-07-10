@@ -10,6 +10,7 @@ import { useToastStore } from '../store/toastStore'
 import { useProjectStore } from '../store/projectStore'
 import { ColorLookPreview, useColorLookHoverPreview } from './ColorLookPreview'
 import { LutPreview, useLutHoverPreview } from './LutPreview'
+import { RgbCurveGraph } from './RgbCurveGraph'
 
 interface Props {
   color: ColorAdjustments
@@ -50,6 +51,10 @@ export function ColorAdjustmentsSection({
     onChange({ ...(color ?? DEFAULT_COLOR), [field]: value })
   }
 
+  const updateRgbCurves = (rgbCurves: ColorAdjustments['rgbCurves'], recordHistory?: boolean) => {
+    onChange({ ...(color ?? DEFAULT_COLOR), rgbCurves }, recordHistory)
+  }
+
   const handleImportLut = async (file: File | undefined) => {
     if (!file) return
     const ok = await importLutFile(file)
@@ -73,7 +78,7 @@ export function ColorAdjustmentsSection({
       <div>
         <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-accent uppercase">ルックプリセット</p>
         <p className="mb-2 text-[10px] leading-relaxed text-text-muted">
-          適用順: LUT → トーンカーブ → 色温度/ティント → 色相/明るさ/コントラスト/彩度。プリセットと LUT は併用できます。
+          適用順: LUT → トーンカーブ → RGB カーブ → 色温度/ティント → 色相/明るさ/コントラスト/彩度。プリセットと LUT は併用できます。
         </p>
         <div className="flex flex-wrap gap-1.5">
           {COLOR_LOOK_PRESETS.map((preset) => (
@@ -174,6 +179,13 @@ export function ColorAdjustmentsSection({
         <Slider label="シャドウ" value={color?.shadows ?? DEFAULT_COLOR.shadows} min={-1} max={1} step={0.05} onChange={(v) => updateField('shadows', v)} />
         <Slider label="ミッドトーン" value={color?.midtones ?? DEFAULT_COLOR.midtones} min={-1} max={1} step={0.05} onChange={(v) => updateField('midtones', v)} />
         <Slider label="ハイライト" value={color?.highlights ?? DEFAULT_COLOR.highlights} min={-1} max={1} step={0.05} onChange={(v) => updateField('highlights', v)} />
+      </div>
+      <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border">
+        <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">RGB カーブ</p>
+        <RgbCurveGraph
+          curves={color?.rgbCurves ?? DEFAULT_COLOR.rgbCurves}
+          onChange={updateRgbCurves}
+        />
       </div>
       <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border">
         <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">HSL 補正</p>

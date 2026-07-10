@@ -1358,3 +1358,18 @@ test('色調補正: トーンカーブのミッドトーンを設定できる', 
   await midtones.fill('0.3')
   await expect(midtones).toHaveValue('0.3')
 })
+
+test('色調補正: RGB カーブの R チャンネルを調整できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-curve-photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-curve-photo.png')
+
+  const rMid = page.getByRole('slider', { name: 'R カーブ 50%' })
+  await rMid.fill('0.7')
+  await expect(rMid).toHaveValue('0.7')
+  await expect(page.getByLabel('RGB カーブ (R)')).toBeVisible()
+})

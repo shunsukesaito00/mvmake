@@ -1,5 +1,6 @@
 import type { AdjustmentClip, Clip, ColorAdjustments, Project } from '../types/project'
 import { DEFAULT_COLOR } from '../types/project'
+import { isRgbCurvesActive, mergeRgbCurves } from './colorRgbCurve'
 
 export function isAdjustmentClip(clip: Clip): clip is AdjustmentClip {
   return clip.type === 'adjustment'
@@ -16,6 +17,7 @@ export function mergeColorAdjustments(base: ColorAdjustments, overlay: ColorAdju
     shadows: base.shadows + (overlay.shadows ?? 0),
     midtones: base.midtones + (overlay.midtones ?? 0),
     highlights: base.highlights + (overlay.highlights ?? 0),
+    rgbCurves: mergeRgbCurves(base.rgbCurves, overlay.rgbCurves ?? base.rgbCurves),
   }
 }
 
@@ -30,6 +32,7 @@ export function isNeutralColorAdjustments(color: ColorAdjustments): boolean {
     && (color.shadows ?? 0) === 0
     && (color.midtones ?? 0) === 0
     && (color.highlights ?? 0) === 0
+    && !isRgbCurvesActive(color.rgbCurves)
   )
 }
 

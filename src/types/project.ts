@@ -52,7 +52,22 @@ export interface ColorAdjustments {
   midtones: number
   /** ハイライト (-1〜1) */
   highlights: number
+  /** RGB 各チャンネルのトーンカーブ（5 制御点の出力値 0〜1） */
+  rgbCurves: RgbCurves
 }
+
+/** 固定入力位置 0 / 0.25 / 0.5 / 0.75 / 1 に対する出力値 */
+export type RgbCurvePoints = [number, number, number, number, number]
+
+export const RGB_CURVE_INPUTS: RgbCurvePoints = [0, 0.25, 0.5, 0.75, 1]
+
+export interface RgbCurves {
+  r: RgbCurvePoints
+  g: RgbCurvePoints
+  b: RgbCurvePoints
+}
+
+export type RgbCurveChannel = keyof RgbCurves
 
 export interface LutAsset {
   id: string
@@ -330,6 +345,12 @@ export const SUBTITLE_BAND_COLOR = 'rgba(0, 0, 0, 0.6)'
 
 export const DEFAULT_LUT_INTENSITY = 1
 
+export const DEFAULT_RGB_CURVES: RgbCurves = {
+  r: [...RGB_CURVE_INPUTS],
+  g: [...RGB_CURVE_INPUTS],
+  b: [...RGB_CURVE_INPUTS],
+}
+
 export const DEFAULT_COLOR: ColorAdjustments = {
   brightness: 0,
   contrast: 0,
@@ -340,6 +361,29 @@ export const DEFAULT_COLOR: ColorAdjustments = {
   shadows: 0,
   midtones: 0,
   highlights: 0,
+  rgbCurves: {
+    r: [...RGB_CURVE_INPUTS],
+    g: [...RGB_CURVE_INPUTS],
+    b: [...RGB_CURVE_INPUTS],
+  },
+}
+
+export function normalizeRgbCurves(curves?: Partial<RgbCurves>): RgbCurves {
+  const normalizeChannel = (channel?: Partial<RgbCurvePoints>, fallback: RgbCurvePoints = [...RGB_CURVE_INPUTS]): RgbCurvePoints => {
+    if (!channel) return [...fallback]
+    return [
+      channel[0] ?? fallback[0],
+      channel[1] ?? fallback[1],
+      channel[2] ?? fallback[2],
+      channel[3] ?? fallback[3],
+      channel[4] ?? fallback[4],
+    ]
+  }
+  return {
+    r: normalizeChannel(curves?.r, DEFAULT_RGB_CURVES.r),
+    g: normalizeChannel(curves?.g, DEFAULT_RGB_CURVES.g),
+    b: normalizeChannel(curves?.b, DEFAULT_RGB_CURVES.b),
+  }
 }
 
 export function normalizeColorAdjustments(color?: Partial<ColorAdjustments>): ColorAdjustments {
@@ -353,6 +397,7 @@ export function normalizeColorAdjustments(color?: Partial<ColorAdjustments>): Co
     shadows: color?.shadows ?? DEFAULT_COLOR.shadows,
     midtones: color?.midtones ?? DEFAULT_COLOR.midtones,
     highlights: color?.highlights ?? DEFAULT_COLOR.highlights,
+    rgbCurves: normalizeRgbCurves(color?.rgbCurves),
   }
 }
 
