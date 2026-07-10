@@ -290,6 +290,7 @@ export function getAudioClipsFromProject(
 export function trackTypeForClip(clip: Clip): Track['type'] {
   if (clip.type === 'text') return 'text'
   if (clip.type === 'audio') return 'audio'
+  if (clip.type === 'adjustment') return 'video'
   return 'video'
 }
 

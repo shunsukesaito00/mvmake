@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useProjectStore } from '../store/projectStore'
-import type { AudioClip, ImageClip, TextClip, Transform, VideoClip } from '../types/project'
+import type { AdjustmentClip, AudioClip, ImageClip, TextClip, Transform, VideoClip } from '../types/project'
 import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_TEXT_LINE_HEIGHT, DEFAULT_TEXT_BACKGROUND_PADDING, DEFAULT_TEXT_BACKGROUND_RADIUS, SUBTITLE_BAND_COLOR, TEXT_PRESETS } from '../types/project'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
@@ -21,6 +21,7 @@ import { isPhotoGuideClip } from '../utils/photoGuide'
 
 function InspectorEmptyState() {
   const addTextClip = useProjectStore((s) => s.addTextClip)
+  const addAdjustmentClip = useProjectStore((s) => s.addAdjustmentClip)
   const showToast = useToastStore((s) => s.showToast)
 
   const handleAddText = () => {
@@ -34,6 +35,11 @@ function InspectorEmptyState() {
     const input = document.querySelector<HTMLInputElement>('input[accept*="video"]')
     if (input) input.click()
     else showToast('左パネルのメディアタブからファイルを選択してください', 'info')
+  }
+
+  const handleAddAdjustment = () => {
+    addAdjustmentClip()
+    showToast('調整レイヤーを追加しました', 'success')
   }
 
   return (
@@ -56,6 +62,19 @@ function InspectorEmptyState() {
           <span>
             <span className="block text-xs font-medium text-text-primary">テキストを追加</span>
             <span className="block text-[10px] text-text-muted">Opening プリセットをタイムラインへ</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={handleAddAdjustment}
+          className="flex w-full items-center gap-3 rounded-xl bg-surface-3 px-3 py-2.5 text-left ring-1 ring-border transition-all hover:bg-surface-4 hover:ring-accent/30"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-muted text-accent">
+            <Icons.Sparkles size={16} />
+          </span>
+          <span>
+            <span className="block text-xs font-medium text-text-primary">調整レイヤーを追加</span>
+            <span className="block text-[10px] text-text-muted">章全体へ色調を一括適用</span>
           </span>
         </button>
         <button
@@ -129,7 +148,15 @@ export function InspectorPanel() {
     if ('transform' in selectedClip) updateClip(selectedClip.id, { transform: { ...selectedClip.transform, ...partial } })
   }
 
-  const typeLabel = selectedClip.type === 'text' ? 'テキスト' : selectedClip.type === 'audio' ? 'オーディオ' : selectedClip.type === 'image' ? '画像' : '動画'
+  const typeLabel = selectedClip.type === 'text'
+    ? 'テキスト'
+    : selectedClip.type === 'audio'
+      ? 'オーディオ'
+      : selectedClip.type === 'image'
+        ? '画像'
+        : selectedClip.type === 'adjustment'
+          ? '調整レイヤー'
+          : '動画'
   const photoGuideClip = selectedClip.type === 'text' && isPhotoGuideClip(selectedClip) ? (selectedClip as TextClip) : null
   const regularTextClip = selectedClip.type === 'text' && !isPhotoGuideClip(selectedClip) ? selectedClip : null
 
@@ -156,7 +183,7 @@ export function InspectorPanel() {
           </CollapsibleSection>
         )}
 
-        {'transform' in selectedClip && (
+        {(selectedClip.type === 'video' || selectedClip.type === 'image' || selectedClip.type === 'text') && (
           <>
             <CollapsibleSection title="位置・変形">
               <Slider label="X" value={selectedClip.transform.x} min={0} max={1} step={0.01} onChange={(v) => handleTransformChange({ x: v })} />
@@ -174,6 +201,18 @@ export function InspectorPanel() {
               />
             </CollapsibleSection>
           </>
+        )}
+
+        {selectedClip.type === 'adjustment' && (
+          <CollapsibleSection title="色調補正">
+            <p className="text-[10px] leading-relaxed text-text-muted">
+              このレイヤーより下のトラック（映像・テキスト）に色調を一括適用します。章マーカー区間に合わせて長さを調整してください。
+            </p>
+            <ColorAdjustmentsSection
+              color={(selectedClip as AdjustmentClip).color ?? DEFAULT_COLOR}
+              onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
+            />
+          </CollapsibleSection>
         )}
 
         {selectedClip.type === 'video' && (

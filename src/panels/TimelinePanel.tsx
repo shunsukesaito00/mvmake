@@ -31,6 +31,7 @@ const CLIP_STYLES: Record<Clip['type'], string> = {
   image: 'bg-gradient-to-r from-clip-image/90 to-clip-image/70',
   audio: 'bg-gradient-to-r from-clip-audio/90 to-clip-audio/70',
   text: 'bg-gradient-to-r from-clip-text/90 to-clip-text/70',
+  adjustment: 'bg-[repeating-linear-gradient(135deg,rgba(201,123,212,0.55)_0px,rgba(201,123,212,0.55)_6px,rgba(139,92,246,0.35)_6px,rgba(139,92,246,0.35)_12px)] ring-1 ring-clip-adjustment/50',
 }
 
 /**
@@ -530,7 +531,11 @@ export function TimelinePanel() {
                   const media = clip.type !== 'text' && 'mediaId' in clip ? mediaMap.get(clip.mediaId) : undefined
                   const left = clip.startTime * pixelsPerSecond
                   const width = Math.max(clip.duration * pixelsPerSecond, 24)
-                  const label = clip.type === 'text' ? clip.text.content : (media?.name ?? clip.type)
+                  const label = clip.type === 'text'
+                    ? clip.text.content
+                    : clip.type === 'adjustment'
+                      ? '調整レイヤー'
+                      : (media?.name ?? clip.type)
                   const isSelected = selectedClipId === clip.id
                   const hasSpeedKeyframes = clip.type === 'video' && ((clip.speedKeyframes?.length ?? 0) > 0 || isSelected)
                   const hasVolumeKeyframes = (clip.type === 'audio' || clip.type === 'video') && ((clip.audio.volumeKeyframes?.length ?? 0) > 0 || isSelected)

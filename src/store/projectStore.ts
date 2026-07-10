@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import {
   type AudioClip,
+  type AdjustmentClip,
   type Clip,
   DEFAULT_AUDIO,
   DEFAULT_COLOR,
@@ -78,6 +79,7 @@ function createDefaultTracks(): Track[] {
     { id: createId(), name: '映像 1', type: 'video', clips: [], muted: false, locked: false },
     { id: createId(), name: '映像 2', type: 'video', clips: [], muted: false, locked: false },
     { id: createId(), name: 'テキスト', type: 'text', clips: [], muted: false, locked: false },
+    { id: createId(), name: '調整', type: 'video', clips: [], muted: false, locked: false },
     { id: createId(), name: 'BGM', type: 'audio', clips: [], muted: false, locked: false },
   ]
 }
@@ -166,6 +168,7 @@ interface ProjectState {
   addSlideshow: (mediaIds: string[], options: SlideshowOptions) => number
   addSlideshowToGuide: (guideClipId: string, mediaIds: string[], options: GuideSlideshowOptions) => number
   addTextClip: (preset: TextPreset, trackId?: string, startTime?: number) => void
+  addAdjustmentClip: (trackId?: string, startTime?: number, duration?: number) => void
   importSrtSubtitles: (content: string, trackId?: string) => number
   updateClip: (clipId: string, updates: Partial<Clip>, recordHistory?: boolean) => void
   replaceClipMedia: (clipId: string, newMediaId: string) => boolean
@@ -580,6 +583,43 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }))
   },
 
+  addAdjustmentClip: (trackId, startTime, duration) => {
+    const { project } = get()
+    const videoTrack =
+      project.tracks.find((t) => t.id === trackId && t.type === 'video' && !t.locked) ??
+      project.tracks.find((t) => t.type === 'video' && t.name === '調整' && !t.locked) ??
+      [...project.tracks].reverse().find((t) => t.type === 'video' && !t.locked)
+    if (!videoTrack) return
+
+    get().pushHistory()
+    const projectDuration = Math.max(getProjectDuration(project.tracks), 10)
+    const clipStart = startTime ?? 0
+    const clipDuration = duration ?? Math.max(0.2, projectDuration - clipStart)
+
+    const clip: AdjustmentClip = {
+      id: createId(),
+      trackId: videoTrack.id,
+      startTime: clipStart,
+      duration: clipDuration,
+      sourceStart: 0,
+      sourceDuration: clipDuration,
+      type: 'adjustment',
+      color: { ...DEFAULT_COLOR },
+    }
+
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((t) =>
+          t.id === videoTrack.id ? { ...t, clips: [...t.clips, clip] } : t,
+        ),
+      },
+      selectedClipId: clip.id,
+      currentTime: Math.max(state.currentTime, clipStart),
+      future: [],
+    }))
+  },
+
   importSrtSubtitles: (content, trackId) => {
     const cues = parseSrt(content)
     if (cues.length === 0) return 0
@@ -626,29 +666,31 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   replaceClipMedia: (clipId, newMediaId) => {
     const { project } = get()
     const found = findClip(project, clipId)
-    if (!found || found.clip.type === 'text') return false
+    if (!found) return false
+    const { clip } = found
+    if (clip.type === 'text' || clip.type === 'adjustment') return false
     if (found.track.locked) return false
 
     const asset = project.mediaAssets.find((a) => a.id === newMediaId)
-    if (!asset || !canReplaceClipWithMedia(found.clip, asset)) return false
+    if (!asset || !canReplaceClipWithMedia(clip, asset)) return false
     if (!isCompatibleTrack(asset, found.track)) return false
-    if (found.clip.mediaId === newMediaId) return false
+    if (clip.mediaId === newMediaId) return false
 
     let newClip: Clip
-    if (isVisualMediaClip(found.clip) && (asset.type === 'video' || asset.type === 'image')) {
-      if (asset.type === found.clip.type) {
-        const updates = computeMediaReplacement(found.clip, newMediaId, project.mediaAssets)
+    if (isVisualMediaClip(clip) && (asset.type === 'video' || asset.type === 'image')) {
+      if (asset.type === clip.type) {
+        const updates = computeMediaReplacement(clip, newMediaId, project.mediaAssets)
         if (!updates) return false
-        newClip = { ...found.clip, ...updates }
+        newClip = { ...clip, ...updates }
       } else {
-        const replaced = buildCrossVisualClip(found.clip, newMediaId, project.mediaAssets)
+        const replaced = buildCrossVisualClip(clip, newMediaId, project.mediaAssets)
         if (!replaced) return false
         newClip = replaced
       }
-    } else if (found.clip.type === 'audio' && asset.type === 'audio') {
-      const updates = computeMediaReplacement(found.clip, newMediaId, project.mediaAssets)
+    } else if (clip.type === 'audio' && asset.type === 'audio') {
+      const updates = computeMediaReplacement(clip, newMediaId, project.mediaAssets)
       if (!updates) return false
-      newClip = { ...found.clip, ...updates }
+      newClip = { ...clip, ...updates }
     } else {
       return false
     }

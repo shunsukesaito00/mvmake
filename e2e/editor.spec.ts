@@ -1192,3 +1192,22 @@ test('BGM: ビートマーカーを配置しスナップに使える', async ({ 
   expect(after.x - before.x).toBeGreaterThan(55)
   expect(after.x - before.x).toBeLessThan(95)
 })
+
+test('調整レイヤー: 追加して色調プリセットを適用できる', async ({ page }) => {
+  await page.getByRole('button', { name: '調整レイヤーを追加 章全体へ色調を一括適用' }).click()
+  await expect(page.getByText('調整レイヤーを追加しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('調整レイヤー')).toBeVisible()
+
+  await clickTimelineClip(page, '調整レイヤー')
+  await expect(page.getByText('調整レイヤー', { exact: true }).first()).toBeVisible()
+
+  await page.getByRole('button', { name: 'ウエディング暖色ルック' }).click()
+  await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
+})
+
+test('効果タブ: 調整レイヤーを追加できる', async ({ page }) => {
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: '調整レイヤーを追加', exact: true }).click()
+  await expect(page.getByText('調整レイヤーを追加しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('調整レイヤー')).toBeVisible()
+})

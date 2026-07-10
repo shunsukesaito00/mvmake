@@ -1,6 +1,6 @@
 export type MediaType = 'video' | 'image' | 'audio'
 export type TrackType = 'video' | 'text' | 'audio'
-export type ClipType = 'video' | 'image' | 'audio' | 'text'
+export type ClipType = 'video' | 'image' | 'audio' | 'text' | 'adjustment'
 export type TransitionType =
   | 'crossfade'
   | 'dissolve'
@@ -202,7 +202,13 @@ export interface TextClip extends BaseClip {
   animation: ClipAnimation
 }
 
-export type Clip = VideoClip | ImageClip | AudioClip | TextClip
+/** 下位トラックへ色調を一括適用する調整レイヤー（映像トラック専用） */
+export interface AdjustmentClip extends BaseClip {
+  type: 'adjustment'
+  color: ColorAdjustments
+}
+
+export type Clip = VideoClip | ImageClip | AudioClip | TextClip | AdjustmentClip
 
 export interface Track {
   id: string
@@ -630,6 +636,9 @@ function normalizeClip(clip: Clip): Clip {
         backgroundRadius: clip.text.backgroundRadius ?? DEFAULT_TEXT_BACKGROUND_RADIUS,
       },
     }
+  }
+  if (clip.type === 'adjustment') {
+    return { ...clip, color: clip.color ?? { ...DEFAULT_COLOR } }
   }
   return clip
 }

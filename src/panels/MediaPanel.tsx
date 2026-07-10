@@ -141,6 +141,7 @@ export function MediaPanel() {
   const removeMediaAsset = useProjectStore((s) => s.removeMediaAsset)
   const addClipFromMedia = useProjectStore((s) => s.addClipFromMedia)
   const addTextClip = useProjectStore((s) => s.addTextClip)
+  const addAdjustmentClip = useProjectStore((s) => s.addAdjustmentClip)
   const setClipTransition = useProjectStore((s) => s.setClipTransition)
   const applyBatchTransitions = useProjectStore((s) => s.applyBatchTransitions)
   const clearBatchTransitions = useProjectStore((s) => s.clearBatchTransitions)
@@ -502,6 +503,15 @@ export function MediaPanel() {
 
         {tab === 'transition' && (
           <div className="flex-1 overflow-y-auto p-3">
+            <div className="mb-4 rounded-xl bg-surface-3 p-3 ring-1 ring-border">
+              <p className="mb-1 text-[11px] font-semibold tracking-wider text-accent uppercase">調整レイヤー</p>
+              <p className="mb-2 text-[10px] leading-relaxed text-text-muted">
+                下位トラックへ章全体の色調を一括適用します（「調整」トラック推奨）
+              </p>
+              <Btn variant="default" className="w-full text-xs" onClick={() => { addAdjustmentClip(); showToast('調整レイヤーを追加しました', 'success') }}>
+                調整レイヤーを追加
+              </Btn>
+            </div>
             <p className="mb-3 text-[11px] text-text-muted">選択中のクリップにトランジションを適用</p>
             {!selectedClip || (selectedClip.type !== 'video' && selectedClip.type !== 'image') ? (
               <EmptyState icon={<Icons.Sparkles size={20} />} title="クリップ未選択" description="タイムラインで映像・画像クリップを選択してください" />

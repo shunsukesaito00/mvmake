@@ -15,6 +15,7 @@ import { getVisualFadeMultiplier } from '../utils/visualFade'
 import { buildCanvasFontString } from '../utils/googleFonts'
 import { getTransformAtLocalTime } from '../utils/transformKeyframes'
 import { getVideoSourceTimeAtLocalTime, getSpeedAtLocalTime } from '../utils/speedKeyframes'
+import { getAdjustmentColorForVisualTrack, mergeClipColorWithAdjustment } from '../utils/colorAdjustments'
 import { easeSmoothstep } from '../utils/transitions'
 
 type VisualTransformClip = VideoClip | ImageClip | TextClip
@@ -324,19 +325,19 @@ function drawMediaClip(
   canvasW: number,
   canvasH: number,
   opacity: number,
+  effectiveColor: ColorAdjustments,
   transitionType?: string,
   transitionProgress?: number,
 ) {
   const localTime = time - clip.startTime
   const localProgress = clip.duration > 0 ? localTime / clip.duration : 0
-  const color = clip.color
   const transform = clip.type === 'image' && clip.kenBurns.enabled
     ? clip.transform
     : resolveClipTransform(clip, localTime)
 
   ctx.save()
   ctx.globalAlpha = opacity
-  applyColorFilter(ctx, color)
+  applyColorFilter(ctx, effectiveColor)
 
   if (transitionType === 'blur' && transitionProgress !== undefined) {
     const blurPx = (1 - transitionProgress) * 16
@@ -394,7 +395,15 @@ function getFontString(text: TextClip['text'], fontSize: number, canvasW: number
   return cached.font
 }
 
-function drawTextClip(ctx: CanvasRenderingContext2D, clip: TextClip, canvasW: number, canvasH: number, opacity: number, time: number) {
+function drawTextClip(
+  ctx: CanvasRenderingContext2D,
+  clip: TextClip,
+  canvasW: number,
+  canvasH: number,
+  opacity: number,
+  time: number,
+  adjustmentColor: ColorAdjustments,
+) {
   const { text } = clip
   const localTime = time - clip.startTime
   const transform = resolveClipTransform(clip, localTime)
@@ -413,6 +422,7 @@ function drawTextClip(ctx: CanvasRenderingContext2D, clip: TextClip, canvasW: nu
 
   ctx.save()
   ctx.globalAlpha = opacity
+  applyColorFilter(ctx, adjustmentColor)
 
   drawWithTransform(ctx, transform, canvasW, canvasH, undefined, undefined, () => {
     const fontSize = text.fontSize * (canvasW / 1920)
@@ -473,15 +483,20 @@ export async function renderFrame(
   const assetMap = getAssetMap(project)
   const visualTracks = project.tracks.filter((t) => t.type === 'video' || t.type === 'text')
 
-  for (const track of visualTracks) {
+  for (let visualTrackIndex = 0; visualTrackIndex < visualTracks.length; visualTrackIndex++) {
+    const track = visualTracks[visualTrackIndex]
+    const adjustmentColor = getAdjustmentColorForVisualTrack(project, visualTrackIndex, time)
     const layers = getTrackLayersAtTime(track, time)
     for (const layer of layers) {
       const { clip, opacity, transitionType, transitionProgress } = layer
       if (clip.type === 'video' || clip.type === 'image') {
         const asset = assetMap.get(clip.mediaId)
-        if (asset) drawMediaClip(ctx, clip, asset, time, width, height, opacity, transitionType, transitionProgress)
+        if (asset) {
+          const effectiveColor = mergeClipColorWithAdjustment(clip.color, adjustmentColor)
+          drawMediaClip(ctx, clip, asset, time, width, height, opacity, effectiveColor, transitionType, transitionProgress)
+        }
       } else if (clip.type === 'text') {
-        drawTextClip(ctx, clip, width, height, opacity, time)
+        drawTextClip(ctx, clip, width, height, opacity, time, adjustmentColor)
       }
 
       if (transitionType === 'wipe' && transitionProgress !== undefined) {
