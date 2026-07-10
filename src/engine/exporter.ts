@@ -135,6 +135,7 @@ export async function exportProject(
 
     const time = startTime + frame / fps
     await seekVideosToTime(project, time)
+    // プレビューと同一の compositor 経路（docs/RENDER_PATH_AUDIT.md）
     await renderFrame(ctx, project, time)
 
     const videoFrame = new VideoFrame(canvas, { timestamp: (frame * 1_000_000) / fps })

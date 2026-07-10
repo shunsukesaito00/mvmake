@@ -334,6 +334,11 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
             layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'iris' })
             continue
           }
+          default: {
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - progress) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: progress * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'crossfade' })
+            continue
+          }
         }
       }
     }
