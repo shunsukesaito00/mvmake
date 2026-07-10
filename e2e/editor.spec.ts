@@ -1773,6 +1773,12 @@ test('テキスト: MG ベルの祝福プリセットを追加できる', async 
   await expect(page.locator('footer').getByText('Wedding Bells')).toBeVisible()
 })
 
+test('テキスト: テロップ（余興）プリセットを追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'テロップ（余興）' }).click()
+  await expect(page.locator('footer').getByText('余興')).toBeVisible()
+})
+
 test('色調補正: LUT をインポートして適用できる', async ({ page }) => {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
