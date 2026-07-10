@@ -3,8 +3,8 @@ import { COLOR_LOOK_PRESETS, colorAdjustmentsEqual, matchColorLookPreset } from 
 import { DEFAULT_COLOR } from '../types/project'
 
 describe('colorLooks', () => {
-  it('プリセット数が 19 種', () => {
-    expect(COLOR_LOOK_PRESETS).toHaveLength(19)
+  it('プリセット数が 22 種', () => {
+    expect(COLOR_LOOK_PRESETS).toHaveLength(22)
   })
 
   it('colorAdjustmentsEqual が近似値を判定する', () => {
@@ -40,6 +40,7 @@ describe('colorLooks', () => {
     expect(matchColorLookPreset(COLOR_LOOK_PRESETS.find((p) => p.id === 'romantic-sunset')!.color)).toBe('romantic-sunset')
     expect(matchColorLookPreset(COLOR_LOOK_PRESETS.find((p) => p.id === 'sakura-pink')!.color)).toBe('sakura-pink')
     expect(matchColorLookPreset(COLOR_LOOK_PRESETS.find((p) => p.id === 'bridal-white')!.color)).toBe('bridal-white')
+    expect(matchColorLookPreset(COLOR_LOOK_PRESETS.find((p) => p.id === 'garden-party')!.color)).toBe('garden-party')
     expect(matchColorLookPreset({ ...DEFAULT_COLOR, brightness: 0.3 })).toBeNull()
   })
 })

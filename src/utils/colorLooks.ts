@@ -30,6 +30,9 @@ export const COLOR_LOOK_PRESETS: ColorLookPreset[] = [
   { id: 'bridal-white', label: 'ブライダルホワイト', description: 'ドレスと会場の明るいハイキー', color: { ...DEFAULT_COLOR, brightness: 0.15, contrast: -0.08, saturation: -0.12, temperature: 0.04, tint: 0.08, highlights: 0.15, midtones: 0.08 } },
   { id: 'sunset-rose', label: 'サンセットローズ', description: '夕暮れのローズゴールド', color: { ...DEFAULT_COLOR, brightness: 0.02, contrast: 0.08, saturation: 0.2, temperature: 0.22, tint: 0.15, highlights: 0.06, shadows: -0.04 } },
   { id: 'vintage-film', label: 'ヴィンテージフィルム', description: '褪せたフィルム写真の温かみ', color: { ...DEFAULT_COLOR, brightness: 0.03, contrast: 0.06, saturation: -0.28, temperature: 0.14, tint: 0.04, shadows: 0.1, midtones: 0.04 } },
+  { id: 'garden-party', label: 'ガーデンパーティ', description: '屋外パーティの明るい緑と陽光', color: { ...DEFAULT_COLOR, brightness: 0.1, contrast: 0.06, saturation: 0.28, temperature: 0.08, tint: -0.06, hue: -0.04, highlights: 0.1 } },
+  { id: 'candlelight', label: 'キャンドルライト', description: 'キャンドルの温かな灯り', color: { ...DEFAULT_COLOR, brightness: -0.06, contrast: 0.1, saturation: 0.05, temperature: 0.25, tint: 0.06, shadows: -0.1, highlights: -0.05, midtones: -0.03 } },
+  { id: 'morning-dew', label: 'モーニングデュー', description: '朝露の爽やかな柔らかさ', color: { ...DEFAULT_COLOR, brightness: 0.12, contrast: -0.06, saturation: 0.08, temperature: -0.12, tint: -0.04, highlights: 0.14, midtones: 0.06 } },
 ]
 
 const EPSILON = 0.001
