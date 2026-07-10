@@ -175,6 +175,16 @@ export interface AudioEqSettings {
   highGain: number
 }
 
+export interface AudioNoiseReductionSettings {
+  enabled: boolean
+  /** ハイパスカットオフ Hz（低周波ノイズ・ランブル除去） */
+  highPassHz: number
+  /** ローパスカットオフ Hz（高周波ヒス除去）。0 で無効 */
+  lowPassHz: number
+  /** ノイズゲート強度 0〜1 */
+  gateStrength: number
+}
+
 export interface AudioSettings {
   volume: number
   fadeIn: number
@@ -183,6 +193,8 @@ export interface AudioSettings {
   volumeKeyframes?: VolumeKeyframe[]
   /** 3バンド EQ（低域/中域/高域）。未設定時は無効 */
   eq?: AudioEqSettings
+  /** 軽量ノイズ除去（ハイパス/ローパス/簡易ゲート）。未設定時は無効 */
+  noiseReduction?: AudioNoiseReductionSettings
 }
 
 /** クリップ内ローカル時間(秒)での音量キーフレーム */
@@ -530,6 +542,13 @@ export const DEFAULT_AUDIO_EQ: AudioEqSettings = {
   lowGain: 0,
   midGain: 0,
   highGain: 0,
+}
+
+export const DEFAULT_AUDIO_NOISE_REDUCTION: AudioNoiseReductionSettings = {
+  enabled: false,
+  highPassHz: 100,
+  lowPassHz: 0,
+  gateStrength: 0.6,
 }
 
 export const DEFAULT_DUCKING: DuckingSettings = {

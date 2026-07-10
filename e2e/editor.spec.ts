@@ -1612,6 +1612,25 @@ test('インスペクター: オーディオ EQ を設定できる', async ({ pa
   await expect(page.getByLabel('イコライザーを有効化')).toBeChecked()
 })
 
+test('インスペクター: オーディオノイズ除去を設定できる', async ({ page }) => {
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'nr-narration.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'nr-narration.wav')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  await page.getByRole('slider', { name: 'ハイパス' }).fill('120')
+  await page.getByLabel('高周波ヒス除去（ローパス）').check()
+
+  await expect(page.getByLabel('ノイズ除去を有効化')).toBeChecked()
+  await expect(page.getByRole('slider', { name: 'ハイパス' })).toHaveValue('120')
+  await expect(page.getByLabel('高周波ヒス除去（ローパス）')).toBeChecked()
+  await expect(page.getByRole('slider', { name: 'ローパス' })).toBeVisible()
+})
+
 test('色調補正: LUT をインポートして適用できる', async ({ page }) => {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',

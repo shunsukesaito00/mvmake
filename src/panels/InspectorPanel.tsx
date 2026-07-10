@@ -17,6 +17,7 @@ import { TextStylePresetsSection } from '../components/TextStylePresetsSection'
 import { ClipMediaReplaceSection } from '../components/ClipMediaReplaceSection'
 import { AudioNormalizeSection } from '../components/AudioNormalizeSection'
 import { AudioEqSection } from '../components/AudioEqSection'
+import { AudioNoiseReductionSection } from '../components/AudioNoiseReductionSection'
 import { TransformKeyframesSection } from '../components/TransformKeyframesSection'
 import { GOOGLE_FONT_OPTIONS, ensureGoogleFontFamily } from '../utils/googleFonts'
 import { resolveColorLookPreviewUrl } from '../utils/colorLookPreview'
@@ -259,6 +260,12 @@ export function InspectorPanel() {
                 sourceDuration={(selectedClip as VideoClip).sourceDuration}
                 audio={(selectedClip as VideoClip).audio}
                 onApply={(audio) => updateClip(selectedClip.id, { audio }, true)}
+              />
+            </CollapsibleSection>
+            <CollapsibleSection title="ノイズ除去" defaultOpen={false}>
+              <AudioNoiseReductionSection
+                audio={(selectedClip as VideoClip).audio}
+                onAudioChange={(patch) => updateClip(selectedClip.id, { audio: { ...(selectedClip as VideoClip).audio, ...patch } })}
               />
             </CollapsibleSection>
             <CollapsibleSection title="イコライザー" defaultOpen={false}>
@@ -533,6 +540,12 @@ export function InspectorPanel() {
               <Slider label="フェードイン" value={(selectedClip as AudioClip).audio.fadeIn} min={0} max={5} step={0.1} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as AudioClip).audio, fadeIn: v } })} />
               <Slider label="フェードアウト" value={(selectedClip as AudioClip).audio.fadeOut} min={0} max={5} step={0.1} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as AudioClip).audio, fadeOut: v } })} />
               <Slider label="再生速度" value={(selectedClip as AudioClip).speed ?? 1} min={0.5} max={2} step={0.1} onChange={(v) => updateClip(selectedClip.id, { speed: v }, true)} format={(v) => `${v}x`} />
+            </CollapsibleSection>
+            <CollapsibleSection title="ノイズ除去" defaultOpen={false}>
+              <AudioNoiseReductionSection
+                audio={(selectedClip as AudioClip).audio}
+                onAudioChange={(patch) => updateClip(selectedClip.id, { audio: { ...(selectedClip as AudioClip).audio, ...patch } })}
+              />
             </CollapsibleSection>
             <CollapsibleSection title="イコライザー" defaultOpen={false}>
               <AudioEqSection
