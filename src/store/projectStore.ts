@@ -58,6 +58,13 @@ import { snapshotFromProjectSettingsPreset } from '../utils/projectSettingsPrese
 import { applyUserProjectTemplateToTracks } from '../utils/userProjectTemplate'
 import { loadTimelinePixelsPerSecond, saveTimelinePixelsPerSecond } from '../persistence/timelineZoom'
 import { clampTimelinePixelsPerSecond } from '../utils/timelineZoom'
+import {
+  canSlideClip,
+  canSlipClip,
+  computeSlipClip,
+  slideClipOnTrack,
+  type SlideSnapshot,
+} from '../utils/slipSlide'
 import { splitTransformKeyframes } from '../utils/transformKeyframesTimeline'
 import { splitVolumeKeyframes } from '../utils/volumeKeyframesTimeline'
 import { ensureProjectFontsLoaded } from '../utils/googleFonts'
@@ -100,7 +107,7 @@ function createDefaultProject(): Project {
 
 export interface TimelineDragState {
   clipId: string
-  mode: 'move' | 'trimStart' | 'trimEnd' | 'playhead' | 'volumeKeyframe' | 'speedKeyframe' | 'transformKeyframe' | 'marker'
+  mode: 'move' | 'trimStart' | 'trimEnd' | 'slip' | 'slide' | 'playhead' | 'volumeKeyframe' | 'speedKeyframe' | 'transformKeyframe' | 'marker'
   startX: number
   startY: number
   originalStartTime: number
@@ -114,6 +121,7 @@ export interface TimelineDragState {
   originalKeyframeSpeed?: number
   originalKeyframeOpacity?: number
   markerId?: string
+  slideSnapshot?: SlideSnapshot
 }
 
 interface ProjectState {
@@ -181,6 +189,8 @@ interface ProjectState {
   pasteClip: () => void
   splitClipAt: (clipId: string, time: number) => void
   moveClip: (clipId: string, trackId: string, startTime: number, recordHistory?: boolean) => void
+  slipSelectedClip: (deltaSeconds: number) => boolean
+  slideSelectedClip: (deltaSeconds: number) => boolean
   applyRippleTrimOnTrack: (trackId: string, trimmedClipId: string, endBefore: number, delta: number) => void
   setClipTransition: (clipId: string, transition: Transition | undefined) => void
   applyBatchTransitions: (
@@ -899,6 +909,44 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       },
       ...(recordHistory ? { future: [] } : {}),
     }))
+  },
+
+  slipSelectedClip: (deltaSeconds) => {
+    const { selectedClipId, project } = get()
+    if (!selectedClipId) return false
+    const found = findClip(project, selectedClipId)
+    if (!found || found.track.locked) return false
+    if (!canSlipClip(found.clip)) return false
+
+    const slipped = computeSlipClip(found.clip, deltaSeconds, project.mediaAssets)
+    if (!slipped || slipped.sourceStart === found.clip.sourceStart) return false
+
+    get().pushHistory()
+    get().updateClip(selectedClipId, { sourceStart: slipped.sourceStart })
+    return true
+  },
+
+  slideSelectedClip: (deltaSeconds) => {
+    const { selectedClipId, project } = get()
+    if (!selectedClipId) return false
+    const found = findClip(project, selectedClipId)
+    if (!found || found.track.locked) return false
+    if (!canSlideClip(found.track.clips, selectedClipId)) return false
+
+    const updated = slideClipOnTrack(found.track.clips, selectedClipId, deltaSeconds, project.mediaAssets)
+    if (!updated) return false
+
+    get().pushHistory()
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((track) =>
+          track.id === found.track.id ? { ...track, clips: updated } : track,
+        ),
+      },
+      future: [],
+    }))
+    return true
   },
 
   applyRippleTrimOnTrack: (trackId, trimmedClipId, endBefore, delta) => {

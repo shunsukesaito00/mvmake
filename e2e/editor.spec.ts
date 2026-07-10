@@ -823,6 +823,36 @@ test('ショートカット: J/K/L で戻る・停止・再生', async ({ page }
   expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
 })
 
+test('ショートカット: スライド編集で隣接クリップが連動', async ({ page }) => {
+  await addOpeningText(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /Thank you/ }).first().click()
+  await page.getByRole('button', { name: /エンディング/ }).first().click()
+
+  await clickTimelineClip(page, 'Thank you')
+  const opening = page.locator('footer').getByText('Opening')
+  const thankYou = page.locator('footer').getByText('Thank you')
+  const openingBefore = (await opening.boundingBox())!
+  const thankYouBefore = (await thankYou.boundingBox())!
+
+  await page.keyboard.press('Shift+]')
+
+  const openingAfter = (await opening.boundingBox())!
+  const thankYouAfter = (await thankYou.boundingBox())!
+  expect(openingAfter.width).toBeGreaterThan(openingBefore.width + 50)
+  expect(thankYouAfter.x).toBeGreaterThan(thankYouBefore.x + 50)
+})
+
+test('ショートカット: 動画クリップのスリップ編集', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  await page.setInputFiles('input[accept*="video"]', { name: 'slip.webm', mimeType: 'video/webm', buffer: webm })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'slip.webm')
+
+  await page.keyboard.press('Shift+.')
+  await expect(page.locator('footer').getByText('slip.webm')).toBeVisible()
+})
+
 test('タイムライン: リップルトリムで後続クリップが連動', async ({ page }) => {
   await addOpeningText(page)
   await page.getByTitle('テキスト').click()

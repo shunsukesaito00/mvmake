@@ -1,10 +1,11 @@
 import { useCallback, useRef, useEffect, useState } from 'react'
-import { useProjectStore } from '../store/projectStore'
+import { useProjectStore, type TimelineDragState } from '../store/projectStore'
 import type { Clip } from '../types/project'
 import { formatTime, snapTime } from '../utils/time'
 import { formatTimelineTextLabel } from '../utils/textWrap'
 import { snapLocalKeyframeTime, snapVolume } from '../utils/keyframeSnap'
 import { clampTrimEnd, clampTrimStart } from '../utils/clipUtils'
+import { canSlideClip, canSlipClip, computeSlipClip, findAdjacentClips, slideClipsFromSnapshot } from '../utils/slipSlide'
 import {
   computeFitTimelinePixelsPerSecond,
   computeTimelineScrollLeftForTime,
@@ -209,6 +210,35 @@ export function TimelinePanel() {
       } else {
         updateClip(dragState.clipId, { startTime: Math.max(0, newStart) })
       }
+    } else if (dragState.mode === 'slip') {
+      const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
+      if (!clip || !canSlipClip(clip)) return
+      const slipped = computeSlipClip(
+        { ...clip, sourceStart: dragState.originalSourceStart },
+        dt,
+        mediaAssets,
+      )
+      if (slipped) updateClip(dragState.clipId, { sourceStart: slipped.sourceStart })
+    } else if (dragState.mode === 'slide' && dragState.slideSnapshot) {
+      const snapPoints = getSnapPoints(dragState.clipId)
+      const rawDelta = dt
+      const snappedStart = snapTime(dragState.originalStartTime + rawDelta, snapPoints)
+      const delta = snappedStart - dragState.originalStartTime
+      setSnapGuide(snappedStart !== dragState.originalStartTime + rawDelta ? snappedStart : null)
+      const result = slideClipsFromSnapshot(dragState.slideSnapshot, delta, mediaAssets)
+      if (!result) return
+      updateClip(result.prev.id, {
+        duration: result.prev.duration,
+        sourceDuration: result.prev.sourceDuration,
+        sourceStart: result.prev.sourceStart,
+      })
+      updateClip(result.selected.id, { startTime: result.selected.startTime })
+      updateClip(result.next.id, {
+        startTime: result.next.startTime,
+        duration: result.next.duration,
+        sourceDuration: result.next.sourceDuration,
+        sourceStart: result.next.sourceStart,
+      })
     } else if (dragState.mode === 'trimStart') {
       const snapPoints = getSnapPoints(dragState.clipId)
       const raw = dragState.originalStartTime + dt
@@ -330,20 +360,42 @@ export function TimelinePanel() {
 
   const startDrag = (clip: Clip, mode: 'move' | 'trimStart' | 'trimEnd', e: React.MouseEvent) => {
     const track = tracks.find((t) => t.id === clip.trackId)
-    if (track?.locked) return
+    if (!track || track.locked) return
     e.stopPropagation()
     e.preventDefault()
     useProjectStore.getState().pushHistory()
 
-    // Alt+ドラッグ: 元クリップを残し、複製を掴んで動かす
     let dragClipId = clip.id
-    if (e.altKey && mode === 'move') {
-      const newId = useProjectStore.getState().duplicateClipInPlace(clip.id)
-      if (newId) dragClipId = newId
+    let dragMode: TimelineDragState['mode'] = mode
+
+    if (mode === 'move') {
+      if (e.altKey) {
+        const newId = useProjectStore.getState().duplicateClipInPlace(clip.id)
+        if (newId) dragClipId = newId
+      } else if (e.ctrlKey && canSlipClip(clip)) {
+        dragMode = 'slip'
+      } else if (e.shiftKey && canSlideClip(track.clips, clip.id)) {
+        dragMode = 'slide'
+      }
     }
 
+    const { prev, next } = findAdjacentClips(track.clips, clip.id)
+    const slideSnapshot = dragMode === 'slide' && prev && next
+      ? { prev: structuredClone(prev), selected: structuredClone(clip), next: structuredClone(next) }
+      : undefined
+
     setSelectedClipId(dragClipId)
-    setDragState({ clipId: dragClipId, mode, startX: e.clientX, startY: e.clientY, originalStartTime: clip.startTime, originalDuration: clip.duration, originalSourceStart: clip.sourceStart, originalTrackId: clip.trackId })
+    setDragState({
+      clipId: dragClipId,
+      mode: dragMode,
+      startX: e.clientX,
+      startY: e.clientY,
+      originalStartTime: clip.startTime,
+      originalDuration: clip.duration,
+      originalSourceStart: clip.sourceStart,
+      originalTrackId: clip.trackId,
+      slideSnapshot,
+    })
   }
 
   const startPlayheadDrag = (e: React.MouseEvent) => {

@@ -89,6 +89,30 @@ function App() {
         const step = e.shiftKey ? 1 / store.project.fps : 1
         store.setCurrentTime(Math.max(0, store.currentTime - step))
       }
+
+      if (store.selectedClipId) {
+        const editStep = e.shiftKey ? 1 : 1 / store.project.fps
+        if (e.key === ',' || e.code === 'Comma') {
+          e.preventDefault()
+          store.slipSelectedClip(-editStep)
+        }
+        if (e.key === '.' || e.code === 'Period') {
+          e.preventDefault()
+          store.slipSelectedClip(editStep)
+        }
+        if (e.key === '[') {
+          e.preventDefault()
+          if (!store.slideSelectedClip(-editStep)) {
+            showToast('スライド編集には前後の隣接クリップが必要です', 'info')
+          }
+        }
+        if (e.key === ']') {
+          e.preventDefault()
+          if (!store.slideSelectedClip(editStep)) {
+            showToast('スライド編集には前後の隣接クリップが必要です', 'info')
+          }
+        }
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
