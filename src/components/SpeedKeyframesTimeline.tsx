@@ -1,39 +1,33 @@
-import type { AudioClip, AudioSettings, VideoClip, VolumeKeyframe } from '../types/project'
+import type { SpeedKeyframe, VideoClip } from '../types/project'
 import {
-  VOLUME_TIMELINE_LANE_HEIGHT,
-  buildVolumeCurvePath,
+  SPEED_TIMELINE_LANE_HEIGHT,
+  buildSpeedCurvePath,
   keyframeToLanePoint,
-  laneYToVolume,
-} from '../utils/volumeKeyframesTimeline'
-
-type AudioClipLike = VideoClip | AudioClip
+  laneYToSpeed,
+} from '../utils/speedKeyframesTimeline'
 
 interface Props {
-  clip: AudioClipLike
-  audio: AudioSettings
+  clip: VideoClip
   widthPx: number
   isSelected: boolean
-  bottomOffset?: number
-  onStartKeyframeDrag: (keyframe: VolumeKeyframe, e: React.MouseEvent) => void
-  onAddKeyframe: (time: number, volume: number) => void
+  onStartKeyframeDrag: (keyframe: SpeedKeyframe, e: React.MouseEvent) => void
+  onAddKeyframe: (time: number, speed: number) => void
 }
 
-export function VolumeKeyframesTimeline({
+export function SpeedKeyframesTimeline({
   clip,
-  audio,
   widthPx,
   isSelected,
-  bottomOffset = 0,
   onStartKeyframeDrag,
   onAddKeyframe,
 }: Props) {
-  const keyframes = audio.volumeKeyframes ?? []
-  const laneHeight = VOLUME_TIMELINE_LANE_HEIGHT
+  const keyframes = clip.speedKeyframes ?? []
+  const laneHeight = SPEED_TIMELINE_LANE_HEIGHT
   const showLane = keyframes.length > 0 || isSelected
 
   if (!showLane || widthPx < 24) return null
 
-  const curvePath = buildVolumeCurvePath(audio, clip.duration, widthPx, laneHeight)
+  const curvePath = buildSpeedCurvePath(clip, clip.duration, widthPx, laneHeight)
 
   const handleDoubleClick = (e: React.MouseEvent<SVGSVGElement>) => {
     e.stopPropagation()
@@ -41,14 +35,14 @@ export function VolumeKeyframesTimeline({
     const localX = Math.max(0, Math.min(widthPx, e.clientX - rect.left))
     const localY = Math.max(0, Math.min(laneHeight, e.clientY - rect.top))
     const time = (localX / widthPx) * clip.duration
-    const volume = laneYToVolume(localY, laneHeight)
-    onAddKeyframe(time, volume)
+    const speed = laneYToSpeed(localY, laneHeight)
+    onAddKeyframe(time, speed)
   }
 
   return (
     <div
-      className={`absolute right-0 bottom-0 left-0 pointer-events-none ${keyframes.length > 0 ? 'z-[20]' : 'z-[15]'}`}
-      style={{ height: laneHeight, bottom: bottomOffset }}
+      className={`absolute right-0 left-0 pointer-events-none ${keyframes.length > 0 ? 'z-[22]' : 'z-[16]'}`}
+      style={{ height: laneHeight, bottom: 0 }}
       aria-hidden={!keyframes.length}
     >
       <svg
@@ -61,7 +55,7 @@ export function VolumeKeyframesTimeline({
           <path
             d={curvePath}
             fill="none"
-            stroke="rgba(255,255,255,0.85)"
+            stroke="rgba(120,200,255,0.9)"
             strokeWidth="1.5"
             vectorEffect="non-scaling-stroke"
           />
@@ -72,7 +66,7 @@ export function VolumeKeyframesTimeline({
             y1={keyframeToLanePoint(keyframes[0], clip.duration, widthPx, laneHeight).y}
             x2={widthPx}
             y2={keyframeToLanePoint(keyframes[0], clip.duration, widthPx, laneHeight).y}
-            stroke="rgba(255,255,255,0.45)"
+            stroke="rgba(120,200,255,0.45)"
             strokeWidth="1"
             strokeDasharray="3 3"
             vectorEffect="non-scaling-stroke"
@@ -85,9 +79,9 @@ export function VolumeKeyframesTimeline({
           <button
             key={kf.id}
             type="button"
-            aria-label={`音量キーフレーム ${index + 1}`}
-            title={`${kf.time.toFixed(1)}s · ${Math.round(kf.volume * 100)}%`}
-            className="pointer-events-auto absolute z-[21] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-white/80 bg-accent shadow-[0_0_6px_rgba(201,169,110,0.8)] active:cursor-grabbing"
+            aria-label={`速度キーフレーム ${index + 1}`}
+            title={`${kf.time.toFixed(1)}s · ${kf.speed}x`}
+            className="pointer-events-auto absolute z-[23] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-white/80 bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)] active:cursor-grabbing"
             style={{ left: x, top: y }}
             onMouseDown={(e) => onStartKeyframeDrag(kf, e)}
             onClick={(e) => e.stopPropagation()}

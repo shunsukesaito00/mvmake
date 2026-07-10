@@ -3,6 +3,7 @@ import {
   DEFAULT_AUDIO,
   DEFAULT_KEN_BURNS,
 } from '../types/project'
+import { getMaxLocalDurationForSourceBudget, getSourceOffsetAtLocalTime } from './speedKeyframes'
 
 export function isCompatibleTrack(
   asset: { type: string },
@@ -30,9 +31,15 @@ export function clampTrimEnd(
 
   if (clip.type === 'video' || clip.type === 'audio') {
     const asset = mediaAssets.find((a) => a.id === clip.mediaId)
-    const speed = clip.type === 'video' || clip.type === 'audio' ? (clip.speed ?? 1) : 1
-    if (asset) {
-      maxDuration = Math.min(newDuration, (asset.duration - clip.sourceStart) / speed)
+    if (clip.type === 'video') {
+      if (asset) {
+        maxDuration = Math.min(newDuration, getMaxLocalDurationForSourceBudget(clip, asset.duration - clip.sourceStart))
+      }
+    } else {
+      const speed = clip.speed ?? 1
+      if (asset) {
+        maxDuration = Math.min(newDuration, (asset.duration - clip.sourceStart) / speed)
+      }
     }
   }
 
@@ -48,7 +55,33 @@ export function clampTrimStart(
 ): { startTime: number; duration: number; sourceStart: number; sourceDuration: number } | null {
   if (newDuration < 0.2) return null
 
-  if (clip.type === 'video' || clip.type === 'audio') {
+  if (clip.type === 'video') {
+    const asset = mediaAssets.find((a) => a.id === clip.mediaId)
+    const localTrim = newStartTime - clip.startTime
+    if (localTrim < 0) {
+      if (newSourceStart < 0) return null
+      if (asset && newSourceStart + getSourceOffsetAtLocalTime(clip, newDuration) > asset.duration) return null
+      return {
+        startTime: Math.max(0, newStartTime),
+        duration: newDuration,
+        sourceStart: Math.max(0, newSourceStart),
+        sourceDuration: newDuration,
+      }
+    }
+    const resolvedSourceStart = clip.sourceStart + getSourceOffsetAtLocalTime(clip, localTrim)
+    if (asset) {
+      if (resolvedSourceStart < 0) return null
+      if (resolvedSourceStart + getSourceOffsetAtLocalTime(clip, newDuration) > asset.duration) return null
+    }
+    return {
+      startTime: Math.max(0, newStartTime),
+      duration: newDuration,
+      sourceStart: Math.max(0, resolvedSourceStart),
+      sourceDuration: newDuration,
+    }
+  }
+
+  if (clip.type === 'audio') {
     const asset = mediaAssets.find((a) => a.id === clip.mediaId)
     const speed = clip.speed ?? 1
     if (asset) {

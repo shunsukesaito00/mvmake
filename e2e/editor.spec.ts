@@ -279,6 +279,66 @@ test('インスペクター: 音量キーフレームを追加・編集できる
   await expect(page.getByText('1件', { exact: true })).toBeVisible()
 })
 
+test('インスペクター: 速度キーフレームを追加・編集できる', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  await page.setInputFiles('input[accept*="video"]', { name: 'speed-kf.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'speed-kf.webm')
+
+  await page.getByRole('button', { name: '再生速度' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+  await expect(page.getByRole('slider', { name: '基本速度' })).toBeVisible()
+})
+
+test('クリップ分割: 速度キーフレームを両側に再配分する', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  await page.setInputFiles('input[accept*="video"]', { name: 'speed-split.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'speed-split.webm')
+
+  await page.getByRole('button', { name: '再生速度' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const timeSliders = page.getByRole('slider', { name: '位置 (秒)' })
+  await timeSliders.nth(1).fill('1')
+
+  await page.locator('main input[type="range"]').fill('0.5')
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  await expect(page.locator('footer').getByText('speed-split.webm')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: '速度キーフレーム 1' })).toHaveCount(2)
+})
+
+test('タイムライン: 速度キーフレームをドラッグ編集できる', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  await page.setInputFiles('input[accept*="video"]', { name: 'speed-drag.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'speed-drag.webm')
+
+  await page.getByRole('button', { name: '再生速度' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).fill('0.2')
+
+  const handle = page.getByRole('button', { name: '速度キーフレーム 1' })
+  await expect(handle).toHaveAttribute('title', /0\.2s/)
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 60, box.y - 10, { steps: 8 })
+  await page.mouse.up()
+
+  await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
+})
+
 test('タイムライン: 音量キーフレームをドラッグ編集できる', async ({ page }) => {
   const wav = makeSilentWav(1)
   await page.setInputFiles('input[accept*="audio"]', { name: 'bgm.wav', mimeType: 'audio/wav', buffer: wav })

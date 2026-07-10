@@ -5,6 +5,7 @@ import { DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_TEXT_LINE_HEIGHT,
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
 import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
+import { SpeedKeyframesSection } from '../components/SpeedKeyframesSection'
 import { ColorAdjustmentsSection } from '../components/ColorAdjustmentsSection'
 import { VisualFadeSection } from '../components/VisualFadeSection'
 import { PhotoGuideSection } from '../components/PhotoGuideSection'
@@ -194,8 +195,11 @@ export function InspectorPanel() {
                 onAudioChange={(patch) => updateClip(selectedClip.id, { audio: { ...(selectedClip as VideoClip).audio, ...patch } })}
               />
             </CollapsibleSection>
-            <CollapsibleSection title="再生速度">
-              <Slider label="速度" value={(selectedClip as VideoClip).speed} min={0.25} max={4} step={0.25} onChange={(v) => updateClip(selectedClip.id, { speed: v }, true)} format={(v) => `${v}x`} />
+            <CollapsibleSection title="再生速度" defaultOpen={false}>
+              <SpeedKeyframesSection
+                clip={selectedClip as VideoClip}
+                onClipChange={(patch) => updateClip(selectedClip.id, patch, true)}
+              />
             </CollapsibleSection>
             <CollapsibleSection title="色調補正">
               <ColorAdjustmentsSection

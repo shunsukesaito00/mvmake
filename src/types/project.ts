@@ -104,6 +104,13 @@ export interface VolumeKeyframe {
   volume: number
 }
 
+/** クリップ内ローカル時間(秒)での速度キーフレーム */
+export interface SpeedKeyframe {
+  id: string
+  time: number
+  speed: number
+}
+
 /** クリップ内ローカル時間(秒)での transform キーフレーム（不透明度キーフレームを含む） */
 export type TransformKeyframeEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut'
 
@@ -158,6 +165,8 @@ export interface VideoClip extends BaseClip {
   transition?: Transition
   audio: AudioSettings
   speed: number
+  /** クリップ先頭からの秒数と速度(0.25〜4)。未設定時は speed を一定値として使用 */
+  speedKeyframes?: SpeedKeyframe[]
   color: ColorAdjustments
   crop: CropSettings
   fadeIn: number

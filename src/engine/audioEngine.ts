@@ -1,6 +1,7 @@
 import type { AudioClip, MediaAsset, Project, VideoClip } from '../types/project'
 import { getAudioClipsFromProject, getDuckingIntervals } from '../utils/clipUtils'
 import { scheduleVolumeAutomation } from '../utils/volumeKeyframes'
+import { getSourceOffsetAtLocalTime, scheduleSpeedAutomation } from '../utils/speedKeyframes'
 
 interface DuckingSchedule {
   intervals: Array<{ start: number; end: number }>
@@ -76,22 +77,34 @@ class AudioEngine {
     audio: AudioClip['audio'],
     speed: number,
     ducking?: DuckingSchedule,
+    isVideo = false,
   ): void {
     const clipEnd = clip.startTime + clip.duration
     if (fromTime >= clipEnd) return
 
     const source = this.context!.createBufferSource()
     source.buffer = buffer
-    source.playbackRate.value = speed
 
     const clipGain = this.context!.createGain()
 
     const localOffset = Math.max(0, fromTime - clip.startTime)
-    const offset = clip.sourceStart + localOffset * speed
+    const offset = isVideo
+      ? clip.sourceStart + getSourceOffsetAtLocalTime(clip as VideoClip, localOffset)
+      : clip.sourceStart + localOffset * speed
     const when = this.context!.currentTime + Math.max(0, clip.startTime - fromTime)
-    const duration = clip.duration - localOffset
+    const timelineDuration = clip.duration - localOffset
+    const videoClip = isVideo ? (clip as VideoClip) : null
+    const bufferDuration = videoClip
+      ? getSourceOffsetAtLocalTime(videoClip, localOffset + timelineDuration) - getSourceOffsetAtLocalTime(videoClip, localOffset)
+      : timelineDuration * speed
 
-    scheduleVolumeAutomation(clipGain.gain, when, localOffset, duration, clip.duration, audio)
+    if (isVideo) {
+      scheduleSpeedAutomation(source.playbackRate, when, localOffset, timelineDuration, clip as VideoClip)
+    } else {
+      source.playbackRate.value = speed
+    }
+
+    scheduleVolumeAutomation(clipGain.gain, when, localOffset, timelineDuration, clip.duration, audio)
 
     source.connect(clipGain)
 
@@ -105,7 +118,7 @@ class AudioEngine {
       clipGain.connect(this.gainNode!)
     }
 
-    source.start(when, offset, duration / speed)
+    source.start(when, offset, bufferDuration)
     this.sources.set(clip.id, source)
   }
 
@@ -124,7 +137,7 @@ class AudioEngine {
 
       if (isVideo) {
         const v = clip as VideoClip
-        this.scheduleClip(v, buffer, fromTime, v.audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 }, v.speed ?? 1)
+        this.scheduleClip(v, buffer, fromTime, v.audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 }, v.speed ?? 1, undefined, true)
       } else {
         const a = clip as AudioClip
         const ducking = a.ducking?.enabled
@@ -176,14 +189,20 @@ export async function mixAudioOffline(project: Project, duration: number, sample
       const source = offline.createBufferSource()
       source.buffer = buffer
 
-      const speed = isVideo ? (clip as VideoClip).speed ?? 1 : (clip as AudioClip).speed ?? 1
+      const isVideoClip = isVideo
+      const videoClip = isVideoClip ? (clip as VideoClip) : null
+      const speed = isVideoClip ? videoClip!.speed ?? 1 : (clip as AudioClip).speed ?? 1
       source.playbackRate.value = speed
 
       const gain = offline.createGain()
-      const audio = isVideo ? (clip as VideoClip).audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 } : (clip as AudioClip).audio
+      const audio = isVideoClip ? videoClip!.audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 } : (clip as AudioClip).audio
 
       const when = clip.startTime
       scheduleVolumeAutomation(gain.gain, when, 0, clip.duration, clip.duration, audio)
+
+      if (isVideoClip) {
+        scheduleSpeedAutomation(source.playbackRate, when, 0, clip.duration, videoClip!)
+      }
 
       source.connect(gain)
 
@@ -204,7 +223,11 @@ export async function mixAudioOffline(project: Project, duration: number, sample
         gain.connect(offline.destination)
       }
 
-      source.start(when, clip.sourceStart, clip.duration / speed)
+      const bufferDuration = isVideoClip
+        ? getSourceOffsetAtLocalTime(videoClip!, clip.duration)
+        : clip.duration * speed
+
+      source.start(when, clip.sourceStart, bufferDuration)
     } catch {
       // skip
     }

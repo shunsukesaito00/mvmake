@@ -59,6 +59,8 @@ import { loadTimelinePixelsPerSecond, saveTimelinePixelsPerSecond } from '../per
 import { clampTimelinePixelsPerSecond } from '../utils/timelineZoom'
 import { splitTransformKeyframes } from '../utils/transformKeyframesTimeline'
 import { splitVolumeKeyframes } from '../utils/volumeKeyframesTimeline'
+import { splitSpeedKeyframes } from '../utils/speedKeyframesTimeline'
+import { getSourceOffsetAtLocalTime } from '../utils/speedKeyframes'
 
 const MAX_HISTORY = 50
 
@@ -95,7 +97,7 @@ function createDefaultProject(): Project {
 
 export interface TimelineDragState {
   clipId: string
-  mode: 'move' | 'trimStart' | 'trimEnd' | 'playhead' | 'volumeKeyframe' | 'transformKeyframe' | 'marker'
+  mode: 'move' | 'trimStart' | 'trimEnd' | 'playhead' | 'volumeKeyframe' | 'speedKeyframe' | 'transformKeyframe' | 'marker'
   startX: number
   startY: number
   originalStartTime: number
@@ -106,6 +108,7 @@ export interface TimelineDragState {
   keyframeId?: string
   originalKeyframeTime?: number
   originalKeyframeVolume?: number
+  originalKeyframeSpeed?: number
   originalKeyframeOpacity?: number
   markerId?: string
 }
@@ -770,14 +773,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     get().pushHistory()
     const splitOffset = time - clip.startTime
-    const speed = clip.type === 'video' || clip.type === 'audio' ? (clip.speed ?? 1) : 1
-    const firstDuration = splitOffset
-    const secondDuration = clip.duration - splitOffset
-    const secondSourceStart = clip.sourceStart + splitOffset * speed
+    const secondSourceStart =
+      clip.type === 'video'
+        ? clip.sourceStart + getSourceOffsetAtLocalTime(clip, splitOffset)
+        : clip.sourceStart + splitOffset * (clip.type === 'audio' ? (clip.speed ?? 1) : 1)
 
     const splitKeyframes =
       'transformKeyframes' in clip && clip.transformKeyframes?.length
         ? splitTransformKeyframes(clip.transformKeyframes, splitOffset)
+        : null
+    const firstDuration = splitOffset
+    const secondDuration = clip.duration - splitOffset
+    const splitSpeedKf =
+      clip.type === 'video' && clip.speedKeyframes?.length
+        ? splitSpeedKeyframes(clip.speedKeyframes, splitOffset)
         : null
     const splitVolumeKf =
       (clip.type === 'video' || clip.type === 'audio') && clip.audio.volumeKeyframes?.length
@@ -791,6 +800,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       sourceDuration: firstDuration,
       ...(clip.type === 'video' || clip.type === 'image' ? { transition: undefined } : {}),
       ...(splitKeyframes ? { transformKeyframes: splitKeyframes.first } : {}),
+      ...(splitSpeedKf && clip.type === 'video' ? { speedKeyframes: splitSpeedKf.first } : {}),
       ...(splitVolumeKf && audioClip ? { audio: { ...audioClip.audio, volumeKeyframes: splitVolumeKf.first } } : {}),
     }
     const secondClip: Clip = {
@@ -801,6 +811,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       sourceStart: secondSourceStart,
       sourceDuration: secondDuration,
       ...(splitKeyframes ? { transformKeyframes: splitKeyframes.second } : {}),
+      ...(splitSpeedKf && clip.type === 'video' ? { speedKeyframes: splitSpeedKf.second } : {}),
       ...(splitVolumeKf && audioClip ? { audio: { ...audioClip.audio, volumeKeyframes: splitVolumeKf.second } } : {}),
     }
 

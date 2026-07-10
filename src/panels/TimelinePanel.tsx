@@ -10,8 +10,11 @@ import {
   isTimelineTimeVisible,
 } from '../utils/timelineZoom'
 import { updateVolumeKeyframeList, VOLUME_TIMELINE_LANE_HEIGHT, createVolumeKeyframeAt, volumeAtTimelineClick } from '../utils/volumeKeyframesTimeline'
+import { updateSpeedKeyframeList, SPEED_TIMELINE_LANE_HEIGHT, createSpeedKeyframeAt } from '../utils/speedKeyframesTimeline'
+import { SPEED_MAX, SPEED_MIN } from '../utils/speedKeyframes'
 import { updateTransformKeyframeList, createTransformKeyframeAt, TRANSFORM_TIMELINE_LANE_HEIGHT } from '../utils/transformKeyframesTimeline'
 import { VolumeKeyframesTimeline } from '../components/VolumeKeyframesTimeline'
+import { SpeedKeyframesTimeline } from '../components/SpeedKeyframesTimeline'
 import { TransformKeyframesTimeline } from '../components/TransformKeyframesTimeline'
 import type { AudioClip, ImageClip, TextClip, VideoClip } from '../types/project'
 import { usePlayback } from '../hooks/usePlayback'
@@ -227,6 +230,18 @@ export function TimelinePanel() {
       const snapped = snapTime(Math.max(0, Math.min(raw, duration)), snapPoints)
       setSnapGuide(snapped !== raw ? snapped : null)
       updateMarker(dragState.markerId, { time: snapped }, false)
+    } else if (dragState.mode === 'speedKeyframe' && dragState.keyframeId != null) {
+      const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
+      if (clip?.type !== 'video') return
+      const videoClip = clip as VideoClip
+      const keyframes = videoClip.speedKeyframes
+      if (!keyframes?.length) return
+
+      const speedDelta = -(e.clientY - dragState.startY) / SPEED_TIMELINE_LANE_HEIGHT * (SPEED_MAX - SPEED_MIN)
+      const newTime = Math.max(0, Math.min(clip.duration, (dragState.originalKeyframeTime ?? 0) + dt))
+      const newSpeed = Math.max(SPEED_MIN, Math.min(SPEED_MAX, (dragState.originalKeyframeSpeed ?? 1) + speedDelta))
+      const next = updateSpeedKeyframeList(keyframes, dragState.keyframeId, { time: newTime, speed: newSpeed })
+      updateClip(dragState.clipId, { speedKeyframes: next }, false)
     } else if (dragState.mode === 'volumeKeyframe' && dragState.keyframeId != null) {
       const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
       if (clip?.type !== 'audio' && clip?.type !== 'video') return
@@ -332,6 +347,34 @@ export function TimelinePanel() {
       originalSourceStart: 0,
       originalTrackId: '',
     })
+  }
+
+  const startSpeedKeyframeDrag = (clip: VideoClip, keyframeId: string, keyframeTime: number, keyframeSpeed: number, e: React.MouseEvent) => {
+    const track = tracks.find((t) => t.id === clip.trackId)
+    if (track?.locked) return
+    e.stopPropagation()
+    e.preventDefault()
+    pushHistory()
+    setSelectedClipId(clip.id)
+    setDragState({
+      clipId: clip.id,
+      mode: 'speedKeyframe',
+      keyframeId,
+      originalKeyframeTime: keyframeTime,
+      originalKeyframeSpeed: keyframeSpeed,
+      startX: e.clientX,
+      startY: e.clientY,
+      originalStartTime: clip.startTime,
+      originalDuration: clip.duration,
+      originalSourceStart: clip.sourceStart,
+      originalTrackId: clip.trackId,
+    })
+  }
+
+  const addSpeedKeyframeOnTimeline = (clip: VideoClip, time: number, speed: number) => {
+    pushHistory()
+    const next = createSpeedKeyframeAt(clip, clip.duration, time, speed)
+    updateClip(clip.id, { speedKeyframes: next })
   }
 
   const startVolumeKeyframeDrag = (clip: AudioClip | VideoClip, keyframeId: string, keyframeTime: number, keyframeVolume: number, e: React.MouseEvent) => {
@@ -489,13 +532,15 @@ export function TimelinePanel() {
                   const width = Math.max(clip.duration * pixelsPerSecond, 24)
                   const label = clip.type === 'text' ? clip.text.content : (media?.name ?? clip.type)
                   const isSelected = selectedClipId === clip.id
+                  const hasSpeedKeyframes = clip.type === 'video' && ((clip.speedKeyframes?.length ?? 0) > 0 || isSelected)
                   const hasVolumeKeyframes = (clip.type === 'audio' || clip.type === 'video') && ((clip.audio.volumeKeyframes?.length ?? 0) > 0 || isSelected)
                   const hasTransformKeyframes = (clip.type === 'video' || clip.type === 'image' || clip.type === 'text') && ((clip.transformKeyframes?.length ?? 0) > 0 || isSelected)
-                  const transformLaneBottom = hasVolumeKeyframes ? VOLUME_TIMELINE_LANE_HEIGHT : 0
+                  const volumeLaneBottom = hasSpeedKeyframes ? SPEED_TIMELINE_LANE_HEIGHT : 0
+                  const transformLaneBottom = (hasVolumeKeyframes ? VOLUME_TIMELINE_LANE_HEIGHT : 0) + volumeLaneBottom
                   return (
                     <div
                       key={clip.id}
-                      className={`absolute top-1.5 bottom-1.5 cursor-grab rounded-md ${CLIP_STYLES[clip.type]} ${isSelected ? 'clip-selected z-10' : 'ring-1 ring-white/10'} ${track.locked ? 'opacity-50' : ''} ${hasVolumeKeyframes || hasTransformKeyframes ? 'overflow-visible' : 'overflow-hidden'}`}
+                      className={`absolute top-1.5 bottom-1.5 cursor-grab rounded-md ${CLIP_STYLES[clip.type]} ${isSelected ? 'clip-selected z-10' : 'ring-1 ring-white/10'} ${track.locked ? 'opacity-50' : ''} ${hasVolumeKeyframes || hasSpeedKeyframes || hasTransformKeyframes ? 'overflow-visible' : 'overflow-hidden'}`}
                       style={{ left, width }}
                       onMouseDown={(e) => startDrag(clip, 'move', e)}
                       onClick={(e) => { e.stopPropagation(); setSelectedClipId(clip.id) }}
@@ -508,8 +553,18 @@ export function TimelinePanel() {
                           audio={clip.audio}
                           widthPx={width}
                           isSelected={isSelected}
+                          bottomOffset={volumeLaneBottom}
                           onStartKeyframeDrag={(kf, e) => startVolumeKeyframeDrag(clip, kf.id, kf.time, kf.volume, e)}
                           onAddKeyframe={(time, volume) => addVolumeKeyframeOnTimeline(clip, time, volume)}
+                        />
+                      )}
+                      {clip.type === 'video' && (
+                        <SpeedKeyframesTimeline
+                          clip={clip}
+                          widthPx={width}
+                          isSelected={isSelected}
+                          onStartKeyframeDrag={(kf, e) => startSpeedKeyframeDrag(clip, kf.id, kf.time, kf.speed, e)}
+                          onAddKeyframe={(time, speed) => addSpeedKeyframeOnTimeline(clip, time, speed)}
                         />
                       )}
                       {(clip.type === 'video' || clip.type === 'image' || clip.type === 'text') && (

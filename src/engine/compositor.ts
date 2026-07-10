@@ -14,6 +14,7 @@ import { drawTextBackground } from '../utils/textBackground'
 import { getVisualFadeMultiplier } from '../utils/visualFade'
 import { buildCanvasFontString } from '../utils/googleFonts'
 import { getTransformAtLocalTime } from '../utils/transformKeyframes'
+import { getVideoSourceTimeAtLocalTime, getSpeedAtLocalTime } from '../utils/speedKeyframes'
 import { easeSmoothstep } from '../utils/transitions'
 
 type VisualTransformClip = VideoClip | ImageClip | TextClip
@@ -88,7 +89,7 @@ function isVisualClip(clip: Clip): clip is VideoClip | ImageClip | TextClip {
 }
 
 function getVideoSourceTime(clip: VideoClip, localTime: number): number {
-  return clip.sourceStart + localTime * (clip.speed ?? 1)
+  return getVideoSourceTimeAtLocalTime(clip, localTime)
 }
 
 const colorFilterCache = new WeakMap<ColorAdjustments, string>()
@@ -575,7 +576,7 @@ export async function syncVideosForPlayback(project: Project, time: number, play
       if (!asset) continue
       const video = getVideoElement(asset)
       const inRange = time >= clip.startTime && time < clip.startTime + clip.duration
-      const speed = clip.speed ?? 1
+      const speed = getSpeedAtLocalTime(clip, time - clip.startTime)
 
       if (inRange && playing) {
         const sourceTime = getVideoSourceTime(clip, time - clip.startTime)
