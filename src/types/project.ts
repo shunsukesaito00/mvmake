@@ -26,6 +26,9 @@ export type TextAnimationType =
   | 'motionSlideLeft'
   | 'motionPop'
   | 'motionDrift'
+  | 'motionElegant'
+  | 'motionCurtain'
+  | 'motionGlow'
   | 'keyframes'
   | 'none'
 
@@ -983,6 +986,78 @@ export const TEXT_PRESETS: TextPreset[] = [
     transform: { x: 0.5, y: 0.35 },
     duration: 5,
     animation: { type: 'motionDrift', duration: 1 },
+  },
+  {
+    id: 'motion-elegant-names',
+    label: 'MG: エレガントネーム',
+    category: 'lowerThird',
+    text: {
+      content: 'Taro & Hanako',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 36,
+      color: '#f5e6d3',
+      strokeColor: '#1a1a1a',
+      strokeWidth: 0,
+      shadowColor: 'rgba(0,0,0,0.45)',
+      shadowBlur: 6,
+      textAlign: 'center',
+      verticalAlign: 'bottom',
+      backgroundColor: SUBTITLE_BAND_COLOR,
+      backgroundPadding: 20,
+      backgroundRadius: 4,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.5, y: 0.9 },
+    duration: 5,
+    animation: { type: 'motionElegant', duration: 0.85 },
+  },
+  {
+    id: 'motion-curtain-chapter',
+    label: 'MG: カーテン章題',
+    category: 'title',
+    text: {
+      content: 'Chapter II',
+      fontFamily: 'Noto Serif JP',
+      fontSize: 52,
+      color: '#ffffff',
+      strokeColor: '#2c2c2c',
+      strokeWidth: 1,
+      shadowColor: 'rgba(0,0,0,0.5)',
+      shadowBlur: 12,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: '',
+      backgroundPadding: 16,
+      backgroundRadius: 8,
+      lineHeight: 1.2,
+    },
+    transform: { x: 0.5, y: 0.38 },
+    duration: 4,
+    animation: { type: 'motionCurtain', duration: 0.8 },
+  },
+  {
+    id: 'motion-glow-vows',
+    label: 'MG: グローメッセージ',
+    category: 'subtitle',
+    text: {
+      content: 'Forever & Always',
+      fontFamily: 'Shippori Mincho',
+      fontSize: 48,
+      color: '#ffffff',
+      strokeColor: '#1a1a1a',
+      strokeWidth: 0,
+      shadowColor: 'rgba(255, 220, 180, 0.65)',
+      shadowBlur: 18,
+      textAlign: 'center',
+      verticalAlign: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      backgroundPadding: 22,
+      backgroundRadius: 10,
+      lineHeight: 1.25,
+    },
+    transform: { x: 0.5, y: 0.45 },
+    duration: 4,
+    animation: { type: 'motionGlow', duration: 0.75 },
   },
 ]
 

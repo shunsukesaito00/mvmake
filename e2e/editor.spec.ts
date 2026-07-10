@@ -1506,6 +1506,12 @@ test('テキスト: MG タイトルリビールプリセットを追加できる
   await expect(page.locator('footer').getByText('Our Wedding Story')).toBeVisible()
 })
 
+test('テキスト: MG エレガントネームプリセットを追加できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'MG: エレガントネーム' }).click()
+  await expect(page.locator('footer').getByText('Taro & Hanako')).toBeVisible()
+})
+
 test('テキスト: MG プリセットをカスタムキーフレームに変換できる', async ({ page }) => {
   await page.getByTitle('テキスト').click()
   await page.getByRole('button', { name: 'MG: タイトルリビール' }).click()

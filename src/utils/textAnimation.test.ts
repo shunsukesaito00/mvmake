@@ -62,6 +62,12 @@ describe('getTextOpacity', () => {
     expect(getTextOpacity(clip, 0.5)).toBeGreaterThan(0)
     expect(getTextOpacity(clip, 1)).toBe(1)
   })
+
+  it('fades in motion glow at clip start', () => {
+    const clip = makeTextClip('motionGlow')
+    expect(getTextOpacity(clip, 0)).toBe(0)
+    expect(getTextOpacity(clip, 1)).toBe(1)
+  })
 })
 
 describe('computeTextAnimationState', () => {
@@ -85,11 +91,33 @@ describe('computeTextAnimationState', () => {
     expect(state.offsetX).toBe(0)
     expect(state.offsetY).toBe(0)
   })
+
+  it('rises gently for motionElegant', () => {
+    const clip = makeTextClip('motionElegant')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetY).toBeGreaterThan(0)
+    expect(state.scale).toBeLessThan(1)
+  })
+
+  it('drops from above for motionCurtain', () => {
+    const clip = makeTextClip('motionCurtain')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.offsetY).toBeLessThan(0)
+  })
+
+  it('zooms out softly for motionGlow', () => {
+    const clip = makeTextClip('motionGlow')
+    const state = computeTextAnimationState(clip, 0, 1920, 48)
+    expect(state.scale).toBeGreaterThan(1)
+  })
 })
 
 describe('isMotionTextAnimation', () => {
   it('detects MG animation types', () => {
     expect(isMotionTextAnimation('motionReveal')).toBe(true)
+    expect(isMotionTextAnimation('motionElegant')).toBe(true)
+    expect(isMotionTextAnimation('motionCurtain')).toBe(true)
+    expect(isMotionTextAnimation('motionGlow')).toBe(true)
     expect(isMotionTextAnimation('fadeIn')).toBe(false)
   })
 })

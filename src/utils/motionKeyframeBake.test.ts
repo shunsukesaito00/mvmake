@@ -58,6 +58,14 @@ describe('bakeMotionPresetToKeyframes', () => {
     const keyframes = bakeMotionPresetToKeyframes(clip)
     expect(keyframes[0].x).toBeLessThan(keyframes[1].x)
   })
+
+  it('creates start/end keyframes for motionElegant', () => {
+    const clip = makeTextClip('motionElegant')
+    const keyframes = bakeMotionPresetToKeyframes(clip)
+    expect(keyframes[0].opacity).toBe(0)
+    expect(keyframes[0].y).toBeGreaterThan(keyframes[1].y)
+    expect(keyframes[0].scale).toBeLessThan(keyframes[1].scale)
+  })
 })
 
 describe('applyBakedMotionKeyframes', () => {

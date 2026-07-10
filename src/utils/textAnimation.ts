@@ -11,17 +11,27 @@ export const TEXT_ANIMATION_LABELS: Record<TextAnimationType, string> = {
   motionSlideLeft: 'MG: スライドイン',
   motionPop: 'MG: ポップ',
   motionDrift: 'MG: ドリフト',
+  motionElegant: 'MG: エレガント',
+  motionCurtain: 'MG: カーテン',
+  motionGlow: 'MG: グローイン',
   keyframes: 'カスタム（キーフレーム）',
 }
+
+const MOTION_TEXT_ANIMATIONS = new Set<TextAnimationType>([
+  'motionReveal',
+  'motionSlideLeft',
+  'motionPop',
+  'motionDrift',
+  'motionElegant',
+  'motionCurtain',
+  'motionGlow',
+])
 
 const FADE_IN_TYPES = new Set<TextAnimationType>([
   'fadeIn',
   'slideUp',
   'scaleIn',
-  'motionReveal',
-  'motionSlideLeft',
-  'motionPop',
-  'motionDrift',
+  ...MOTION_TEXT_ANIMATIONS,
 ])
 
 export interface TextAnimationState {
@@ -43,7 +53,7 @@ export function getTextAnimProgress(clip: TextClip, time: number): number {
 }
 
 export function isMotionTextAnimation(type: TextAnimationType): boolean {
-  return type === 'motionReveal' || type === 'motionSlideLeft' || type === 'motionPop' || type === 'motionDrift'
+  return MOTION_TEXT_ANIMATIONS.has(type)
 }
 
 /** transform キーフレームでモーションを駆動する場合、手続き型アニメをスキップする */
@@ -118,6 +128,16 @@ export function computeTextAnimationState(
     case 'motionDrift':
       state.offsetY = -(1 - eased) * lineHeightPx * 1.5
       state.scale = 0.92 + 0.08 * eased
+      break
+    case 'motionElegant':
+      state.offsetY = (1 - eased) * lineHeightPx * 1.2
+      state.scale = 0.9 + 0.1 * eased
+      break
+    case 'motionCurtain':
+      state.offsetY = -(1 - eased) * lineHeightPx * 2.5
+      break
+    case 'motionGlow':
+      state.scale = 1.12 - 0.12 * eased
       break
     default:
       break
