@@ -15,7 +15,13 @@ import {
 import { updateVolumeKeyframeList, VOLUME_TIMELINE_LANE_HEIGHT, createVolumeKeyframeAt, volumeAtTimelineClick } from '../utils/volumeKeyframesTimeline'
 import { updateSpeedKeyframeList, SPEED_TIMELINE_LANE_HEIGHT, createSpeedKeyframeAt } from '../utils/speedKeyframesTimeline'
 import { SPEED_MAX, SPEED_MIN } from '../utils/speedKeyframes'
-import { updateTransformKeyframeList, createTransformKeyframeAt, TRANSFORM_TIMELINE_LANE_HEIGHT } from '../utils/transformKeyframesTimeline'
+import {
+  updateTransformKeyframeList,
+  createTransformKeyframeAt,
+  TRANSFORM_TIMELINE_LANE_HEIGHT,
+  applyTransformPropertyLaneDelta,
+  type TransformTimelineProperty,
+} from '../utils/transformKeyframesTimeline'
 import { VolumeKeyframesTimeline } from '../components/VolumeKeyframesTimeline'
 import { SpeedKeyframesTimeline } from '../components/SpeedKeyframesTimeline'
 import { TransformKeyframesTimeline } from '../components/TransformKeyframesTimeline'
@@ -312,10 +318,15 @@ export function TimelinePanel() {
       const keyframes = transformClip.transformKeyframes
       if (!keyframes?.length) return
 
-      const opacityDelta = -(e.clientY - dragState.startY) / TRANSFORM_TIMELINE_LANE_HEIGHT
+      const property = dragState.transformKeyframeProperty ?? 'opacity'
+      const propertyDelta = -(e.clientY - dragState.startY) / TRANSFORM_TIMELINE_LANE_HEIGHT
       const newTime = Math.max(0, Math.min(clip.duration, (dragState.originalKeyframeTime ?? 0) + dt))
-      const newOpacity = Math.max(0, Math.min(1, (dragState.originalKeyframeOpacity ?? 1) + opacityDelta))
-      const next = updateTransformKeyframeList(keyframes, dragState.keyframeId, { time: newTime, opacity: newOpacity })
+      const newValue = applyTransformPropertyLaneDelta(
+        dragState.originalKeyframePropertyValue ?? dragState.originalKeyframeOpacity ?? 1,
+        propertyDelta,
+        property,
+      )
+      const next = updateTransformKeyframeList(keyframes, dragState.keyframeId, { time: newTime, [property]: newValue })
       updateClip(dragState.clipId, { transformKeyframes: next }, false)
     }
   }, [dragState, pixelsPerSecond, getSnapPoints, updateClip, updateMarker, moveClip, getTrackAtY, tracks, mediaAssets, project.tracks, seek, duration])
@@ -494,7 +505,8 @@ export function TimelinePanel() {
     clip: VideoClip | ImageClip | TextClip,
     keyframeId: string,
     keyframeTime: number,
-    keyframeOpacity: number,
+    property: TransformTimelineProperty,
+    propertyValue: number,
     e: React.MouseEvent,
   ) => {
     const track = tracks.find((t) => t.id === clip.trackId)
@@ -508,7 +520,9 @@ export function TimelinePanel() {
       mode: 'transformKeyframe',
       keyframeId,
       originalKeyframeTime: keyframeTime,
-      originalKeyframeOpacity: keyframeOpacity,
+      transformKeyframeProperty: property,
+      originalKeyframePropertyValue: propertyValue,
+      originalKeyframeOpacity: property === 'opacity' ? propertyValue : undefined,
       startX: e.clientX,
       startY: e.clientY,
       originalStartTime: clip.startTime,
@@ -518,9 +532,14 @@ export function TimelinePanel() {
     })
   }
 
-  const addTransformKeyframeOnTimeline = (clip: VideoClip | ImageClip | TextClip, time: number, opacity: number) => {
+  const addTransformKeyframeOnTimeline = (
+    clip: VideoClip | ImageClip | TextClip,
+    time: number,
+    property: TransformTimelineProperty,
+    value: number,
+  ) => {
     pushHistory()
-    const next = createTransformKeyframeAt(clip.transform, clip.transformKeyframes, clip.duration, time, opacity)
+    const next = createTransformKeyframeAt(clip.transform, clip.transformKeyframes, clip.duration, time, property, value)
     updateClip(clip.id, { transformKeyframes: next })
   }
 
@@ -659,14 +678,15 @@ export function TimelinePanel() {
                           widthPx={width}
                           isSelected={isSelected}
                           bottomOffset={transformLaneBottom}
-                          onStartKeyframeDrag={(kf, e) => startTransformKeyframeDrag(
+                          onStartKeyframeDrag={(kf, property, value, e) => startTransformKeyframeDrag(
                             clip,
                             kf.id,
                             kf.time,
-                            kf.opacity ?? clip.transform.opacity,
+                            property,
+                            value,
                             e,
                           )}
-                          onAddKeyframe={(time, opacity) => addTransformKeyframeOnTimeline(clip, time, opacity)}
+                          onAddKeyframe={(time, property, value) => addTransformKeyframeOnTimeline(clip, time, property, value)}
                         />
                       )}
                       <div className="pointer-events-none relative z-10 truncate px-2 py-1.5 text-[10px] font-semibold text-white drop-shadow-sm">{label}</div>

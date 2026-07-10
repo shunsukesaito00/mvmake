@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_TRANSFORM } from '../types/project'
 import {
   buildTransformOpacityCurvePath,
+  buildTransformPropertyCurvePath,
   createTransformKeyframeAt,
   keyframeToLanePoint,
   laneYToOpacity,
+  laneYToProperty,
   opacityToLaneY,
+  propertyToLaneY,
   splitTransformKeyframes,
   upsertTransformKeyframeAt,
 } from './transformKeyframesTimeline'
@@ -35,9 +38,24 @@ describe('transform timeline lane', () => {
   })
 
   it('ダブルクリック追加時に不透明度を指定できる', () => {
-    const next = createTransformKeyframeAt(DEFAULT_TRANSFORM, undefined, 4, 1, 0.3)
+    const next = createTransformKeyframeAt(DEFAULT_TRANSFORM, undefined, 4, 1, 'opacity', 0.3)
     expect(next).toHaveLength(1)
     expect(next[0].opacity).toBe(0.3)
+  })
+
+  it('スケールカーブ path を生成する', () => {
+    const keyframes = [
+      { id: 'a', time: 0, x: 0.5, y: 0.5, scale: 0.5, rotation: 0, opacity: 1 },
+      { id: 'b', time: 2, x: 0.5, y: 0.5, scale: 2, rotation: 0, opacity: 1 },
+    ]
+    const path = buildTransformPropertyCurvePath(DEFAULT_TRANSFORM, keyframes, 2, 40, 24, 'scale')
+    expect(path.startsWith('M')).toBe(true)
+    expect(path.includes('L')).toBe(true)
+  })
+
+  it('レーンYとスケール値を相互変換する', () => {
+    expect(propertyToLaneY(2, 'scale', 24)).toBeLessThan(propertyToLaneY(0.5, 'scale', 24))
+    expect(laneYToProperty(12, 'scale', 24)).toBeGreaterThan(0.5)
   })
 })
 

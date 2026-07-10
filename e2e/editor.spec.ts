@@ -223,7 +223,7 @@ test('クリップ分割: 音量キーフレームを両側に再配分する', 
 test('タイムライン: レーンをダブルクリックでトランスフォームキーフレームを追加できる', async ({ page }) => {
   await addOpeningText(page)
   await clickTimelineClip(page, 'Opening')
-  await page.getByTestId('transform-opacity-lane').dblclick({ position: { x: 40, y: 12 } })
+  await page.getByTestId('transform-property-lane').dblclick({ position: { x: 40, y: 12 } })
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
 })
 
@@ -1316,6 +1316,30 @@ test('テキスト: MG プリセットをカスタムキーフレームに変換
   await expect(page.getByText('キーフレーム 1')).toBeVisible()
   await expect(page.getByText('キーフレーム 2')).toBeVisible()
   await expect(page.locator('select').filter({ hasText: 'カスタム（キーフレーム）' })).toBeVisible()
+})
+
+test('テキスト: MG カスタムキーフレームのスケールをタイムラインで編集できる', async ({ page }) => {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'MG: タイトルリビール' }).click()
+  await clickTimelineClip(page, 'Our Wedding Story')
+
+  await page.getByRole('button', { name: 'カスタムキーフレームに変換' }).click()
+  await expect(page.getByText('MG アニメをカスタムキーフレームに変換しました')).toBeVisible()
+
+  await page.getByTestId('transform-kf-property-scale').click()
+  await expect(page.getByTestId('transform-kf-property-scale')).toHaveAttribute('aria-pressed', 'true')
+
+  const handle = page.getByRole('button', { name: 'トランスフォームキーフレーム 2' })
+  const beforeTitle = await handle.getAttribute('title')
+  expect(beforeTitle).toMatch(/スケール/)
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2, box.y - 20, { steps: 10 })
+  await page.mouse.up()
+
+  await expect(handle).not.toHaveAttribute('title', beforeTitle!)
 })
 
 test('BGM: ビートマーカーを配置しスナップに使える', async ({ page }) => {

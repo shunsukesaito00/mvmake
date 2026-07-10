@@ -67,7 +67,7 @@ import {
   slideClipOnTrack,
   type SlideSnapshot,
 } from '../utils/slipSlide'
-import { splitTransformKeyframes } from '../utils/transformKeyframesTimeline'
+import { splitTransformKeyframes, type TransformTimelineProperty } from '../utils/transformKeyframesTimeline'
 import { splitVolumeKeyframes } from '../utils/volumeKeyframesTimeline'
 import { ensureProjectFontsLoaded } from '../utils/googleFonts'
 import { splitSpeedKeyframes } from '../utils/speedKeyframesTimeline'
@@ -123,6 +123,8 @@ export interface TimelineDragState {
   originalKeyframeVolume?: number
   originalKeyframeSpeed?: number
   originalKeyframeOpacity?: number
+  transformKeyframeProperty?: TransformTimelineProperty
+  originalKeyframePropertyValue?: number
   markerId?: string
   slideSnapshot?: SlideSnapshot
 }

@@ -3,6 +3,106 @@ import { createId } from './id'
 import { getTransformAtLocalTime, sortTransformKeyframes } from './transformKeyframes'
 
 export const TRANSFORM_TIMELINE_LANE_HEIGHT = 24
+export const TRANSFORM_TIMELINE_TAB_HEIGHT = 14
+
+export type TransformTimelineProperty = 'opacity' | 'x' | 'y' | 'scale' | 'rotation'
+
+export const TRANSFORM_TIMELINE_PROPERTIES: TransformTimelineProperty[] = [
+  'opacity',
+  'x',
+  'y',
+  'scale',
+  'rotation',
+]
+
+export const TRANSFORM_TIMELINE_PROPERTY_LABELS: Record<TransformTimelineProperty, string> = {
+  opacity: '不透明度',
+  x: 'X',
+  y: 'Y',
+  scale: 'スケール',
+  rotation: '回転',
+}
+
+export function getTransformTimelinePropertyRange(property: TransformTimelineProperty): { min: number; max: number } {
+  switch (property) {
+    case 'opacity':
+    case 'x':
+    case 'y':
+      return { min: 0, max: 1 }
+    case 'scale':
+      return { min: 0.1, max: 3 }
+    case 'rotation':
+      return { min: -180, max: 180 }
+  }
+}
+
+export function getTransformPropertyValue(transform: Transform, property: TransformTimelineProperty): number {
+  return transform[property]
+}
+
+export function keyframePropertyValue(
+  keyframe: TransformKeyframe,
+  base: Transform,
+  property: TransformTimelineProperty,
+): number {
+  if (property === 'opacity') return keyframe.opacity ?? base.opacity
+  return keyframe[property]
+}
+
+export function clampTransformTimelinePropertyValue(
+  property: TransformTimelineProperty,
+  value: number,
+): number {
+  const { min, max } = getTransformTimelinePropertyRange(property)
+  return Math.max(min, Math.min(max, value))
+}
+
+export function propertyToLaneNormalized(value: number, property: TransformTimelineProperty): number {
+  const { min, max } = getTransformTimelinePropertyRange(property)
+  if (max === min) return 0
+  return (value - min) / (max - min)
+}
+
+export function laneNormalizedToProperty(normalized: number, property: TransformTimelineProperty): number {
+  const { min, max } = getTransformTimelinePropertyRange(property)
+  return clampTransformTimelinePropertyValue(property, min + normalized * (max - min))
+}
+
+export function applyTransformPropertyLaneDelta(
+  original: number,
+  deltaNormalized: number,
+  property: TransformTimelineProperty,
+): number {
+  const { min, max } = getTransformTimelinePropertyRange(property)
+  return clampTransformTimelinePropertyValue(property, original + deltaNormalized * (max - min))
+}
+
+export function formatTransformKeyframePropertyValue(
+  property: TransformTimelineProperty,
+  value: number,
+): string {
+  switch (property) {
+    case 'opacity':
+      return `${Math.round(value * 100)}%`
+    case 'x':
+    case 'y':
+      return `${Math.round(value * 100)}%`
+    case 'scale':
+      return value.toFixed(2)
+    case 'rotation':
+      return `${Math.round(value)}°`
+  }
+}
+
+export function formatTransformKeyframeTitle(
+  keyframe: TransformKeyframe,
+  base: Transform,
+  property: TransformTimelineProperty,
+): string {
+  const value = keyframePropertyValue(keyframe, base, property)
+  const label = TRANSFORM_TIMELINE_PROPERTY_LABELS[property]
+  return `${keyframe.time.toFixed(1)}s · ${label} ${formatTransformKeyframePropertyValue(property, value)}`
+}
 
 export function keyframeToTimelineX(keyframe: TransformKeyframe, clipDuration: number, width: number): number {
   const duration = Math.max(clipDuration, 0.001)
@@ -24,8 +124,18 @@ export function opacityToLaneY(opacity: number, laneHeight: number): number {
 }
 
 export function laneYToOpacity(y: number, laneHeight: number): number {
+  return laneNormalizedToProperty((laneHeight - Math.max(0, Math.min(laneHeight, y))) / laneHeight, 'opacity')
+}
+
+export function propertyToLaneY(value: number, property: TransformTimelineProperty, laneHeight: number): number {
+  const normalized = propertyToLaneNormalized(value, property)
+  return laneHeight - normalized * laneHeight
+}
+
+export function laneYToProperty(y: number, property: TransformTimelineProperty, laneHeight: number): number {
   const clampedY = Math.max(0, Math.min(laneHeight, y))
-  return (laneHeight - clampedY) / laneHeight
+  const normalized = (laneHeight - clampedY) / laneHeight
+  return laneNormalizedToProperty(normalized, property)
 }
 
 export function keyframeToLanePoint(
@@ -34,20 +144,22 @@ export function keyframeToLanePoint(
   clipDuration: number,
   width: number,
   laneHeight: number,
+  property: TransformTimelineProperty = 'opacity',
 ): { x: number; y: number } {
   return {
     x: keyframeToTimelineX(keyframe, clipDuration, width),
-    y: opacityToLaneY(keyframeOpacityValue(keyframe, base), laneHeight),
+    y: propertyToLaneY(keyframePropertyValue(keyframe, base, property), property, laneHeight),
   }
 }
 
-/** 不透明度補間に沿った SVG path (M/L) */
-export function buildTransformOpacityCurvePath(
+/** 選択属性の補間に沿った SVG path (M/L) */
+export function buildTransformPropertyCurvePath(
   transform: Transform,
   keyframes: TransformKeyframe[] | undefined,
   clipDuration: number,
   width: number,
   laneHeight: number,
+  property: TransformTimelineProperty,
 ): string {
   if (!keyframes?.length || width <= 0 || laneHeight <= 0) return ''
 
@@ -57,13 +169,25 @@ export function buildTransformOpacityCurvePath(
 
   for (let i = 0; i <= samples; i++) {
     const localTime = (i / samples) * duration
-    const opacity = getTransformAtLocalTime(transform, keyframes, localTime, duration).opacity
+    const resolved = getTransformAtLocalTime(transform, keyframes, localTime, duration)
+    const value = getTransformPropertyValue(resolved, property)
     const x = (localTime / duration) * width
-    const y = opacityToLaneY(opacity, laneHeight)
+    const y = propertyToLaneY(value, property, laneHeight)
     parts.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`)
   }
 
   return parts.join(' ')
+}
+
+/** @deprecated buildTransformPropertyCurvePath を使用 */
+export function buildTransformOpacityCurvePath(
+  transform: Transform,
+  keyframes: TransformKeyframe[] | undefined,
+  clipDuration: number,
+  width: number,
+  laneHeight: number,
+): string {
+  return buildTransformPropertyCurvePath(transform, keyframes, clipDuration, width, laneHeight, 'opacity')
 }
 
 export function updateTransformKeyframeList(
@@ -79,20 +203,23 @@ export function createTransformKeyframeAt(
   keyframes: TransformKeyframe[] | undefined,
   clipDuration: number,
   time: number,
-  opacity?: number,
+  property: TransformTimelineProperty = 'opacity',
+  propertyValue?: number,
 ): TransformKeyframe[] {
   const localTime = Math.max(0, Math.min(clipDuration, time))
   const resolved = getTransformAtLocalTime(transform, keyframes, localTime, clipDuration)
-  const resolvedOpacity = opacity != null
-    ? Math.max(0, Math.min(1, opacity))
-    : resolved.opacity
-  return upsertTransformKeyframeAt(transform, keyframes, clipDuration, localTime, {
+  const values = {
     x: resolved.x,
     y: resolved.y,
     scale: resolved.scale,
     rotation: resolved.rotation,
-    opacity: resolvedOpacity,
-  })
+    opacity: resolved.opacity,
+  }
+  if (propertyValue != null) {
+    if (property === 'opacity') values.opacity = clampTransformTimelinePropertyValue(property, propertyValue)
+    else values[property] = clampTransformTimelinePropertyValue(property, propertyValue)
+  }
+  return upsertTransformKeyframeAt(transform, keyframes, clipDuration, localTime, values)
 }
 
 export const TRANSFORM_KEYFRAME_TIME_EPSILON = 0.05
