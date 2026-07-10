@@ -1252,6 +1252,34 @@ test('プロジェクト設定: プリセットを保存して適用できる', 
   await expect(page.getByText('プロジェクト解像度: 1080×1920')).toBeVisible()
 })
 
+test('プロジェクト設定: プリセットを JSON エクスポート/インポートできる', async ({ page }) => {
+  await addOpeningText(page)
+
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: /縦型 9:16/ }).click()
+  await page.getByLabel('設定プリセット名').fill('E2EProjectPreset')
+  await page.getByRole('button', { name: '設定プリセット保存' }).click()
+  await expect(page.getByText('「E2EProjectPreset」設定を保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EProjectPresetをエクスポート' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toContain('.fable-project-preset.json')
+
+  const exportPath = path.join(test.info().outputDir, 'e2e-project-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.getByRole('button', { name: 'E2EProjectPresetを削除' }).click()
+  await expect(page.getByRole('button', { name: 'E2EProjectPresetを適用' })).toBeHidden()
+
+  await page.getByLabel('プロジェクト設定プリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EProjectPreset」設定プリセットをインポートしました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'E2EProjectPresetを適用' }).click()
+  await expect(page.getByText('「E2EProjectPreset」設定を適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /縦型 9:16/ })).toHaveClass(/accent/)
+})
+
 test('テキスト: ロワーサードプリセットを追加できる', async ({ page }) => {
   await page.getByTitle('テキスト').click()
   await page.getByRole('button', { name: 'ロワーサード（名前）' }).click()

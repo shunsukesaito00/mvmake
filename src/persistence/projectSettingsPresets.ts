@@ -1,4 +1,6 @@
 import type { ProjectSettingsPreset } from '../types/projectSettingsPreset'
+import type { ExportedProjectSettingsPresetItem } from '../types/projectSettingsPreset'
+import { projectSettingsPresetFromImportedItem } from '../utils/projectSettingsPresetFile'
 
 const STORAGE_KEY = 'fable-project-settings-presets'
 
@@ -43,4 +45,18 @@ export function deleteProjectSettingsPreset(id: string): ProjectSettingsPreset[]
 
 export function replaceProjectSettingsPresets(presets: ProjectSettingsPreset[]): void {
   writeRaw(presets)
+}
+
+export function importProjectSettingsPresets(items: ExportedProjectSettingsPresetItem[]): ProjectSettingsPreset[] {
+  const existing = readRaw()
+  const takenNames = existing.map((p) => p.name)
+  const imported: ProjectSettingsPreset[] = []
+  for (const item of items) {
+    const preset = projectSettingsPresetFromImportedItem(item, takenNames)
+    imported.push(preset)
+    takenNames.push(preset.name)
+  }
+  const next = [...existing, ...imported]
+  writeRaw(next)
+  return next
 }
