@@ -1880,6 +1880,23 @@ test('効果タブ: 調整レイヤーを追加できる', async ({ page }) => {
   await expect(page.locator('footer').getByText('調整レイヤー')).toBeVisible()
 })
 
+test('インスペクター: BGM ダッキングを設定できる', async ({ page }) => {
+  const wav = makeWavWithPeak(0.8, 2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'duck-bgm.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'duck-bgm.wav')
+
+  await page.getByRole('button', { name: 'ダッキング' }).click()
+  await page.getByText('動画音声がある区間でBGMを下げる').click()
+  await expect(page.getByRole('slider', { name: 'ダッキング音量' })).toBeVisible()
+
+  const duckAmount = page.getByRole('slider', { name: 'ダッキング音量' })
+  await duckAmount.fill('0.25')
+  await expect(duckAmount).toHaveValue('0.25')
+})
+
 test('インスペクター: オーディオ EQ を設定できる', async ({ page }) => {
   const wav = makeSilentWav(1)
   await page.setInputFiles('input[accept*="audio"]', { name: 'eq-bgm.wav', mimeType: 'audio/wav', buffer: wav })

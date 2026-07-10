@@ -4,42 +4,7 @@ import { scheduleVolumeAutomation } from '../utils/volumeKeyframes'
 import { getSourceOffsetAtLocalTime, scheduleSpeedAutomation } from '../utils/speedKeyframes'
 import { connectEqChain } from '../utils/audioEq'
 import { connectNoiseReductionChain } from '../utils/audioNoiseReduction'
-
-interface DuckingSchedule {
-  intervals: Array<{ start: number; end: number }>
-  amount: number
-  fade: number
-}
-
-/**
- * ダッキング用ゲインノードに音量オートメーションを設定する。
- * toContextTime はプロジェクト時間 → AudioContext 時間の変換。
- */
-function applyDucking(
-  gain: GainNode,
-  ducking: DuckingSchedule,
-  clipStart: number,
-  clipEnd: number,
-  playbackStart: number,
-  toContextTime: (projectTime: number) => number,
-): void {
-  gain.gain.value = 1
-  for (const iv of ducking.intervals) {
-    const s = Math.max(iv.start, clipStart, playbackStart)
-    const e = Math.min(iv.end, clipEnd)
-    if (e <= s) continue
-
-    if (s <= playbackStart + 0.01) {
-      // 再生開始時点で既にダッキング区間内
-      gain.gain.setValueAtTime(ducking.amount, toContextTime(playbackStart))
-    } else {
-      gain.gain.setValueAtTime(1, toContextTime(s))
-      gain.gain.linearRampToValueAtTime(ducking.amount, toContextTime(s) + ducking.fade)
-    }
-    gain.gain.setValueAtTime(ducking.amount, toContextTime(e))
-    gain.gain.linearRampToValueAtTime(1, toContextTime(e) + ducking.fade)
-  }
-}
+import { applyDucking, type DuckingSchedule } from '../utils/audioDucking'
 
 class AudioEngine {
   private context: AudioContext | null = null
@@ -117,7 +82,7 @@ class AudioEngine {
     if (ducking && ducking.intervals.length > 0) {
       const duckGain = this.context!.createGain()
       const base = this.context!.currentTime
-      applyDucking(duckGain, ducking, clip.startTime, clipEnd, fromTime, (pt) => base + Math.max(0, pt - fromTime))
+      applyDucking(duckGain.gain, ducking, clip.startTime, clipEnd, fromTime, (pt) => base + Math.max(0, pt - fromTime))
       clipGain.connect(duckGain)
       duckGain.connect(this.gainNode!)
     } else {
@@ -220,7 +185,7 @@ export async function mixAudioOffline(project: Project, duration: number, sample
       if (audioClip?.ducking?.enabled && duckingIntervals.length > 0) {
         const duckGain = offline.createGain()
         applyDucking(
-          duckGain,
+          duckGain.gain,
           { intervals: duckingIntervals, amount: audioClip.ducking.amount, fade: audioClip.ducking.fade },
           clip.startTime,
           clip.startTime + clip.duration,

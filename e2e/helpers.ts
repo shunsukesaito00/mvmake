@@ -1,4 +1,15 @@
 import { expect } from '@playwright/test'
+import { makeSilentWav, makeWavWithPeak } from '../src/utils/wavFixtures'
+
+export function makeSilentWavBuffer(durationSec = 0.5): Buffer {
+  return Buffer.from(makeSilentWav(durationSec))
+}
+
+export function makeWavWithPeakBuffer(peak: number, durationSec = 0.5): Buffer {
+  return Buffer.from(makeWavWithPeak(peak, durationSec))
+}
+
+export { makeSilentWavBuffer as makeSilentWav, makeWavWithPeakBuffer as makeWavWithPeak }
 
 /** E2E 用 1x1 PNG */
 export const TINY_PNG = Buffer.from(
@@ -68,37 +79,6 @@ export async function makeTinyWebmVideo(page: import('@playwright/test').Page): 
   })
 
   return Buffer.from(bytes)
-}
-
-export function makeSilentWav(durationSec = 0.5): Buffer {
-  return makeWavWithPeak(0, durationSec)
-}
-
-/** 指定ピーク振幅（0〜1）のモノラル 16bit WAV を生成 */
-export function makeWavWithPeak(peak: number, durationSec = 0.5): Buffer {
-  const sampleRate = 44100
-  const numSamples = Math.max(1, Math.floor(sampleRate * durationSec))
-  const dataSize = numSamples * 2
-  const buffer = Buffer.alloc(44 + dataSize)
-  buffer.write('RIFF', 0)
-  buffer.writeUInt32LE(36 + dataSize, 4)
-  buffer.write('WAVE', 8)
-  buffer.write('fmt ', 12)
-  buffer.writeUInt32LE(16, 16)
-  buffer.writeUInt16LE(1, 20)
-  buffer.writeUInt16LE(1, 22)
-  buffer.writeUInt32LE(sampleRate, 24)
-  buffer.writeUInt32LE(sampleRate * 2, 28)
-  buffer.writeUInt16LE(2, 32)
-  buffer.writeUInt16LE(16, 34)
-  buffer.write('data', 36)
-  buffer.writeUInt32LE(dataSize, 40)
-
-  const sampleValue = Math.round(Math.min(1, Math.max(0, peak)) * 32767)
-  for (let i = 0; i < numSamples; i++) {
-    buffer.writeInt16LE(sampleValue, 44 + i * 2)
-  }
-  return buffer
 }
 
 /** MediaRecorder / getUserMedia をモックしてナレーション録音 E2E を可能にする */
