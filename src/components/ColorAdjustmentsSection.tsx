@@ -71,7 +71,7 @@ export function ColorAdjustmentsSection({
       <div>
         <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-accent uppercase">ルックプリセット</p>
         <p className="mb-2 text-[10px] leading-relaxed text-text-muted">
-          プリセット（スライダー）と LUT は併用できます。適用順は LUT → 明るさ/コントラスト/彩度です。
+          適用順: LUT → 色温度/ティント → 色相/明るさ/コントラスト/彩度。プリセットと LUT は併用できます。
         </p>
         <div className="flex flex-wrap gap-1.5">
           {COLOR_LOOK_PRESETS.map((preset) => (
@@ -153,6 +153,12 @@ export function ColorAdjustmentsSection({
           )}
         </div>
       )}
+      <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border">
+        <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">HSL 補正</p>
+        <Slider label="色相" value={color?.hue ?? DEFAULT_COLOR.hue} min={-1} max={1} step={0.01} format={(v) => `${Math.round(v * 180)}°`} onChange={(v) => updateField('hue', v)} />
+        <Slider label="色温度" value={color?.temperature ?? DEFAULT_COLOR.temperature} min={-1} max={1} step={0.05} format={(v) => (v < 0 ? '寒色' : v > 0 ? '暖色' : '標準')} onChange={(v) => updateField('temperature', v)} />
+        <Slider label="ティント" value={color?.tint ?? DEFAULT_COLOR.tint} min={-1} max={1} step={0.05} format={(v) => (v < 0 ? '緑' : v > 0 ? 'マゼンタ' : '標準')} onChange={(v) => updateField('tint', v)} />
+      </div>
       <Slider label="明るさ" value={color?.brightness ?? DEFAULT_COLOR.brightness} min={-1} max={1} step={0.05} onChange={(v) => updateField('brightness', v)} />
       <Slider label="コントラスト" value={color?.contrast ?? DEFAULT_COLOR.contrast} min={-1} max={1} step={0.05} onChange={(v) => updateField('contrast', v)} />
       <Slider label="彩度" value={color?.saturation ?? DEFAULT_COLOR.saturation} min={-1} max={1} step={0.05} onChange={(v) => updateField('saturation', v)} />

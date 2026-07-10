@@ -24,7 +24,7 @@ const baseVideoClip: VideoClip = {
   transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 },
   audio: { ...DEFAULT_AUDIO },
   speed: 1,
-  color: { brightness: 0, contrast: 0, saturation: 0 },
+  color: { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 },
   crop: { enabled: false, x: 0, y: 0, width: 1, height: 1 },
   fadeIn: 0,
   fadeOut: 0,

@@ -10,11 +10,21 @@ export function mergeColorAdjustments(base: ColorAdjustments, overlay: ColorAdju
     brightness: base.brightness + overlay.brightness,
     contrast: base.contrast + overlay.contrast,
     saturation: base.saturation + overlay.saturation,
+    hue: base.hue + overlay.hue,
+    temperature: base.temperature + overlay.temperature,
+    tint: base.tint + overlay.tint,
   }
 }
 
 export function isNeutralColorAdjustments(color: ColorAdjustments): boolean {
-  return color.brightness === 0 && color.contrast === 0 && color.saturation === 0
+  return (
+    color.brightness === 0
+    && color.contrast === 0
+    && color.saturation === 0
+    && (color.hue ?? 0) === 0
+    && (color.temperature ?? 0) === 0
+    && (color.tint ?? 0) === 0
+  )
 }
 
 /** 指定ビジュアルトラックより上にある調整レイヤーの色調を合成 */

@@ -16,7 +16,7 @@ const adjustmentClip: AdjustmentClip = {
   duration: 10,
   sourceStart: 0,
   sourceDuration: 10,
-  color: { brightness: 0.1, contrast: 0.05, saturation: 0.2 },
+  color: { brightness: 0.1, contrast: 0.05, saturation: 0.2, hue: 0, temperature: 0, tint: 0 },
 }
 
 const project: Project = {
@@ -37,12 +37,15 @@ const project: Project = {
 describe('mergeColorAdjustments', () => {
   it('色調を加算合成する', () => {
     const merged = mergeColorAdjustments(
-      { brightness: 0.1, contrast: 0, saturation: 0 },
-      { brightness: 0.05, contrast: 0.1, saturation: -0.2 },
+      { brightness: 0.1, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 },
+      { brightness: 0.05, contrast: 0.1, saturation: -0.2, hue: 0.1, temperature: 0.05, tint: -0.02 },
     )
     expect(merged.brightness).toBeCloseTo(0.15)
     expect(merged.contrast).toBe(0.1)
     expect(merged.saturation).toBe(-0.2)
+    expect(merged.hue).toBeCloseTo(0.1)
+    expect(merged.temperature).toBeCloseTo(0.05)
+    expect(merged.tint).toBeCloseTo(-0.02)
   })
 })
 
@@ -66,8 +69,8 @@ describe('getAdjustmentColorForVisualTrack', () => {
 describe('mergeClipColorWithAdjustment', () => {
   it('クリップ色と調整を合成する', () => {
     const result = mergeClipColorWithAdjustment(
-      { brightness: 0.05, contrast: 0, saturation: 0 },
-      { brightness: 0.1, contrast: 0, saturation: 0 },
+      { brightness: 0.05, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 },
+      { brightness: 0.1, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 },
     )
     expect(result.brightness).toBeCloseTo(0.15)
   })

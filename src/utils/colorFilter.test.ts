@@ -2,14 +2,21 @@ import { describe, expect, it } from 'vitest'
 import { buildColorFilterCss } from './colorFilter'
 
 describe('colorFilter', () => {
+  const neutral = { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, tint: 0 }
+
   it('buildColorFilterCss は補正なしで undefined', () => {
-    expect(buildColorFilterCss({ brightness: 0, contrast: 0, saturation: 0 })).toBeUndefined()
+    expect(buildColorFilterCss(neutral)).toBeUndefined()
   })
 
   it('buildColorFilterCss は brightness/contrast/saturate を生成する', () => {
-    const css = buildColorFilterCss({ brightness: 0.1, contrast: 0.2, saturation: -0.3 })
+    const css = buildColorFilterCss({ ...neutral, brightness: 0.1, contrast: 0.2, saturation: -0.3 })
     expect(css).toContain('brightness(105%)')
     expect(css).toContain('contrast(110%)')
     expect(css).toContain('saturate(70%)')
+  })
+
+  it('buildColorFilterCss は hue-rotate を生成する', () => {
+    const css = buildColorFilterCss({ ...neutral, hue: 0.5 })
+    expect(css).toContain('hue-rotate(90deg)')
   })
 })

@@ -40,6 +40,12 @@ export interface ColorAdjustments {
   brightness: number
   contrast: number
   saturation: number
+  /** 色相シフト (-1〜1 → -180°〜180°) */
+  hue: number
+  /** 色温度 (-1=寒色 〜 1=暖色) */
+  temperature: number
+  /** ティント (-1=緑 〜 1=マゼンタ) */
+  tint: number
 }
 
 export interface LutAsset {
@@ -322,6 +328,20 @@ export const DEFAULT_COLOR: ColorAdjustments = {
   brightness: 0,
   contrast: 0,
   saturation: 0,
+  hue: 0,
+  temperature: 0,
+  tint: 0,
+}
+
+export function normalizeColorAdjustments(color?: Partial<ColorAdjustments>): ColorAdjustments {
+  return {
+    brightness: color?.brightness ?? DEFAULT_COLOR.brightness,
+    contrast: color?.contrast ?? DEFAULT_COLOR.contrast,
+    saturation: color?.saturation ?? DEFAULT_COLOR.saturation,
+    hue: color?.hue ?? DEFAULT_COLOR.hue,
+    temperature: color?.temperature ?? DEFAULT_COLOR.temperature,
+    tint: color?.tint ?? DEFAULT_COLOR.tint,
+  }
 }
 
 export const DEFAULT_CROP: CropSettings = {
@@ -641,7 +661,7 @@ function normalizeClip(clip: Clip): Clip {
       ...clip,
       audio: clip.audio ?? { ...DEFAULT_AUDIO },
       speed: clip.speed ?? 1,
-      color: clip.color ?? { ...DEFAULT_COLOR },
+      color: normalizeColorAdjustments(clip.color),
       crop: clip.crop ?? { ...DEFAULT_CROP },
       fadeIn: clip.fadeIn ?? DEFAULT_VISUAL_FADE.fadeIn,
       fadeOut: clip.fadeOut ?? DEFAULT_VISUAL_FADE.fadeOut,
@@ -650,7 +670,7 @@ function normalizeClip(clip: Clip): Clip {
   if (clip.type === 'image') {
     return {
       ...clip,
-      color: clip.color ?? { ...DEFAULT_COLOR },
+      color: normalizeColorAdjustments(clip.color),
       crop: clip.crop ?? { ...DEFAULT_CROP },
       kenBurns: clip.kenBurns ?? { ...DEFAULT_KEN_BURNS },
       fadeIn: clip.fadeIn ?? DEFAULT_VISUAL_FADE.fadeIn,
@@ -674,7 +694,7 @@ function normalizeClip(clip: Clip): Clip {
     }
   }
   if (clip.type === 'adjustment') {
-    return { ...clip, color: clip.color ?? { ...DEFAULT_COLOR } }
+    return { ...clip, color: normalizeColorAdjustments(clip.color) }
   }
   return clip
 }

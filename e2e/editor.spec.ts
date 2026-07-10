@@ -1317,3 +1317,17 @@ test('色調補正: LUT をインポートして適用できる', async ({ page 
   await expect(page.getByText('「wedding-warm」LUT を適用しました')).toBeVisible()
   await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
 })
+
+test('色調補正: HSL の色温度を設定できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'hsl-photo.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'hsl-photo.png')
+
+  const temperature = page.getByRole('slider', { name: '色温度' })
+  await temperature.fill('0.4')
+  await expect(temperature).toHaveValue('0.4')
+})
