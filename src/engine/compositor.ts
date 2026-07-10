@@ -17,6 +17,7 @@ import { getMediaVisualOpacityAtTime } from '../utils/visualFade'
 import { buildCanvasFontString } from '../utils/googleFonts'
 import { getTransformAtLocalTime } from '../utils/transformKeyframes'
 import { getVideoSourceTimeAtLocalTime } from '../utils/speedKeyframes'
+import { getCandidateVisualClipIndices } from '../utils/visualClipTimeline'
 import { getAdjustmentColorForVisualTrack, mergeClipColorWithAdjustment } from '../utils/colorAdjustments'
 import { buildColorFilterCss } from '../utils/colorFilter'
 import { getParsedLutById } from '../utils/cubeLut'
@@ -159,7 +160,7 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
   const sorted = getSortedVisualClips(track.clips)
   const layers: RenderLayer[] = []
 
-  for (let i = 0; i < sorted.length; i++) {
+  for (const i of getCandidateVisualClipIndices(sorted, time)) {
     const clip = sorted[i]
     const clipEnd = clip.startTime + clip.duration
     const isActive = time >= clip.startTime && time < clipEnd
