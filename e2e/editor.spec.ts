@@ -1255,6 +1255,22 @@ test('トランジション: シルクフェードを画像クリップに適用
   await expect(page.getByText('シルクフェードを適用しました')).toBeVisible()
 })
 
+test('トランジション: パールシマーを画像クリップに適用できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'pearl-a.png', mimeType: 'image/png', buffer: png })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'pearl-a.png' }).click()
+  await page.setInputFiles('input[accept*="image"]', { name: 'pearl-b.png', mimeType: 'image/png', buffer: png })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'pearl-b.png' }).click()
+
+  await clickTimelineClip(page, 'pearl-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'パールシマー', exact: true }).click()
+  await expect(page.getByText('パールシマーを適用しました')).toBeVisible()
+})
+
 test('メディア: ナレーション録音をプレビューしてタイムラインに配置できる', async ({ page }) => {
   await installNarrationRecordingMocks(page)
   await page.goto('./')

@@ -161,6 +161,24 @@ function TransitionPreview({ type }: { type: TransitionType }) {
           style={anim('tp-in-lace-reveal')}
         />
       )}
+      {type === 'pearlShimmer' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-rose-100/80 via-white/60 to-sky-100/50"
+          style={anim('tp-in-pearl-shimmer')}
+        />
+      )}
+      {type === 'mistFade' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-white/70 via-slate-50/40 to-transparent"
+          style={anim('tp-in-mist-fade')}
+        />
+      )}
+      {type === 'ribbonCut' && (
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-rose-200/70 via-white/50 to-amber-100/40"
+          style={anim('tp-in-ribbon-cut')}
+        />
+      )}
     </div>
   )
 }

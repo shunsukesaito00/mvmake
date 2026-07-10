@@ -287,6 +287,23 @@ function getTrackLayersAtTime(track: Project['tracks'][0], time: number): Render
             layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'laceReveal' })
             continue
           }
+          case 'pearlShimmer': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'pearlShimmer' })
+            continue
+          }
+          case 'mistFade': {
+            const eased = easeSmoothstep(progress)
+            if (prevVisible) layers.push({ clip: prev, opacity: (1 - eased) * getLayerOpacityAtTime(prev, time), transitionProgress: progress, transitionType: 'mistFade' })
+            layers.push({ clip, opacity: eased * getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'mistFade' })
+            continue
+          }
+          case 'ribbonCut': {
+            if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
+            layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'ribbonCut' })
+            continue
+          }
           case 'wipe': {
             if (prevVisible) layers.push({ clip: prev, opacity: getLayerOpacityAtTime(prev, time) })
             layers.push({ clip, opacity: getLayerOpacityAtTime(clip, time), transitionProgress: progress, transitionType: 'wipe' })
@@ -387,6 +404,11 @@ function drawWithTransform(
     const s = 1.05 - eased * 0.05
     ctx.scale(s, s)
   }
+  if (transitionType === 'pearlShimmer' && transitionProgress !== undefined) {
+    const eased = easeSmoothstep(transitionProgress)
+    const s = 1.04 - eased * 0.04
+    ctx.scale(s, s)
+  }
   if (transitionType === 'petalFall' && transitionProgress !== undefined) {
     const eased = easeSmoothstep(transitionProgress)
     ctx.translate(0, -canvasH * (1 - eased) * 0.04)
@@ -431,7 +453,9 @@ function drawMediaClip(
       ? (1 - easeSmoothstep(transitionProgress)) * 24
       : transitionType === 'dreamyBlur' && transitionProgress !== undefined
         ? (1 - easeSmoothstep(transitionProgress)) * 20
-        : undefined
+        : transitionType === 'mistFade' && transitionProgress !== undefined
+          ? (1 - easeSmoothstep(transitionProgress)) * 18
+          : undefined
 
   const parsedLut = resolvedLut ? getParsedLutById(resolvedLut.lutId) : undefined
 
@@ -807,6 +831,46 @@ export async function renderFrame(
         const soft = height * 0.16
         const grad = ctx.createLinearGradient(0, edge - soft, 0, edge + soft * 0.5)
         grad.addColorStop(0, 'rgba(0, 0, 0, 1)')
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'pearlShimmer' && transitionProgress !== undefined) {
+        const peak = Math.sin(transitionProgress * Math.PI)
+        const shimmer = 0.5 + 0.5 * Math.sin(transitionProgress * Math.PI * 2.5)
+        ctx.save()
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = peak * shimmer * 0.5
+        const grad = ctx.createLinearGradient(0, height * 0.2, width, height * 0.8)
+        grad.addColorStop(0, 'rgba(255, 245, 250, 0.9)')
+        grad.addColorStop(0.4, 'rgba(255, 230, 240, 0.7)')
+        grad.addColorStop(0.7, 'rgba(230, 240, 255, 0.5)')
+        grad.addColorStop(1, 'rgba(255, 250, 245, 0)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'mistFade' && transitionProgress !== undefined) {
+        const mist = Math.sin(transitionProgress * Math.PI)
+        ctx.save()
+        ctx.globalAlpha = mist * 0.42
+        const grad = ctx.createRadialGradient(width * 0.5, height * 0.5, 0, width * 0.5, height * 0.5, width * 0.55)
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)')
+        grad.addColorStop(0.6, 'rgba(245, 248, 252, 0.35)')
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        ctx.restore()
+      }
+      if (transitionType === 'ribbonCut' && transitionProgress !== undefined) {
+        ctx.save()
+        const reveal = transitionProgress
+        const soft = 0.14
+        const grad = ctx.createLinearGradient(0, 0, width, height)
+        grad.addColorStop(0, 'rgba(0, 0, 0, 1)')
+        grad.addColorStop(Math.max(0, reveal - soft), 'rgba(0, 0, 0, 1)')
+        grad.addColorStop(Math.min(1, reveal + soft * 0.5), 'rgba(0, 0, 0, 0)')
         grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
         ctx.fillStyle = grad
         ctx.fillRect(0, 0, width, height)
