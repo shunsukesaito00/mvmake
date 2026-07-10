@@ -1,4 +1,6 @@
 import type { ExportPreset } from '../types/exportPreset'
+import type { ExportedExportPresetItem } from '../types/exportPreset'
+import { exportPresetFromImportedItem } from '../utils/exportPresetFile'
 import { normalizeExportResolution } from '../utils/exportResolution'
 
 const STORAGE_KEY = 'fable-export-presets'
@@ -43,4 +45,18 @@ export function deleteExportPreset(id: string): ExportPreset[] {
 
 export function replaceExportPresets(presets: ExportPreset[]): void {
   writeRaw(presets)
+}
+
+export function importExportPresets(items: ExportedExportPresetItem[]): ExportPreset[] {
+  const existing = readRaw()
+  const takenNames = existing.map((p) => p.name)
+  const imported: ExportPreset[] = []
+  for (const item of items) {
+    const preset = exportPresetFromImportedItem(item, takenNames)
+    imported.push(preset)
+    takenNames.push(preset.name)
+  }
+  const next = [...existing, ...imported]
+  writeRaw(next)
+  return next
 }

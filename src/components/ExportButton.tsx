@@ -5,8 +5,15 @@ import { useToastStore } from '../store/toastStore'
 import { Modal, Btn, ProgressBar } from './ui'
 import { Icons } from './icons'
 import type { ExportPreset, ExportResolution } from '../types/exportPreset'
-import { deleteExportPreset, loadExportPresets, saveExportPreset } from '../persistence/exportPresets'
+import { deleteExportPreset, importExportPresets, loadExportPresets, saveExportPreset } from '../persistence/exportPresets'
+import { downloadBlob } from '../persistence/projectFile'
 import { buildExportPreset, formatExportPresetSummary } from '../utils/exportPresetUtils'
+import {
+  buildExportedExportPresetFile,
+  buildExportPresetExportFilename,
+  parseExportPresetFileText,
+  serializeExportedExportPresetFile,
+} from '../utils/exportPresetFile'
 import {
   estimateExportEta,
   formatExportError,
@@ -40,6 +47,7 @@ export function ExportButton() {
   const [batchExportLabel, setBatchExportLabel] = useState('')
   const abortRef = useRef<AbortController | null>(null)
   const exportStartedAtRef = useRef<number | null>(null)
+  const presetImportRef = useRef<HTMLInputElement>(null)
 
   const project = useProjectStore((s) => s.project)
   const isExporting = useProjectStore((s) => s.isExporting)
@@ -154,6 +162,33 @@ export function ExportButton() {
 
   const handleDeletePreset = (id: string) => {
     setPresets(deleteExportPreset(id))
+  }
+
+  const handleExportPresetsFile = (targetPresets: ExportPreset[] = presets) => {
+    if (targetPresets.length === 0) return
+    const payload = buildExportedExportPresetFile(targetPresets)
+    const filename = buildExportPresetExportFilename(
+      targetPresets.length === 1 ? targetPresets[0].name : 'export-presets',
+    )
+    downloadBlob(
+      new Blob([serializeExportedExportPresetFile(payload)], { type: 'application/json' }),
+      filename,
+    )
+    showToast(`${targetPresets.length} 件のプリセットをエクスポートしました`, 'success')
+  }
+
+  const handleImportPresetsFile = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      const text = await file.text()
+      const items = await parseExportPresetFileText(text)
+      const imported = importExportPresets(items)
+      setPresets(imported)
+      const label = items.length === 1 ? `「${items[0].name}」` : `${items.length} 件`
+      showToast(`${label}プリセットをインポートしました`, 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'インポートに失敗しました', 'error')
+    }
   }
 
   const handleSetChapterInOut = (markerId: string) => {
@@ -447,6 +482,37 @@ export function ExportButton() {
                   現在の In/Out ({inPoint?.toFixed(1) ?? '—'}–{outPoint?.toFixed(1) ?? '—'}s) も保存されます
                 </p>
               )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Btn
+                  variant="default"
+                  className="text-xs"
+                  disabled={presets.length === 0}
+                  onClick={() => handleExportPresetsFile()}
+                >
+                  JSON エクスポート
+                </Btn>
+                <Btn
+                  variant="default"
+                  className="text-xs"
+                  onClick={() => presetImportRef.current?.click()}
+                >
+                  JSON インポート
+                </Btn>
+                <input
+                  ref={presetImportRef}
+                  type="file"
+                  accept=".json,.fable-export-preset.json,application/json"
+                  className="hidden"
+                  aria-label="書き出しプリセットファイルをインポート"
+                  onChange={(e) => {
+                    void handleImportPresetsFile(e.target.files?.[0])
+                    e.target.value = ''
+                  }}
+                />
+              </div>
+              <p className="mt-1 text-[10px] text-text-muted">
+                `.fable-export-preset.json` で別端末と共有できます
+              </p>
               {presets.length > 0 ? (
                 <ul className="mt-2 max-h-36 space-y-1.5 overflow-y-auto">
                   {presets.map((preset) => (
@@ -460,6 +526,15 @@ export function ExportButton() {
                           {formatExportPresetSummary(preset, QUALITY_PRESETS[preset.quality].label)}
                         </p>
                       </div>
+                      <button
+                        type="button"
+                        aria-label={`${preset.name}をエクスポート`}
+                        onClick={() => handleExportPresetsFile([preset])}
+                        className="shrink-0 rounded-md px-1.5 py-1 text-[10px] text-text-muted hover:text-accent"
+                        title="JSON エクスポート"
+                      >
+                        <Icons.Export size={12} />
+                      </button>
                       <button
                         type="button"
                         aria-label={`${preset.name}を適用`}

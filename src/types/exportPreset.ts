@@ -21,3 +21,20 @@ export const EXPORT_RESOLUTION_LABELS: Record<ExportResolution, string> = {
   project: 'プロジェクト解像度',
   '720p': '1280×720',
 }
+
+export const EXPORT_PRESET_FILE_SCHEMA_VERSION = 1
+
+/** `.fable-export-preset.json` の on-disk 形式（id はインポート時に再発行） */
+export interface ExportedExportPresetItem {
+  name: string
+  quality: ExportQuality
+  resolution: LegacyExportResolution
+  useInOut: boolean
+  inPoint: number | null
+  outPoint: number | null
+}
+
+export interface ExportedExportPresetFile {
+  schemaVersion: number
+  presets: ExportedExportPresetItem[]
+}

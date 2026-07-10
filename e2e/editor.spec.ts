@@ -599,6 +599,36 @@ test('書き出し: プリセットを保存して適用できる', async ({ pag
   await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'true')
 })
 
+test('書き出し: プリセットを JSON エクスポート/インポートできる', async ({ page }) => {
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+
+  await page.getByRole('button', { name: /軽量/ }).click()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EExportPreset')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EExportPreset」プリセットを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EExportPresetをエクスポート' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toContain('.fable-export-preset.json')
+
+  const exportPath = path.join(test.info().outputDir, 'e2e-export-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.getByRole('button', { name: 'E2EExportPresetを削除' }).click()
+  await expect(page.getByRole('button', { name: 'E2EExportPresetを適用' })).toBeHidden()
+
+  await page.getByLabel('書き出しプリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EExportPreset」プリセットをインポートしました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'E2EExportPresetを適用' }).click()
+  await expect(page.getByText('「E2EExportPreset」プリセットを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /軽量/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'true')
+})
+
 test('書き出し: 正方形プロジェクトはネイティブ解像度で書き出せる', async ({ page }) => {
   await addOpeningText(page)
   await page.getByTitle('プロジェクト設定').click()
