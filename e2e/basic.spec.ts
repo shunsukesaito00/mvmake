@@ -8398,3 +8398,128 @@ test('色調補正: LUT 付きユーザールック適用後の LUT 強度変更
   await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.15')
 })
+
+test('色調補正: 組み込みルック適用後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'builtin-lut-intensity-switch-none-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'builtin-lut-intensity-switch-none-undo-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-lut-intensity-switch-none-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-lut-intensity-switch-none-cool.cube', mimeType: 'text/plain', buffer: BUILTIN_LUT_SWITCH_CUBE_COOL })
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'builtin-lut-intensity-switch-none-warm (2³)' })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+  const warmLutId = await lutSelect.inputValue()
+  expect(warmLutId).not.toBe('')
+
+  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
+  await intensity.dragTo(intensity, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(intensity).not.toHaveValue('1')
+
+  await lutSelect.selectOption({ label: 'builtin-lut-intensity-switch-none-cool (2³)' })
+  await expect(lutSelect).not.toHaveValue(warmLutId)
+
+  await lutSelect.selectOption({ label: 'なし' })
+  await expect(lutSelect).toHaveValue('')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.evaluate(() => {
+    const undo = window.__FABLE_E2E__!.undo
+    for (let i = 0; i < 3; i++) undo()
+  })
+  await clickTimelineClip(page, 'builtin-lut-intensity-switch-none-undo-photo.png')
+  await expect(lutSelect).toHaveValue(warmLutId)
+  await expect(intensity).toHaveValue('1')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('slider', { name: 'コントラスト' })).toHaveValue('0.15')
+})
+
+test('色調補正: LUT のみ適用後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'lut-only-intensity-switch-none-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'lut-only-intensity-switch-none-undo-photo.png')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'lut-only-intensity-switch-none-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'lut-only-intensity-switch-none-cool.cube', mimeType: 'text/plain', buffer: BUILTIN_LUT_SWITCH_CUBE_COOL })
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'lut-only-intensity-switch-none-warm (2³)' })
+  await expect(page.getByText('「lut-only-intensity-switch-none-warm」LUT を適用しました')).toBeVisible()
+  const warmLutId = await lutSelect.inputValue()
+  expect(warmLutId).not.toBe('')
+
+  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
+  await intensity.dragTo(intensity, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(intensity).not.toHaveValue('1')
+
+  await lutSelect.selectOption({ label: 'lut-only-intensity-switch-none-cool (2³)' })
+  await expect(lutSelect).not.toHaveValue(warmLutId)
+
+  await lutSelect.selectOption({ label: 'なし' })
+  await expect(lutSelect).toHaveValue('')
+
+  await page.evaluate(() => {
+    const undo = window.__FABLE_E2E__!.undo
+    for (let i = 0; i < 3; i++) undo()
+  })
+  await clickTimelineClip(page, 'lut-only-intensity-switch-none-undo-photo.png')
+  await expect(lutSelect).toHaveValue(warmLutId)
+  await expect(intensity).toHaveValue('1')
+})
+
+test('色調補正: LUT 付きユーザールック適用後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-lut-bundled-intensity-none-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-lut-bundled-intensity-none-undo-photo.png')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'user-lut-bundled-intensity-none-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'user-lut-bundled-intensity-none-warm (2³)' })
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserLutBundledIntensityNoneUndo')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserLutBundledIntensityNoneUndo」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserLutBundledIntensityNoneUndoルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await lutSelect.selectOption({ label: 'user-lut-bundled-intensity-none-warm (2³)' })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  const lutId = await lutSelect.inputValue()
+  expect(lutId).not.toBe('')
+
+  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
+  await intensity.dragTo(intensity, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(intensity).not.toHaveValue('1')
+
+  await lutSelect.selectOption({ label: 'なし' })
+  await expect(lutSelect).toHaveValue('')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.evaluate(() => {
+    const undo = window.__FABLE_E2E__!.undo
+    for (let i = 0; i < 2; i++) undo()
+  })
+  await clickTimelineClip(page, 'user-lut-bundled-intensity-none-undo-photo.png')
+  await expect(lutSelect).toHaveValue(lutId)
+  await expect(intensity).toHaveValue('1')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.15')
+})
