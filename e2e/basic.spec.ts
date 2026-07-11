@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { Buffer } from 'node:buffer'
 import {
   TINY_PNG,
   applyWeddingFullTemplate,
@@ -387,4 +388,76 @@ test('映像フェード: 画像クリップにフェードインを設定でき
   const fadeIn = page.getByRole('slider', { name: 'フェードイン' })
   await fadeIn.fill('0.5')
   await expect(fadeIn).toHaveValue('0.5')
+})
+
+test('タイムライン: 右端ハンドルのトリムで長さが短くなる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const clip = page.locator('footer').getByText('Opening')
+  const before = (await clip.boundingBox())!
+
+  await page.mouse.move(before.x + before.width - 3, before.y + 10)
+  await page.mouse.down()
+  await page.mouse.move(before.x + before.width - 83, before.y + 10, { steps: 5 })
+  await page.mouse.up()
+
+  const after = (await clip.boundingBox())!
+  expect(after.x).toBeCloseTo(before.x, 0)
+  expect(before.width - after.width).toBeGreaterThan(60)
+  expect(before.width - after.width).toBeLessThan(100)
+})
+
+test('タイムライン: クリップのドラッグ移動', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const clip = page.locator('footer').getByText('Opening')
+  const before = (await clip.boundingBox())!
+
+  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(before.x + before.width / 2 + 160, before.y + before.height / 2, { steps: 8 })
+  await page.mouse.up()
+
+  const after = (await clip.boundingBox())!
+  expect(after.x - before.x).toBeGreaterThan(140)
+  expect(after.x - before.x).toBeLessThan(180)
+})
+
+test('テキスト: SRT 字幕をエクスポートできる', async ({ page }) => {
+  await goOnboarded(page)
+  const srt = `1
+00:00:01,000 --> 00:00:03,500
+乾杯のご挨拶`
+
+  await page.getByTitle('テキスト').click()
+  await page.setInputFiles('input[aria-label="SRT 字幕ファイル"]', {
+    name: 'subtitles.srt',
+    mimeType: 'application/x-subrip',
+    buffer: Buffer.from(srt, 'utf-8'),
+  })
+  await expect(page.getByText('1件の字幕クリップをインポートしました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'SRT を保存' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toMatch(/\.srt$/)
+  await expect(page.getByText('1件の字幕をSRTでエクスポートしました')).toBeVisible()
+})
+
+test('編集: ビートマーカーを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.locator('[data-preview-container]').click()
+  await page.keyboard.press('Shift+M')
+  await expect(page.locator('[data-marker-type="beat"]')).toHaveCount(1)
+  await expect(page.locator('[title="Beat 1"]')).toBeVisible()
+})
+
+test('プレビュー: セーフエリア表示を切り替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  const safeBtn = page.getByTitle('セーフエリア (G)')
+  await safeBtn.click()
+  await expect(safeBtn).toHaveClass(/bg-accent-muted/)
+  await page.locator('[data-preview-container]').click()
+  await page.keyboard.press('g')
+  await expect(safeBtn).not.toHaveClass(/bg-accent-muted/)
 })
