@@ -967,3 +967,39 @@ test('インスペクター: テキストの行間と縦配置を設定できる
   await page.getByLabel('縦配置').selectOption('top')
   await expect(page.getByLabel('縦配置')).toHaveValue('top')
 })
+
+test('トランジション: 花びら舞を画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'petal-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'petal-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'petal-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'petal-b.png' }).click()
+
+  await clickTimelineClip(page, 'petal-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: '花びら舞', exact: true }).click()
+  await expect(page.getByText('花びら舞を適用しました')).toBeVisible()
+})
+
+test('テキスト: ロワーサード（司会）プリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: '司会  山田 太郎 ロワーサード（司会）' }).click()
+  await expect(page.locator('footer').getByText('司会  山田 太郎')).toBeVisible()
+})
+
+test('インスペクター: テキストに字幕帯を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  await page.getByRole('checkbox', { name: '字幕帯' }).check()
+  await expect(page.getByRole('slider', { name: '背景余白' })).toBeVisible()
+  await expect(page.getByRole('slider', { name: '角丸' })).toBeVisible()
+
+  await page.getByRole('slider', { name: '背景余白' }).fill('20')
+  await expect(page.getByRole('slider', { name: '背景余白' })).toHaveValue('20')
+})
