@@ -1039,3 +1039,39 @@ test('色調: ロマンティック夕暮れルックを適用できる', async 
   await expect(page.getByText('「ロマンティック夕暮れ」ルックを適用しました')).toBeVisible()
   await expect(page.getByRole('button', { name: 'ロマンティック夕暮れルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('トランジション: シルクフェードを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'silk-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'silk-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'silk-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'silk-b.png' }).click()
+
+  await clickTimelineClip(page, 'silk-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'シルクフェード', exact: true }).click()
+  await expect(page.getByText('シルクフェードを適用しました')).toBeVisible()
+})
+
+test('テキスト: MG タイトルリビールプリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Our Wedding Story MG: タイトルリビール' }).click()
+  await expect(page.locator('footer').getByText('Our Wedding Story')).toBeVisible()
+})
+
+test('色調: 桜ピンクルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'sakura.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'sakura.png')
+
+  await page.getByRole('button', { name: '桜ピンクルック', exact: true }).click()
+  await expect(page.getByText('「桜ピンク」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: '桜ピンクルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
