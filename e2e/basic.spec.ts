@@ -81,6 +81,7 @@ import {
   loadChapterExportE2eProject,
   loadMarkerEditStress,
   loadUserProjectTemplateStress,
+  getUserProjectTemplateCount,
 } from './helpers'
 
 async function goOnboarded(page: Page) {
@@ -3199,4 +3200,76 @@ test('メディア: 複数ファイル取り込みで進捗表示が使われる
   await expect(page.getByText('import-a.png')).toBeVisible()
   await expect(page.getByText('import-b.png')).toBeVisible()
   await expect(page.getByText('import-c.png')).toBeVisible()
+})
+
+test('プロジェクト設定: プリセットを JSON エクスポート/インポートできる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: /縦型 9:16/ }).click()
+  await page.getByLabel('設定プリセット名').fill('E2EProjectPreset')
+  await page.getByRole('button', { name: '設定プリセット保存' }).click()
+  await expect(page.getByText('「E2EProjectPreset」設定を保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EProjectPresetをエクスポート' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toContain('.fable-project-preset.json')
+
+  const exportPath = path.join(test.info().outputDir, 'e2e-project-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.getByRole('button', { name: 'E2EProjectPresetを削除' }).click()
+  await expect(page.getByRole('button', { name: 'E2EProjectPresetを適用' })).toBeHidden()
+
+  await page.getByLabel('プロジェクト設定プリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EProjectPreset」設定プリセットをインポートしました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'E2EProjectPresetを適用' }).click()
+  await expect(page.getByText('「E2EProjectPreset」設定を適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /縦型 9:16/ })).toHaveClass(/accent/)
+})
+
+test('ユーザーテンプレート: 保存済みテンプレートを削除できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadUserProjectTemplateStress(page)
+  expect(await getUserProjectTemplateCount(page)).toBe(1)
+
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: `${stats.templateLabel}を削除` }).click()
+  await expect(page.getByText(`「${stats.templateLabel}」テンプレートを削除しました`)).toBeVisible()
+  await expect(page.getByText('保存済みテンプレートはありません')).toBeVisible()
+  expect(await getUserProjectTemplateCount(page)).toBe(0)
+})
+
+test('テキスト: 長文 SRT をインポートして再エクスポートできる', async ({ page }) => {
+  await goOnboarded(page)
+  const longText =
+    '本日はお越しいただき、誠にありがとうございます。新郎新婦一同、心より感謝申し上げます。'
+  const srt = `1
+00:00:01,000 --> 00:00:06,500
+${longText}`
+
+  await page.getByTitle('テキスト').click()
+  await page.setInputFiles('input[aria-label="SRT 字幕ファイル"]', {
+    name: 'long-subtitles.srt',
+    mimeType: 'application/x-subrip',
+    buffer: Buffer.from(srt, 'utf-8'),
+  })
+  await expect(page.getByText('1件の字幕クリップをインポートしました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'SRT を保存' }).click()
+  const download = await downloadPromise
+  const downloadPath = await download.path()
+  expect(downloadPath).toBeTruthy()
+  const exported = await download.createReadStream()
+  const chunks: Buffer[] = []
+  for await (const chunk of exported!) {
+    chunks.push(Buffer.from(chunk))
+  }
+  const content = Buffer.concat(chunks).toString('utf-8')
+  expect(content).toContain('00:00:01,000 --> 00:00:06,500')
+  expect(content).toContain('本日はお越しいただき')
 })
