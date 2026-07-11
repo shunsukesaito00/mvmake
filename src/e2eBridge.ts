@@ -89,6 +89,12 @@ import {
   updateVolumeKeyframeById,
   type VolumeKeyframeTimelineStressStats,
 } from './utils/volumeKeyframeTimelineStressSetup'
+import {
+  listAudioTrackVolumeKeyframeCounts,
+  listVolumeKeyframeClipCounts,
+  seedVolumeKeyframeStress,
+  type VolumeKeyframeStressStats,
+} from './utils/volumeKeyframeStressSetup'
 import { parseExportedExportPresetFile } from './utils/exportPresetFile'
 import { importExportPresets } from './persistence/exportPresets'
 import { filterChapterMarkers } from './utils/beatMarkers'
@@ -147,6 +153,9 @@ declare global {
       getClipFadeValues: (clipId: string) => { fadeIn: number; fadeOut: number }
       applyClipFade: (clipId: string, fadeIn: number, fadeOut: number) => { fadeIn: number; fadeOut: number }
       loadVolumeKeyframeTimelineStress: () => VolumeKeyframeTimelineStressStats
+      loadVolumeKeyframeStress: () => VolumeKeyframeStressStats
+      listVolumeKeyframeClipCounts: () => Array<{ clipId: string; count: number }>
+      listAudioTrackVolumeKeyframeCounts: () => Array<{ clipId: string; count: number }>
       getVolumeAtClipLocalTime: (clipId: string, localTime: number) => number
       getClipVolumeKeyframeCount: (clipId: string) => number
       listAudioClipVolumeKeyframeCounts: () => Array<{ clipId: string; count: number }>
@@ -247,6 +256,9 @@ export function installE2eBridge(): void {
     getClipFadeValues: (clipId) => getClipFadeValues(clipId),
     applyClipFade: (clipId, fadeIn, fadeOut) => applyClipFade(clipId, fadeIn, fadeOut),
     loadVolumeKeyframeTimelineStress: () => seedVolumeKeyframeTimelineStress(),
+    loadVolumeKeyframeStress: () => seedVolumeKeyframeStress(),
+    listVolumeKeyframeClipCounts: () => listVolumeKeyframeClipCounts(),
+    listAudioTrackVolumeKeyframeCounts: () => listAudioTrackVolumeKeyframeCounts(),
     getVolumeAtClipLocalTime: (clipId, localTime) => getVolumeAtClipLocalTime(clipId, localTime),
     getClipVolumeKeyframeCount: (clipId) => getStressClipVolumeKeyframeCount(clipId),
     listAudioClipVolumeKeyframeCounts: () => listAudioClipVolumeKeyframeCounts(),

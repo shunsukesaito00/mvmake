@@ -337,6 +337,28 @@ export async function loadVolumeKeyframeTimelineStress(page: import('@playwright
   return stats
 }
 
+export async function loadVolumeKeyframeStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadVolumeKeyframeStress()
+  })
+  return stats
+}
+
+export async function listVolumeKeyframeClipCounts(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.listVolumeKeyframeClipCounts()
+  })
+}
+
+export async function listAudioTrackVolumeKeyframeCounts(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.listAudioTrackVolumeKeyframeCounts()
+  })
+}
+
 export async function getVolumeAtClipLocalTime(
   page: import('@playwright/test').Page,
   clipId: string,

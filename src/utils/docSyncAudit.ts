@@ -32,6 +32,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/EXPORT_PRESET_AUDIT.md',
   'docs/VIDEO_FADE_AUDIT.md',
   'docs/VOLUME_KEYFRAME_TIMELINE_AUDIT.md',
+  'docs/VOLUME_KEYFRAME_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {
