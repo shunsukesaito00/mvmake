@@ -6804,3 +6804,87 @@ test('色調補正: ルック適用後のミッドトーン変更を undo でル
   await clickTimelineClip(page, 'midtones-undo-look-photo.png')
   await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: ユーザールック適用後のミッドトーン変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-midtones-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-midtones-undo-look-photo.png')
+
+  const midtones = page.getByRole('slider', { name: 'ミッドトーン' })
+  await midtones.fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserMidtonesUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserMidtonesUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserMidtonesUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await midtones.dragTo(midtones, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-midtones-undo-look-photo.png')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: ユーザールック適用後のシャドウ変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-shadow-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-shadow-undo-look-photo.png')
+
+  const shadows = page.getByRole('slider', { name: 'シャドウ' })
+  await shadows.fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserShadowUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserShadowUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserShadowUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await shadows.dragTo(shadows, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-shadow-undo-look-photo.png')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: ユーザールック適用後の明るさ変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-brightness-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-brightness-undo-look-photo.png')
+
+  const brightness = page.getByRole('slider', { name: '明るさ' })
+  await brightness.fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserBrightnessUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserBrightnessUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserBrightnessUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await brightness.dragTo(brightness, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-brightness-undo-look-photo.png')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+})
