@@ -3886,3 +3886,37 @@ test('色調補正: LUT をインポートして適用できる', async ({ page 
   await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
   await expect(page.getByLabel('LUTプレビュー')).toBeVisible()
 })
+
+test('色調補正: HSL の色温度を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'hsl-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'hsl-photo.png')
+
+  const temperature = page.getByRole('slider', { name: '色温度' })
+  await temperature.fill('0.4')
+  await expect(temperature).toHaveValue('0.4')
+})
+
+test('色調補正: トーンカーブのミッドトーンを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'tone-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'tone-photo.png')
+
+  const midtones = page.getByRole('slider', { name: 'ミッドトーン' })
+  await midtones.fill('0.3')
+  await expect(midtones).toHaveValue('0.3')
+})
+
+test('色調補正: RGB カーブの R チャンネルを調整できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-curve-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-curve-photo.png')
+
+  const rMid = page.getByRole('slider', { name: 'R カーブ 50%' })
+  await rMid.fill('0.7')
+  await expect(rMid).toHaveValue('0.7')
+  await expect(page.getByLabel('RGB カーブ (R)')).toBeVisible()
+})
