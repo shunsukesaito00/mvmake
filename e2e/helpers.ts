@@ -187,6 +187,29 @@ export async function getPhotoGuideClipCount(page: import('@playwright/test').Pa
   })
 }
 
+export async function loadVertical916PresetStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadVertical916PresetStress()
+  })
+  return stats
+}
+
+export async function getVertical916PresetStressStats(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getVertical916PresetStressStats()
+  })
+}
+
+export async function applyVertical916Preset(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.applyVertical916Preset()
+  })
+  return stats
+}
+
 export async function getClipKenBurnsEnabled(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

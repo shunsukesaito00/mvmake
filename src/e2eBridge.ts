@@ -50,6 +50,12 @@ import {
   seedStructuredWeddingTemplateStress,
   type StructuredWeddingTemplateStressStats,
 } from './utils/structuredWeddingTemplateStressSetup'
+import {
+  applyVertical916Preset,
+  getVertical916PresetStressStats,
+  seedVertical916PresetStress,
+  type Vertical916PresetStressStats,
+} from './utils/vertical916PresetStressSetup'
 import { filterChapterMarkers } from './utils/beatMarkers'
 import { isPhotoGuideClip } from './utils/photoGuide'
 import { getTransformAtLocalTime } from './utils/transformKeyframes'
@@ -87,6 +93,9 @@ declare global {
       loadTransformKeyframeStress: () => TransformKeyframeStressStats
       loadStructuredWeddingTemplateStress: () => StructuredWeddingTemplateStressStats
       getStructuredWeddingTemplateStressStats: () => StructuredWeddingTemplateStressStats
+      loadVertical916PresetStress: () => Vertical916PresetStressStats
+      getVertical916PresetStressStats: () => Vertical916PresetStressStats
+      applyVertical916Preset: () => Vertical916PresetStressStats
       importUserProjectTemplateJson: (json: string) => string
       importProjectSettingsPresetJson: (json: string) => string[]
       clearUserProjectTemplates: () => void
@@ -155,6 +164,9 @@ export function installE2eBridge(): void {
     loadTransformKeyframeStress: () => seedTransformKeyframeStress(),
     loadStructuredWeddingTemplateStress: () => seedStructuredWeddingTemplateStress(),
     getStructuredWeddingTemplateStressStats: () => getStructuredWeddingTemplateStressStats(),
+    loadVertical916PresetStress: () => seedVertical916PresetStress(),
+    getVertical916PresetStressStats: () => getVertical916PresetStressStats(),
+    applyVertical916Preset: () => applyVertical916Preset(),
     importUserProjectTemplateJson: (json) => importUserProjectTemplateFromText(json).label,
     importProjectSettingsPresetJson: (json) => {
       let raw: unknown

@@ -64,6 +64,7 @@
 | `docs/AUDIO_NORMALIZE_AUDIT.md` | BGM/ナレーション音量正規化（v1.93.0） |
 | `docs/TRANSFORM_KEYFRAME_AUDIT.md` | トランスフォームキーフレーム（v1.94.0） |
 | `docs/STRUCTURED_WEDDING_TEMPLATE_AUDIT.md` | 構造化ウェディングテンプレート拡張（v1.95.0） |
+| `docs/VERTICAL_916_PRESET_AUDIT.md` | 縦型 9:16 プロジェクトプリセット（v1.96.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 
