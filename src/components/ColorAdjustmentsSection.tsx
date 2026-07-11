@@ -47,6 +47,7 @@ export function ColorAdjustmentsSection({
   const importLutFile = useProjectStore((s) => s.importLutFile)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const lutIntensityDragRef = useRef<number | null>(null)
+  const toneDragRef = useRef<{ field: 'shadows' | 'midtones' | 'highlights'; from: number } | null>(null)
   const [userPresets, setUserPresets] = useState<UserColorLookPreset[]>([])
   const [lookCatalogFilter, setLookCatalogFilter] = useState<CatalogFilterValue>('all')
   const [lookFavorites, setLookFavorites] = useState(() => loadPresetFavorites().colorLook)
@@ -71,8 +72,40 @@ export function ColorAdjustmentsSection({
     showToast(`「${preset.name}」ルックを適用しました`, 'success')
   }
 
-  const updateField = (field: keyof ColorAdjustments, value: number) => {
-    onChange({ ...(color ?? DEFAULT_COLOR), [field]: value })
+  const updateField = (field: keyof ColorAdjustments, value: number, recordHistory = false) => {
+    onChange({ ...(color ?? DEFAULT_COLOR), [field]: value }, recordHistory)
+  }
+
+  const renderToneSlider = (label: string, field: 'shadows' | 'midtones' | 'highlights') => {
+    const value = color?.[field] ?? DEFAULT_COLOR[field]
+    return (
+      <div className="space-y-1.5" key={field}>
+        <div className="flex justify-between gap-2">
+          <span className="text-[11px] text-text-secondary">{label}</span>
+          <span className="text-[11px] tabular-nums text-text-muted">{value.toFixed(2)}</span>
+        </div>
+        <input
+          type="range"
+          aria-label={label}
+          min={-1}
+          max={1}
+          step={0.05}
+          value={value}
+          onPointerDown={() => { toneDragRef.current = { field, from: value } }}
+          onChange={(e) => updateField(field, parseFloat(e.target.value))}
+          onPointerUp={(e) => {
+            const next = parseFloat((e.target as HTMLInputElement).value)
+            const drag = toneDragRef.current
+            toneDragRef.current = null
+            if (drag?.field === field && drag.from !== next) {
+              updateField(field, drag.from, false)
+              updateField(field, next, true)
+            }
+          }}
+          className="w-full"
+        />
+      </div>
+    )
   }
 
   const updateRgbCurves = (rgbCurves: ColorAdjustments['rgbCurves'], recordHistory?: boolean) => {
@@ -239,9 +272,9 @@ export function ColorAdjustmentsSection({
       )}
       <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border">
         <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">トーンカーブ</p>
-        <Slider label="シャドウ" value={color?.shadows ?? DEFAULT_COLOR.shadows} min={-1} max={1} step={0.05} onChange={(v) => updateField('shadows', v)} />
-        <Slider label="ミッドトーン" value={color?.midtones ?? DEFAULT_COLOR.midtones} min={-1} max={1} step={0.05} onChange={(v) => updateField('midtones', v)} />
-        <Slider label="ハイライト" value={color?.highlights ?? DEFAULT_COLOR.highlights} min={-1} max={1} step={0.05} onChange={(v) => updateField('highlights', v)} />
+        {renderToneSlider('シャドウ', 'shadows')}
+        {renderToneSlider('ミッドトーン', 'midtones')}
+        {renderToneSlider('ハイライト', 'highlights')}
       </div>
       <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border">
         <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">RGB カーブ</p>
