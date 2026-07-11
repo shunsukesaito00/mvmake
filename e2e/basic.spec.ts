@@ -1645,3 +1645,74 @@ test('インスペクター: 速度キーフレームを追加・編集できる
   await expect(page.getByText('キーフレーム 1')).toBeVisible()
   await expect(page.getByRole('slider', { name: '基本速度' })).toBeVisible()
 })
+
+test('タイムライン: 速度キーフレームをドラッグ編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.setInputFiles('input[accept*="video"]', { name: 'speed-drag.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'speed-drag.webm')
+
+  await page.getByRole('button', { name: '再生速度' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).fill('0.2')
+
+  const handle = page.getByRole('button', { name: '速度キーフレーム 1' })
+  await expect(handle).toHaveAttribute('title', /0\.2s/)
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 60, box.y - 10, { steps: 8 })
+  await page.mouse.up()
+
+  await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
+})
+
+test('タイムライン: トランスフォームキーフレームの全属性を同時表示できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('2')
+  await page.getByRole('slider', { name: '不透明度' }).nth(1).fill('0.3')
+  await page.getByRole('slider', { name: 'スケール' }).nth(1).fill('1.5')
+
+  await page.getByTestId('transform-kf-show-all').click()
+  await expect(page.getByTestId('transform-kf-show-all')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('transform-kf-legend')).toBeVisible()
+  await expect(page.getByTestId('transform-kf-curve-opacity')).toBeVisible()
+  await expect(page.getByTestId('transform-kf-curve-scale')).toBeVisible()
+
+  await page.getByTestId('transform-kf-property-x').click()
+  await expect(page.getByTestId('transform-kf-curve-x')).toHaveAttribute('stroke-width', '2')
+
+  await page.getByTestId('transform-kf-show-all').click()
+  await expect(page.getByTestId('transform-kf-curve-opacity')).toBeHidden()
+  await expect(page.getByTestId('transform-kf-curve-scale')).toBeHidden()
+})
+
+test('プレビュー: 不透明度ハンドルで transform キーフレームを更新できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const opacityHandle = page.getByTitle(/不透明度 .*上下ドラッグ/)
+  await expect(opacityHandle).toBeVisible()
+
+  const box = (await opacityHandle.boundingBox())!
+  await opacityHandle.hover()
+  await page.mouse.down()
+  await page.mouse.move(box.x, box.y + 40, { steps: 6 })
+  await page.mouse.up()
+
+  await expect(opacityHandle).not.toHaveAttribute('title', /不透明度 100%/)
+})
