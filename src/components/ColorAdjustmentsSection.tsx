@@ -54,7 +54,7 @@ export function ColorAdjustmentsSection({
     () => filterCatalogItems(COLOR_LOOK_PRESETS, lookCatalogFilter, (p) => p.id, (p) => p.category, lookFavorites),
     [lookCatalogFilter, lookFavorites],
   )
-  const activePresetId = matchColorLookPreset(color, userPresets)
+  const activePresetId = lutId ? null : matchColorLookPreset(color, userPresets)
   const { setHoverPresetId, previewColor, previewLabel } = useColorLookHoverPreview(color)
   const { setHoverLutId, previewLutId, previewLabel: lutPreviewLabel } = useLutHoverPreview(lutId, lutAssets)
 

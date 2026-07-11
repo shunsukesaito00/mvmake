@@ -4491,3 +4491,101 @@ test('書き出し: プリセット JSON インポートで同名が重複回避
   await page.getByLabel('書き出しプリセットファイルをインポート').setInputFiles(exportPath)
   await expect(page.getByRole('button', { name: 'E2EDupExport (インポート 2)を適用' })).toBeVisible()
 })
+
+test('色調補正: LUT 適用後に組み込みルックの選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'lut-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'lut-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'lut-look-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'lut-look-warm (2³)' })
+  await expect(page.getByText('「lut-look-warm」LUT を適用しました')).toBeVisible()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('書き出し: In/Out 付きプリセットを JSON エクスポート→インポート→適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const playhead = page.locator('main input[type="range"]')
+  await playhead.fill('1')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('3')
+  await playhead.blur()
+  await page.keyboard.press('o')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByText('現在の In/Out (1.0–3.0s) も保存されます')).toBeVisible()
+  await page.getByPlaceholder('プリセット名').fill('E2EInOutExport')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EInOutExport」プリセットを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EInOutExportをエクスポート' }).click()
+  const download = await downloadPromise
+  const exportPath = path.join(test.info().outputDir, 'e2e-inout-export-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.keyboard.press('Escape')
+
+  await playhead.fill('1.5')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('2.5')
+  await playhead.blur()
+  await page.keyboard.press('o')
+  await expect(page.getByText('IN 1.5')).toBeVisible()
+  await expect(page.getByText('OUT 2.5')).toBeVisible()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: 'E2EInOutExportを削除' }).click()
+  await page.getByLabel('書き出しプリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EInOutExport」プリセットをインポートしました')).toBeVisible()
+  await page.getByRole('button', { name: 'E2EInOutExportを適用' }).click()
+  await expect(page.getByText('「E2EInOutExport」プリセットを適用しました')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+  expect(await getInPoint(page)).toBe(1)
+  expect(await getOutPoint(page)).toBe(3)
+})
+
+test('色調補正: ルック適用後のパラメータ変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'look-param-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'look-param-undo-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('button', { name: 'G', exact: true }).click()
+  const graph = page.getByLabel('RGB カーブ (G)')
+  const box = await graph.boundingBox()
+  expect(box).not.toBeNull()
+  await graph.dblclick({ position: { x: box!.width * 0.4, y: box!.height * 0.45 } })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await clickTimelineClip(page, 'look-param-undo-photo.png')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+})
