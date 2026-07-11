@@ -461,3 +461,76 @@ test('プレビュー: セーフエリア表示を切り替えできる', async 
   await page.keyboard.press('g')
   await expect(safeBtn).not.toHaveClass(/bg-accent-muted/)
 })
+
+test('タイムライン: 左端ハンドルのトリムで開始位置と長さが変わる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const clip = page.locator('footer').getByText('Opening')
+  const before = (await clip.boundingBox())!
+
+  await page.mouse.move(before.x + 3, before.y + before.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(before.x + 83, before.y + before.height / 2, { steps: 5 })
+  await page.mouse.up()
+
+  const after = (await clip.boundingBox())!
+  expect(after.x - before.x).toBeGreaterThan(60)
+  expect(after.x - before.x).toBeLessThan(100)
+  expect(before.width - after.width).toBeGreaterThan(60)
+  expect(after.x + after.width).toBeCloseTo(before.x + before.width, 0)
+})
+
+test('タイムライン: Alt+ドラッグでクリップを複製して移動', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const clips = page.locator('footer').getByText('Opening')
+  await expect(clips).toHaveCount(1)
+
+  const box = (await clips.first().boundingBox())!
+  await page.keyboard.down('Alt')
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + 200, box.y + box.height / 2, { steps: 8 })
+  await page.mouse.up()
+  await page.keyboard.up('Alt')
+
+  await expect(clips).toHaveCount(2)
+})
+
+test('テキスト: VTT 字幕をエクスポートできる', async ({ page }) => {
+  await goOnboarded(page)
+  const srt = `1
+00:00:01,000 --> 00:00:03,500
+VTT エクスポート確認`
+
+  await page.getByTitle('テキスト').click()
+  await page.setInputFiles('input[aria-label="SRT 字幕ファイル"]', {
+    name: 'vtt-source.srt',
+    mimeType: 'application/x-subrip',
+    buffer: Buffer.from(srt, 'utf-8'),
+  })
+  await expect(page.getByText('1件の字幕クリップをインポートしました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'VTT を保存' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toMatch(/\.vtt$/)
+  await expect(page.getByText('1件の字幕をVTTでエクスポートしました')).toBeVisible()
+})
+
+test('効果: 調整レイヤーを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByRole('button', { name: '調整レイヤーを追加 章全体へ色調を一括適用' }).click()
+  await expect(page.getByText('調整レイヤーを追加しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('調整レイヤー')).toBeVisible()
+})
+
+test('プロジェクト設定: モーダルを開いて解像度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await expect(page.getByText('1920×1080 · 30fps')).toBeVisible()
+  await page.getByTitle('プロジェクト設定').click()
+  await expect(page.getByRole('dialog', { name: 'プロジェクト設定' })).toBeVisible()
+  await page.getByRole('button', { name: /正方形/ }).click()
+  await page.getByRole('dialog', { name: 'プロジェクト設定' }).getByRole('button', { name: '適用', exact: true }).click()
+  await expect(page.getByText('1080×1080 · 30fps')).toBeVisible()
+})
