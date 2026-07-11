@@ -768,3 +768,43 @@ test('プロジェクト設定: リップル削除を切り替えできる', asy
   await page.getByTitle('プロジェクト設定').click()
   await expect(page.getByLabel('リップル編集（削除・トリム）')).not.toBeChecked()
 })
+
+test('テキスト: カテゴリ絞り込みでロワーサードのみ表示する', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('group', { name: 'テキストプリセット絞り込み' }).getByRole('button', { name: 'ロワーサード' }).click()
+  await expect(page.getByRole('button', { name: 'Taro & Hanako ロワーサード（名前）' })).toBeVisible()
+  await page.getByRole('button', { name: 'Taro & Hanako ロワーサード（名前）' }).click()
+  await expect(page.locator('footer').getByText('Taro & Hanako')).toBeVisible()
+})
+
+test('テキスト: よく使うに登録して絞り込める', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Openingをよく使うに追加' }).click()
+  await page.getByRole('group', { name: 'テキストプリセット絞り込み' }).getByRole('button', { name: 'よく使う' }).click()
+  await expect(page.getByRole('button', { name: 'Opening Opening' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Taro & Hanako ロワーサード（名前）' })).toBeHidden()
+
+  await page.reload()
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('group', { name: 'テキストプリセット絞り込み' }).getByRole('button', { name: 'よく使う' }).click()
+  await expect(page.getByRole('button', { name: 'Opening Opening' })).toBeVisible()
+})
+
+test('インスペクター: 画像クリップのメディアを差し替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'photo-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'photo-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').first().click()
+  await clickTimelineClip(page, 'photo-a.png')
+
+  await page.getByRole('button', { name: 'メディア' }).click()
+  await page.getByRole('button', { name: 'photo-b.png に差し替え' }).click()
+  await expect(page.getByText('「photo-b.png」に差し替えました')).toBeVisible()
+  await expect(page.locator('footer').getByText('photo-b.png')).toBeVisible()
+  await expect(page.locator('footer').getByText('photo-a.png')).toBeHidden()
+})
