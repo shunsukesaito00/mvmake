@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 263
+export const PROD_SMOKE_SCENARIO_COUNT = 266
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -582,4 +582,11 @@ export const PROD_SMOKE_V2277_ADDITIONS = [
   '色調補正: ティント変更後に組み込みルックの選択が解除',
   '色調補正: シャドウ変更後に組み込みルックの選択が解除',
   '書き出し: JSON 一括エクスポート→全削除→再インポート',
+] as const
+
+/** v2.2.78 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2278_ADDITIONS = [
+  '色調補正: ハイライト変更後に組み込みルックの選択が解除',
+  '色調補正: 色相変更後に組み込みルックの選択が解除',
+  '色調補正: ルック変更の各パラメータ解除フローを undo',
 ] as const
