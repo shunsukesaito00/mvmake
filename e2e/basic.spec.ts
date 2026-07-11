@@ -6972,3 +6972,87 @@ test('色調補正: ユーザールック適用後の彩度変更を undo でル
   await clickTimelineClip(page, 'user-saturation-undo-look-photo.png')
   await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: ユーザールック適用後の色相変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-hue-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-hue-undo-look-photo.png')
+
+  const hue = page.getByRole('slider', { name: '色相' })
+  await hue.fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserHueUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserHueUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserHueUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await hue.dragTo(hue, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-hue-undo-look-photo.png')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: ユーザールック適用後の色温度変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-temperature-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-temperature-undo-look-photo.png')
+
+  const temperature = page.getByRole('slider', { name: '色温度' })
+  await temperature.fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserTemperatureUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserTemperatureUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserTemperatureUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await temperature.dragTo(temperature, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-temperature-undo-look-photo.png')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: ユーザールック適用後のティント変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-tint-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-tint-undo-look-photo.png')
+
+  const tint = page.getByRole('slider', { name: 'ティント' })
+  await tint.fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserTintUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserTintUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserTintUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await tint.dragTo(tint, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-tint-undo-look-photo.png')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+})
