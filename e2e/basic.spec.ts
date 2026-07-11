@@ -36,6 +36,13 @@ import {
   loadToneCurveStress,
   getRgbCurveSampleAt,
   getClipPixelGradeSample,
+  applyClipColorMidtones,
+  getClipColorMidtones,
+  applyClipRgbCurvePoint,
+  loadTemplateStress,
+  applyBuiltinTemplateById,
+  getTemplateStressClipCount,
+  getTemplateStressMarkerCount,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -2086,4 +2093,37 @@ test('トーンカーブ: ストレス投入でトーン・RGBカーブが有効
   expect(await getRgbCurveSampleAt(page, stats.clipId, 'r', 0.5)).toBeCloseTo(stats.rgbSampleAtHalf, 3)
   const pixel = await getClipPixelGradeSample(page, stats.clipId)
   expect(pixel.r).toBeGreaterThan(128)
+})
+
+test('トーンカーブ: ミッドトーン変更でピクセルグレードが変化する', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadToneCurveStress(page)
+  const before = await getClipPixelGradeSample(page, stats.clipId)
+  await applyClipColorMidtones(page, stats.clipId, 0.45)
+  expect(await getClipColorMidtones(page, stats.clipId)).toBe(0.45)
+  const after = await getClipPixelGradeSample(page, stats.clipId)
+  expect(after.r).toBeGreaterThan(before.r)
+})
+
+test('トーンカーブ: RGB Rチャンネル変更をundoで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadToneCurveStress(page)
+  const beforeSample = await getRgbCurveSampleAt(page, stats.clipId, 'r', 0.5)
+  await applyClipRgbCurvePoint(page, stats.clipId, 'r', 2, 0.8)
+  expect(await getRgbCurveSampleAt(page, stats.clipId, 'r', 0.5)).toBeCloseTo(0.8, 2)
+
+  await page.keyboard.press('ControlOrMeta+z')
+  expect(await getRgbCurveSampleAt(page, stats.clipId, 'r', 0.5)).toBeCloseTo(beforeSample, 2)
+})
+
+test('テンプレート: ストレス投入で組み込み4種とユーザー保存が有効', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadTemplateStress(page)
+  expect(stats.builtinTemplateCount).toBe(4)
+  expect(stats.openingClipCount).toBe(1)
+  expect(stats.endingClipCount).toBe(2)
+  expect(stats.structuredClipCount).toBe(11)
+  expect(await getTemplateStressClipCount(page)).toBe(11)
+  expect(await getTemplateStressMarkerCount(page)).toBe(5)
+  expect(await applyBuiltinTemplateById(page, 'profile-movie')).toBe(1)
 })
