@@ -32,6 +32,7 @@ import {
   formatBatchExportSummary,
   sanitizeFileBase,
 } from '../utils/chapterBatchExport'
+import { resolveRangeExportParams } from '../utils/chapterRangeExport'
 
 type ExportPanelView = 'form' | 'progress' | 'cancelled' | 'error'
 
@@ -224,13 +225,13 @@ export function ExportButton() {
     }
 
     const duration = getProjectDuration()
-    const { start, end } = useProjectStore.getState().getPlaybackRange()
-    const exportDuration = (useProjectStore.getState().inPoint !== null || useProjectStore.getState().outPoint !== null)
-      ? end - start
-      : duration
-
-    if (exportDuration <= 0.01) {
-      showToast('クリップを追加してから書き出してください', 'error')
+    const { inPoint: exportIn, outPoint: exportOut } = useProjectStore.getState()
+    const exportParams = resolveRangeExportParams(exportIn, exportOut, duration)
+    if (!exportParams) {
+      showToast(
+        hasClips ? '書き出し範囲が短すぎます。In/Out または章区間を確認してください' : 'クリップを追加してから書き出してください',
+        'error',
+      )
       return
     }
 
@@ -244,9 +245,9 @@ export function ExportButton() {
 
     let exportError: unknown = null
     try {
-      const blob = await exportProject(exportProject_, exportDuration, setExportProgress, {
+      const blob = await exportProject(exportProject_, exportParams.duration, setExportProgress, {
         signal: controller.signal,
-        startTime: start,
+        startTime: exportParams.startTime,
         quality,
       })
       const url = URL.createObjectURL(blob)

@@ -549,6 +549,30 @@ describe('setInOutFromMarker', () => {
     expect(useProjectStore.getState().inPoint).toBe(20)
     expect(useProjectStore.getState().outPoint).toBe(50)
   })
+
+  it('極短章区間は In/Out に設定できない', () => {
+    useProjectStore.getState().resetProject()
+    useProjectStore.getState().addMarker(0, '短')
+    useProjectStore.getState().addMarker(0.005, '本編')
+    const shortMarker = useProjectStore.getState().project.markers!.find((m) => m.label === '短')!
+    expect(useProjectStore.getState().setInOutFromMarker(shortMarker.id)).toBe(false)
+    expect(useProjectStore.getState().inPoint).toBeNull()
+  })
+
+  it('先頭章・末尾章の境界を In/Out に設定できる', () => {
+    const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(template)
+    const opening = useProjectStore.getState().project.markers!.find((m) => m.label === 'オープニング')!
+    const ending = useProjectStore.getState().project.markers!.find((m) => m.label === 'エンディング')!
+
+    expect(useProjectStore.getState().setInOutFromMarker(opening.id)).toBe(true)
+    expect(useProjectStore.getState().inPoint).toBe(0)
+    expect(useProjectStore.getState().outPoint).toBe(20)
+
+    expect(useProjectStore.getState().setInOutFromMarker(ending.id)).toBe(true)
+    expect(useProjectStore.getState().inPoint).toBe(110)
+    expect(useProjectStore.getState().outPoint).toBeGreaterThan(110)
+  })
 })
 
 describe('marker selection and editing', () => {

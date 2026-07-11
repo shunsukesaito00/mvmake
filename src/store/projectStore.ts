@@ -34,7 +34,7 @@ import { createId } from '../utils/id'
 import { buildPhotoGuideClips, buildTemplateMarkers, buildTemplateTextClips } from '../utils/weddingTemplate'
 import { buildTextClipsFromSrtCues, parseSrt } from '../utils/srtParser'
 import { computeGuideSlideshowDurationPerImage, isPhotoGuideClip } from '../utils/photoGuide'
-import { getMarkerChapterRanges } from '../utils/markerExport'
+import { findChapterRangeByMarkerId, isExportableChapterRange } from '../utils/chapterRangeExport'
 import { beatMarkerLabel, countBeatMarkers, generateBeatMarkerTimes } from '../utils/beatMarkers'
 import { collectBatchTransitionClipIds, collectBatchTransitionRemovalClipIds, type BatchTransitionScope } from '../utils/batchTransition'
 import {
@@ -338,9 +338,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   clearInOut: () => set({ inPoint: null, outPoint: null }),
   setInOutFromMarker: (markerId) => {
     const duration = get().getProjectDuration()
-    const ranges = getMarkerChapterRanges(get().project.markers ?? [], duration)
-    const range = ranges.find((r) => r.markerId === markerId)
-    if (!range || range.end - range.start <= 0.01) return false
+    const range = findChapterRangeByMarkerId(markerId, get().project.markers ?? [], duration)
+    if (!range || !isExportableChapterRange(range.start, range.end)) return false
     set({ inPoint: range.start, outPoint: range.end })
     return true
   },
