@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, selectClipById, countClipsWithTransition, getClipMediaId, getClipAudioVolume, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, selectClipById, countClipsWithTransition, getClipMediaId, getClipAudioVolume, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -2231,6 +2231,49 @@ test('ユーザーテンプレート: エクスポートとインポート', asy
   await expect(page.getByText('「E2EExportテンプレ」で新規プロジェクトを作成しました')).toBeVisible()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
   await expect(page.locator('[title="オープニング"]')).toBeVisible()
+})
+
+test('ユーザーテンプレート: 破損 JSON のインポートはエラー表示する', async ({ page }) => {
+  await page.getByTitle('テンプレ').click()
+  await page.getByLabel('テンプレートファイルをインポート').setInputFiles({
+    name: 'broken.fable-template.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{not-valid-json', 'utf-8'),
+  })
+  await expect(page.getByText('テンプレートファイルの JSON が読み取れません')).toBeVisible()
+})
+
+test('ユーザーテンプレート: 同名テンプレートの再インポートでラベルが重複回避される', async ({ page }) => {
+  const stats = await loadUserProjectTemplateExportStress(page)
+
+  const exportPath = path.join(test.info().outputDir, 'duplicate-import-template.json')
+  const fs = await import('node:fs')
+  fs.mkdirSync(test.info().outputDir, { recursive: true })
+  fs.writeFileSync(exportPath, stats.exportJson, 'utf-8')
+
+  await page.getByTitle('テンプレ').click()
+  await page.getByLabel('テンプレートファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText(`「${stats.templateLabel} (インポート)」テンプレートをインポートしました`)).toBeVisible()
+
+  await page.getByLabel('テンプレートファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText(`「${stats.templateLabel} (インポート 2)」テンプレートをインポートしました`)).toBeVisible()
+  expect(await getUserProjectTemplateCount(page)).toBe(3)
+})
+
+test('ユーザーテンプレート: ストレス JSON のエクスポート往復で新規作成できる', async ({ page }) => {
+  const stats = await loadUserProjectTemplateExportStress(page)
+  await clearUserProjectTemplates(page)
+  expect(await getUserProjectTemplateCount(page)).toBe(0)
+
+  const label = await importUserProjectTemplateJson(page, stats.exportJson)
+  expect(label).toBe(stats.templateLabel)
+  expect(await getUserProjectTemplateCount(page)).toBe(1)
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: `${stats.templateLabel}で新規作成` }).click()
+  await expect(page.getByText(`「${stats.templateLabel}」で新規プロジェクトを作成しました`)).toBeVisible()
+  await expect.poll(() => getProjectClipCount(page)).toBe(stats.clipCount)
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
 })
 
 test('タイムラインズーム: 選択クリップへズームとフィット', async ({ page }) => {

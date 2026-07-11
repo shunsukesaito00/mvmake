@@ -24,8 +24,15 @@ import {
   seedUserProjectTemplateStress,
   type UserProjectTemplateStressStats,
 } from './utils/userProjectTemplateStressSetup'
+import {
+  seedUserProjectTemplateExportStress,
+  type UserProjectTemplateExportStressStats,
+} from './utils/userProjectTemplateExportStressSetup'
 import { loadTextStylePresets } from './persistence/textStylePresets'
-import { loadUserProjectTemplates } from './persistence/userProjectTemplates'
+import {
+  importUserProjectTemplateFromText,
+  loadUserProjectTemplates,
+} from './persistence/userProjectTemplates'
 import { useProjectStore } from './store/projectStore'
 import { getMediaReplaceCandidates } from './utils/clipUtils'
 import type { Clip } from './types/project'
@@ -43,6 +50,8 @@ declare global {
       loadBatchTransitionRemovalStress: () => BatchTransitionRemovalStressStats
       loadMediaReplaceStress: () => MediaReplaceStressStats
       loadUserProjectTemplateStress: () => UserProjectTemplateStressStats
+      loadUserProjectTemplateExportStress: () => UserProjectTemplateExportStressStats
+      importUserProjectTemplateJson: (json: string) => string
       clearUserProjectTemplates: () => void
       getUserProjectTemplateCount: () => number
       getProjectClipCount: () => number
@@ -83,6 +92,8 @@ export function installE2eBridge(): void {
     loadBatchTransitionRemovalStress: () => seedBatchTransitionRemovalStress(),
     loadMediaReplaceStress: () => seedMediaReplaceStress(),
     loadUserProjectTemplateStress: () => seedUserProjectTemplateStress(),
+    loadUserProjectTemplateExportStress: () => seedUserProjectTemplateExportStress(),
+    importUserProjectTemplateJson: (json) => importUserProjectTemplateFromText(json).label,
     clearUserProjectTemplates: () => clearUserProjectTemplateStress(),
     getUserProjectTemplateCount: () => loadUserProjectTemplates().length,
     getProjectClipCount: () =>

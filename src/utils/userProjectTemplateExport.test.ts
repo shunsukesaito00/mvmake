@@ -119,6 +119,52 @@ describe('userProjectTemplateExport', () => {
   it('buildUserProjectTemplateExportFilename は安全なファイル名を返す', () => {
     expect(buildUserProjectTemplateExportFilename('縦型/テンプレ')).toBe('縦型_テンプレ.fable-template.json')
   })
+
+  it('parseExportedUserProjectTemplate は null を拒否する', () => {
+    expect(() => parseExportedUserProjectTemplate(null)).toThrow('形式が不正')
+  })
+
+  it('parseExportedUserProjectTemplate は空白ラベルを拒否する', () => {
+    expect(() =>
+      parseExportedUserProjectTemplate({
+        schemaVersion: USER_PROJECT_TEMPLATE_SCHEMA_VERSION,
+        label: '   ',
+        width: 1920,
+        height: 1080,
+        fps: 30,
+        markers: [],
+        clipEntries: [],
+      }),
+    ).toThrow('テンプレート名')
+  })
+
+  it('parseExportedUserProjectTemplate は不正な解像度を拒否する', () => {
+    expect(() =>
+      parseExportedUserProjectTemplate({
+        schemaVersion: USER_PROJECT_TEMPLATE_SCHEMA_VERSION,
+        label: 'test',
+        width: NaN,
+        height: 1080,
+        fps: 30,
+        markers: [],
+        clipEntries: [],
+      }),
+    ).toThrow('解像度')
+  })
+
+  it('parseExportedUserProjectTemplate は clipEntries 非配列を拒否する', () => {
+    expect(() =>
+      parseExportedUserProjectTemplate({
+        schemaVersion: USER_PROJECT_TEMPLATE_SCHEMA_VERSION,
+        label: 'test',
+        width: 1920,
+        height: 1080,
+        fps: 30,
+        markers: [],
+        clipEntries: null,
+      }),
+    ).toThrow('クリップまたはマーカー')
+  })
 })
 
 describe('userProjectTemplates export/import persistence', () => {
@@ -176,5 +222,22 @@ describe('userProjectTemplates export/import persistence', () => {
     const json = serializeExportedUserProjectTemplate(buildExportedUserProjectTemplate(template))
     importUserProjectTemplateFromText(json)
     expect(loadUserProjectTemplates()).toHaveLength(1)
+  })
+
+  it('不正な JSON テキストは拒否する', () => {
+    expect(() => importUserProjectTemplateFromText('{broken')).toThrow('JSON が読み取れません')
+  })
+
+  it('対応外 schemaVersion は拒否する', () => {
+    const bad = JSON.stringify({
+      schemaVersion: 99,
+      label: 'bad',
+      width: 1920,
+      height: 1080,
+      fps: 30,
+      markers: [],
+      clipEntries: [],
+    })
+    expect(() => importUserProjectTemplateFromText(bad)).toThrow('バージョン')
   })
 })

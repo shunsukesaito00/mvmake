@@ -139,6 +139,21 @@ export async function loadUserProjectTemplateStress(page: import('@playwright/te
   return stats
 }
 
+export async function loadUserProjectTemplateExportStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadUserProjectTemplateExportStress()
+  })
+  return stats
+}
+
+export async function importUserProjectTemplateJson(page: import('@playwright/test').Page, json: string) {
+  return page.evaluate((text) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.importUserProjectTemplateJson(text)
+  }, json)
+}
+
 export async function clearUserProjectTemplates(page: import('@playwright/test').Page) {
   await page.evaluate(() => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
