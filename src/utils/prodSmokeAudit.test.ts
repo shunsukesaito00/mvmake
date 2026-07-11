@@ -2,7 +2,11 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { countE2eTestCalls } from './docSyncAudit'
-import { PROD_SMOKE_SCENARIO_COUNT, PROD_SMOKE_V211_ADDITIONS } from './prodSmokeAudit'
+import {
+  PROD_SMOKE_SCENARIO_COUNT,
+  PROD_SMOKE_V211_ADDITIONS,
+  PROD_SMOKE_V212_ADDITIONS,
+} from './prodSmokeAudit'
 
 const rootDir = resolve(import.meta.dirname, '../..')
 
@@ -15,6 +19,12 @@ describe('prodSmokeAudit', () => {
 
   it('v2.1.1 追加シナリオが basic.spec に含まれる', () => {
     for (const label of PROD_SMOKE_V211_ADDITIONS) {
+      expect(basic).toContain(label)
+    }
+  })
+
+  it('v2.1.2 追加シナリオが basic.spec に含まれる', () => {
+    for (const label of PROD_SMOKE_V212_ADDITIONS) {
       expect(basic).toContain(label)
     }
   })

@@ -277,3 +277,61 @@ test('ユーザーテンプレート: 保存・適用・新規作成', async ({ 
   await expect(page.getByText('「ProdSmoke保存テンプレ」テンプレートを適用しました')).toBeVisible()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
 })
+
+test('メディア: 画像をインポートしてタイムラインに配置できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', { name: 'smoke-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('smoke-photo.png')).toBeVisible()
+})
+
+test('編集: クリップ削除を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.keyboard.press('Delete')
+  await expect(page.locator('footer').getByText('Opening')).toBeHidden()
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+})
+
+test('編集: クリップをコピーしてペーストできる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.keyboard.press('ControlOrMeta+c')
+  await expect(page.getByText('コピーしました')).toBeVisible()
+  await page.keyboard.press('ControlOrMeta+v')
+  await expect(page.locator('footer').getByText('Opening')).toHaveCount(2)
+})
+
+test('メディア: 検索・種類フィルタができる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'zebra.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'alpha-photo.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'bgm-theme.wav', mimeType: 'audio/wav', buffer: makeSilentWav() },
+  ])
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible()
+
+  await page.getByLabel('メディア検索').fill('alpha')
+  await expect(page.getByText('1/3件表示')).toBeVisible()
+  await expect(page.getByText('alpha-photo.png')).toBeVisible()
+  await expect(page.getByText('zebra.png')).toBeHidden()
+
+  await page.getByLabel('メディア検索').fill('')
+  await page.getByLabel('メディア種類').selectOption('image')
+  await expect(page.getByText('2/3件表示')).toBeVisible()
+  await expect(page.getByText('bgm-theme.wav')).toBeHidden()
+})
+
+test('書き出し: ダイアログを Escape で閉じられる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('dialog', { name: 'MP4書き出し' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '1080p で書き出し' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: 'MP4書き出し' })).toBeHidden()
+})
