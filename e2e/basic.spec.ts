@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import {
   TINY_PNG,
   applyWeddingFullTemplate,
@@ -8,6 +8,18 @@ import {
   makeTinyWebmVideo,
   timelineClip,
 } from './helpers'
+
+async function goOnboarded(page: Page) {
+  await page.addInitScript(() => localStorage.setItem('fable-onboarded', '1'))
+  await page.goto('./')
+  await expect(page.getByText('FABLE', { exact: true })).toBeVisible()
+}
+
+async function addOpeningText(page: Page) {
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /Opening/ }).first().click()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+}
 
 test('基本フロー: 起動 → オンボーディング → テキスト追加 → タイムライン確認', async ({ page }) => {
   // './' は baseURL のサブパス(本番の /mvmake/ など)を保持する
@@ -135,7 +147,7 @@ test('トランジション: クロスフェードを適用できる', async ({ 
 
   await timelineClip(page, 'tr-a.png').click()
   await page.getByTitle('効果').click()
-  await page.getByRole('button', { name: 'クロスフェード' }).click()
+  await page.getByRole('button', { name: 'クロスフェード', exact: true }).click()
   await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
 })
 
@@ -182,4 +194,86 @@ test('プレビュー: 動画クリップ配置後に再生停止できる', asy
   await expect(page.locator('footer').getByText('prod-playback.webm')).toBeVisible()
 
   await assertPlaybackStops(page)
+})
+
+test('プロジェクト一覧: モーダル開閉と新規プロジェクト作成', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await expect(page.getByText('プロジェクト', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: '閉じる' }).click()
+  await expect(page.getByText('プロジェクト', { exact: true })).toBeHidden()
+  await page.getByTitle('プロジェクト一覧').click()
+
+  await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()
+  await expect(page.getByText('新規プロジェクトを作成しました')).toBeVisible()
+  await expect(page.getByText('プロジェクト', { exact: true })).toBeHidden()
+  await expect(page.locator('footer').getByText('Opening')).toBeHidden()
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await expect(page.getByText(/クリップ1件/)).toBeVisible()
+})
+
+test('インスペクター: テキスト内容の編集がタイムラインへ反映される', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  const textarea = page.locator('textarea')
+  await expect(textarea).toBeVisible()
+  await textarea.fill('乾杯のご挨拶')
+
+  await expect(page.locator('footer').getByText('乾杯のご挨拶')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeHidden()
+})
+
+test('インスペクター: 未選択時のクイックスタートからテキストを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()
+  await expect(page.getByText('新規プロジェクトを作成しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeHidden()
+
+  await expect(page.getByText('クイックスタート')).toBeVisible()
+  await page.getByRole('button', { name: 'テキストを追加' }).click()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+})
+
+test('ヘルプ: 「?」キーでショートカット一覧をトグル表示', async ({ page }) => {
+  await goOnboarded(page)
+
+  await page.keyboard.press('?')
+  await expect(page.getByRole('dialog', { name: 'キーボードショートカット' })).toBeVisible()
+  await expect(page.getByText('再生 / 一時停止')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: 'キーボードショートカット' })).toBeHidden()
+})
+
+test('ユーザーテンプレート: 保存・適用・新規作成', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await expect(page.getByText('結婚式フル構成テンプレートを適用しました')).toBeVisible()
+
+  await page.getByLabel('テンプレート名').fill('ProdSmoke保存テンプレ')
+  await page.getByRole('button', { name: '現在の構成をテンプレート保存' }).click()
+  await expect(page.getByText('「ProdSmoke保存テンプレ」テンプレートを保存しました')).toBeVisible()
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()
+  await expect(page.getByText('新規プロジェクトを作成しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeHidden()
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: 'ProdSmoke保存テンプレで新規作成' }).click()
+  await expect(page.getByText('「ProdSmoke保存テンプレ」で新規プロジェクトを作成しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+  await expect(page.locator('[title="オープニング"]')).toBeVisible()
+
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: 'ProdSmoke保存テンプレを適用' }).click()
+  await expect(page.getByText('「ProdSmoke保存テンプレ」テンプレートを適用しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
 })

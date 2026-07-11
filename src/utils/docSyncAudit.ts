@@ -36,6 +36,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/SLIP_SLIDE_AUDIT.md',
   'docs/TONE_CURVE_AUDIT.md',
   'docs/TEMPLATE_AUDIT.md',
+  'docs/PROD_SMOKE_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {

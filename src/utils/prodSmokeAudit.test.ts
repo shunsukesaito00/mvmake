@@ -1,0 +1,21 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import { countE2eTestCalls } from './docSyncAudit'
+import { PROD_SMOKE_SCENARIO_COUNT, PROD_SMOKE_V211_ADDITIONS } from './prodSmokeAudit'
+
+const rootDir = resolve(import.meta.dirname, '../..')
+
+describe('prodSmokeAudit', () => {
+  const basic = readFileSync(resolve(rootDir, 'e2e/basic.spec.ts'), 'utf8')
+
+  it('basic.spec.ts の件数が PROD_SMOKE_SCENARIO_COUNT と一致する', () => {
+    expect(countE2eTestCalls(basic)).toBe(PROD_SMOKE_SCENARIO_COUNT)
+  })
+
+  it('v2.1.1 追加シナリオが basic.spec に含まれる', () => {
+    for (const label of PROD_SMOKE_V211_ADDITIONS) {
+      expect(basic).toContain(label)
+    }
+  })
+})
