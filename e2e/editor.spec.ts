@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, selectClipById, countClipsWithTransition } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, selectClipById, countClipsWithTransition } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -1751,6 +1751,43 @@ test('メディア: マイク拒否時に案内と再試行を表示する', asy
   await expect(page.getByRole('button', { name: '再試行' })).toBeVisible()
   await page.getByRole('button', { name: '権限の確認方法' }).click()
   await expect(page.getByRole('dialog', { name: 'マイク権限の確認方法' })).toBeVisible()
+})
+
+test('メディア: マイク未検出時に案内と再試行を表示する', async ({ page }) => {
+  await installNarrationNoDeviceMock(page)
+  await page.goto('./')
+  await page.getByTitle('メディア').click()
+
+  await page.getByRole('button', { name: '録音開始' }).click()
+  await expect(page.getByRole('alert')).toContainText('マイクが見つかりません')
+  await expect(page.getByRole('button', { name: '再試行' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '権限の確認方法' })).toBeVisible()
+})
+
+test('メディア: 空の録音データはエラー表示する', async ({ page }) => {
+  await installNarrationEmptyRecordingMock(page)
+  await page.goto('./')
+  await page.getByTitle('メディア').click()
+
+  await page.getByRole('button', { name: '録音開始' }).click()
+  await page.getByRole('button', { name: '停止' }).click()
+  await expect(page.getByRole('alert')).toContainText('録音データが空です')
+  await expect(page.getByRole('button', { name: '録音開始' })).toBeVisible()
+})
+
+test('メディア: ナレーション配置を undo でクリップから除去できる', async ({ page }) => {
+  await installNarrationRecordingMocks(page)
+  await page.goto('./')
+  await page.getByTitle('メディア').click()
+
+  await page.getByRole('button', { name: '録音開始' }).click()
+  await page.getByRole('button', { name: '停止' }).click()
+  await page.getByRole('button', { name: 'タイムラインに配置' }).click()
+  await expect(page.getByText('ナレーションをタイムラインに配置しました')).toBeVisible()
+  await expect(page.locator('footer').getByText(/^narration-/)).toBeVisible()
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect(page.locator('footer').getByText(/^narration-/)).toHaveCount(0)
 })
 
 test('インスペクター: 画像クリップのメディアを差し替えできる', async ({ page }) => {

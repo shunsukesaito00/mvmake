@@ -6,6 +6,8 @@ import {
   extensionForMimeType,
   formatRecordingElapsed,
   mergeRecordedChunks,
+  narrationEmptyRecordingError,
+  narrationRecorderRuntimeError,
 } from './narrationRecorder'
 
 describe('narrationRecorder', () => {
@@ -52,6 +54,22 @@ describe('narrationRecorder', () => {
   it('classifyGetUserMediaError がデバイス未検出を分類する', () => {
     const error = classifyGetUserMediaError(new DOMException('not found', 'NotFoundError'))
     expect(error.code).toBe('no_device')
+  })
+
+  it('classifyGetUserMediaError がデバイス占有を分類する', () => {
+    const error = classifyGetUserMediaError(new DOMException('busy', 'NotReadableError'))
+    expect(error.code).toBe('device_busy')
+    expect(error.title).toContain('使用できません')
+  })
+
+  it('classifyGetUserMediaError が未知エラーを分類する', () => {
+    const error = classifyGetUserMediaError(new Error('unexpected'))
+    expect(error.code).toBe('unknown')
+  })
+
+  it('narrationEmptyRecordingError と narrationRecorderRuntimeError', () => {
+    expect(narrationEmptyRecordingError().code).toBe('empty_recording')
+    expect(narrationRecorderRuntimeError().code).toBe('recorder_error')
   })
 
   it('canRetryNarrationError は unsupported のみ再試行不可', () => {

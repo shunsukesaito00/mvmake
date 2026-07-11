@@ -498,6 +498,46 @@ describe('clearBatchTransitions', () => {
   })
 })
 
+describe('narration placement', () => {
+  it('ナレーション音声を再生位置へ BGM トラックに配置できる', () => {
+    const asset: MediaAsset = {
+      id: 'narr-1',
+      name: 'narration-test.webm',
+      type: 'audio',
+      blob: new Blob(),
+      url: 'blob:narr-1',
+      duration: 3,
+    }
+    setProject(makeProject([], [asset]))
+    useProjectStore.getState().setCurrentTime(7)
+
+    const ok = useProjectStore.getState().addClipFromMedia(asset.id, TRACK_BGM, 7)
+    expect(ok).toBe(true)
+
+    const clip = getTrackClips(TRACK_BGM)[0] as AudioClip
+    expect(clip.mediaId).toBe('narr-1')
+    expect(clip.startTime).toBe(7)
+  })
+
+  it('ナレーション配置の undo でクリップを除去する', () => {
+    const asset: MediaAsset = {
+      id: 'narr-2',
+      name: 'narration-undo.webm',
+      type: 'audio',
+      blob: new Blob(),
+      url: 'blob:narr-2',
+      duration: 2,
+    }
+    setProject(makeProject([], [asset]))
+    useProjectStore.getState().addClipFromMedia(asset.id, TRACK_BGM, 0)
+    expect(getTrackClips(TRACK_BGM)).toHaveLength(1)
+
+    useProjectStore.getState().undo()
+    expect(getTrackClips(TRACK_BGM)).toHaveLength(0)
+    expect(useProjectStore.getState().project.mediaAssets).toHaveLength(1)
+  })
+})
+
 describe('importSrtSubtitles', () => {
   const srt = `1
 00:00:01,000 --> 00:00:03,000
