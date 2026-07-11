@@ -80,6 +80,14 @@ export async function loadBatchTransitionStress(page: import('@playwright/test')
   return stats
 }
 
+export async function loadBatchTransitionRemovalStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadBatchTransitionRemovalStress()
+  })
+  return stats
+}
+
 export async function loadMediaReplaceStress(page: import('@playwright/test').Page) {
   const stats = await page.evaluate(() => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

@@ -8,6 +8,7 @@ import {
   createBatchTransitionStressProject,
   getBatchTransitionStressStats,
 } from '../utils/batchTransitionStressSetup'
+import { seedBatchTransitionRemovalStress } from '../utils/batchTransitionRemovalStressSetup'
 import type { AudioClip, ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
 import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
 
@@ -495,6 +496,56 @@ describe('clearBatchTransitions', () => {
   it('トランジションがなければ 0 を返す', () => {
     setProject(makeProject([videoClip('c1', 0, 4), videoClip('c2', 4, 4)]))
     expect(useProjectStore.getState().clearBatchTransitions('all-video-tracks')).toBe(0)
+  })
+
+  it('selected-track で未選択なら 0 を返す', () => {
+    setProject(makeProject([
+      videoClip('c1', 0, 4),
+      videoClip('c2', 4, 4, { transition: { type: 'crossfade', duration: 0.8 } }),
+    ]))
+    useProjectStore.setState({ selectedClipId: null })
+    expect(useProjectStore.getState().clearBatchTransitions('selected-track')).toBe(0)
+  })
+
+  it('ストレスプロジェクトで全映像トラック30件を一括削除する', () => {
+    const stats = seedBatchTransitionRemovalStress()
+    const count = useProjectStore.getState().clearBatchTransitions('all-video-tracks')
+    expect(count).toBe(30)
+    expect(stats.removalTargetCountAll).toBe(30)
+
+    const withTransition = useProjectStore.getState().project.tracks
+      .flatMap((t) => t.clips)
+      .filter((c) => (c.type === 'video' || c.type === 'image') && c.transition)
+    expect(withTransition).toHaveLength(0)
+  })
+
+  it('ストレスプロジェクトで副トラックのみ一括削除する', () => {
+    const stats = seedBatchTransitionRemovalStress()
+    useProjectStore.getState().setSelectedClipId(stats.firstSecondaryClipId)
+
+    const count = useProjectStore.getState().clearBatchTransitions('selected-track')
+    expect(count).toBe(10)
+
+    const primaryWithTransition = useProjectStore.getState().project.tracks
+      .find((t) => t.id === stats.primaryTrackId)!
+      .clips.filter((c) => (c.type === 'video' || c.type === 'image') && c.transition)
+    expect(primaryWithTransition).toHaveLength(20)
+  })
+
+  it('一括削除の undo でトランジションを復元する', () => {
+    seedBatchTransitionRemovalStress()
+    useProjectStore.getState().clearBatchTransitions('all-video-tracks')
+
+    const beforeUndo = useProjectStore.getState().project.tracks
+      .flatMap((t) => t.clips)
+      .filter((c) => (c.type === 'video' || c.type === 'image') && c.transition)
+    expect(beforeUndo).toHaveLength(0)
+
+    useProjectStore.getState().undo()
+    const afterUndo = useProjectStore.getState().project.tracks
+      .flatMap((t) => t.clips)
+      .filter((c) => (c.type === 'video' || c.type === 'image') && c.transition)
+    expect(afterUndo).toHaveLength(30)
   })
 })
 

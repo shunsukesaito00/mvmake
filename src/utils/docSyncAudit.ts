@@ -20,6 +20,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/BATCH_TRANSITION_AUDIT.md',
   'docs/NARRATION_RECORDER_AUDIT.md',
   'docs/MEDIA_REPLACE_AUDIT.md',
+  'docs/BATCH_TRANSITION_REMOVAL_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {

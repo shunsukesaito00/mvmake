@@ -57,6 +57,7 @@
 | `docs/BATCH_TRANSITION_AUDIT.md` | 隣接クリップへの一括トランジション（v1.86.0） |
 | `docs/NARRATION_RECORDER_AUDIT.md` | ブラウザ内ナレーション録音（v1.87.0） |
 | `docs/MEDIA_REPLACE_AUDIT.md` | クリップのメディア差し替え（v1.88.0） |
+| `docs/BATCH_TRANSITION_REMOVAL_AUDIT.md` | トランジション一括削除（v1.89.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 

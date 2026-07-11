@@ -107,4 +107,38 @@ describe('batchTransition', () => {
   it('formatBatchTransitionRemovalSummary', () => {
     expect(formatBatchTransitionRemovalSummary(2)).toBe('2件のクリップからトランジションを一括削除しました')
   })
+
+  it('collectBatchTransitionRemovalClipIds は selected-track で指定トラックのみ', () => {
+    const c2 = { ...imageClip('a2', 3, 3), transition: { type: 'crossfade' as const, duration: 0.8 } }
+    const b2 = { ...imageClip('b2', 2, 2), transition: { type: 'wipe' as const, duration: 0.5 } }
+    b2.trackId = 'track-v2'
+    const tracks: Track[] = [
+      makeVideoTrack([imageClip('a1', 0, 3), c2]),
+      { id: 'track-v2', name: '映像 2', type: 'video', clips: [imageClip('b1', 0, 2), b2], muted: false, locked: false },
+    ]
+    expect(collectBatchTransitionRemovalClipIds(tracks, 'selected-track', 'track-v2')).toEqual(['b2'])
+    expect(collectBatchTransitionRemovalClipIds(tracks, 'selected-track', 'track-v1')).toEqual(['a2'])
+  })
+
+  it('collectBatchTransitionRemovalClipIds はトランジション未設定クリップを含めない', () => {
+    const tracks: Track[] = [
+      makeVideoTrack([
+        imageClip('a1', 0, 3),
+        { ...imageClip('a2', 3, 3), transition: { type: 'crossfade' as const, duration: 0.8 } },
+        imageClip('a3', 6, 3),
+      ]),
+    ]
+    expect(collectBatchTransitionRemovalClipIds(tracks, 'all-video-tracks')).toEqual(['a2'])
+  })
+
+  it('collectBatchTransitionRemovalClipIds はテキストトラックを対象外にする', () => {
+    const tracks: Track[] = [
+      makeVideoTrack([
+        imageClip('a1', 0, 3),
+        { ...imageClip('a2', 3, 3), transition: { type: 'crossfade' as const, duration: 0.8 } },
+      ]),
+      { id: 'track-text', name: 'Text', type: 'text', clips: [], muted: false, locked: false },
+    ]
+    expect(collectBatchTransitionRemovalClipIds(tracks, 'all-video-tracks')).toEqual(['a2'])
+  })
 })

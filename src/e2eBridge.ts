@@ -12,6 +12,10 @@ import {
   type BatchTransitionStressStats,
 } from './utils/batchTransitionStressSetup'
 import {
+  seedBatchTransitionRemovalStress,
+  type BatchTransitionRemovalStressStats,
+} from './utils/batchTransitionRemovalStressSetup'
+import {
   seedMediaReplaceStress,
   type MediaReplaceStressStats,
 } from './utils/mediaReplaceStressSetup'
@@ -30,6 +34,7 @@ declare global {
       loadTextStylePresetStress: () => TextStylePresetStressStats
       loadMediaListStress: () => MediaListStressStats
       loadBatchTransitionStress: () => BatchTransitionStressStats
+      loadBatchTransitionRemovalStress: () => BatchTransitionRemovalStressStats
       loadMediaReplaceStress: () => MediaReplaceStressStats
       selectClip: (clipId: string) => void
       countClipsWithTransition: () => number
@@ -65,6 +70,7 @@ export function installE2eBridge(): void {
     loadTextStylePresetStress: () => seedTextStylePresetStress(),
     loadMediaListStress: () => seedMediaListStress(),
     loadBatchTransitionStress: () => seedBatchTransitionStress(),
+    loadBatchTransitionRemovalStress: () => seedBatchTransitionRemovalStress(),
     loadMediaReplaceStress: () => seedMediaReplaceStress(),
     selectClip: (clipId) => useProjectStore.getState().setSelectedClipId(clipId),
     countClipsWithTransition: () =>
