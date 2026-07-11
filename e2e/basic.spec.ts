@@ -58,6 +58,15 @@ import {
   getVertical916PresetStressStats,
   loadExportResolutionAlignmentStress,
   loadExportPresetStress,
+  applyExportPresetByName,
+  loadExportPresetExportStress,
+  clearExportPresets,
+  getExportPresetCount,
+  importExportPresetJson,
+  getInPoint,
+  getOutPoint,
+  loadVideoFadeStress,
+  getMediaVisualOpacityForClip,
   getProjectWidth,
   getProjectHeight,
   makeSilentWav,
@@ -2545,4 +2554,42 @@ test('書き出しプリセット: ストレス投入で4件保存・UI適用で
   await expect(page.getByText('「SNS軽量」プリセットを適用しました')).toBeVisible()
   await expect(page.getByRole('button', { name: /軽量SNS共有/ })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('書き出しプリセット: In/Outクリア後の再適用で範囲が復元される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadExportPresetStress(page)
+  await applyExportPresetByName(page, stats.highlightPresetName)
+  expect(await getInPoint(page)).toBe(stats.highlightInPoint)
+  expect(await getOutPoint(page)).toBe(stats.highlightOutPoint)
+
+  await applyExportPresetByName(page, '標準全体')
+  expect(await getInPoint(page)).toBeNull()
+  expect(await getOutPoint(page)).toBeNull()
+
+  await applyExportPresetByName(page, stats.highlightPresetName)
+  expect(await getInPoint(page)).toBe(stats.highlightInPoint)
+  expect(await getOutPoint(page)).toBe(stats.highlightOutPoint)
+})
+
+test('書き出しプリセット: JSON往復で4件が維持される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadExportPresetExportStress(page)
+  await clearExportPresets(page)
+  expect(await getExportPresetCount(page)).toBe(0)
+
+  const names = await importExportPresetJson(page, stats.exportJson)
+  expect(names).toHaveLength(stats.presetCount)
+  expect(await getExportPresetCount(page)).toBe(stats.presetCount)
+})
+
+test('映像フェード: ストレス投入で2クリップ・開始/終端不透明度が整合', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVideoFadeStress(page)
+  expect(stats.clipCount).toBe(2)
+  expect(stats.imageOpacityAtStart).toBe(0)
+  expect(stats.imageOpacityAtMid).toBeCloseTo(0.5)
+  expect(stats.videoOpacityAtEnd).toBe(0)
+  expect(await getMediaVisualOpacityForClip(page, stats.imageClipId, 0)).toBe(0)
+  expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, stats.videoFadeIn)).toBeCloseTo(1)
 })

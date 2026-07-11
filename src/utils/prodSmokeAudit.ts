@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 167
+export const PROD_SMOKE_SCENARIO_COUNT = 170
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -358,4 +358,11 @@ export const PROD_SMOKE_V2245_ADDITIONS = [
   '書き出し整合: 適用を undo で1080p',
   '正方形ネイティブと720p',
   '4件保存・UI適用',
+] as const
+
+/** v2.2.46 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2246_ADDITIONS = [
+  'In/Outクリア後の再適用',
+  'JSON往復で4件',
+  '開始/終端不透明度が整合',
 ] as const
