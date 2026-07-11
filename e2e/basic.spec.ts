@@ -1075,3 +1075,39 @@ test('色調: 桜ピンクルックを適用できる', async ({ page }) => {
   await expect(page.getByText('「桜ピンク」ルックを適用しました')).toBeVisible()
   await expect(page.getByRole('button', { name: '桜ピンクルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('トランジション: パールシマーを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'pearl-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'pearl-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'pearl-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'pearl-b.png' }).click()
+
+  await clickTimelineClip(page, 'pearl-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'パールシマー', exact: true }).click()
+  await expect(page.getByText('パールシマーを適用しました')).toBeVisible()
+})
+
+test('テキスト: MG エレガントネームプリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Taro & Hanako MG: エレガントネーム' }).click()
+  await expect(page.locator('footer').getByText('Taro & Hanako')).toBeVisible()
+})
+
+test('色調: ブライダルホワイトルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'bridal.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'bridal.png')
+
+  await page.getByRole('button', { name: 'ブライダルホワイトルック', exact: true }).click()
+  await expect(page.getByText('「ブライダルホワイト」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ブライダルホワイトルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
