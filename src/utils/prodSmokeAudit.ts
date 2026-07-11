@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 251
+export const PROD_SMOKE_SCENARIO_COUNT = 254
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -554,4 +554,11 @@ export const PROD_SMOKE_V2273_ADDITIONS = [
   '色調補正: RGB カーブの B チャンネル制御点を追加',
   '色調補正: トーンカーブ変更後に組み込みルックの選択が解除',
   '書き出し: 2件のプリセットを保存し片方のみ JSON',
+] as const
+
+/** v2.2.74 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2274_ADDITIONS = [
+  '色調補正: G チャンネル制御点追加後に組み込みルックの選択が解除',
+  '色調補正: HSL 色温度変更後に組み込みルックの選択が解除',
+  '書き出し: プリセット適用後に別プリセットを JSON',
 ] as const
