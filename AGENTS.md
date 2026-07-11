@@ -27,7 +27,7 @@
 | `src/persistence/db.ts` | IndexedDB への保存・復元・プロジェクト一覧/複製/削除 |
 | `src/persistence/projectFile.ts` | `.fable` ファイル(JSON+メディアZIP)のエクスポート/インポート |
 | `src/hooks/` | `usePlayback`(再生ループ・`PlaybackProvider` 経由で単一マウント)、`useAutoSave` / `useProjectRestore`、`usePanelSize`(リサイズ可能レイアウト) |
-| `src/utils/` | `createId()`(uuid)、`formatTime` / `snapTime` / `getProjectDuration`、`docSyncAudit`（ドキュメント数値乖離検知） |
+| `src/utils/` | `createId()`(uuid)、`formatTime` / `snapTime` / `getProjectDuration`、`docSyncAudit`、`chapterRangeExport`、`photoGuideSlideshow` |
 | `src/layout/AppLayout.tsx` | 全体レイアウト。メディア(左)・プレビュー(中央)・インスペクタ(右)・タイムライン(下)の 4 ペイン |
 | `src/panels/` | `MediaPanel` / `PreviewPanel` / `InspectorPanel` / `TimelinePanel` |
 | `src/components/` | `Toolbar`、`ExportButton`、モーダル類、`ToastContainer`、共通 UI(`ui.tsx` / `icons.tsx`) |
@@ -50,6 +50,7 @@
 | `docs/DOC_SYNC_AUDIT.md` | README / FEATURE_COMPARISON / AGENTS 同期（Q11） |
 | `docs/CHAPTER_EXPORT_AUDIT.md` | 章マーカー一括 ZIP 書き出し（v1.80.0） |
 | `docs/CHAPTER_RANGE_EXPORT_AUDIT.md` | 章区間の部分書き出し（v1.81.0） |
+| `docs/PHOTO_GUIDE_SLIDESHOW_AUDIT.md` | 写真ガイド連動スライドショー（v1.82.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 

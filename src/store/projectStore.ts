@@ -33,7 +33,8 @@ import { clearMediaCache } from '../engine/compositor'
 import { createId } from '../utils/id'
 import { buildPhotoGuideClips, buildTemplateMarkers, buildTemplateTextClips } from '../utils/weddingTemplate'
 import { buildTextClipsFromSrtCues, parseSrt } from '../utils/srtParser'
-import { computeGuideSlideshowDurationPerImage, isPhotoGuideClip } from '../utils/photoGuide'
+import { isPhotoGuideClip } from '../utils/photoGuide'
+import { buildGuideSlideshowImageClips } from '../utils/photoGuideSlideshow'
 import { findChapterRangeByMarkerId, isExportableChapterRange } from '../utils/chapterRangeExport'
 import { beatMarkerLabel, countBeatMarkers, generateBeatMarkerTimes } from '../utils/beatMarkers'
 import { collectBatchTransitionClipIds, collectBatchTransitionRemovalClipIds, type BatchTransitionScope } from '../utils/batchTransition'
@@ -564,30 +565,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     get().pushHistory()
 
-    const durationPerImage = computeGuideSlideshowDurationPerImage(guide.duration, images.length)
-    let cursor = guide.startTime
-    const newClips: ImageClip[] = images.map((asset, i) => {
-      const clip: ImageClip = {
-        id: createId(),
-        trackId: targetTrack.id,
-        startTime: cursor,
-        duration: durationPerImage,
-        sourceStart: 0,
-        sourceDuration: durationPerImage,
-        type: 'image',
-        mediaId: asset.id,
-        transform: { ...DEFAULT_TRANSFORM },
-        kenBurns: { ...DEFAULT_KEN_BURNS, enabled: options.kenBurns },
-        color: { ...DEFAULT_COLOR },
-        crop: { ...DEFAULT_CROP },
-        ...DEFAULT_VISUAL_FADE,
-      }
-      if (i > 0 && options.transitionType !== 'none') {
-        clip.transition = { type: options.transitionType, duration: options.transitionDuration }
-      }
-      cursor += durationPerImage
-      return clip
-    })
+    const newClips = buildGuideSlideshowImageClips(
+      guide.startTime,
+      guide.duration,
+      targetTrack.id,
+      images.map((a) => a.id),
+      options,
+    )
 
     const firstClipId = newClips[0]?.id ?? null
 

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -890,6 +890,63 @@ test('写真ガイド: 選択区間にスライドショーを配置できる', 
   await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeHidden()
   await expect(page.locator('footer').getByText('guide-a.png')).toBeVisible()
   await expect(page.locator('footer').getByText('guide-b.png')).toBeVisible()
+})
+
+test('写真ガイド: 52 枚を1区間に配置できる', async ({ page }) => {
+  const stats = await loadPhotoGuideSlideshowStress(page)
+  expect(stats.imageCount).toBeGreaterThanOrEqual(50)
+  expect(stats.guideCount).toBeGreaterThanOrEqual(5)
+
+  await clickTimelineClip(page, '写真: 新郎 幼少期')
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText(`${stats.imageCount}枚の写真をガイド区間に配置しました`)).toBeVisible()
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeHidden()
+  await expect(page.locator('footer').getByText('photo-001.jpg')).toBeVisible()
+})
+
+test('写真ガイド: 複数区間に順次配置できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await applyWeddingFullTemplate(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'multi-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'multi-b.png', mimeType: 'image/png', buffer: png },
+    { name: 'multi-c.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible()
+
+  await clickTimelineClip(page, '写真: 新郎 幼少期')
+  await page.locator('label').filter({ hasText: 'multi-a.png' }).locator('input').uncheck()
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText('2枚の写真をガイド区間に配置しました')).toBeVisible()
+
+  await clickTimelineClip(page, '写真: 新婦 幼少期')
+  await page.locator('label').filter({ hasText: 'multi-a.png' }).locator('input').check()
+  await page.locator('label').filter({ hasText: 'multi-b.png' }).locator('input').uncheck()
+  await page.locator('label').filter({ hasText: 'multi-c.png' }).locator('input').uncheck()
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText('1枚の写真をガイド区間に配置しました')).toBeVisible()
+})
+
+test('写真ガイド: 配置後に undo でガイドが復元される', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await applyWeddingFullTemplate(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', { name: 'undo-guide.png', mimeType: 'image/png', buffer: png })
+  await clickTimelineClip(page, '写真: 新郎 幼少期')
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText('1枚の写真をガイド区間に配置しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeHidden()
+
+  await page.keyboard.press('Meta+z')
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
+  await expect(page.locator('footer').getByText('undo-guide.png')).toBeHidden()
 })
 
 test('書き出し: 章マーカー区間を In/Out に設定できる', async ({ page }) => {

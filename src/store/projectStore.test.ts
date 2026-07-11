@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { useProjectStore } from './projectStore'
 import { PROJECT_TEMPLATES } from '../types/project'
 import { buildUserProjectTemplate } from '../utils/userProjectTemplate'
+import { PHOTO_GUIDE_SLIDESHOW_STRESS_IMAGE_COUNT } from '../utils/photoGuideSlideshow'
 import type { AudioClip, ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
 import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
 
@@ -533,6 +534,86 @@ describe('addSlideshowToGuide', () => {
     expect(videoClips).toHaveLength(2)
     expect(videoClips[0].startTime).toBe(guide!.startTime)
     expect(videoClips[0].duration).toBeCloseTo(guide!.duration / 2)
+  })
+
+  it(`${PHOTO_GUIDE_SLIDESHOW_STRESS_IMAGE_COUNT} 枚をガイド区間内に配置できる`, () => {
+    const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(template)
+
+    const ids = Array.from({ length: PHOTO_GUIDE_SLIDESHOW_STRESS_IMAGE_COUNT }, (_, i) => `img-${i}`)
+    for (const id of ids) useProjectStore.getState().addMediaAsset(imageAsset(id))
+
+    const guide = useProjectStore.getState().project.tracks
+      .find((t) => t.type === 'text')!
+      .clips.find((c) => c.type === 'text' && c.text.content === '写真: 新郎 幼少期')!
+
+    const placed = useProjectStore.getState().addSlideshowToGuide(guide.id, ids, {
+      transitionType: 'crossfade',
+      transitionDuration: 0.6,
+      kenBurns: true,
+    })
+
+    expect(placed).toBe(PHOTO_GUIDE_SLIDESHOW_STRESS_IMAGE_COUNT)
+    const videoClips = useProjectStore.getState().project.tracks.find((t) => t.type === 'video')!.clips
+    expect(videoClips).toHaveLength(PHOTO_GUIDE_SLIDESHOW_STRESS_IMAGE_COUNT)
+    const last = videoClips[videoClips.length - 1]
+    expect(last.startTime + last.duration).toBeCloseTo(guide.startTime + guide.duration, 4)
+  })
+
+  it('複数ガイド区間に順次配置できる', () => {
+    const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(template)
+    useProjectStore.getState().addMediaAsset(imageAsset('a'))
+    useProjectStore.getState().addMediaAsset(imageAsset('b'))
+    useProjectStore.getState().addMediaAsset(imageAsset('c'))
+
+    const guides = useProjectStore.getState().project.tracks
+      .find((t) => t.type === 'text')!
+      .clips.filter((c) => c.type === 'text' && c.text.content.startsWith('写真:'))
+
+    const g1 = guides.find((c) => c.text.content === '写真: 新郎 幼少期')!
+    const g2 = guides.find((c) => c.text.content === '写真: 新婦 幼少期')!
+
+    const opts = { transitionType: 'crossfade' as const, transitionDuration: 0.6, kenBurns: true }
+    expect(useProjectStore.getState().addSlideshowToGuide(g1.id, ['a', 'b'], opts)).toBe(2)
+    expect(useProjectStore.getState().addSlideshowToGuide(g2.id, ['c'], opts)).toBe(1)
+
+    const textClips = useProjectStore.getState().project.tracks.find((t) => t.type === 'text')!.clips
+    expect(textClips.some((c) => c.id === g1.id)).toBe(false)
+    expect(textClips.some((c) => c.id === g2.id)).toBe(false)
+    expect(useProjectStore.getState().project.tracks.find((t) => t.type === 'video')!.clips).toHaveLength(3)
+  })
+
+  it('配置後に undo でガイドクリップが復元される', () => {
+    const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(template)
+    useProjectStore.getState().addMediaAsset(imageAsset('img1'))
+
+    const guide = useProjectStore.getState().project.tracks
+      .find((t) => t.type === 'text')!
+      .clips.find((c) => c.text.content === '写真: 新郎 幼少期')!
+    const guideId = guide!.id
+
+    useProjectStore.getState().addSlideshowToGuide(guideId, ['img1'], {
+      transitionType: 'none',
+      transitionDuration: 0,
+      kenBurns: false,
+    })
+    expect(useProjectStore.getState().project.tracks.find((t) => t.type === 'text')!.clips.some((c) => c.id === guideId)).toBe(false)
+
+    useProjectStore.getState().undo()
+    expect(useProjectStore.getState().project.tracks.find((t) => t.type === 'text')!.clips.some((c) => c.id === guideId)).toBe(true)
+    expect(useProjectStore.getState().project.tracks.find((t) => t.type === 'video')!.clips).toHaveLength(0)
+  })
+
+  it('無効なガイド ID では 0 を返す', () => {
+    useProjectStore.getState().addMediaAsset(imageAsset('img1'))
+    const placed = useProjectStore.getState().addSlideshowToGuide('missing', ['img1'], {
+      transitionType: 'none',
+      transitionDuration: 0,
+      kenBurns: false,
+    })
+    expect(placed).toBe(0)
   })
 })
 

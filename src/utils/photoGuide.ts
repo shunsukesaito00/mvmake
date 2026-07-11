@@ -12,8 +12,10 @@ export function getPhotoGuideSlotLabel(content: string): string {
   return content.slice(PHOTO_GUIDE_PREFIX.length)
 }
 
-/** ガイド区間内に均等配分する1枚あたり秒数 */
+/** ガイド区間内に均等配分する1枚あたり秒数（枚数が多いときは区間内に必ず収める） */
 export function computeGuideSlideshowDurationPerImage(guideDuration: number, imageCount: number): number {
   const count = Math.max(imageCount, 1)
-  return Math.max(MIN_GUIDE_SLIDESHOW_IMAGE_DURATION, guideDuration / count)
+  const evenSplit = guideDuration / count
+  if (count * MIN_GUIDE_SLIDESHOW_IMAGE_DURATION > guideDuration) return evenSplit
+  return Math.max(MIN_GUIDE_SLIDESHOW_IMAGE_DURATION, evenSplit)
 }

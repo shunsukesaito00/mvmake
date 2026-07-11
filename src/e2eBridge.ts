@@ -1,4 +1,5 @@
 import { createChapterExportE2eProject, createChapterExportStressProject, getChapterExportStressProjectStats } from './engine/chapterExportStressProject'
+import { seedPhotoGuideSlideshowStress, type PhotoGuideSlideshowStressStats } from './utils/photoGuideStressSetup'
 import { useProjectStore } from './store/projectStore'
 
 declare global {
@@ -6,6 +7,7 @@ declare global {
     __FABLE_E2E__?: {
       loadChapterExportStressProject: () => ReturnType<typeof getChapterExportStressProjectStats>
       loadChapterExportE2eProject: () => ReturnType<typeof getChapterExportStressProjectStats>
+      loadPhotoGuideSlideshowStress: () => PhotoGuideSlideshowStressStats
     }
   }
 }
@@ -25,5 +27,6 @@ export function installE2eBridge(): void {
       useProjectStore.getState().loadProject(project)
       return getChapterExportStressProjectStats(project)
     },
+    loadPhotoGuideSlideshowStress: () => seedPhotoGuideSlideshowStress(),
   }
 }

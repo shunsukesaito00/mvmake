@@ -49,6 +49,6 @@ describe('photoGuide', () => {
 
   it('区間内に均等配分する秒数を計算する', () => {
     expect(computeGuideSlideshowDurationPerImage(7, 2)).toBe(3.5)
-    expect(computeGuideSlideshowDurationPerImage(1, 10)).toBe(0.2)
+    expect(computeGuideSlideshowDurationPerImage(1, 10)).toBeCloseTo(0.1, 5)
   })
 })
