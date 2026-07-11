@@ -1508,3 +1508,72 @@ test('色調: LUT をインポートして適用できる', async ({ page }) => 
   await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
   await expect(page.getByLabel('LUTプレビュー')).toBeVisible()
 })
+
+test('色調スタック: 調整レイヤー + ルック + LUT を複合適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'stack-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('stack-photo.png')).toBeVisible()
+
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: '調整レイヤーを追加', exact: true }).click()
+  await expect(page.getByText('調整レイヤーを追加しました')).toBeVisible()
+  await clickTimelineClip(page, '調整レイヤー')
+  await page.getByRole('button', { name: 'ロマンティック夕暮れルック', exact: true }).click()
+  await expect(page.getByText('「ロマンティック夕暮れ」ルックを適用しました')).toBeVisible()
+
+  await clickTimelineClip(page, 'stack-photo.png')
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
+  await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'stack-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await expect(page.getByText('「stack-warm」をインポートしました')).toBeVisible()
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'stack-warm (2³)' })
+  await expect(page.getByText('「stack-warm」LUT を適用しました')).toBeVisible()
+
+  const midtone = page.getByRole('slider', { name: 'ミッドトーン' })
+  await midtone.fill('0.15')
+  await expect(midtone).toHaveValue('0.15')
+  await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
+})
+
+test('タイムライン: レーンをダブルクリックでトランスフォームキーフレームを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+  await page.getByTestId('transform-property-lane').dblclick({ position: { x: 40, y: 12 } })
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
+})
+
+test('タイムライン: トランスフォームキーフレームをドラッグ編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).fill('0.2')
+
+  const handle = page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })
+  await expect(handle).toHaveAttribute('title', /0\.2s/)
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 60, box.y - 8, { steps: 8 })
+  await page.mouse.up()
+
+  await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
+})
