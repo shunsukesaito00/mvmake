@@ -4589,3 +4589,118 @@ test('色調補正: ルック適用後のパラメータ変更を undo でルッ
   await clickTimelineClip(page, 'look-param-undo-photo.png')
   await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: LUT 強度変更後に組み込みルックの選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'lut-intensity-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'lut-intensity-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'lut-intensity-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'lut-intensity-warm (2³)' })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
+  await intensity.fill('0.5')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('書き出し: 2件の In/Out 付きプリセットを JSON 一括エクスポート→再インポートできる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const playhead = page.locator('main input[type="range"]')
+
+  await playhead.fill('1')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('3')
+  await playhead.blur()
+  await page.keyboard.press('o')
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EInOutBulkA')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EInOutBulkA」プリセットを保存しました')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await playhead.fill('1.5')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('2.5')
+  await playhead.blur()
+  await page.keyboard.press('o')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EInOutBulkB')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EInOutBulkB」プリセットを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'JSON エクスポート', exact: true }).click()
+  await expect(page.getByText('2 件のプリセットをエクスポートしました')).toBeVisible()
+  const download = await downloadPromise
+  const exportPath = path.join(test.info().outputDir, 'e2e-inout-bulk-export-presets.json')
+  await download.saveAs(exportPath)
+
+  await page.getByRole('button', { name: 'E2EInOutBulkAを削除' }).click()
+  await page.getByRole('button', { name: 'E2EInOutBulkBを削除' }).click()
+
+  await page.getByLabel('書き出しプリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('2 件プリセットをインポートしました')).toBeVisible()
+  await expect(page.getByText('In/Out 1.0–3.0s')).toBeVisible()
+  await expect(page.getByText('In/Out 1.5–2.5s')).toBeVisible()
+
+  await page.getByRole('button', { name: 'E2EInOutBulkAを適用' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: 'E2EInOutBulkBを適用' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.5')).toBeVisible()
+  await expect(page.getByText('OUT 2.5')).toBeVisible()
+})
+
+test('色調補正: ルック適用後に LUT を解除するとルック選択が復元される', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'lut-clear-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'lut-clear-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'lut-clear-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'lut-clear-warm (2³)' })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'なし' })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+})
