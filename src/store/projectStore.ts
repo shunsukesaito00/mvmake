@@ -153,6 +153,8 @@ interface ProjectState {
   showSafeAreas: boolean
   loopPlayback: boolean
   showPlayHint: boolean
+  showExportHint: boolean
+  coachmarkFromSample: boolean
 
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
@@ -168,6 +170,8 @@ interface ProjectState {
   setShowSafeAreas: (v: boolean) => void
   setLoopPlayback: (v: boolean) => void
   setShowPlayHint: (v: boolean) => void
+  setShowExportHint: (v: boolean) => void
+  setCoachmarkFromSample: (v: boolean) => void
   setInPoint: (time: number | null) => void
   setOutPoint: (time: number | null) => void
   clearInOut: () => void
@@ -307,6 +311,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   showSafeAreas: false,
   loopPlayback: false,
   showPlayHint: false,
+  showExportHint: false,
+  coachmarkFromSample: false,
 
   setCurrentTime: (time) => set({ currentTime: Math.max(0, time) }),
   setIsPlaying: (playing) => set({ isPlaying: playing }),
@@ -325,6 +331,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setShowSafeAreas: (v) => set({ showSafeAreas: v }),
   setLoopPlayback: (v) => set({ loopPlayback: v }),
   setShowPlayHint: (v) => set({ showPlayHint: v }),
+  setShowExportHint: (v) => set({ showExportHint: v }),
+  setCoachmarkFromSample: (v) => set({ coachmarkFromSample: v }),
   setInPoint: (time) => set({ inPoint: time }),
   setOutPoint: (time) => set({ outPoint: time }),
   clearInOut: () => set({ inPoint: null, outPoint: null }),
@@ -1224,6 +1232,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       past: [],
       future: [],
       showPlayHint: false,
+      showExportHint: false,
+      coachmarkFromSample: false,
     })
   },
 
@@ -1360,6 +1370,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       past: [],
       future: [],
       showPlayHint: false,
+      showExportHint: false,
+      coachmarkFromSample: false,
     })
   },
 
@@ -1375,6 +1387,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       past: [],
       future: [],
       showPlayHint: false,
+      showExportHint: false,
+      coachmarkFromSample: false,
     })
     ensureProjectFontsLoaded(normalized).catch(console.error)
     preloadProjectLuts(normalized.lutAssets ?? []).catch(console.error)

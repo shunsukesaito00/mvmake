@@ -38,15 +38,39 @@ test('サンプルプロジェクト: オンボーディングから開いて編
   await page.goto('./')
   await expect(page.getByText('FABLE へようこそ')).toBeVisible()
 
-  await page.getByRole('button', { name: 'サンプルプロジェクトを開いて試す' }).click()
-  await expect(page.getByText('サンプルプロジェクトを開きました', { exact: false })).toBeVisible()
+  await page.getByRole('button', { name: '次へ' }).click()
+  await page.getByRole('button', { name: '次へ' }).click()
+  await page.getByRole('button', { name: 'サンプルで体験する' }).click()
+  await expect(page.getByText('サンプルを開きました', { exact: false })).toBeVisible()
   await expect(page.getByText('FABLE へようこそ')).toBeHidden()
 
-  // ツールバーにプロジェクト名、タイムラインに画像・テキストクリップが並ぶ
   await expect(page.getByRole('button', { name: 'サンプルプロジェクト' })).toBeVisible()
   await expect(page.locator('footer').getByText('Our Story.jpg')).toBeVisible()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
   await expect(page.getByText('▶ 再生してプレビュー')).toBeVisible()
+})
+
+test('サンプルプロジェクト: 再生ガイド後に書き出しへ誘導される', async ({ page }) => {
+  await page.goto('./')
+  await expect(page.getByText('FABLE へようこそ')).toBeVisible()
+
+  await page.getByRole('button', { name: '次へ' }).click()
+  await page.getByRole('button', { name: '次へ' }).click()
+  await page.getByRole('button', { name: 'サンプルで体験する' }).click()
+  await expect(page.getByText('▶ 再生してプレビュー')).toBeVisible()
+
+  await page.getByRole('button', { name: '再生 (Space)' }).click()
+  await expect(page.getByText('書き出しから MP4 を保存')).toBeVisible()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '1080p で書き出し' })).toBeVisible()
+  await expect(page.getByText('章マーカー区間')).toBeVisible()
+})
+
+test('書き出し: 空プロジェクトではボタンが無効', async ({ page }) => {
+  await page.goto('./')
+  await page.getByRole('button', { name: 'スキップ' }).click()
+  await expect(page.getByRole('button', { name: '書き出し' })).toBeDisabled()
 })
 
 test('音量キーフレーム: オーディオクリップでキーフレームを追加できる', async ({ page }) => {

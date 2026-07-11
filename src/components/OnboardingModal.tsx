@@ -10,9 +10,9 @@ const STORAGE_KEY = 'fable-onboarded'
 
 const STEPS = [
   {
-    icon: Icons.Upload,
-    title: 'メディアを追加',
-    description: '左パネルに動画・写真・BGMをドラッグ&ドロップ。写真を複数選択すればスライドショーも一括作成できます。',
+    icon: Icons.Play,
+    title: 'サンプルで体験',
+    description: '写真・テキスト・BGM入りのサンプルを開き、再生と書き出しまで約15分で完走できます。まずは触ってみましょう。',
   },
   {
     icon: Icons.Grid,
@@ -35,6 +35,11 @@ export function OnboardingModal() {
   useEffect(() => {
     if (!restoreReady) return
     try {
+      const hasClips = useProjectStore.getState().project.tracks.some((t) => t.clips.length > 0)
+      if (hasClips) {
+        localStorage.setItem(STORAGE_KEY, '1')
+        return
+      }
       if (!localStorage.getItem(STORAGE_KEY)) setVisible(true)
     } catch {
       // localStorage が使えない環境ではガイドを出さない
@@ -60,9 +65,10 @@ export function OnboardingModal() {
         // 保存に失敗しても編集体験は開始できる
       })
       useProjectStore.getState().loadProject(demo)
+      useProjectStore.getState().setCoachmarkFromSample(true)
       useProjectStore.getState().setShowPlayHint(true)
       dismiss()
-      showToast('サンプルプロジェクトを開きました。再生ボタンでプレビューできます', 'success')
+      showToast('サンプルを開きました。再生→書き出しの順で体験できます', 'success')
     } catch (err) {
       console.error(err)
       showToast('サンプルの作成に失敗しました', 'error')
@@ -86,7 +92,7 @@ export function OnboardingModal() {
           </div>
           <div>
             <h2 className="text-base font-bold text-text-primary">FABLE へようこそ</h2>
-            <p className="text-[11px] text-text-muted">結婚式ムービーを3ステップで</p>
+            <p className="text-[11px] text-text-muted">サンプルで15分完走を目指す3ステップ</p>
           </div>
         </div>
 
@@ -113,26 +119,30 @@ export function OnboardingModal() {
           ))}
         </div>
 
-        <div className="flex gap-2">
-          <Btn variant="ghost" className="flex-1 text-xs" onClick={dismiss}>
-            スキップ
-          </Btn>
-          <Btn
-            variant="accent"
-            className="flex-1 text-xs"
-            onClick={() => (isLast ? dismiss() : setStep(step + 1))}
-          >
-            {isLast ? '始める' : '次へ'}
-          </Btn>
-        </div>
-
-        <button
-          onClick={openDemo}
-          disabled={creatingDemo}
-          className="mt-3 w-full rounded-lg border border-dashed border-border-light px-3 py-2 text-xs text-text-secondary transition-colors hover:border-accent/50 hover:bg-accent-muted hover:text-accent disabled:opacity-50"
-        >
-          {creatingDemo ? 'サンプルを準備中...' : 'サンプルプロジェクトを開いて試す'}
-        </button>
+        {isLast ? (
+          <div className="flex flex-col gap-2">
+            <Btn
+              variant="accent"
+              className="w-full text-xs"
+              disabled={creatingDemo}
+              onClick={openDemo}
+            >
+              {creatingDemo ? 'サンプルを準備中...' : 'サンプルで体験する'}
+            </Btn>
+            <Btn variant="ghost" className="w-full text-xs" onClick={dismiss}>
+              空で始める
+            </Btn>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Btn variant="ghost" className="flex-1 text-xs" onClick={dismiss}>
+              スキップ
+            </Btn>
+            <Btn variant="accent" className="flex-1 text-xs" onClick={() => setStep(step + 1)}>
+              次へ
+            </Btn>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -21,7 +21,9 @@
 | `src/engine/audioEngine.ts` | Web Audio 再生 + `mixAudioOffline()`(書き出し用オフラインミックス) |
 | `src/engine/exporter.ts` | `exportProject()`。WebCodecs でエンコードし mp4-muxer で MP4 化 |
 | `src/engine/mediaLoader.ts` | File → `MediaAsset` 変換(duration・サムネイル・波形の抽出) |
-| `src/engine/demoProject.ts` | `createDemoProject()`。Canvas 生成画像+テキストのサンプルプロジェクト(オンボーディングから起動) |
+| `src/engine/demoProject.ts` | `createDemoProject()`。サンプルプロジェクト（6 映像・BGM・3 章・33 秒） |
+| `docs/ONBOARDING_AUDIT.md` | 初回体験・15 分ジャーニー監査（Q9） |
+| `docs/ONBOARDING_AUDIT.md` | 初回体験・15 分ジャーニー監査（Q9） |
 | `src/engine/stressTestProject.ts` | `createStressTestProject()`。10 分・100 クリップのパフォーマンス計測用プロジェクト |
 | `docs/TEXT_SRT_AUDIT.md` | テキスト・SRT・フォント描画監査（Q8） |
 | `src/persistence/db.ts` | IndexedDB への保存・復元・プロジェクト一覧/複製/削除 |

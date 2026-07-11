@@ -18,6 +18,9 @@ export function PreviewPanel() {
   const showSafeAreas = useProjectStore((s) => s.showSafeAreas)
   const showPlayHint = useProjectStore((s) => s.showPlayHint)
   const setShowPlayHint = useProjectStore((s) => s.setShowPlayHint)
+  const coachmarkFromSample = useProjectStore((s) => s.coachmarkFromSample)
+  const setCoachmarkFromSample = useProjectStore((s) => s.setCoachmarkFromSample)
+  const setShowExportHint = useProjectStore((s) => s.setShowExportHint)
   const inPoint = useProjectStore((s) => s.inPoint)
   const outPoint = useProjectStore((s) => s.outPoint)
   const setShowSafeAreas = useProjectStore((s) => s.setShowSafeAreas)
@@ -69,15 +72,23 @@ export function PreviewPanel() {
     return () => observer.disconnect()
   }, [project.width, project.height])
 
+  const dismissPlayHint = useCallback(() => {
+    setShowPlayHint(false)
+    if (coachmarkFromSample) {
+      setCoachmarkFromSample(false)
+      setShowExportHint(true)
+    }
+  }, [coachmarkFromSample, setCoachmarkFromSample, setShowExportHint, setShowPlayHint])
+
   // サンプルプロジェクト起動後、再生ボタンを数秒間ハイライト
   useEffect(() => {
     if (!showPlayHint) return
-    const timer = setTimeout(() => setShowPlayHint(false), 5000)
+    const timer = setTimeout(dismissPlayHint, 5000)
     return () => clearTimeout(timer)
-  }, [showPlayHint, setShowPlayHint])
+  }, [showPlayHint, dismissPlayHint])
 
   const handleTogglePlay = () => {
-    setShowPlayHint(false)
+    if (showPlayHint) dismissPlayHint()
     togglePlay()
   }
 

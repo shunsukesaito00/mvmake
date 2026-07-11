@@ -9,12 +9,13 @@ test('README 用スクリーンショットを生成', async ({ page }) => {
   await page.goto('./')
   await expect(page.getByText('FABLE へようこそ')).toBeVisible()
 
-  // サンプルプロジェクトを開く(画像クリップ4つ+テキストクリップ3つが配置される)
-  await page.getByRole('button', { name: 'サンプルプロジェクトを開いて試す' }).click()
+  // サンプルプロジェクトを開く(画像クリップ6枚+テキスト+BGM)
+  await page.getByRole('button', { name: '次へ' }).click()
+  await page.getByRole('button', { name: '次へ' }).click()
+  await page.getByRole('button', { name: 'サンプルで体験する' }).click()
   await expect(page.locator('footer').getByText('Our Story.jpg')).toBeVisible()
 
-  // トースト通知(3秒)が消えるのを待つ
-  await expect(page.getByText('サンプルプロジェクトを開きました', { exact: false })).toBeHidden({ timeout: 6000 })
+  await expect(page.getByText('サンプルを開きました', { exact: false })).toBeHidden({ timeout: 6000 })
 
   // ルーラーをクリックして 2 秒付近へシーク(1枚目の画像 + Opening テキストが映る)
   const ruler = page.locator('footer .cursor-pointer').first()

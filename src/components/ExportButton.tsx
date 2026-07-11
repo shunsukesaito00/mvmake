@@ -49,6 +49,9 @@ export function ExportButton() {
   const exportStartedAtRef = useRef<number | null>(null)
   const presetImportRef = useRef<HTMLInputElement>(null)
 
+  const showExportHint = useProjectStore((s) => s.showExportHint)
+  const setShowExportHint = useProjectStore((s) => s.setShowExportHint)
+
   const project = useProjectStore((s) => s.project)
   const isExporting = useProjectStore((s) => s.isExporting)
   const exportProgress = useProjectStore((s) => s.exportProgress)
@@ -72,6 +75,16 @@ export function ExportButton() {
   const hasClips = project.tracks.some((t) => t.clips.length > 0)
   const exportDisabled = isExporting || !hasClips
   const exportTooltip = !hasClips ? 'クリップを追加してから書き出してください' : undefined
+
+  useEffect(() => {
+    if (!showExportHint) return
+    const timer = setTimeout(() => setShowExportHint(false), 8000)
+    return () => clearTimeout(timer)
+  }, [showExportHint, setShowExportHint])
+
+  useEffect(() => {
+    if (showDialog) setShowExportHint(false)
+  }, [showDialog, setShowExportHint])
 
   useEffect(() => {
     if (showDialog) setPresets(loadExportPresets())
@@ -302,15 +315,25 @@ export function ExportButton() {
 
   return (
     <>
-      <span title={exportTooltip} className="inline-flex">
+      <span title={exportTooltip} className="relative inline-flex">
+        {showExportHint && (
+          <div
+            role="tooltip"
+            className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 animate-fade-in whitespace-nowrap rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-surface-0 shadow-lg shadow-black/40"
+          >
+            書き出しから MP4 を保存
+            <span className="absolute top-full right-4 border-4 border-transparent border-t-accent" />
+          </div>
+        )}
         <Btn
           variant="accent"
           onClick={() => {
+            setShowExportHint(false)
             if (!isExporting) resetExportPanel()
             setShowDialog(true)
           }}
           disabled={exportDisabled}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs"
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs ${showExportHint ? 'animate-pulse ring-2 ring-accent ring-offset-2 ring-offset-surface-1' : ''}`}
         >
           <Icons.Export size={14} />
           {isExporting ? `${Math.round(exportProgress * 100)}%` : '書き出し'}
