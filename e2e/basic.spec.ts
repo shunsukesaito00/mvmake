@@ -19,6 +19,11 @@ import {
   listImageClipTransformKeyframeCounts,
   loadVolumeKeyframeTimelineStress,
   getClipVolumeKeyframeCount,
+  loadVolumeKeyframeStress,
+  getVolumeAtClipLocalTime,
+  listVolumeKeyframeClipCounts,
+  listAudioTrackVolumeKeyframeCounts,
+  updateVolumeKeyframeById,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -1959,4 +1964,41 @@ test('音量キーフレームUI: ストレス投入で6キーフレームがロ
   expect(stats.keyframeCount).toBe(6)
   expect(stats.hasCurvePath).toBe(true)
   expect(await getClipVolumeKeyframeCount(page, stats.clipId)).toBe(6)
+})
+
+test('音量キーフレーム: ストレス投入で音声4KF・動画2KFと補間が一致する', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVolumeKeyframeStress(page)
+  expect(stats.audioKeyframeCount).toBe(4)
+  expect(stats.videoKeyframeCount).toBe(2)
+  expect(stats.automationEventCount).toBeGreaterThanOrEqual(2)
+  expect(await getVolumeAtClipLocalTime(page, stats.audioClipId, stats.audioMidLocalTime)).toBeCloseTo(stats.audioMidVolume, 3)
+  expect(await getVolumeAtClipLocalTime(page, stats.videoClipId, stats.videoMidLocalTime)).toBeCloseTo(stats.videoMidVolume, 3)
+  const counts = await listVolumeKeyframeClipCounts(page)
+  expect(counts.map((c) => c.count).sort()).toEqual([2, 4])
+})
+
+test('音量キーフレーム: ストレス分割で2+2に再配分される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVolumeKeyframeStress(page)
+  await selectClipById(page, stats.audioClipId)
+  await clickTimelineClip(page, stats.audioClipName)
+
+  await page.locator('main input[type="range"]').fill(String(stats.splitAt))
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  const counts = await listAudioTrackVolumeKeyframeCounts(page)
+  expect(counts).toHaveLength(2)
+  expect(counts.map((c) => c.count).sort()).toEqual([2, 2])
+})
+
+test('音量キーフレーム: キーフレーム変更を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVolumeKeyframeStress(page)
+  const before = await getVolumeAtClipLocalTime(page, stats.audioClipId, 0)
+  await updateVolumeKeyframeById(page, stats.audioClipId, stats.firstAudioKeyframeId, { volume: 1.9 })
+  expect(await getVolumeAtClipLocalTime(page, stats.audioClipId, 0)).toBe(1.9)
+
+  await page.keyboard.press('ControlOrMeta+z')
+  expect(await getVolumeAtClipLocalTime(page, stats.audioClipId, 0)).toBeCloseTo(before, 3)
 })
