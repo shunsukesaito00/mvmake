@@ -1003,3 +1003,39 @@ test('インスペクター: テキストに字幕帯を設定できる', async 
   await page.getByRole('slider', { name: '背景余白' }).fill('20')
   await expect(page.getByRole('slider', { name: '背景余白' })).toHaveValue('20')
 })
+
+test('トランジション: キャンドルグローを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'candle-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'candle-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'candle-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'candle-b.png' }).click()
+
+  await clickTimelineClip(page, 'candle-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'キャンドルグロー', exact: true }).click()
+  await expect(page.getByText('キャンドルグローを適用しました')).toBeVisible()
+})
+
+test('テキスト: テロップ（指輪交換）プリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Ring Exchange テロップ（指輪交換）' }).click()
+  await expect(page.locator('footer').getByText('Ring Exchange')).toBeVisible()
+})
+
+test('色調: ロマンティック夕暮れルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'sunset.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'sunset.png')
+
+  await page.getByRole('button', { name: 'ロマンティック夕暮れルック', exact: true }).click()
+  await expect(page.getByText('「ロマンティック夕暮れ」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ロマンティック夕暮れルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
