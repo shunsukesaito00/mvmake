@@ -956,6 +956,87 @@ describe('replaceClipMedia', () => {
     useProjectStore.getState().undo()
     expect((getTrackClips(TRACK_V1)[0] as ImageClip).mediaId).toBe('img1')
   })
+
+  it('動画→動画差し替えで音声設定と speed を引き継ぐ', () => {
+    setProject(makeProject(
+      [videoClip('c1', 0, 5, {
+        audio: { volume: 0.42, fadeIn: 0.8, fadeOut: 0.3 },
+        speed: 1.5,
+      })],
+      [videoAsset('media-v1', 10), videoAsset('media-v2', 10)],
+    ))
+
+    const ok = useProjectStore.getState().replaceClipMedia('c1', 'media-v2')
+    expect(ok).toBe(true)
+
+    const clip = getTrackClips(TRACK_V1)[0] as VideoClip
+    expect(clip.mediaId).toBe('media-v2')
+    expect(clip.audio.volume).toBe(0.42)
+    expect(clip.audio.fadeIn).toBe(0.8)
+    expect(clip.speed).toBe(1.5)
+  })
+
+  it('画像→画像差し替えで Ken Burns を引き継ぐ', () => {
+    const customKenBurns = {
+      enabled: true,
+      startScale: 1.1,
+      endScale: 1.4,
+      startX: 0.4,
+      startY: 0.45,
+      endX: 0.6,
+      endY: 0.55,
+    }
+    setProject(makeProject(
+      [imageClip('c1', 0, 4, { mediaId: 'img1', kenBurns: customKenBurns })],
+      [imageAsset('img1'), imageAsset('img2')],
+    ))
+
+    useProjectStore.getState().replaceClipMedia('c1', 'img2')
+    const clip = getTrackClips(TRACK_V1)[0] as ImageClip
+    expect(clip.mediaId).toBe('img2')
+    expect(clip.kenBurns).toEqual(customKenBurns)
+  })
+
+  it('音声クリップを別の音声メディアへ差し替えできる', () => {
+    const mkAudioAsset = (id: string): MediaAsset => ({
+      id, name: `${id}.wav`, type: 'audio', blob: new Blob(), url: `blob:${id}`, duration: 30,
+    })
+    setProject(makeProject(
+      [audioClip('a1', 0, 6, { mediaId: 'media-a1' })],
+      [mkAudioAsset('media-a1'), mkAudioAsset('media-a2')],
+      TRACK_BGM,
+    ))
+
+    const ok = useProjectStore.getState().replaceClipMedia('a1', 'media-a2')
+    expect(ok).toBe(true)
+    expect((getTrackClips(TRACK_BGM)[0] as AudioClip).mediaId).toBe('media-a2')
+  })
+
+  it('ロック済みトラックのクリップは差し替えできない', () => {
+    const project = makeProject(
+      [imageClip('c1', 0, 4, { mediaId: 'img1' })],
+      [imageAsset('img1'), imageAsset('img2')],
+    )
+    project.tracks[0].locked = true
+    setProject(project)
+
+    expect(useProjectStore.getState().replaceClipMedia('c1', 'img2')).toBe(false)
+  })
+
+  it('クロス差し替えで transform と transition を引き継ぐ', () => {
+    setProject(makeProject(
+      [videoClip('c1', 1, 5, {
+        transform: { x: 0.35, y: 0.65, scale: 1.2, rotation: 5, opacity: 0.9 },
+        transition: { type: 'wipe', duration: 0.4 },
+      })],
+      [videoAsset('media-v1', 10), imageAsset('img2')],
+    ))
+
+    useProjectStore.getState().replaceClipMedia('c1', 'img2')
+    const clip = getTrackClips(TRACK_V1)[0] as ImageClip
+    expect(clip.transform.x).toBe(0.35)
+    expect(clip.transition?.type).toBe('wipe')
+  })
 })
 
 describe('user project template', () => {

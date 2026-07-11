@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, selectClipById, countClipsWithTransition } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadMediaReplaceStress, selectClipById, countClipsWithTransition, getClipMediaId, getClipAudioVolume, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -2040,6 +2040,63 @@ test('インスペクター: 動画クリップを画像メディアへ差し替
   await expect(page.getByText('「still.png」に差し替えました')).toBeVisible()
   await expect(page.locator('footer').getByText('still.png')).toBeVisible()
   await expect(page.locator('footer').getByText('clip.webm')).toBeHidden()
+})
+
+test('インスペクター: 画像クリップのメディア差し替えを undo できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'undo-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'undo-b.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').first().click()
+  await clickTimelineClip(page, 'undo-a.png')
+
+  await page.getByRole('button', { name: 'メディア' }).click()
+  await page.getByRole('button', { name: 'undo-b.png に差し替え' }).click()
+  await expect(page.getByText('「undo-b.png」に差し替えました')).toBeVisible()
+  await expect(page.locator('footer').getByText('undo-b.png')).toBeVisible()
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect(page.locator('footer').getByText('undo-a.png')).toBeVisible()
+  await expect(page.locator('footer').getByText('undo-b.png')).toBeHidden()
+})
+
+test('インスペクター: 動画差し替え後も音量設定を維持する', async ({ page }) => {
+  const stats = await loadMediaReplaceStress(page)
+  await selectClipById(page, stats.videoClipId)
+
+  expect(await getClipAudioVolume(page, stats.videoClipId)).toBeCloseTo(0.42, 2)
+
+  const replaceName = await getMediaAssetName(page, stats.videoReplaceTargetId)
+  await page.getByRole('button', { name: 'メディア', exact: true }).click()
+  await page.getByRole('button', { name: `${replaceName} に差し替え` }).click()
+  await expect(page.getByText(`「${replaceName}」に差し替えました`)).toBeVisible()
+
+  expect(await getClipMediaId(page, stats.videoClipId)).toBe(stats.videoReplaceTargetId)
+  expect(await getClipAudioVolume(page, stats.videoClipId)).toBeCloseTo(0.42, 2)
+})
+
+test('メディア差し替えストレス: 候補件数と Ken Burns 引き継ぎ', async ({ page }) => {
+  const stats = await loadMediaReplaceStress(page)
+
+  expect(await getMediaReplaceCandidateCount(page, stats.imageClipId)).toBe(10)
+
+  await selectClipById(page, stats.imageClipId)
+  expect(await getClipKenBurnsEnabled(page, stats.imageClipId)).toBe(true)
+
+  const replaceName = await getMediaAssetName(page, stats.imageReplaceTargetId)
+  await page.getByRole('button', { name: 'メディア', exact: true }).click()
+  await page.getByRole('button', { name: `${replaceName} に差し替え` }).click()
+  await expect(page.getByText(`「${replaceName}」に差し替えました`)).toBeVisible()
+
+  expect(await getClipKenBurnsEnabled(page, stats.imageClipId)).toBe(true)
+  expect(await getClipMediaId(page, stats.imageClipId)).toBe(stats.imageReplaceTargetId)
 })
 
 test('ユーザーテンプレート: 保存・適用・新規作成', async ({ page }) => {

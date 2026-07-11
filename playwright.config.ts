@@ -25,7 +25,7 @@ export default defineConfig({
   webServer: externalBaseURL
     ? undefined
     : {
-        command: 'npm run build && npm run preview',
+        command: 'vite build --mode e2e && vite preview --port 4173',
         url: 'http://localhost:4173',
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

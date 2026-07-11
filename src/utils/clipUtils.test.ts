@@ -197,6 +197,67 @@ describe('buildCrossVisualClip', () => {
     expect(clip && 'mediaId' in clip && clip.mediaId).toBe('img1')
     expect(clip?.duration).toBe(8)
   })
+
+  it('画像→動画クロス差し替えで Ken Burns を引き継ぐ', () => {
+    const customKenBurns = {
+      enabled: true,
+      startScale: 1.2,
+      endScale: 1.5,
+      startX: 0.3,
+      startY: 0.4,
+      endX: 0.7,
+      endY: 0.6,
+    }
+    const source: ImageClip = { ...imageClip, kenBurns: customKenBurns }
+    const assets = [
+      { id: 'img1', duration: 5, type: 'image' as const },
+      { id: 'vid1', duration: 4, type: 'video' as const },
+    ]
+    const clip = buildCrossVisualClip(source, 'vid1', assets)
+    expect(clip?.type).toBe('video')
+    expect(clip && 'kenBurns' in clip).toBe(false)
+    expect(clip && 'audio' in clip && clip.audio.volume).toBe(1)
+  })
+
+  it('動画→画像クロス差し替えで transform と transition を引き継ぐ', () => {
+    const videoClip: VideoClip = {
+      ...baseVideoClip,
+      transform: { x: 0.35, y: 0.65, scale: 1.2, rotation: 5, opacity: 0.9 },
+      transition: { type: 'wipe', duration: 0.4 },
+    }
+    const assets = [
+      { id: 'v1', duration: 10, type: 'video' as const },
+      { id: 'img1', duration: 5, type: 'image' as const },
+    ]
+    const clip = buildCrossVisualClip(videoClip, 'img1', assets) as ImageClip | null
+    expect(clip?.transform).toEqual(videoClip.transform)
+    expect(clip?.transition).toEqual(videoClip.transition)
+    expect(clip?.kenBurns.enabled).toBe(true)
+  })
+
+  it('画像→動画クロス差し替えで画像の Ken Burns は video 側には載らないが image→image 同種は維持', () => {
+    const customKenBurns = {
+      enabled: true,
+      startScale: 1.15,
+      endScale: 1.35,
+      startX: 0.45,
+      startY: 0.5,
+      endX: 0.55,
+      endY: 0.5,
+    }
+    const source: ImageClip = { ...imageClip, kenBurns: customKenBurns }
+    const assets = [
+      { id: 'img1', duration: 5, type: 'image' as const },
+      { id: 'img2', duration: 5, type: 'image' as const },
+    ]
+    const sameType = computeMediaReplacement(source, 'img2', assets)
+    expect(sameType?.mediaId).toBe('img2')
+    const cross = buildCrossVisualClip(source, 'vid1', [
+      { id: 'img1', duration: 5, type: 'image' },
+      { id: 'vid1', duration: 4, type: 'video' },
+    ])
+    expect(cross?.type).toBe('video')
+  })
 })
 
 describe('canReplaceClipWithMedia', () => {

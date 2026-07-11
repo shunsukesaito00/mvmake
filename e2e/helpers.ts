@@ -80,6 +80,49 @@ export async function loadBatchTransitionStress(page: import('@playwright/test')
   return stats
 }
 
+export async function loadMediaReplaceStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadMediaReplaceStress()
+  })
+  return stats
+}
+
+export async function getClipMediaId(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipMediaId(id)
+  }, clipId)
+}
+
+export async function getClipAudioVolume(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipAudioVolume(id)
+  }, clipId)
+}
+
+export async function getClipKenBurnsEnabled(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipKenBurnsEnabled(id)
+  }, clipId)
+}
+
+export async function getMediaReplaceCandidateCount(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getMediaReplaceCandidateCount(id)
+  }, clipId)
+}
+
+export async function getMediaAssetName(page: import('@playwright/test').Page, mediaId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getMediaAssetName(id)
+  }, mediaId)
+}
+
 export async function selectClipById(page: import('@playwright/test').Page, clipId: string) {
   await page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

@@ -9,9 +9,7 @@ import { saveProject } from './persistence/db'
 import { useToastStore } from './store/toastStore'
 import { installE2eBridge } from './e2eBridge'
 
-if (import.meta.env.DEV) {
-  installE2eBridge()
-}
+installE2eBridge()
 
 function App() {
   useProjectRestore()
