@@ -415,6 +415,59 @@ export async function slideClipById(page: import('@playwright/test').Page, clipI
   }, { id: clipId, d: delta })
 }
 
+export async function loadToneCurveStress(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadToneCurveStress()
+  })
+}
+
+export async function getClipColorMidtones(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipColorMidtones(id)
+  }, clipId)
+}
+
+export async function getClipPixelGradeSample(page: import('@playwright/test').Page, clipId: string, gray?: number) {
+  return page.evaluate(({ id, g }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipPixelGradeSample(id, g)
+  }, { id: clipId, g: gray })
+}
+
+export async function getRgbCurveSampleAt(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  channel: 'r' | 'g' | 'b',
+  input: number,
+) {
+  return page.evaluate(({ id, ch, inp }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getRgbCurveSampleAt(id, ch, inp)
+  }, { id: clipId, ch: channel, inp: input })
+}
+
+export async function applyClipColorMidtones(page: import('@playwright/test').Page, clipId: string, midtones: number) {
+  return page.evaluate(({ id, m }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.applyClipColorMidtones(id, m)
+  }, { id: clipId, m: midtones })
+}
+
+export async function applyClipRgbCurvePoint(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  channel: 'r' | 'g' | 'b',
+  pointIndex: number,
+  output: number,
+) {
+  return page.evaluate(({ id, ch, idx, out }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.applyClipRgbCurvePoint(id, ch, idx, out)
+  }, { id: clipId, ch: channel, idx: pointIndex, out: output })
+}
+
 export async function getVolumeAtClipLocalTime(
   page: import('@playwright/test').Page,
   clipId: string,

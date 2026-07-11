@@ -106,6 +106,15 @@ import {
   slipClipById,
   type SlipSlideStressStats,
 } from './utils/slipSlideStressSetup'
+import {
+  applyClipColor,
+  applyClipRgbCurvePoint,
+  getClipColor,
+  getClipPixelGradeSample,
+  getRgbCurveSampleAt,
+  seedToneCurveStress,
+  type ToneCurveStressStats,
+} from './utils/toneCurveStressSetup'
 import { parseExportedExportPresetFile } from './utils/exportPresetFile'
 import { importExportPresets } from './persistence/exportPresets'
 import { filterChapterMarkers } from './utils/beatMarkers'
@@ -175,6 +184,12 @@ declare global {
       getClipVolumeKeyframeTimes: (clipId: string) => number[]
       slipClipById: (clipId: string, delta: number) => boolean
       slideClipById: (clipId: string, delta: number) => boolean
+      loadToneCurveStress: () => ToneCurveStressStats
+      getClipColorMidtones: (clipId: string) => number
+      getClipPixelGradeSample: (clipId: string, gray?: number) => { r: number; g: number; b: number }
+      getRgbCurveSampleAt: (clipId: string, channel: 'r' | 'g' | 'b', input: number) => number
+      applyClipColorMidtones: (clipId: string, midtones: number) => number
+      applyClipRgbCurvePoint: (clipId: string, channel: 'r' | 'g' | 'b', pointIndex: number, output: number) => number
       getVolumeAtClipLocalTime: (clipId: string, localTime: number) => number
       getClipVolumeKeyframeCount: (clipId: string) => number
       listAudioClipVolumeKeyframeCounts: () => Array<{ clipId: string; count: number }>
@@ -286,6 +301,14 @@ export function installE2eBridge(): void {
     getClipVolumeKeyframeTimes: (clipId) => getClipVolumeKeyframeTimes(clipId),
     slipClipById: (clipId, delta) => slipClipById(clipId, delta),
     slideClipById: (clipId, delta) => slideClipById(clipId, delta),
+    loadToneCurveStress: () => seedToneCurveStress(),
+    getClipColorMidtones: (clipId) => getClipColor(clipId).midtones,
+    getClipPixelGradeSample: (clipId, gray) => getClipPixelGradeSample(clipId, gray),
+    getRgbCurveSampleAt: (clipId, channel, input) => getRgbCurveSampleAt(clipId, channel, input),
+    applyClipColorMidtones: (clipId, midtones) => applyClipColor(clipId, { midtones }, true).midtones,
+    applyClipRgbCurvePoint: (clipId, channel, pointIndex, output) => (
+      applyClipRgbCurvePoint(clipId, channel, pointIndex, output, true).rgbCurves[channel][pointIndex]?.y ?? output
+    ),
     getVolumeAtClipLocalTime: (clipId, localTime) => getVolumeAtClipLocalTime(clipId, localTime),
     getClipVolumeKeyframeCount: (clipId) => getStressClipVolumeKeyframeCount(clipId),
     listAudioClipVolumeKeyframeCounts: () => listAudioClipVolumeKeyframeCounts(),
