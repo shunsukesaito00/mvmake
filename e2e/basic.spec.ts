@@ -9,6 +9,10 @@ import {
   installNarrationRecordingMocks,
   loadTextStylePresetStress,
   loadMediaListStress,
+  loadAudioNormalizeStress,
+  getClipAudioVolume,
+  getClipVolumeKeyframeMax,
+  selectClipById,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -1825,4 +1829,59 @@ test('メディア: 種類フィルタ切替で件数が更新される', async 
   await page.getByLabel('メディア種類').selectOption('video')
   await expect(page.getByText('2/52件表示')).toBeVisible()
   await expect(page.getByText('clip-01.mp4')).toBeVisible()
+})
+
+test('メディア: 52件ストレスで検索・フィルタ・ソートが動作する', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadMediaListStress(page)
+  expect(stats.mediaCount).toBe(52)
+
+  await page.getByTitle('メディア', { exact: true }).click()
+  await expect(page.getByText('52件のメディア')).toBeVisible()
+
+  await page.getByLabel('メディア検索').fill('alpha')
+  await expect(page.getByText('1/52件表示')).toBeVisible()
+  await expect(page.getByText('alpha-cover.jpg')).toBeVisible()
+
+  await page.getByLabel('メディア検索').fill('')
+  await page.getByLabel('メディア種類').selectOption('audio')
+  await expect(page.getByText('5/52件表示')).toBeVisible()
+  await expect(page.getByText('bgm-01.wav')).toBeVisible()
+  await expect(page.getByText('photo-001.jpg')).toBeHidden()
+
+  await page.getByLabel('メディア並び順').selectOption('name')
+  await expect(page.locator('.grid.grid-cols-2 > div').first().getByText('bgm-01.wav')).toBeVisible()
+})
+
+test('インスペクター: 音量正規化を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadAudioNormalizeStress(page)
+  await selectClipById(page, stats.bgmClipId)
+  await clickTimelineClip(page, stats.bgmClipName)
+
+  const volumeSlider = page.getByRole('slider', { name: '音量' })
+  await expect(volumeSlider).toHaveValue('1')
+
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+  await expect(volumeSlider).toHaveValue('2')
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect.poll(() => getClipAudioVolume(page, stats.bgmClipId)).toBe(1)
+})
+
+test('インスペクター: 音量キーフレーム付きクリップを正規化すると KF も同倍率スケールする', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadAudioNormalizeStress(page)
+  await selectClipById(page, stats.keyframedClipId)
+  await clickTimelineClip(page, stats.keyframedClipName)
+
+  expect(await getClipAudioVolume(page, stats.keyframedClipId)).toBe(0.5)
+  expect(await getClipVolumeKeyframeMax(page, stats.keyframedClipId)).toBe(0.8)
+
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+
+  await expect.poll(() => getClipAudioVolume(page, stats.keyframedClipId)).toBeCloseTo(1.25, 1)
+  await expect.poll(() => getClipVolumeKeyframeMax(page, stats.keyframedClipId)).toBe(2)
 })

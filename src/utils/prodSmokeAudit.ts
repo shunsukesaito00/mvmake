@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 119
+export const PROD_SMOKE_SCENARIO_COUNT = 122
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -246,4 +246,11 @@ export const PROD_SMOKE_V2229_ADDITIONS = [
   'フォーカスし、Escape',
   '該当なし検索で空状態',
   '種類フィルタ切替',
+] as const
+
+/** v2.2.30 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2230_ADDITIONS = [
+  '52件ストレスで検索',
+  '音量正規化を undo',
+  'KF も同倍率スケール',
 ] as const
