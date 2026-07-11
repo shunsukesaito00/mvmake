@@ -41,8 +41,11 @@ import {
   applyClipRgbCurvePoint,
   loadTemplateStress,
   applyBuiltinTemplateById,
+  applyUserTemplateById,
+  tryImportTemplateStressJson,
   getTemplateStressClipCount,
   getTemplateStressMarkerCount,
+  loadStructuredWeddingTemplateStress,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -2126,4 +2129,38 @@ test('テンプレート: ストレス投入で組み込み4種とユーザー�
   expect(await getTemplateStressClipCount(page)).toBe(11)
   expect(await getTemplateStressMarkerCount(page)).toBe(5)
   expect(await applyBuiltinTemplateById(page, 'profile-movie')).toBe(1)
+})
+
+test('テンプレート: ユーザー適用をundoで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadTemplateStress(page)
+  await applyBuiltinTemplateById(page, 'opening-movie')
+  const beforeCount = await getTemplateStressClipCount(page)
+
+  expect(await applyUserTemplateById(page, stats.userTemplateId)).toBe(true)
+  expect(await getTemplateStressClipCount(page)).toBe(stats.userClipCount)
+
+  await page.keyboard.press('ControlOrMeta+z')
+  expect(await getTemplateStressClipCount(page)).toBe(beforeCount)
+})
+
+test('テンプレート: 破損JSONインポートはエラー', async ({ page }) => {
+  await goOnboarded(page)
+  const result = await tryImportTemplateStressJson(page, '{broken')
+  expect(result.ok).toBe(false)
+  if (!result.ok) {
+    expect(result.error).toContain('JSON')
+  }
+})
+
+test('構造化ウェディング: ストレス投入で11クリップ・5章マーカーが配置される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadStructuredWeddingTemplateStress(page)
+  expect(stats.totalClipCount).toBe(11)
+  expect(stats.photoGuideCount).toBe(8)
+  expect(stats.markerCount).toBe(5)
+  expect(stats.textClipCount).toBe(3)
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+  await expect(page.locator('[title="オープニング"]')).toBeVisible()
+  await expect(page.locator('footer').getByText(stats.firstPhotoGuideLabel)).toBeVisible()
 })
