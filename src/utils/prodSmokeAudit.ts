@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 347
+export const PROD_SMOKE_SCENARIO_COUNT = 350
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -778,4 +778,11 @@ export const PROD_SMOKE_V2305_ADDITIONS = [
   '色調補正: ユーザールック適用後の色相変更を undo でルック選択まで復元',
   '色調補正: ユーザールック適用後の色温度変更を undo でルック選択まで復元',
   '色調補正: ユーザールック適用後のティント変更を undo でルック選択まで復元',
+] as const
+
+/** v2.3.6 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2306_ADDITIONS = [
+  '色調補正: ユーザールック適用後のトーンカーブ変更を undo でルック選択まで復元',
+  '色調補正: ユーザールック適用後の RGB R カーブスライダー変更を undo でルック選択まで復元',
+  '色調補正: ユーザールック適用後の RGB カーブ制御点削除を undo でルック選択まで復元',
 ] as const

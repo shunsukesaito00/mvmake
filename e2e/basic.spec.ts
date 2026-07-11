@@ -7056,3 +7056,88 @@ test('色調補正: ユーザールック適用後のティント変更を undo 
   await clickTimelineClip(page, 'user-tint-undo-look-photo.png')
   await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: ユーザールック適用後のトーンカーブ変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-tone-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-tone-undo-look-photo.png')
+
+  const midtones = page.getByRole('slider', { name: 'ミッドトーン' })
+  await midtones.fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserToneUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserToneUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserToneUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await midtones.dragTo(midtones, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-tone-undo-look-photo.png')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: ユーザールック適用後の RGB R カーブスライダー変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-r-slider-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-r-slider-undo-look-photo.png')
+
+  await page.getByRole('button', { name: 'R', exact: true }).click()
+  const rMid = page.getByRole('slider', { name: 'R カーブ 50%' })
+  await rMid.fill('0.65')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserRSliderUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserRSliderUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserRSliderUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await rMid.dragTo(rMid, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-r-slider-undo-look-photo.png')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: ユーザールック適用後の RGB カーブ制御点削除を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-del-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-del-undo-look-photo.png')
+
+  const graph = page.getByLabel('RGB カーブ (R)')
+  const box = await graph.boundingBox()
+  expect(box).not.toBeNull()
+  await graph.dblclick({ position: { x: box!.width * 0.4, y: box!.height * 0.45 } })
+
+  await page.getByLabel('ルックプリセット名').fill('E2EUserDelUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserDelUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserDelUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('button', { name: '制御点を削除' }).click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-del-undo-look-photo.png')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+})
