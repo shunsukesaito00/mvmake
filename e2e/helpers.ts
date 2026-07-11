@@ -329,6 +329,51 @@ export async function applyClipFade(
   }, { id: clipId, inVal: fadeIn, outVal: fadeOut })
 }
 
+export async function loadVolumeKeyframeTimelineStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadVolumeKeyframeTimelineStress()
+  })
+  return stats
+}
+
+export async function getVolumeAtClipLocalTime(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  localTime: number,
+) {
+  return page.evaluate(({ id, time }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getVolumeAtClipLocalTime(id, time)
+  }, { id: clipId, time: localTime })
+}
+
+export async function getClipVolumeKeyframeCount(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipVolumeKeyframeCount(id)
+  }, clipId)
+}
+
+export async function listAudioClipVolumeKeyframeCounts(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.listAudioClipVolumeKeyframeCounts()
+  })
+}
+
+export async function updateVolumeKeyframeById(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  keyframeId: string,
+  patch: { time?: number; volume?: number },
+) {
+  await page.evaluate(({ id, kfId, p }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.updateVolumeKeyframeById(id, kfId, p)
+  }, { id: clipId, kfId: keyframeId, p: patch })
+}
+
 export async function getClipKenBurnsEnabled(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

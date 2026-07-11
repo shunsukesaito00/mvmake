@@ -81,6 +81,14 @@ import {
   seedVideoFadeStress,
   type VideoFadeStressStats,
 } from './utils/videoFadeStressSetup'
+import {
+  getClipVolumeKeyframeCount as getStressClipVolumeKeyframeCount,
+  getVolumeAtClipLocalTime,
+  listAudioClipVolumeKeyframeCounts,
+  seedVolumeKeyframeTimelineStress,
+  updateVolumeKeyframeById,
+  type VolumeKeyframeTimelineStressStats,
+} from './utils/volumeKeyframeTimelineStressSetup'
 import { parseExportedExportPresetFile } from './utils/exportPresetFile'
 import { importExportPresets } from './persistence/exportPresets'
 import { filterChapterMarkers } from './utils/beatMarkers'
@@ -138,6 +146,11 @@ declare global {
       getMediaVisualOpacityForClip: (clipId: string, time: number) => number
       getClipFadeValues: (clipId: string) => { fadeIn: number; fadeOut: number }
       applyClipFade: (clipId: string, fadeIn: number, fadeOut: number) => { fadeIn: number; fadeOut: number }
+      loadVolumeKeyframeTimelineStress: () => VolumeKeyframeTimelineStressStats
+      getVolumeAtClipLocalTime: (clipId: string, localTime: number) => number
+      getClipVolumeKeyframeCount: (clipId: string) => number
+      listAudioClipVolumeKeyframeCounts: () => Array<{ clipId: string; count: number }>
+      updateVolumeKeyframeById: (clipId: string, keyframeId: string, patch: { time?: number; volume?: number }) => void
       importUserProjectTemplateJson: (json: string) => string
       importProjectSettingsPresetJson: (json: string) => string[]
       clearUserProjectTemplates: () => void
@@ -233,6 +246,11 @@ export function installE2eBridge(): void {
     getMediaVisualOpacityForClip: (clipId, time) => getMediaVisualOpacityForClip(clipId, time),
     getClipFadeValues: (clipId) => getClipFadeValues(clipId),
     applyClipFade: (clipId, fadeIn, fadeOut) => applyClipFade(clipId, fadeIn, fadeOut),
+    loadVolumeKeyframeTimelineStress: () => seedVolumeKeyframeTimelineStress(),
+    getVolumeAtClipLocalTime: (clipId, localTime) => getVolumeAtClipLocalTime(clipId, localTime),
+    getClipVolumeKeyframeCount: (clipId) => getStressClipVolumeKeyframeCount(clipId),
+    listAudioClipVolumeKeyframeCounts: () => listAudioClipVolumeKeyframeCounts(),
+    updateVolumeKeyframeById: (clipId, keyframeId, patch) => updateVolumeKeyframeById(clipId, keyframeId, patch),
     importUserProjectTemplateJson: (json) => importUserProjectTemplateFromText(json).label,
     importProjectSettingsPresetJson: (json) => {
       let raw: unknown

@@ -68,6 +68,7 @@
 | `docs/EXPORT_RESOLUTION_ALIGNMENT_AUDIT.md` | プロジェクト解像度と書き出しの整合（v1.97.0） |
 | `docs/EXPORT_PRESET_AUDIT.md` | 書き出しプリセットの保存（v1.98.0） |
 | `docs/VIDEO_FADE_AUDIT.md` | 映像クリップのフェードイン/アウト（v1.99.0） |
+| `docs/VOLUME_KEYFRAME_TIMELINE_AUDIT.md` | 音量キーフレームのタイムライン UI（v2.0.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 
