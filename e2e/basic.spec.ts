@@ -1436,3 +1436,75 @@ test('クリップ分割: トランスフォームキーフレームを両側に
   await expect(page.locator('footer').getByText('Opening')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toHaveCount(2)
 })
+
+test('クリップ分割: 音量キーフレームを両側に再配分する', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'bgm-split.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'bgm-split.wav')
+
+  await page.getByRole('button', { name: '音量キーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const timeSliders = page.getByRole('slider', { name: '位置 (秒)' })
+  await timeSliders.nth(1).fill('2')
+
+  await page.locator('main input[type="range"]').fill('1')
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  await expect(page.locator('footer').getByText('bgm-split.wav')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: '音量キーフレーム 1' })).toHaveCount(2)
+})
+
+test('クリップ分割: 速度キーフレームを両側に再配分する', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.setInputFiles('input[accept*="video"]', { name: 'speed-split.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'speed-split.webm')
+
+  await page.getByRole('button', { name: '再生速度' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const timeSliders = page.getByRole('slider', { name: '位置 (秒)' })
+  await timeSliders.nth(1).fill('1')
+
+  await page.locator('main input[type="range"]').fill('0.5')
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  await expect(page.locator('footer').getByText('speed-split.webm')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: '速度キーフレーム 1' })).toHaveCount(2)
+})
+
+test('色調: LUT をインポートして適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'lut-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'lut-photo.png')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'wedding-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await expect(page.getByText('「wedding-warm」をインポートしました')).toBeVisible()
+
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'wedding-warm (2³)' })
+  await expect(page.getByText('「wedding-warm」LUT を適用しました')).toBeVisible()
+  await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
+  await expect(page.getByLabel('LUTプレビュー')).toBeVisible()
+})
