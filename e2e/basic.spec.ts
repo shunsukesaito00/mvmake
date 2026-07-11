@@ -8,6 +8,7 @@ import {
   clickTimelineClip,
   clearTextStylePresets,
   installNarrationRecordingMocks,
+  installNarrationPermissionDeniedMock,
   loadTextStylePresetStress,
   loadMediaListStress,
   loadAudioNormalizeStress,
@@ -3272,4 +3273,38 @@ ${longText}`
   const content = Buffer.concat(chunks).toString('utf-8')
   expect(content).toContain('00:00:01,000 --> 00:00:06,500')
   expect(content).toContain('本日はお越しいただき')
+})
+
+test('ユーザーテンプレート: ストレス投入から新規作成できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadUserProjectTemplateStress(page)
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: `${stats.templateLabel}で新規作成` }).click()
+  await expect(page.getByText(`「${stats.templateLabel}」で新規プロジェクトを作成しました`)).toBeVisible()
+  await expect.poll(() => getProjectClipCount(page)).toBe(stats.clipCount)
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+})
+
+test('プロジェクト設定: 破損 JSON のインポートはエラー表示する', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByLabel('プロジェクト設定プリセットファイルをインポート').setInputFiles({
+    name: 'broken.fable-project-preset.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{not-valid-json', 'utf-8'),
+  })
+  await expect(page.getByText('JSON の読み込みに失敗しました')).toBeVisible()
+})
+
+test('メディア: マイク拒否時に案内と再試行を表示する', async ({ page }) => {
+  await installNarrationPermissionDeniedMock(page)
+  await goOnboarded(page)
+
+  await page.getByTitle('メディア').click()
+  await page.getByRole('button', { name: '録音開始' }).click()
+  await expect(page.getByRole('alert')).toContainText('マイクの使用が許可されていません')
+  await expect(page.getByRole('button', { name: '再試行' })).toBeVisible()
+  await page.getByRole('button', { name: '権限の確認方法' }).click()
+  await expect(page.getByRole('dialog', { name: 'マイク権限の確認方法' })).toBeVisible()
 })

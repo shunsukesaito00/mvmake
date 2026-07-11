@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 206
+export const PROD_SMOKE_SCENARIO_COUNT = 209
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -449,4 +449,11 @@ export const PROD_SMOKE_V2258_ADDITIONS = [
   'プロジェクト設定: プリセットを JSON',
   '保存済みテンプレートを削除',
   '長文 SRT をインポートして再エクスポート',
+] as const
+
+/** v2.2.59 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2259_ADDITIONS = [
+  'ストレス投入から新規作成',
+  '破損 JSON のインポートはエラー',
+  'マイク拒否時に案内と再試行',
 ] as const
