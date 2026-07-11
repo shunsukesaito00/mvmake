@@ -80,6 +80,7 @@ import {
   loadChapterExportStressProject,
   loadChapterExportE2eProject,
   loadMarkerEditStress,
+  loadUserProjectTemplateStress,
 } from './helpers'
 
 async function goOnboarded(page: Page) {
@@ -3141,4 +3142,61 @@ test('写真ガイド: 配置後に undo でガイドが復元される', async 
   await page.keyboard.press('ControlOrMeta+z')
   await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
   await expect(page.locator('footer').getByText('undo-guide.png')).toBeHidden()
+})
+
+test('ユーザーテンプレート: 適用を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadUserProjectTemplateStress(page)
+  expect(stats.clipCount).toBeGreaterThan(0)
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: '+ 新規プロジェクト' }).click()
+  await expect(page.getByText('新規プロジェクトを作成しました')).toBeVisible()
+  await expect.poll(() => getProjectClipCount(page)).toBe(0)
+
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: `${stats.templateLabel}を適用` }).click()
+  await expect(page.getByText(`「${stats.templateLabel}」テンプレートを適用しました`)).toBeVisible()
+  await expect.poll(() => getProjectClipCount(page)).toBe(stats.clipCount)
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect.poll(() => getProjectClipCount(page)).toBe(0)
+})
+
+test('プロジェクト設定: プリセットを保存して適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: /縦型 9:16/ }).click()
+  await page.getByLabel('設定プリセット名').fill('縦型婚礼')
+  await page.getByRole('button', { name: '設定プリセット保存' }).click()
+  await expect(page.getByText('「縦型婚礼」設定を保存しました')).toBeVisible()
+
+  await page.getByRole('button', { name: /正方形/ }).click()
+  await page.getByRole('dialog').getByRole('button', { name: '適用', exact: true }).click()
+
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: '縦型婚礼を適用' }).click()
+  await expect(page.getByText('「縦型婚礼」設定を適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /縦型 9:16/ })).toHaveClass(/accent/)
+
+  await page.getByRole('dialog').getByRole('button', { name: '適用', exact: true }).click()
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByText('プロジェクト解像度: 1080×1920')).toBeVisible()
+})
+
+test('メディア: 複数ファイル取り込みで進捗表示が使われる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'import-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'import-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'import-c.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('import-a.png')).toBeVisible()
+  await expect(page.getByText('import-b.png')).toBeVisible()
+  await expect(page.getByText('import-c.png')).toBeVisible()
 })

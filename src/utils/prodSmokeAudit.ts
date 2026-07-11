@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 200
+export const PROD_SMOKE_SCENARIO_COUNT = 203
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -435,4 +435,11 @@ export const PROD_SMOKE_V2256_ADDITIONS = [
   '自動保存: 編集後にインジケータ',
   '選択クリップへズームとフィット',
   '配置後に undo でガイドが復元',
+] as const
+
+/** v2.2.57 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2257_ADDITIONS = [
+  'ユーザーテンプレート: 適用を undo',
+  'プリセットを保存して適用',
+  '複数ファイル取り込みで進捗表示',
 ] as const
