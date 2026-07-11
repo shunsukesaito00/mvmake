@@ -730,3 +730,10 @@ test('インスペクター: テキストスタイルを保存して適用でき
   await expect(page.getByText('「大見出し」スタイルを適用しました')).toBeVisible()
   await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('80')
 })
+
+test('テキスト: MG 花びら舞プリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Petals of Love MG: 花びら舞' }).click()
+  await expect(page.locator('footer').getByText('Petals of Love')).toBeVisible()
+})
