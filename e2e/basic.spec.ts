@@ -79,6 +79,7 @@ import {
   checkEncodersSupported,
   loadChapterExportStressProject,
   loadChapterExportE2eProject,
+  loadMarkerEditStress,
 } from './helpers'
 
 async function goOnboarded(page: Page) {
@@ -2869,4 +2870,50 @@ test('マーカー: インスペクターで編集しタイムライン上でド
   await page.mouse.up()
 
   await expect.poll(async () => Number(await timeInput.inputValue())).toBeGreaterThan(nudgedTime)
+})
+
+test('マーカー: ラベル編集を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await loadMarkerEditStress(page)
+
+  const marker = page.locator('[title="新郎プロフィール"]')
+  await marker.click()
+  const labelInput = page.getByRole('textbox', { name: 'マーカーラベル' })
+  await labelInput.fill('新郎パート改')
+  await expect(labelInput).toHaveValue('新郎パート改')
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(labelInput).toHaveValue('新郎プロフィール')
+})
+
+test('マーカー: インスペクターから削除できる', async ({ page }) => {
+  await goOnboarded(page)
+  await loadMarkerEditStress(page)
+
+  const marker = page.locator('[title="エンディング"]')
+  await marker.click()
+  await expect(page.locator('aside').getByText('章マーカー', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'マーカーを削除' }).click()
+  await expect(marker).toHaveCount(0)
+  await expect(page.locator('aside').getByText('章マーカー', { exact: true })).toHaveCount(0)
+})
+
+test('マーカー: 境界時刻の編集と再生位置へ移動', async ({ page }) => {
+  await goOnboarded(page)
+  await loadMarkerEditStress(page)
+
+  const marker = page.locator('[title="オープニング"]')
+  await marker.click()
+  const timeInput = page.getByRole('spinbutton', { name: 'マーカー時刻' })
+
+  await timeInput.fill('0')
+  await timeInput.press('Tab')
+  await expect(timeInput).toHaveValue('0')
+
+  await page.locator('main input[type="range"]').fill('30')
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__?.getPlaybackTime() ?? -1)).toBeGreaterThan(20)
+
+  await page.getByRole('button', { name: '再生位置へ移動' }).click()
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__?.getPlaybackTime() ?? -1)).toBe(0)
 })

@@ -1737,11 +1737,7 @@ test('マーカー: 境界時刻の編集と再生位置へ移動', async ({ pag
   await timeInput.press('Tab')
   await expect(timeInput).toHaveValue('0')
 
-  await page.locator('input[type="range"]').evaluate((el) => {
-    el.value = '30'
-    el.dispatchEvent(new Event('input', { bubbles: true }))
-    el.dispatchEvent(new Event('change', { bubbles: true }))
-  })
+  await page.locator('main input[type="range"]').fill('30')
   await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__?.getPlaybackTime() ?? -1)).toBeGreaterThan(20)
 
   await page.getByRole('button', { name: '再生位置へ移動' }).click()

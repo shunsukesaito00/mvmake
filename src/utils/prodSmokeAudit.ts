@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 185
+export const PROD_SMOKE_SCENARIO_COUNT = 188
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -400,4 +400,11 @@ export const PROD_SMOKE_V2251_ADDITIONS = [
   '章 ZIP 一括をキャンセル',
   '短尺プロジェクトで章 ZIP',
   'タイムライン上でドラッグ移動',
+] as const
+
+/** v2.2.52 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2252_ADDITIONS = [
+  'ラベル編集を undo',
+  'インスペクターから削除',
+  '境界時刻の編集と再生位置',
 ] as const

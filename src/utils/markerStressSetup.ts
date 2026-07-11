@@ -15,9 +15,10 @@ export function seedMarkerEditStress(): MarkerEditStressStats {
   if (!template) throw new Error('structured-wedding template missing')
 
   const store = useProjectStore.getState()
+  store.resetProject()
   store.applyTemplate(template)
 
-  const markers = store.project.markers ?? []
+  const markers = useProjectStore.getState().project.markers ?? []
   const chapterMarkers = filterChapterMarkers(markers)
   if (chapterMarkers.length !== STRUCTURED_WEDDING_CHAPTER_MARKER_COUNT) {
     throw new Error(`expected ${STRUCTURED_WEDDING_CHAPTER_MARKER_COUNT} chapter markers, got ${chapterMarkers.length}`)
@@ -26,6 +27,6 @@ export function seedMarkerEditStress(): MarkerEditStressStats {
   return {
     chapterMarkerCount: chapterMarkers.length,
     markerIds: chapterMarkers.map((m) => m.id),
-    projectDuration: store.getProjectDuration(),
+    projectDuration: useProjectStore.getState().getProjectDuration(),
   }
 }
