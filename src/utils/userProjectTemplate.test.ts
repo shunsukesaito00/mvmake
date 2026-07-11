@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import type { Project, TextClip } from '../types/project'
 import {
+  DEFAULT_COLOR,
+  DEFAULT_CROP,
+  DEFAULT_KEN_BURNS,
   DEFAULT_TEXT_BACKGROUND_PADDING,
   DEFAULT_TEXT_BACKGROUND_RADIUS,
   DEFAULT_TEXT_LINE_HEIGHT,
@@ -131,6 +134,34 @@ describe('userProjectTemplate utils', () => {
     expect(formatUserProjectTemplateSummary(summary)).toContain('1080×1920')
     expect(formatUserProjectTemplateSummary(summary)).toContain('クリップ2件')
   })
+
+  it('applyUserProjectTemplateToTracks は映像2トラック目のクリップを割り当てる', () => {
+    const project = sampleProject()
+    const videoClip = {
+      id: 'v1',
+      trackId: TRACK_V2,
+      type: 'image' as const,
+      mediaId: 'img1',
+      startTime: 0,
+      duration: 4,
+      sourceStart: 0,
+      sourceDuration: 4,
+      transform: { ...DEFAULT_TRANSFORM },
+      kenBurns: { ...DEFAULT_KEN_BURNS },
+      color: { ...DEFAULT_COLOR },
+      crop: { ...DEFAULT_CROP },
+      fadeIn: 0,
+      fadeOut: 0,
+    }
+    project.tracks[1].clips = [videoClip]
+    const template = buildUserProjectTemplate(project, '2トラック検証')
+    const baseTracks = sampleProject().tracks.map((t) => ({ ...t, clips: [] }))
+    const { tracks } = applyUserProjectTemplateToTracks(template, baseTracks)
+
+    const secondVideoTrack = tracks.find((t) => t.id === TRACK_V2)
+    expect(secondVideoTrack?.clips).toHaveLength(1)
+    expect(secondVideoTrack?.clips[0]?.type).toBe('image')
+  })
 })
 
 describe('userProjectTemplates persistence', () => {
@@ -167,5 +198,10 @@ describe('userProjectTemplates persistence', () => {
     const template = buildUserProjectTemplate(sampleProject(), '置換')
     replaceUserProjectTemplates([template])
     expect(loadUserProjectTemplates()).toHaveLength(1)
+  })
+
+  it('破損 JSON は空配列を返す', () => {
+    localStorage.setItem('fable-user-project-templates', '{invalid')
+    expect(loadUserProjectTemplates()).toEqual([])
   })
 })

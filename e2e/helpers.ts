@@ -131,6 +131,35 @@ export async function getMediaAssetName(page: import('@playwright/test').Page, m
   }, mediaId)
 }
 
+export async function loadUserProjectTemplateStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadUserProjectTemplateStress()
+  })
+  return stats
+}
+
+export async function clearUserProjectTemplates(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.clearUserProjectTemplates()
+  })
+}
+
+export async function getUserProjectTemplateCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getUserProjectTemplateCount()
+  })
+}
+
+export async function getProjectClipCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getProjectClipCount()
+  })
+}
+
 export async function selectClipById(page: import('@playwright/test').Page, clipId: string) {
   await page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

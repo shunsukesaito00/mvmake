@@ -1121,4 +1121,31 @@ describe('user project template', () => {
     expect(project.mediaAssets).toHaveLength(0)
     expect(project.tracks.flatMap((t) => t.clips).length).toBeGreaterThan(0)
   })
+
+  it('applyUserProjectTemplate の undo で適用前の構成に戻せる', () => {
+    const fullTemplate = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(fullTemplate)
+    const template = buildUserProjectTemplate(useProjectStore.getState().project, 'undo検証')
+
+    useProjectStore.getState().resetProject()
+    const emptyWidth = useProjectStore.getState().project.width
+    expect(useProjectStore.getState().project.tracks.flatMap((t) => t.clips)).toHaveLength(0)
+
+    useProjectStore.getState().applyUserProjectTemplate(template)
+    expect(useProjectStore.getState().project.tracks.flatMap((t) => t.clips).length).toBe(template.clipEntries.length)
+
+    useProjectStore.getState().undo()
+    expect(useProjectStore.getState().project.tracks.flatMap((t) => t.clips)).toHaveLength(0)
+    expect(useProjectStore.getState().project.width).toBe(emptyWidth)
+  })
+
+  it('createProjectFromUserTemplate はメディアを破棄して空にする', () => {
+    setProject(makeProject([], [imageAsset('img1')]))
+    const template = buildUserProjectTemplate(
+      { ...makeProject(), mediaAssets: [imageAsset('img1')] },
+      'メディアなし新規',
+    )
+    useProjectStore.getState().createProjectFromUserTemplate(template)
+    expect(useProjectStore.getState().project.mediaAssets).toHaveLength(0)
+  })
 })
