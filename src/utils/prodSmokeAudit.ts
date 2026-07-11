@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 230
+export const PROD_SMOKE_SCENARIO_COUNT = 233
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -505,4 +505,11 @@ export const PROD_SMOKE_V2266_ADDITIONS = [
   '画像クリップへの適用フロー',
   '動画クリップを配置して再生・停止',
   '効果タブ: 調整レイヤーを追加',
+] as const
+
+/** v2.2.67 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2267_ADDITIONS = [
+  '色調補正: カラールックプリセットを適用',
+  '映像フェード: 適用を undo で復元',
+  '映像フェード: undo 後の再適用でフェードが復元',
 ] as const

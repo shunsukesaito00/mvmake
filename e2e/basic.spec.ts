@@ -3768,3 +3768,41 @@ test('効果タブ: 調整レイヤーを追加できる', async ({ page }) => {
   await expect(page.getByText('調整レイヤーを追加しました')).toBeVisible()
   await expect(page.locator('footer').getByText('調整レイヤー')).toBeVisible()
 })
+
+test('色調補正: カラールックプリセットを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'photo.png')
+
+  await expect(page.getByLabel('カラールックプレビュー')).toBeVisible()
+  await expect(page.getByLabel('カラールックプレビュー').locator('canvas')).toBeVisible()
+  await page.getByRole('button', { name: 'フィルム風ルック', exact: true }).click()
+  await expect(page.getByText('「フィルム風」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'フィルム風ルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('映像フェード: 適用を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVideoFadeStress(page)
+  await applyClipFade(page, stats.imageClipId, 0.2, 0.2)
+  expect((await getClipFadeValues(page, stats.imageClipId)).fadeIn).toBe(0.2)
+
+  await page.keyboard.press('ControlOrMeta+z')
+  expect((await getClipFadeValues(page, stats.imageClipId)).fadeIn).toBe(stats.imageFadeIn)
+  expect((await getClipFadeValues(page, stats.imageClipId)).fadeOut).toBe(stats.imageFadeOut)
+  expect(await getMediaVisualOpacityForClip(page, stats.imageClipId, 0)).toBe(0)
+})
+
+test('映像フェード: undo 後の再適用でフェードが復元される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVideoFadeStress(page)
+  await applyClipFade(page, stats.videoClipId, 0, 0)
+  await page.keyboard.press('ControlOrMeta+z')
+
+  const applied = await applyClipFade(page, stats.videoClipId, stats.videoFadeIn, stats.videoFadeOut)
+  expect(applied.fadeIn).toBe(stats.videoFadeIn)
+  expect(applied.fadeOut).toBe(stats.videoFadeOut)
+  expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, stats.videoFadeIn)).toBeCloseTo(1)
+  expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, 6)).toBe(0)
+})
