@@ -3978,3 +3978,62 @@ test('色調補正: RGB カーブの G チャンネルを調整できる', async
   await expect(gMid).toHaveValue('0.65')
   await expect(page.getByLabel('RGB カーブ (G)')).toBeVisible()
 })
+
+test('色調補正: RGB カーブの B チャンネルを調整できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-curve-b-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-curve-b-photo.png')
+
+  await page.getByRole('button', { name: 'B', exact: true }).click()
+  const bMid = page.getByRole('slider', { name: 'B カーブ 50%' })
+  await bMid.fill('0.6')
+  await expect(bMid).toHaveValue('0.6')
+  await expect(page.getByLabel('RGB カーブ (B)')).toBeVisible()
+})
+
+test('色調補正: RGB カーブ制御点追加後にルック選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-bezier-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-bezier-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  const graph = page.getByLabel('RGB カーブ (R)')
+  const box = await graph.boundingBox()
+  expect(box).not.toBeNull()
+  await graph.dblclick({ position: { x: box!.width * 0.4, y: box!.height * 0.45 } })
+  await expect(page.getByRole('button', { name: '制御点を削除' })).toBeVisible()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('書き出し: 保存済みプリセット削除後に JSON 再インポートして適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+
+  await page.getByRole('button', { name: /標準/ }).click()
+  await page.getByRole('button', { name: '解像度 プロジェクト' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EReimportPreset')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EReimportPreset」プリセットを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EReimportPresetをエクスポート' }).click()
+  const download = await downloadPromise
+  const exportPath = path.join(test.info().outputDir, 'e2e-reimport-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.getByRole('button', { name: 'E2EReimportPresetを削除' }).click()
+  await expect(page.getByRole('button', { name: 'E2EReimportPresetを適用' })).toBeHidden()
+
+  await page.getByLabel('書き出しプリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EReimportPreset」プリセットをインポートしました')).toBeVisible()
+  await page.getByRole('button', { name: 'E2EReimportPresetを適用' }).click()
+  await expect(page.getByText('「E2EReimportPreset」プリセットを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /標準/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: '解像度 プロジェクト' })).toHaveAttribute('aria-pressed', 'true')
+})
