@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 293
+export const PROD_SMOKE_SCENARIO_COUNT = 296
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -652,4 +652,11 @@ export const PROD_SMOKE_V2287_ADDITIONS = [
   '色調補正: ルック適用後の明るさ変更を undo でルック選択まで復元',
   '書き出し: In/Out 付きプリセット適用後に In/Out なしプリセットを適用',
   '色調補正: ユーザールック適用後に LUT を適用するとユーザールック選択が解除',
+] as const
+
+/** v2.2.88 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2288_ADDITIONS = [
+  '色調補正: ルック適用後のコントラスト変更を undo でルック選択まで復元',
+  '書き出し: In/Out 付き→なし→付きプリセットを連続適用',
+  '色調補正: LUT 適用後の LUT 解除を undo で LUT 選択まで復元',
 ] as const

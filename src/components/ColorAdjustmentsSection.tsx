@@ -47,7 +47,7 @@ export function ColorAdjustmentsSection({
   const importLutFile = useProjectStore((s) => s.importLutFile)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const lutIntensityDragRef = useRef<number | null>(null)
-  const toneDragRef = useRef<{ field: 'shadows' | 'midtones' | 'highlights' | 'brightness'; from: number } | null>(null)
+  const toneDragRef = useRef<{ field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast'; from: number } | null>(null)
   const [userPresets, setUserPresets] = useState<UserColorLookPreset[]>([])
   const [lookCatalogFilter, setLookCatalogFilter] = useState<CatalogFilterValue>('all')
   const [lookFavorites, setLookFavorites] = useState(() => loadPresetFavorites().colorLook)
@@ -76,7 +76,7 @@ export function ColorAdjustmentsSection({
     onChange({ ...(color ?? DEFAULT_COLOR), [field]: value }, recordHistory)
   }
 
-  const renderToneSlider = (label: string, field: 'shadows' | 'midtones' | 'highlights' | 'brightness') => {
+  const renderToneSlider = (label: string, field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast') => {
     const value = color?.[field] ?? DEFAULT_COLOR[field]
     return (
       <div className="space-y-1.5" key={field}>
@@ -290,7 +290,7 @@ export function ColorAdjustmentsSection({
         <Slider label="ティント" value={color?.tint ?? DEFAULT_COLOR.tint} min={-1} max={1} step={0.05} format={(v) => (v < 0 ? '緑' : v > 0 ? 'マゼンタ' : '標準')} onChange={(v) => updateField('tint', v)} />
       </div>
       {renderToneSlider('明るさ', 'brightness')}
-      <Slider label="コントラスト" value={color?.contrast ?? DEFAULT_COLOR.contrast} min={-1} max={1} step={0.05} onChange={(v) => updateField('contrast', v)} />
+      {renderToneSlider('コントラスト', 'contrast')}
       <Slider label="彩度" value={color?.saturation ?? DEFAULT_COLOR.saturation} min={-1} max={1} step={0.05} onChange={(v) => updateField('saturation', v)} />
     </div>
   )
