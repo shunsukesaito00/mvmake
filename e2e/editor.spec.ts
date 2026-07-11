@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -1106,6 +1106,41 @@ test('テンプレート: 構造化テンプレートで章マーカーと写真
   await expect(page.locator('[title="新郎プロフィール"]')).toBeVisible()
   await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+})
+
+test('構造化ウェディング: ストレス投入で11クリップ・5章マーカーが配置される', async ({ page }) => {
+  const stats = await loadStructuredWeddingTemplateStress(page)
+  expect(stats.totalClipCount).toBe(11)
+  expect(stats.photoGuideCount).toBe(8)
+  expect(stats.markerCount).toBe(5)
+  expect(stats.textClipCount).toBe(3)
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+  await expect(page.locator('[title="オープニング"]')).toBeVisible()
+  await expect(page.locator('footer').getByText(stats.firstPhotoGuideLabel)).toBeVisible()
+})
+
+test('構造化ウェディング: 適用を undo で復元できる', async ({ page }) => {
+  const stats = await loadStructuredWeddingTemplateStress(page)
+  expect(stats.totalClipCount).toBe(11)
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect.poll(() => getProjectClipCount(page)).toBe(0)
+  expect(await getChapterMarkerCount(page)).toBe(0)
+  expect(await getPhotoGuideClipCount(page)).toBe(0)
+})
+
+test('構造化ウェディング: undo 後の再適用で章マーカーと写真ガイドが復元される', async ({ page }) => {
+  await loadStructuredWeddingTemplateStress(page)
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect.poll(() => getProjectClipCount(page)).toBe(0)
+
+  await applyWeddingFullTemplate(page)
+  const stats = await getStructuredWeddingTemplateStressStats(page)
+  expect(stats.totalClipCount).toBe(11)
+  expect(stats.photoGuideCount).toBe(8)
+  expect(stats.markerCount).toBe(5)
+  expect(stats.chapterLabels).toContain('新郎プロフィール')
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
 })
 
 test('写真ガイド: 選択区間にスライドショーを配置できる', async ({ page }) => {

@@ -158,6 +158,35 @@ export async function listImageClipTransformKeyframeCounts(page: import('@playwr
   })
 }
 
+export async function loadStructuredWeddingTemplateStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadStructuredWeddingTemplateStress()
+  })
+  return stats
+}
+
+export async function getStructuredWeddingTemplateStressStats(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getStructuredWeddingTemplateStressStats()
+  })
+}
+
+export async function getChapterMarkerCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getChapterMarkerCount()
+  })
+}
+
+export async function getPhotoGuideClipCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getPhotoGuideClipCount()
+  })
+}
+
 export async function getClipKenBurnsEnabled(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

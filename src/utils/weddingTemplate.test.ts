@@ -6,6 +6,11 @@ import {
   buildTemplateTextClips,
   formatPhotoGuideLabel,
 } from './weddingTemplate'
+import {
+  STRUCTURED_WEDDING_PHOTO_GUIDE_COUNT,
+  STRUCTURED_WEDDING_TEXT_CLIP_COUNT,
+  STRUCTURED_WEDDING_TOTAL_CLIP_COUNT,
+} from './structuredWeddingTemplateStressSetup'
 
 const TEXT_TRACK_ID = 'track-text'
 
@@ -40,5 +45,13 @@ describe('weddingTemplate', () => {
     expect(guides).toHaveLength(8)
     expect(guides[0].text.content).toBe('写真: 新郎 幼少期')
     expect(guides.every((c) => c.animation.type === 'none')).toBe(true)
+  })
+
+  it('構造化テンプレートのクリップ総数が11件である', () => {
+    const textClips = buildTemplateTextClips(structured, TEXT_TRACK_ID)
+    const guides = buildPhotoGuideClips(structured, TEXT_TRACK_ID)
+    expect(textClips).toHaveLength(STRUCTURED_WEDDING_TEXT_CLIP_COUNT)
+    expect(guides).toHaveLength(STRUCTURED_WEDDING_PHOTO_GUIDE_COUNT)
+    expect(textClips.length + guides.length).toBe(STRUCTURED_WEDDING_TOTAL_CLIP_COUNT)
   })
 })

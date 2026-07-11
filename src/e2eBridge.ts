@@ -45,6 +45,13 @@ import {
   seedTransformKeyframeStress,
   type TransformKeyframeStressStats,
 } from './utils/transformKeyframeStressSetup'
+import {
+  getStructuredWeddingTemplateStressStats,
+  seedStructuredWeddingTemplateStress,
+  type StructuredWeddingTemplateStressStats,
+} from './utils/structuredWeddingTemplateStressSetup'
+import { filterChapterMarkers } from './utils/beatMarkers'
+import { isPhotoGuideClip } from './utils/photoGuide'
 import { getTransformAtLocalTime } from './utils/transformKeyframes'
 import { loadTextStylePresets } from './persistence/textStylePresets'
 import {
@@ -78,6 +85,8 @@ declare global {
       loadProjectSettingsPresetExportStress: () => ProjectSettingsPresetExportStressStats
       loadAudioNormalizeStress: () => AudioNormalizeStressStats
       loadTransformKeyframeStress: () => TransformKeyframeStressStats
+      loadStructuredWeddingTemplateStress: () => StructuredWeddingTemplateStressStats
+      getStructuredWeddingTemplateStressStats: () => StructuredWeddingTemplateStressStats
       importUserProjectTemplateJson: (json: string) => string
       importProjectSettingsPresetJson: (json: string) => string[]
       clearUserProjectTemplates: () => void
@@ -85,6 +94,8 @@ declare global {
       getUserProjectTemplateCount: () => number
       getProjectSettingsPresetCount: () => number
       getProjectClipCount: () => number
+      getChapterMarkerCount: () => number
+      getPhotoGuideClipCount: () => number
       getProjectWidth: () => number
       getProjectHeight: () => number
       getProjectFps: () => number
@@ -142,6 +153,8 @@ export function installE2eBridge(): void {
     loadProjectSettingsPresetExportStress: () => seedProjectSettingsPresetExportStress(),
     loadAudioNormalizeStress: () => seedAudioNormalizeStress(),
     loadTransformKeyframeStress: () => seedTransformKeyframeStress(),
+    loadStructuredWeddingTemplateStress: () => seedStructuredWeddingTemplateStress(),
+    getStructuredWeddingTemplateStressStats: () => getStructuredWeddingTemplateStressStats(),
     importUserProjectTemplateJson: (json) => importUserProjectTemplateFromText(json).label,
     importProjectSettingsPresetJson: (json) => {
       let raw: unknown
@@ -159,6 +172,12 @@ export function installE2eBridge(): void {
     getProjectSettingsPresetCount: () => loadProjectSettingsPresets().length,
     getProjectClipCount: () =>
       useProjectStore.getState().project.tracks.flatMap((t) => t.clips).length,
+    getChapterMarkerCount: () =>
+      filterChapterMarkers(useProjectStore.getState().project.markers ?? []).length,
+    getPhotoGuideClipCount: () =>
+      useProjectStore.getState().project.tracks
+        .flatMap((t) => t.clips)
+        .filter((c) => isPhotoGuideClip(c)).length,
     getProjectWidth: () => useProjectStore.getState().project.width,
     getProjectHeight: () => useProjectStore.getState().project.height,
     getProjectFps: () => useProjectStore.getState().project.fps,

@@ -26,6 +26,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/PROJECT_SETTINGS_PRESET_AUDIT.md',
   'docs/AUDIO_NORMALIZE_AUDIT.md',
   'docs/TRANSFORM_KEYFRAME_AUDIT.md',
+  'docs/STRUCTURED_WEDDING_TEMPLATE_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {
