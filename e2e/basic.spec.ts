@@ -2995,3 +2995,52 @@ test('ショートカット: Space で再生・停止、Cmd/Ctrl+Z で取り消�
   await page.keyboard.press('ControlOrMeta+z')
   await expect(page.locator('footer').getByText('Opening')).toBeHidden()
 })
+
+test('ショートカット: J/K/L で戻る・停止・再生', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.keyboard.press('Escape')
+
+  const transport = page.locator('main input[type="range"]').first()
+  await transport.fill('2')
+  await page.locator('header').getByText('FABLE', { exact: true }).click()
+  const beforeJ = parseFloat(await transport.inputValue())
+  expect(beforeJ).toBeGreaterThan(1)
+
+  await page.keyboard.press('j')
+  await expect.poll(async () => parseFloat(await transport.inputValue())).toBeLessThan(beforeJ - 0.5)
+
+  await page.keyboard.press('l')
+  const atPlay = parseFloat(await transport.inputValue())
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(atPlay + 0.05)
+
+  await page.keyboard.press('k')
+  const atStop = parseFloat(await transport.inputValue())
+  await page.waitForTimeout(400)
+  expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
+})
+
+test('プレビュー: 1フレーム進むボタンで再生ヘッドが進む', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.keyboard.press('Escape')
+
+  const transport = page.locator('main input[type="range"]').first()
+  const before = parseFloat(await transport.inputValue())
+  await page.getByRole('button', { name: '1フレーム進む' }).click()
+  await expect.poll(async () => parseFloat(await transport.inputValue())).toBeGreaterThan(before)
+})
+
+test('プレビュー: 1フレーム戻るボタンで再生ヘッドが戻る', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.keyboard.press('Escape')
+
+  const transport = page.locator('main input[type="range"]').first()
+  await transport.fill('2')
+  const before = parseFloat(await transport.inputValue())
+  expect(before).toBeGreaterThan(0)
+
+  await page.getByRole('button', { name: '1フレーム戻る' }).click()
+  await expect.poll(async () => parseFloat(await transport.inputValue())).toBeLessThan(before)
+})
