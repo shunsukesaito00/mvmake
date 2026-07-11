@@ -2694,3 +2694,52 @@ test('写真ガイド: スライドショー適用を undo で復元できる', 
   await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
   await expect(page.locator('footer').getByText('undo-guide.png')).toBeHidden()
 })
+
+test('写真ガイド: 52 枚を1区間に配置できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadPhotoGuideSlideshowStress(page)
+  expect(stats.imageCount).toBeGreaterThanOrEqual(50)
+  expect(stats.guideCount).toBeGreaterThanOrEqual(5)
+
+  await clickTimelineClip(page, '写真: 新郎 幼少期')
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText(`${stats.imageCount}枚の写真をガイド区間に配置しました`)).toBeVisible()
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeHidden()
+  await expect(page.locator('footer').getByText('photo-001.jpg')).toBeVisible()
+})
+
+test('写真ガイド: 複数区間に順次配置できる', async ({ page }) => {
+  await goOnboarded(page)
+  await applyWeddingFullTemplate(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'multi-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'multi-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'multi-c.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible()
+
+  await clickTimelineClip(page, '写真: 新郎 幼少期')
+  await page.locator('label').filter({ hasText: 'multi-a.png' }).locator('input').uncheck()
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText('2枚の写真をガイド区間に配置しました')).toBeVisible()
+
+  await clickTimelineClip(page, '写真: 新婦 幼少期')
+  await page.locator('label').filter({ hasText: 'multi-a.png' }).locator('input').check()
+  await page.locator('label').filter({ hasText: 'multi-b.png' }).locator('input').uncheck()
+  await page.locator('label').filter({ hasText: 'multi-c.png' }).locator('input').uncheck()
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText('1枚の写真をガイド区間に配置しました')).toBeVisible()
+})
+
+test('書き出し: 先頭章・末尾章の In/Out 境界', async ({ page }) => {
+  await goOnboarded(page)
+  await applyWeddingFullTemplate(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+
+  await page.getByRole('button', { name: '章「オープニング」を In/Out に設定' }).click()
+  await expect(page.getByText('書き出し範囲: 0.0–20.0s')).toBeVisible()
+
+  await page.getByRole('button', { name: '章「エンディング」を In/Out に設定' }).click()
+  await expect(page.getByText(/書き出し範囲: 110\.0–/)).toBeVisible()
+})

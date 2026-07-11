@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 176
+export const PROD_SMOKE_SCENARIO_COUNT = 179
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -379,4 +379,11 @@ export const PROD_SMOKE_V2248_ADDITIONS = [
   '選択区間にスライドショー',
   '8ガイド・8写真クリップ',
   'スライドショー適用を undo',
+] as const
+
+/** v2.2.49 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2249_ADDITIONS = [
+  '52 枚を1区間に配置',
+  '複数区間に順次配置',
+  '先頭章・末尾章の In/Out',
 ] as const
