@@ -1175,3 +1175,52 @@ test('インスペクター: 同名スタイル保存は上書きする', async 
   await page.getByRole('button', { name: '大見出しを適用' }).click()
   await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('48')
 })
+
+test('インスペクター: スタイル適用を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await clearTextStylePresets(page)
+  await addOpeningText(page)
+
+  await page.getByRole('button', { name: 'スタイルプリセット' }).click()
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('80')
+  await page.getByLabel('スタイル名').fill('大見出し')
+  await page.getByRole('button', { name: 'スタイル保存' }).click()
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('36')
+  await page.getByRole('button', { name: '大見出しを適用' }).click()
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('80')
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await clickTimelineClip(page, 'Opening')
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('36')
+})
+
+test('テキスト: Shift_JIS の SRT をインポートできる', async ({ page }) => {
+  await goOnboarded(page)
+  const header = Buffer.from('1\r\n00:00:01,000 --> 00:00:03,500\r\n', 'utf-8')
+  const body = new Uint8Array([
+    0x8a, 0xa3, 0x94, 0x74, 0x82, 0xcc, 0x82, 0xb2, 0x88, 0xa5, 0x8e, 0x41, 0x0d, 0x0a,
+  ])
+  const buffer = Buffer.concat([header, Buffer.from(body)])
+
+  await page.getByTitle('テキスト').click()
+  await page.setInputFiles('input[aria-label="SRT 字幕ファイル"]', {
+    name: 'subtitles-sjis.srt',
+    mimeType: 'application/x-subrip',
+    buffer,
+  })
+  await expect(page.getByText('1件の字幕クリップをインポートしました（Shift_JIS）')).toBeVisible()
+  await expect(page.locator('footer').getByText('乾杯のご挨拶')).toBeVisible()
+})
+
+test('色調: HSL の色温度を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'hsl-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'hsl-photo.png')
+
+  const temperature = page.getByRole('slider', { name: '色温度' })
+  await temperature.fill('0.4')
+  await expect(temperature).toHaveValue('0.4')
+})
