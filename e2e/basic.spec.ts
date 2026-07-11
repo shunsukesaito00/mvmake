@@ -13,6 +13,8 @@ import {
   getClipAudioVolume,
   getClipVolumeKeyframeMax,
   selectClipById,
+  loadTransformKeyframeStress,
+  getClipTransformKeyframeCount,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -1884,4 +1886,40 @@ test('インスペクター: 音量キーフレーム付きクリップを正規
 
   await expect.poll(() => getClipAudioVolume(page, stats.keyframedClipId)).toBeCloseTo(1.25, 1)
   await expect.poll(() => getClipVolumeKeyframeMax(page, stats.keyframedClipId)).toBe(2)
+})
+
+test('インスペクター: ストレス投入の BGM とナレーションを順次正規化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadAudioNormalizeStress(page)
+  expect(stats.clipCount).toBe(3)
+
+  await selectClipById(page, stats.bgmClipId)
+  await clickTimelineClip(page, stats.bgmClipName)
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+  expect(await getClipAudioVolume(page, stats.bgmClipId)).toBe(2)
+
+  await selectClipById(page, stats.narrationClipId)
+  await clickTimelineClip(page, stats.narrationClipName)
+  await expect(page.getByRole('slider', { name: '音量' })).toHaveValue('0.75')
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+  await expect.poll(() => getClipAudioVolume(page, stats.narrationClipId)).toBe(2)
+})
+
+test('インスペクター: Google Fonts を 10 種以上から選択できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  const fontSelect = page.getByLabel('フォント', { exact: true })
+  await expect(fontSelect.locator('option')).toHaveCount(12)
+  await fontSelect.selectOption('Zen Old Mincho')
+  await expect(fontSelect).toHaveValue('Zen Old Mincho')
+})
+
+test('トランスフォームキーフレーム: ストレス投入で8キーフレームがロードされる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadTransformKeyframeStress(page)
+  expect(stats.keyframeCount).toBe(8)
+  expect(await getClipTransformKeyframeCount(page, stats.clipId)).toBe(8)
 })

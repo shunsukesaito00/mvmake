@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 122
+export const PROD_SMOKE_SCENARIO_COUNT = 125
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -253,4 +253,11 @@ export const PROD_SMOKE_V2230_ADDITIONS = [
   '52件ストレスで検索',
   '音量正規化を undo',
   'KF も同倍率スケール',
+] as const
+
+/** v2.2.31 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2231_ADDITIONS = [
+  '順次正規化',
+  '10 種以上から選択',
+  '8キーフレームがロード',
 ] as const
