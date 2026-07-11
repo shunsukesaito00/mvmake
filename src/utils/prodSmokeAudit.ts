@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 99
+export const PROD_SMOKE_SCENARIO_COUNT = 100
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -194,4 +194,9 @@ export const PROD_SMOKE_V2221_ADDITIONS = [
   'イージングを設定',
   'スケールを数値入力',
   '色調プリセットを適用',
+] as const
+
+/** v2.2.22 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2222_ADDITIONS = [
+  'キーフレームを両側に再配分',
 ] as const
