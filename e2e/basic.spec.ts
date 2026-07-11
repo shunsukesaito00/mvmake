@@ -1265,3 +1265,53 @@ test('テキスト: MG プリセットをカスタムキーフレームに変換
   await expect(page.getByText('キーフレーム 2')).toBeVisible()
   await expect(page.locator('select').filter({ hasText: 'カスタム（キーフレーム）' })).toBeVisible()
 })
+
+test('色調: RGB カーブの R チャンネルを調整できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-curve-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-curve-photo.png')
+
+  const rMid = page.getByRole('slider', { name: 'R カーブ 50%' })
+  await rMid.fill('0.7')
+  await expect(rMid).toHaveValue('0.7')
+  await expect(page.getByLabel('RGB カーブ (R)')).toBeVisible()
+})
+
+test('インスペクター: トランスフォームキーフレームを追加・編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+  await expect(page.getByText('1件', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
+})
+
+test('テキスト: MG カスタムキーフレームのスケールをタイムラインで編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Our Wedding Story MG: タイトルリビール' }).click()
+  await clickTimelineClip(page, 'Our Wedding Story')
+
+  await page.getByRole('button', { name: 'カスタムキーフレームに変換' }).click()
+  await expect(page.getByText('MG アニメをカスタムキーフレームに変換しました')).toBeVisible()
+
+  await page.getByTestId('transform-kf-property-scale').click()
+  await expect(page.getByTestId('transform-kf-property-scale')).toHaveAttribute('aria-pressed', 'true')
+
+  const handle = page.getByRole('button', { name: 'トランスフォームキーフレーム 2' })
+  const beforeTitle = await handle.getAttribute('title')
+  expect(beforeTitle).toMatch(/スケール/)
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2, box.y - 20, { steps: 10 })
+  await page.mouse.up()
+
+  await expect(handle).not.toHaveAttribute('title', beforeTitle!)
+})
