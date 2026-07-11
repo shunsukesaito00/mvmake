@@ -233,6 +233,64 @@ export async function applyResolutionPresetById(page: import('@playwright/test')
   return stats
 }
 
+export async function loadExportPresetStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadExportPresetStress()
+  })
+  return stats
+}
+
+export async function loadExportPresetExportStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadExportPresetExportStress()
+  })
+  return stats
+}
+
+export async function applyExportPresetByName(page: import('@playwright/test').Page, name: string) {
+  return page.evaluate((presetName) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.applyExportPresetByName(presetName)
+  }, name)
+}
+
+export async function importExportPresetJson(page: import('@playwright/test').Page, json: string) {
+  return page.evaluate((text) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.importExportPresetJson(text)
+  }, json)
+}
+
+export async function clearExportPresets(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.clearExportPresets()
+  })
+}
+
+export async function getExportPresetCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getExportPresetCount()
+  })
+}
+
+export async function getInPoint(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getInPoint()
+  })
+}
+
+export async function getOutPoint(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getOutPoint()
+  })
+}
+
 export async function getClipKenBurnsEnabled(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

@@ -62,6 +62,20 @@ import {
   seedExportResolutionAlignmentStress,
   type ExportResolutionAlignmentStressStats,
 } from './utils/exportResolutionAlignmentStressSetup'
+import {
+  applyExportPresetByName,
+  clearExportPresetStress,
+  getExportPresetStressCount,
+  seedExportPresetStress,
+  type AppliedExportPresetState,
+  type ExportPresetStressStats,
+} from './utils/exportPresetStressSetup'
+import {
+  seedExportPresetExportStress,
+  type ExportPresetExportStressStats,
+} from './utils/exportPresetExportStressSetup'
+import { parseExportedExportPresetFile } from './utils/exportPresetFile'
+import { importExportPresets } from './persistence/exportPresets'
 import { filterChapterMarkers } from './utils/beatMarkers'
 import { isPhotoGuideClip } from './utils/photoGuide'
 import { getTransformAtLocalTime } from './utils/transformKeyframes'
@@ -105,6 +119,14 @@ declare global {
       loadExportResolutionAlignmentStress: () => ExportResolutionAlignmentStressStats
       getExportResolutionAlignmentStressStats: () => ExportResolutionAlignmentStressStats
       applyResolutionPresetById: (presetId: string) => ExportResolutionAlignmentStressStats
+      loadExportPresetStress: () => ExportPresetStressStats
+      loadExportPresetExportStress: () => ExportPresetExportStressStats
+      applyExportPresetByName: (name: string) => AppliedExportPresetState
+      importExportPresetJson: (json: string) => string[]
+      clearExportPresets: () => void
+      getExportPresetCount: () => number
+      getInPoint: () => number | null
+      getOutPoint: () => number | null
       importUserProjectTemplateJson: (json: string) => string
       importProjectSettingsPresetJson: (json: string) => string[]
       clearUserProjectTemplates: () => void
@@ -179,6 +201,23 @@ export function installE2eBridge(): void {
     loadExportResolutionAlignmentStress: () => seedExportResolutionAlignmentStress(),
     getExportResolutionAlignmentStressStats: () => getExportResolutionAlignmentStressStats(),
     applyResolutionPresetById: (presetId) => applyResolutionPresetById(presetId),
+    loadExportPresetStress: () => seedExportPresetStress(),
+    loadExportPresetExportStress: () => seedExportPresetExportStress(),
+    applyExportPresetByName: (name) => applyExportPresetByName(name),
+    importExportPresetJson: (json) => {
+      let raw: unknown
+      try {
+        raw = JSON.parse(json)
+      } catch {
+        throw new Error('JSON の読み込みに失敗しました')
+      }
+      const items = parseExportedExportPresetFile(raw)
+      return importExportPresets(items).map((p) => p.name)
+    },
+    clearExportPresets: () => clearExportPresetStress(),
+    getExportPresetCount: () => getExportPresetStressCount(),
+    getInPoint: () => useProjectStore.getState().inPoint,
+    getOutPoint: () => useProjectStore.getState().outPoint,
     importUserProjectTemplateJson: (json) => importUserProjectTemplateFromText(json).label,
     importProjectSettingsPresetJson: (json) => {
       let raw: unknown

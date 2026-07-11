@@ -29,6 +29,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/STRUCTURED_WEDDING_TEMPLATE_AUDIT.md',
   'docs/VERTICAL_916_PRESET_AUDIT.md',
   'docs/EXPORT_RESOLUTION_ALIGNMENT_AUDIT.md',
+  'docs/EXPORT_PRESET_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {

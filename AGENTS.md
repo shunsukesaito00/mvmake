@@ -66,6 +66,7 @@
 | `docs/STRUCTURED_WEDDING_TEMPLATE_AUDIT.md` | 構造化ウェディングテンプレート拡張（v1.95.0） |
 | `docs/VERTICAL_916_PRESET_AUDIT.md` | 縦型 9:16 プロジェクトプリセット（v1.96.0） |
 | `docs/EXPORT_RESOLUTION_ALIGNMENT_AUDIT.md` | プロジェクト解像度と書き出しの整合（v1.97.0） |
+| `docs/EXPORT_PRESET_AUDIT.md` | 書き出しプリセットの保存（v1.98.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 

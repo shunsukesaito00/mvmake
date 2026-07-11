@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -1235,6 +1235,44 @@ test('書き出し整合: undo 後の再適用で正方形ネイティブと720p
   await expect(page.getByRole('button', { name: '1080×1080 で書き出し' })).toBeVisible()
   await page.getByRole('button', { name: '解像度 720p' }).click()
   await expect(page.getByText('1280×720').first()).toBeVisible()
+})
+
+test('書き出しプリセット: ストレス投入で4件保存・UI適用で品質/解像度が反映される', async ({ page }) => {
+  const stats = await loadExportPresetStress(page)
+  expect(stats.presetCount).toBe(4)
+  expect(stats.names).toContain('SNS軽量')
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: 'SNS軽量を適用' }).click()
+  await expect(page.getByText('「SNS軽量」プリセットを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /軽量SNS共有/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('書き出しプリセット: In/Outクリア後の再適用で範囲が復元される', async ({ page }) => {
+  const stats = await loadExportPresetStress(page)
+  await applyExportPresetByName(page, stats.highlightPresetName)
+  expect(await getInPoint(page)).toBe(stats.highlightInPoint)
+  expect(await getOutPoint(page)).toBe(stats.highlightOutPoint)
+
+  await applyExportPresetByName(page, '標準全体')
+  expect(await getInPoint(page)).toBeNull()
+  expect(await getOutPoint(page)).toBeNull()
+
+  await applyExportPresetByName(page, stats.highlightPresetName)
+  expect(await getInPoint(page)).toBe(stats.highlightInPoint)
+  expect(await getOutPoint(page)).toBe(stats.highlightOutPoint)
+})
+
+test('書き出しプリセット: JSON往復で4件が維持される', async ({ page }) => {
+  const stats = await loadExportPresetExportStress(page)
+  await clearExportPresets(page)
+  expect(await getExportPresetCount(page)).toBe(0)
+
+  const names = await importExportPresetJson(page, stats.exportJson)
+  expect(names).toHaveLength(stats.presetCount)
+  expect(await getExportPresetCount(page)).toBe(stats.presetCount)
 })
 
 test('写真ガイド: 選択区間にスライドショーを配置できる', async ({ page }) => {
