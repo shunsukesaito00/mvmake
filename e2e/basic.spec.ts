@@ -23,7 +23,14 @@ import {
   getVolumeAtClipLocalTime,
   listVolumeKeyframeClipCounts,
   listAudioTrackVolumeKeyframeCounts,
+  listAudioClipVolumeKeyframeCounts,
   updateVolumeKeyframeById,
+  loadSlipSlideStress,
+  getClipTransformKeyframeTimes,
+  getClipVolumeKeyframeTimes,
+  getClipSourceStart,
+  getClipStartTime,
+  slipClipById,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -2001,4 +2008,40 @@ test('音量キーフレーム: キーフレーム変更を undo で復元でき
 
   await page.keyboard.press('ControlOrMeta+z')
   expect(await getVolumeAtClipLocalTime(page, stats.audioClipId, 0)).toBeCloseTo(before, 3)
+})
+
+test('音量キーフレームUI: ストレス分割で3+3に再配分される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVolumeKeyframeTimelineStress(page)
+  await selectClipById(page, stats.clipId)
+  await clickTimelineClip(page, stats.clipName)
+
+  await page.locator('main input[type="range"]').fill(String(stats.splitAt))
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  const counts = await listAudioClipVolumeKeyframeCounts(page)
+  expect(counts).toHaveLength(2)
+  expect(counts.map((c) => c.count).sort()).toEqual([3, 3])
+})
+
+test('スリップ/スライド: ストレス投入で隣接3クリップとKFがロードされる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadSlipSlideStress(page)
+  expect(stats.clipCount).toBe(3)
+  expect(stats.transformKeyframeCount).toBe(2)
+  expect(stats.volumeKeyframeCount).toBe(2)
+  expect(await getClipTransformKeyframeTimes(page, stats.selectedClipId)).toEqual(stats.transformKeyframeTimes)
+})
+
+test('スリップ/スライド: スリップでsourceStartが変化しKF時刻は維持される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadSlipSlideStress(page)
+  const transformBefore = await getClipTransformKeyframeTimes(page, stats.selectedClipId)
+  const volumeBefore = await getClipVolumeKeyframeTimes(page, stats.selectedClipId)
+
+  expect(await slipClipById(page, stats.selectedClipId, stats.slipDelta)).toBe(true)
+  expect(await getClipSourceStart(page, stats.selectedClipId)).toBe(stats.sourceStartAfterSlip)
+  expect(await getClipStartTime(page, stats.selectedClipId)).toBe(stats.selectedStartBefore)
+  expect(await getClipTransformKeyframeTimes(page, stats.selectedClipId)).toEqual(transformBefore)
+  expect(await getClipVolumeKeyframeTimes(page, stats.selectedClipId)).toEqual(volumeBefore)
 })
