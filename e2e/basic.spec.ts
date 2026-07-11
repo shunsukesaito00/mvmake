@@ -7,6 +7,7 @@ import {
   clickTimelineClip,
   makeSilentWav,
   makeTinyWebmVideo,
+  makeWavWithPeak,
   timelineClip,
 } from './helpers'
 
@@ -579,4 +580,54 @@ test('メディア: スライドショーを作成してタイムラインに配
   await page.getByRole('dialog').locator('select').selectOption('none')
   await page.getByRole('button', { name: 'タイムラインに追加' }).click()
   await expect(page.getByText('2枚の写真をタイムラインに配置しました')).toBeVisible()
+})
+
+test('インスペクター: オーディオクリップにフェードイン/アウトを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'fade-bgm.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'fade-bgm.wav')
+
+  const fadeIn = page.getByRole('slider', { name: 'フェードイン' })
+  const fadeOut = page.getByRole('slider', { name: 'フェードアウト' })
+  await fadeIn.fill('0.5')
+  await fadeOut.fill('1')
+  await expect(fadeIn).toHaveValue('0.5')
+  await expect(fadeOut).toHaveValue('1')
+})
+
+test('インスペクター: BGM ダッキングを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeWavWithPeak(0.8, 2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'duck-bgm.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'duck-bgm.wav')
+
+  await page.getByRole('button', { name: 'ダッキング' }).click()
+  await page.getByText('動画音声がある区間でBGMを下げる').click()
+  await expect(page.getByRole('slider', { name: 'ダッキング音量' })).toBeVisible()
+
+  const duckAmount = page.getByRole('slider', { name: 'ダッキング音量' })
+  await duckAmount.fill('0.25')
+  await expect(duckAmount).toHaveValue('0.25')
+})
+
+test('トランジション: フェード to 黒を画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'black-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'black-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'black-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'black-b.png' }).click()
+
+  await clickTimelineClip(page, 'black-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'フェード to 黒', exact: true }).click()
+  await expect(page.getByText('フェード to 黒を適用しました')).toBeVisible()
 })
