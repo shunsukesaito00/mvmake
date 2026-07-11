@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 218
+export const PROD_SMOKE_SCENARIO_COUNT = 221
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -477,4 +477,11 @@ export const PROD_SMOKE_V2262_ADDITIONS = [
   '画像クリップを動画メディアへ差し替え',
   '動画クリップを画像メディアへ差し替え',
   '同名テンプレートの再インポートでラベルが重複回避',
+] as const
+
+/** v2.2.63 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2263_ADDITIONS = [
+  '画像クリップのメディア差し替えを undo',
+  '動画差し替え後も音量設定を維持',
+  'メディア差し替えストレス: 候補件数と Ken Burns',
 ] as const

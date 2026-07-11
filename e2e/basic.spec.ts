@@ -85,7 +85,12 @@ import {
   loadMarkerEditStress,
   loadUserProjectTemplateStress,
   loadUserProjectTemplateExportStress,
+  loadMediaReplaceStress,
   getUserProjectTemplateCount,
+  getClipMediaId,
+  getMediaAssetName,
+  getMediaReplaceCandidateCount,
+  getClipKenBurnsEnabled,
 } from './helpers'
 
 async function goOnboarded(page: Page) {
@@ -3473,4 +3478,60 @@ test('ユーザーテンプレート: 同名テンプレートの再インポー
   await page.getByLabel('テンプレートファイルをインポート').setInputFiles(exportPath)
   await expect(page.getByText(`「${stats.templateLabel} (インポート 2)」テンプレートをインポートしました`)).toBeVisible()
   expect(await getUserProjectTemplateCount(page)).toBe(3)
+})
+
+test('インスペクター: 画像クリップのメディア差し替えを undo できる', async ({ page }) => {
+  await goOnboarded(page)
+
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'undo-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'undo-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').first().click()
+  await clickTimelineClip(page, 'undo-a.png')
+
+  await page.getByRole('button', { name: 'メディア' }).click()
+  await page.getByRole('button', { name: 'undo-b.png に差し替え' }).click()
+  await expect(page.getByText('「undo-b.png」に差し替えました')).toBeVisible()
+  await expect(page.locator('footer').getByText('undo-b.png')).toBeVisible()
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(page.locator('footer').getByText('undo-a.png')).toBeVisible()
+  await expect(page.locator('footer').getByText('undo-b.png')).toBeHidden()
+})
+
+test('インスペクター: 動画差し替え後も音量設定を維持する', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadMediaReplaceStress(page)
+  await selectClipById(page, stats.videoClipId)
+
+  expect(await getClipAudioVolume(page, stats.videoClipId)).toBeCloseTo(0.42, 2)
+
+  const replaceName = await getMediaAssetName(page, stats.videoReplaceTargetId)
+  await page.getByRole('button', { name: 'メディア', exact: true }).click()
+  await page.getByRole('button', { name: `${replaceName} に差し替え` }).click()
+  await expect(page.getByText(`「${replaceName}」に差し替えました`)).toBeVisible()
+
+  expect(await getClipMediaId(page, stats.videoClipId)).toBe(stats.videoReplaceTargetId)
+  expect(await getClipAudioVolume(page, stats.videoClipId)).toBeCloseTo(0.42, 2)
+})
+
+test('メディア差し替えストレス: 候補件数と Ken Burns 引き継ぎ', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadMediaReplaceStress(page)
+
+  expect(await getMediaReplaceCandidateCount(page, stats.imageClipId)).toBe(10)
+
+  await selectClipById(page, stats.imageClipId)
+  expect(await getClipKenBurnsEnabled(page, stats.imageClipId)).toBe(true)
+
+  const replaceName = await getMediaAssetName(page, stats.imageReplaceTargetId)
+  await page.getByRole('button', { name: 'メディア', exact: true }).click()
+  await page.getByRole('button', { name: `${replaceName} に差し替え` }).click()
+  await expect(page.getByText(`「${replaceName}」に差し替えました`)).toBeVisible()
+
+  expect(await getClipKenBurnsEnabled(page, stats.imageClipId)).toBe(true)
+  expect(await getClipMediaId(page, stats.imageClipId)).toBe(stats.imageReplaceTargetId)
 })
