@@ -101,6 +101,12 @@ export function parseFeatureComparisonSummary(md: string): FeatureComparisonSumm
   }
 }
 
+export function parseFeatureComparisonTestCoverage(md: string): { unitTests: number | null } {
+  const section = extractMarkdownSection(md, '## テストカバレッジ')
+  const unitTests = Number(section.match(/ユニットテスト \(Vitest\): (\d+)件/)?.[1] ?? NaN) || null
+  return { unitTests }
+}
+
 export function parseReadmeVersion(md: string): string | null {
   return md.match(/\*\*現在のバージョン\*\*: v([\d.]+)/)?.[1] ?? null
 }

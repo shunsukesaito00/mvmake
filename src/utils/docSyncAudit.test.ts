@@ -8,6 +8,7 @@ import {
   collectDocSyncMetrics,
   missingAuditDocFiles,
   parseReadmeProdSmokeCount,
+  parseFeatureComparisonTestCoverage,
 } from './docSyncAudit'
 
 const rootDir = resolve(import.meta.dirname, '../..')
@@ -32,6 +33,12 @@ describe('docSyncAudit', () => {
 
   it('README の本番スモーク件数が basic E2E と一致する', () => {
     expect(parseReadmeProdSmokeCount(readme)).toBe(metrics.e2eBasicCount)
+  })
+
+  it('FEATURE_COMPARISON テストカバレッジ節のユニット件数が実測と一致する', () => {
+    const featureComparison = readFileSync(resolve(rootDir, DOC_SYNC_PATHS.featureComparison), 'utf8')
+    const { unitTests } = parseFeatureComparisonTestCoverage(featureComparison)
+    expect(unitTests).toBe(metrics.unitTestCount)
   })
 
   it('監査ドキュメントがすべて存在し AGENTS に参照されている', () => {
