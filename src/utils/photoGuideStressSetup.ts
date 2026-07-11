@@ -16,12 +16,13 @@ export function seedPhotoGuideSlideshowStress(
   if (!template) throw new Error('structured-wedding template missing')
 
   const store = useProjectStore.getState()
+  store.resetProject()
   store.applyTemplate(template)
   for (const asset of createStressImageAssets(imageCount)) {
     store.addMediaAsset(asset)
   }
 
-  const guideClipIds = store.project.tracks
+  const guideClipIds = useProjectStore.getState().project.tracks
     .flatMap((t) => t.clips)
     .filter((c) => isPhotoGuideClip(c))
     .map((c) => c.id)

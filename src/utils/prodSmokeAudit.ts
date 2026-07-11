@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 173
+export const PROD_SMOKE_SCENARIO_COUNT = 176
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -372,4 +372,11 @@ export const PROD_SMOKE_V2247_ADDITIONS = [
   'フェード適用を undo',
   'フェード再適用で復元',
   'In/Outマーカーで範囲復元',
+] as const
+
+/** v2.2.48 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2248_ADDITIONS = [
+  '選択区間にスライドショー',
+  '8ガイド・8写真クリップ',
+  'スライドショー適用を undo',
 ] as const
