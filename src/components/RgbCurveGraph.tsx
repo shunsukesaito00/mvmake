@@ -34,7 +34,8 @@ export function RgbCurveGraph({ curves, onChange }: Props) {
   const [channel, setChannel] = useState<RgbCurveChannel>('r')
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const dragRef = useRef<{ index: number } | null>(null)
+  const graphDragRef = useRef<{ index: number } | null>(null)
+  const sliderDragRef = useRef<{ channel: RgbCurveChannel; index: number; from: number } | null>(null)
   const points = curves[channel]
 
   const updatePoint = useCallback((index: number, x: number, y: number, recordHistory = false) => {
@@ -52,25 +53,25 @@ export function RgbCurveGraph({ curves, onChange }: Props) {
 
   const handlePointerDown = (index: number) => (event: React.PointerEvent) => {
     setSelectedIndex(index)
-    dragRef.current = { index }
+    graphDragRef.current = { index }
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
   const handlePointerMove = (event: React.PointerEvent) => {
-    if (!dragRef.current) return
+    if (!graphDragRef.current) return
     const { x, y } = pointerToValues(event.clientX, event.clientY)
-    const index = dragRef.current.index
+    const index = graphDragRef.current.index
     const isEndpoint = index === 0 || index === points.length - 1
     updatePoint(index, isEndpoint ? points[index].x : x, y)
   }
 
   const handlePointerUp = (event: React.PointerEvent) => {
-    if (!dragRef.current) return
+    if (!graphDragRef.current) return
     const { x, y } = pointerToValues(event.clientX, event.clientY)
-    const index = dragRef.current.index
+    const index = graphDragRef.current.index
     const isEndpoint = index === 0 || index === points.length - 1
     updatePoint(index, isEndpoint ? points[index].x : x, y, true)
-    dragRef.current = null
+    graphDragRef.current = null
     event.currentTarget.releasePointerCapture(event.pointerId)
   }
 
@@ -180,8 +181,17 @@ export function RgbCurveGraph({ curves, onChange }: Props) {
               max={1}
               step={0.01}
               value={point.y}
+              onPointerDown={() => { sliderDragRef.current = { channel, index, from: point.y } }}
               onChange={(e) => onChange(updateRgbCurvePoint(curves, channel, index, Number(e.target.value)))}
-              onPointerUp={(e) => onChange(updateRgbCurvePoint(curves, channel, index, Number((e.target as HTMLInputElement).value)), true)}
+              onPointerUp={(e) => {
+                const next = Number((e.target as HTMLInputElement).value)
+                const drag = sliderDragRef.current
+                sliderDragRef.current = null
+                if (drag?.channel === channel && drag.index === index && drag.from !== next) {
+                  onChange(updateRgbCurvePoint(curves, channel, index, drag.from), false)
+                  onChange(updateRgbCurvePoint(curves, channel, index, next), true)
+                }
+              }}
               className="mt-1 w-full"
             />
           </label>
