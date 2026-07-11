@@ -7612,3 +7612,113 @@ test('色調補正: LUT 付きユーザールック適用後の強度変更を u
   await expect(lutSelect).toHaveValue('')
   await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
 })
+
+const USER_LUT_SWITCH_CUBE_COOL = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.2 0
+0 1 0
+1 0.3 0
+0 0 1
+1 0.2 1
+0 1 1
+1 0.3 1
+`)
+
+test('色調補正: ユーザールック適用後の LUT「なし」選択を undo で LUT 選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-lut-none-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-lut-none-undo-look-photo.png')
+
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserLutNoneUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserLutNoneUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserLutNoneUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'user-lut-none-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'user-lut-none-warm (2³)' })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  const lutId = await lutSelect.inputValue()
+  expect(lutId).not.toBe('')
+
+  await lutSelect.selectOption({ label: 'なし' })
+  await expect(lutSelect).toHaveValue('')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-lut-none-undo-look-photo.png')
+  await expect(lutSelect).toHaveValue(lutId)
+})
+
+test('色調補正: ユーザールック適用後の LUT 切替を undo で元の LUT まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-lut-switch-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-lut-switch-undo-look-photo.png')
+
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserLutSwitchUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserLutSwitchUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserLutSwitchUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'user-lut-switch-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'user-lut-switch-cool.cube', mimeType: 'text/plain', buffer: USER_LUT_SWITCH_CUBE_COOL })
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'user-lut-switch-warm (2³)' })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  const warmLutId = await lutSelect.inputValue()
+  expect(warmLutId).not.toBe('')
+
+  await lutSelect.selectOption({ label: 'user-lut-switch-cool (2³)' })
+  await expect(lutSelect).not.toHaveValue(warmLutId)
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-lut-switch-undo-look-photo.png')
+  await expect(lutSelect).toHaveValue(warmLutId)
+})
+
+test('色調補正: LUT 付きユーザールック適用後の LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-lut-bundled-none-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-lut-bundled-none-undo-look-photo.png')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'user-lut-bundled-none-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'user-lut-bundled-none-warm (2³)' })
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserLutBundledNoneUndoLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserLutBundledNoneUndoLook」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EUserLutBundledNoneUndoLookルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await lutSelect.selectOption({ label: 'user-lut-bundled-none-warm (2³)' })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  const lutId = await lutSelect.inputValue()
+  expect(lutId).not.toBe('')
+
+  await lutSelect.selectOption({ label: 'なし' })
+  await expect(lutSelect).toHaveValue('')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'user-lut-bundled-none-undo-look-photo.png')
+  await expect(lutSelect).toHaveValue(lutId)
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.15')
+})
