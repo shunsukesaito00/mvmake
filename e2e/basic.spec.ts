@@ -1577,3 +1577,56 @@ test('タイムライン: トランスフォームキーフレームをドラッ
 
   await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
 })
+
+test('タイムライン: トランスフォームキーフレームのベジェハンドルをドラッグ編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('2')
+  await page.getByLabel('補間イージング').selectOption('bezier')
+
+  const handle = page.getByTestId('transform-bezier-handle-out-1')
+  await expect(handle).toBeVisible()
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 30, box.y - 20, { steps: 10 })
+  await page.mouse.up()
+
+  const newBox = (await handle.boundingBox())!
+  expect(newBox.y).not.toBeCloseTo(box.y, 0)
+})
+
+test('インスペクター: 音量キーフレームを追加・編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(0.5)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'bgm-kf.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'bgm-kf.wav')
+
+  await page.getByRole('button', { name: '音量キーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+  await expect(page.getByText('1件', { exact: true })).toBeVisible()
+})
+
+test('色調: カラールックプリセットを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'look-photo.png')
+
+  await expect(page.getByLabel('カラールックプレビュー')).toBeVisible()
+  await expect(page.getByLabel('カラールックプレビュー').locator('canvas')).toBeVisible()
+  await page.getByRole('button', { name: 'フィルム風ルック', exact: true }).click()
+  await expect(page.getByText('「フィルム風」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'フィルム風ルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
