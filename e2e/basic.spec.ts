@@ -737,3 +737,34 @@ test('テキスト: MG 花びら舞プリセットを追加できる', async ({ 
   await page.getByRole('button', { name: 'Petals of Love MG: 花びら舞' }).click()
   await expect(page.locator('footer').getByText('Petals of Love')).toBeVisible()
 })
+
+test('テキスト: テロップ（ケーキカット）プリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Cake Cutting テロップ（ケーキカット）' }).click()
+  await expect(page.locator('footer').getByText('Cake Cutting')).toBeVisible()
+})
+
+test('プロジェクト設定: ループ再生を切り替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('プロジェクト設定').click()
+  const loopCheckbox = page.getByLabel('In/Out点間をループ再生')
+  await expect(loopCheckbox).not.toBeChecked()
+  await loopCheckbox.check()
+  await expect(loopCheckbox).toBeChecked()
+  await page.getByRole('dialog', { name: 'プロジェクト設定' }).getByRole('button', { name: '適用', exact: true }).click()
+  await page.getByTitle('プロジェクト設定').click()
+  await expect(page.getByLabel('In/Out点間をループ再生')).toBeChecked()
+})
+
+test('プロジェクト設定: リップル削除を切り替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('プロジェクト設定').click()
+  const rippleCheckbox = page.getByLabel('リップル編集（削除・トリム）')
+  await expect(rippleCheckbox).toBeChecked()
+  await rippleCheckbox.uncheck()
+  await expect(rippleCheckbox).not.toBeChecked()
+  await page.getByRole('dialog', { name: 'プロジェクト設定' }).getByRole('button', { name: '適用', exact: true }).click()
+  await page.getByTitle('プロジェクト設定').click()
+  await expect(page.getByLabel('リップル編集（削除・トリム）')).not.toBeChecked()
+})
