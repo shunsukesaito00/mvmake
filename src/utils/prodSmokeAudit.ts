@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 188
+export const PROD_SMOKE_SCENARIO_COUNT = 191
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -407,4 +407,11 @@ export const PROD_SMOKE_V2252_ADDITIONS = [
   'ラベル編集を undo',
   'インスペクターから削除',
   '境界時刻の編集と再生位置',
+] as const
+
+/** v2.2.53 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2253_ADDITIONS = [
+  'MP4ダウンロード、非対応環境ではエラー',
+  'キャンセル後に設定画面へ戻れる',
+  'Space で再生・停止',
 ] as const
