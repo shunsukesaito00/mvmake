@@ -5758,3 +5758,91 @@ test('色調補正: ユーザールック適用後に「なし」ルックを適
   await expect(userButton).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByRole('button', { name: 'なしルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: ルック適用後の RGB R チャンネル制御点追加を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'r-add-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'r-add-undo-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  const graph = page.getByLabel('RGB カーブ (R)')
+  const box = await graph.boundingBox()
+  expect(box).not.toBeNull()
+  await graph.dblclick({ position: { x: box!.width * 0.4, y: box!.height * 0.45 } })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'r-add-undo-look-photo.png')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('書き出し: In/Out 付きプリセットを JSON エクスポート→インポート→適用で In/Out と品質が復元される', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const playhead = page.locator('main input[type="range"]')
+
+  await playhead.fill('1')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('3')
+  await playhead.blur()
+  await page.keyboard.press('o')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: /軽量/ }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EInOutJsonQuality')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EInOutJsonQuality」プリセットを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EInOutJsonQualityをエクスポート' }).click()
+  const download = await downloadPromise
+  const exportPath = path.join(test.info().outputDir, 'e2e-inout-json-quality-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.keyboard.press('Escape')
+  await playhead.fill('1.5')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('2.5')
+  await playhead.blur()
+  await page.keyboard.press('o')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: 'E2EInOutJsonQualityを削除' }).click()
+  await page.getByRole('button', { name: /標準/ }).click()
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByLabel('書き出しプリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EInOutJsonQuality」プリセットをインポートしました')).toBeVisible()
+  await page.getByRole('button', { name: 'E2EInOutJsonQualityを適用' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+  expect(await getInPoint(page)).toBe(1)
+  expect(await getOutPoint(page)).toBe(3)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: /軽量/ })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: 組み込みルック適用後に「なし」ルックを適用すると組み込みルック選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'builtin-none-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'builtin-none-look-photo.png')
+
+  const weddingButton = page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true })
+  await weddingButton.click()
+  await expect(weddingButton).toHaveAttribute('aria-pressed', 'true')
+
+  const noneButton = page.getByRole('button', { name: 'なしルック', exact: true })
+  await noneButton.click()
+  await expect(weddingButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(noneButton).toHaveAttribute('aria-pressed', 'true')
+})
