@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -445,6 +445,40 @@ test('音量キーフレーム: キーフレーム変更を undo で復元でき
 
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
   expect(await getVolumeAtClipLocalTime(page, stats.audioClipId, 0)).toBeCloseTo(before, 3)
+})
+
+test('スリップ/スライド: ストレス投入で隣接3クリップとKFがロードされる', async ({ page }) => {
+  const stats = await loadSlipSlideStress(page)
+  expect(stats.clipCount).toBe(3)
+  expect(stats.transformKeyframeCount).toBe(2)
+  expect(stats.volumeKeyframeCount).toBe(2)
+  expect(await getClipTransformKeyframeTimes(page, stats.selectedClipId)).toEqual(stats.transformKeyframeTimes)
+})
+
+test('スリップ/スライド: スリップでsourceStartが変化しKF時刻は維持される', async ({ page }) => {
+  const stats = await loadSlipSlideStress(page)
+  const transformBefore = await getClipTransformKeyframeTimes(page, stats.selectedClipId)
+  const volumeBefore = await getClipVolumeKeyframeTimes(page, stats.selectedClipId)
+
+  expect(await slipClipById(page, stats.selectedClipId, stats.slipDelta)).toBe(true)
+  expect(await getClipSourceStart(page, stats.selectedClipId)).toBe(stats.sourceStartAfterSlip)
+  expect(await getClipStartTime(page, stats.selectedClipId)).toBe(stats.selectedStartBefore)
+  expect(await getClipTransformKeyframeTimes(page, stats.selectedClipId)).toEqual(transformBefore)
+  expect(await getClipVolumeKeyframeTimes(page, stats.selectedClipId)).toEqual(volumeBefore)
+})
+
+test('スリップ/スライド: スライドで隣接が連動しundoで復元できる', async ({ page }) => {
+  const stats = await loadSlipSlideStress(page)
+  const beforeStart = await getClipStartTime(page, stats.selectedClipId)
+  const beforePrevDuration = await getStressClipDuration(page, stats.prevClipId)
+
+  expect(await slideClipById(page, stats.selectedClipId, stats.slideDelta)).toBe(true)
+  expect(await getClipStartTime(page, stats.selectedClipId)).toBeCloseTo(stats.selectedStartAfterSlide, 3)
+  expect(await getStressClipDuration(page, stats.prevClipId)).toBeCloseTo(stats.prevDurationAfterSlide, 3)
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  expect(await getClipStartTime(page, stats.selectedClipId)).toBeCloseTo(beforeStart, 3)
+  expect(await getStressClipDuration(page, stats.prevClipId)).toBeCloseTo(beforePrevDuration, 3)
 })
 
 test('音量キーフレームUI: ストレス分割で3+3に再配分される', async ({ page }) => {

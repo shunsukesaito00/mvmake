@@ -359,6 +359,62 @@ export async function listAudioTrackVolumeKeyframeCounts(page: import('@playwrig
   })
 }
 
+export async function loadSlipSlideStress(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadSlipSlideStress()
+  })
+}
+
+export async function getClipSourceStart(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipSourceStart(id)
+  }, clipId)
+}
+
+export async function getClipStartTime(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipStartTime(id)
+  }, clipId)
+}
+
+export async function getStressClipDuration(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getStressClipDuration(id)
+  }, clipId)
+}
+
+export async function getClipTransformKeyframeTimes(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipTransformKeyframeTimes(id)
+  }, clipId)
+}
+
+export async function getClipVolumeKeyframeTimes(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipVolumeKeyframeTimes(id)
+  }, clipId)
+}
+
+export async function slipClipById(page: import('@playwright/test').Page, clipId: string, delta: number) {
+  return page.evaluate(({ id, d }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.slipClipById(id, d)
+  }, { id: clipId, d: delta })
+}
+
+export async function slideClipById(page: import('@playwright/test').Page, clipId: string, delta: number) {
+  return page.evaluate(({ id, d }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.slideClipById(id, d)
+  }, { id: clipId, d: delta })
+}
+
 export async function getVolumeAtClipLocalTime(
   page: import('@playwright/test').Page,
   clipId: string,

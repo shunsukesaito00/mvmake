@@ -70,6 +70,7 @@
 | `docs/VIDEO_FADE_AUDIT.md` | 映像クリップのフェードイン/アウト（v1.99.0） |
 | `docs/VOLUME_KEYFRAME_TIMELINE_AUDIT.md` | 音量キーフレームのタイムライン UI（v2.0.0） |
 | `docs/VOLUME_KEYFRAME_AUDIT.md` | 音量キーフレーム本体（補間・書き出し・分割・undo）（v2.0.1） |
+| `docs/SLIP_SLIDE_AUDIT.md` | スリップ/スライド編集（v2.0.2） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 

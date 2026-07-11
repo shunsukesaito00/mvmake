@@ -95,6 +95,17 @@ import {
   seedVolumeKeyframeStress,
   type VolumeKeyframeStressStats,
 } from './utils/volumeKeyframeStressSetup'
+import {
+  getClipDuration as getStressClipDuration,
+  getClipSourceStart,
+  getClipStartTime,
+  getClipTransformKeyframeTimes,
+  getClipVolumeKeyframeTimes,
+  seedSlipSlideStress,
+  slideClipById,
+  slipClipById,
+  type SlipSlideStressStats,
+} from './utils/slipSlideStressSetup'
 import { parseExportedExportPresetFile } from './utils/exportPresetFile'
 import { importExportPresets } from './persistence/exportPresets'
 import { filterChapterMarkers } from './utils/beatMarkers'
@@ -156,6 +167,14 @@ declare global {
       loadVolumeKeyframeStress: () => VolumeKeyframeStressStats
       listVolumeKeyframeClipCounts: () => Array<{ clipId: string; count: number }>
       listAudioTrackVolumeKeyframeCounts: () => Array<{ clipId: string; count: number }>
+      loadSlipSlideStress: () => SlipSlideStressStats
+      getClipSourceStart: (clipId: string) => number
+      getClipStartTime: (clipId: string) => number
+      getStressClipDuration: (clipId: string) => number
+      getClipTransformKeyframeTimes: (clipId: string) => number[]
+      getClipVolumeKeyframeTimes: (clipId: string) => number[]
+      slipClipById: (clipId: string, delta: number) => boolean
+      slideClipById: (clipId: string, delta: number) => boolean
       getVolumeAtClipLocalTime: (clipId: string, localTime: number) => number
       getClipVolumeKeyframeCount: (clipId: string) => number
       listAudioClipVolumeKeyframeCounts: () => Array<{ clipId: string; count: number }>
@@ -259,6 +278,14 @@ export function installE2eBridge(): void {
     loadVolumeKeyframeStress: () => seedVolumeKeyframeStress(),
     listVolumeKeyframeClipCounts: () => listVolumeKeyframeClipCounts(),
     listAudioTrackVolumeKeyframeCounts: () => listAudioTrackVolumeKeyframeCounts(),
+    loadSlipSlideStress: () => seedSlipSlideStress(),
+    getClipSourceStart: (clipId) => getClipSourceStart(clipId),
+    getClipStartTime: (clipId) => getClipStartTime(clipId),
+    getStressClipDuration: (clipId) => getStressClipDuration(clipId),
+    getClipTransformKeyframeTimes: (clipId) => getClipTransformKeyframeTimes(clipId),
+    getClipVolumeKeyframeTimes: (clipId) => getClipVolumeKeyframeTimes(clipId),
+    slipClipById: (clipId, delta) => slipClipById(clipId, delta),
+    slideClipById: (clipId, delta) => slideClipById(clipId, delta),
     getVolumeAtClipLocalTime: (clipId, localTime) => getVolumeAtClipLocalTime(clipId, localTime),
     getClipVolumeKeyframeCount: (clipId) => getStressClipVolumeKeyframeCount(clipId),
     listAudioClipVolumeKeyframeCounts: () => listAudioClipVolumeKeyframeCounts(),
