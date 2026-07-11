@@ -52,6 +52,7 @@
 | `docs/CHAPTER_RANGE_EXPORT_AUDIT.md` | 章区間の部分書き出し（v1.81.0） |
 | `docs/PHOTO_GUIDE_SLIDESHOW_AUDIT.md` | 写真ガイド連動スライドショー（v1.82.0） |
 | `docs/MARKER_EDIT_AUDIT.md` | マーカー編集 UI（v1.83.0） |
+| `docs/TEXT_STYLE_PRESET_AUDIT.md` | テキストスタイルのユーザー保存（v1.84.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 

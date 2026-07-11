@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useProjectStore } from './projectStore'
-import { PROJECT_TEMPLATES } from '../types/project'
+import { PROJECT_TEMPLATES, TEXT_PRESETS } from '../types/project'
 import { buildUserProjectTemplate } from '../utils/userProjectTemplate'
 import { PHOTO_GUIDE_SLIDESHOW_STRESS_IMAGE_COUNT } from '../utils/photoGuideSlideshow'
+import { applyTextStylePreset, buildSavedTextStylePreset } from '../utils/textStylePresetUtils'
 import type { AudioClip, ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
 import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
 
@@ -750,6 +751,35 @@ describe('marker selection and editing', () => {
     useProjectStore.getState().undo()
     expect(useProjectStore.getState().project.markers).toHaveLength(1)
     expect(useProjectStore.getState().project.markers![0].label).toBe('Restore')
+  })
+})
+
+describe('text style preset apply', () => {
+  it('スタイル適用の undo で書式を復元する', () => {
+    const opening = TEXT_PRESETS.find((p) => p.id === 'opening')!
+    useProjectStore.getState().addTextClip(opening, TRACK_TEXT, 0)
+    const clipId = useProjectStore.getState().selectedClipId!
+    const clip = useProjectStore.getState().getSelectedClip()
+    expect(clip?.type).toBe('text')
+    if (clip?.type !== 'text') return
+
+    const beforeSize = clip.text.fontSize
+    const preset = buildSavedTextStylePreset('test', { ...clip.text, fontSize: 99 })
+    useProjectStore.getState().updateClip(
+      clipId,
+      { text: applyTextStylePreset(clip.text, preset.style) },
+      true,
+    )
+
+    const updated = useProjectStore.getState().getSelectedClip()
+    expect(updated?.type === 'text' && updated.text.fontSize).toBe(99)
+
+    useProjectStore.getState().undo()
+    const restored = useProjectStore
+      .getState()
+      .project.tracks.flatMap((t) => t.clips)
+      .find((c) => c.id === clipId)
+    expect(restored?.type === 'text' && restored.text.fontSize).toBe(beforeSize)
   })
 })
 

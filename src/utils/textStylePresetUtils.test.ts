@@ -88,11 +88,37 @@ describe('textStylePresets persistence', () => {
   it('保存・読み込み・削除できる', () => {
     expect(loadTextStylePresets()).toEqual([])
     const preset = buildSavedTextStylePreset('テスト', sampleText)
-    saveTextStylePreset(preset)
-    expect(loadTextStylePresets()).toHaveLength(1)
+    const { presets } = saveTextStylePreset(preset)
+    expect(presets).toHaveLength(1)
     expect(loadTextStylePresets()[0].name).toBe('テスト')
 
     deleteTextStylePreset(preset.id)
+    expect(loadTextStylePresets()).toEqual([])
+  })
+
+  it('同名保存は上書きし件数を増やさない', () => {
+    const first = buildSavedTextStylePreset('見出し', sampleText)
+    saveTextStylePreset(first)
+    const second = buildSavedTextStylePreset('見出し', { ...sampleText, fontSize: 96 })
+    const { presets, replaced } = saveTextStylePreset(second)
+    expect(replaced).toBe(true)
+    expect(presets).toHaveLength(1)
+    expect(loadTextStylePresets()[0].style.fontSize).toBe(96)
+    expect(loadTextStylePresets()[0].id).toBe(first.id)
+  })
+
+  it('trim 一致の別表記も同名として上書きする', () => {
+    saveTextStylePreset(buildSavedTextStylePreset(' 見出し ', sampleText))
+    const { replaced } = saveTextStylePreset(
+      buildSavedTextStylePreset('見出し', { ...sampleText, fontSize: 72 }),
+    )
+    expect(replaced).toBe(true)
+    expect(loadTextStylePresets()).toHaveLength(1)
+    expect(loadTextStylePresets()[0].style.fontSize).toBe(72)
+  })
+
+  it('破損 JSON は空配列として扱う', () => {
+    store['fable-text-style-presets'] = '{not json'
     expect(loadTextStylePresets()).toEqual([])
   })
 

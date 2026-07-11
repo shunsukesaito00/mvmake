@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -98,6 +98,56 @@ test('インスペクター: テキストスタイルを保存して適用でき
   await page.getByRole('button', { name: '大見出しを適用' }).click()
   await expect(page.getByText('「大見出し」スタイルを適用しました')).toBeVisible()
   await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('80')
+})
+
+test('インスペクター: 同名スタイル保存は上書きする', async ({ page }) => {
+  await clearTextStylePresets(page)
+  await addOpeningText(page)
+
+  await page.getByRole('button', { name: 'スタイルプリセット' }).click()
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('80')
+  await page.getByLabel('スタイル名').fill('大見出し')
+  await page.getByRole('button', { name: 'スタイル保存' }).click()
+  await expect(page.getByText('「大見出し」スタイルを保存しました')).toBeVisible()
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('48')
+  await page.getByLabel('スタイル名').fill('大見出し')
+  await page.getByRole('button', { name: 'スタイル保存' }).click()
+  await expect(page.getByText('「大見出し」スタイルを上書き保存しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: '大見出しを適用' })).toHaveCount(1)
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('24')
+  await page.getByRole('button', { name: '大見出しを適用' }).click()
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('48')
+})
+
+test('インスペクター: 保存スタイルを削除できる', async ({ page }) => {
+  await clearTextStylePresets(page)
+  const stats = await loadTextStylePresetStress(page)
+  expect(stats.presetCount).toBeGreaterThan(0)
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: 'スタイルプリセット' }).click()
+  await page.getByRole('button', { name: `${stats.names[0]}を削除` }).click()
+  await expect(page.getByText(`「${stats.names[0]}」スタイルを削除しました`)).toBeVisible()
+  await expect(page.getByRole('button', { name: `${stats.names[0]}を適用` })).toHaveCount(0)
+})
+
+test('インスペクター: スタイル適用を undo で復元できる', async ({ page }) => {
+  await clearTextStylePresets(page)
+  await addOpeningText(page)
+
+  await page.getByRole('button', { name: 'スタイルプリセット' }).click()
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('80')
+  await page.getByLabel('スタイル名').fill('大見出し')
+  await page.getByRole('button', { name: 'スタイル保存' }).click()
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('36')
+  await page.getByRole('button', { name: '大見出しを適用' }).click()
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('80')
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('36')
 })
 
 test('インスペクター: Google Fonts を 10 種以上から選択できる', async ({ page }) => {

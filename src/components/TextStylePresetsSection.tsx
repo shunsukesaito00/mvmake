@@ -31,9 +31,15 @@ export function TextStylePresetsSection({ text, onApply }: TextStylePresetsSecti
   const handleSave = () => {
     try {
       const preset = buildSavedTextStylePreset(presetName, text)
-      setPresets(saveTextStylePreset(preset))
+      const { presets: next, replaced } = saveTextStylePreset(preset)
+      setPresets(next)
       setPresetName('')
-      showToast(`「${preset.name}」スタイルを保存しました`, 'success')
+      showToast(
+        replaced
+          ? `「${preset.name}」スタイルを上書き保存しました`
+          : `「${preset.name}」スタイルを保存しました`,
+        'success',
+      )
     } catch (err) {
       showToast(err instanceof Error ? err.message : '保存に失敗しました', 'error')
     }

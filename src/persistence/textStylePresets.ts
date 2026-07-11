@@ -51,10 +51,26 @@ export function loadTextStylePresets(): SavedTextStylePreset[] {
   return readRaw()
 }
 
-export function saveTextStylePreset(preset: SavedTextStylePreset): SavedTextStylePreset[] {
-  const next = [...readRaw(), preset]
+export interface SaveTextStylePresetResult {
+  presets: SavedTextStylePreset[]
+  replaced: boolean
+}
+
+/** 同名（trim 一致）があれば上書き、なければ追加 */
+export function saveTextStylePreset(preset: SavedTextStylePreset): SaveTextStylePresetResult {
+  const existing = readRaw()
+  const nameKey = preset.name.trim()
+  const normalized = normalizePreset({ ...preset, name: nameKey })
+  const index = existing.findIndex((p) => p.name.trim() === nameKey)
+  if (index >= 0) {
+    const next = [...existing]
+    next[index] = { ...normalized, id: existing[index]!.id }
+    writeRaw(next)
+    return { presets: next, replaced: true }
+  }
+  const next = [...existing, normalized]
   writeRaw(next)
-  return next
+  return { presets: next, replaced: false }
 }
 
 export function deleteTextStylePreset(id: string): SavedTextStylePreset[] {
