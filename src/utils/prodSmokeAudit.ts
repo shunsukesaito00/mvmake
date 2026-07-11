@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 170
+export const PROD_SMOKE_SCENARIO_COUNT = 173
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -365,4 +365,11 @@ export const PROD_SMOKE_V2246_ADDITIONS = [
   'In/Outクリア後の再適用',
   'JSON往復で4件',
   '開始/終端不透明度が整合',
+] as const
+
+/** v2.2.47 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2247_ADDITIONS = [
+  'フェード適用を undo',
+  'フェード再適用で復元',
+  'In/Outマーカーで範囲復元',
 ] as const

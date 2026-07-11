@@ -66,6 +66,8 @@ import {
   getInPoint,
   getOutPoint,
   loadVideoFadeStress,
+  applyClipFade,
+  getClipFadeValues,
   getMediaVisualOpacityForClip,
   getProjectWidth,
   getProjectHeight,
@@ -2592,4 +2594,53 @@ test('映像フェード: ストレス投入で2クリップ・開始/終端不�
   expect(stats.videoOpacityAtEnd).toBe(0)
   expect(await getMediaVisualOpacityForClip(page, stats.imageClipId, 0)).toBe(0)
   expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, stats.videoFadeIn)).toBeCloseTo(1)
+})
+
+test('映像フェード: フェード適用を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVideoFadeStress(page)
+  await applyClipFade(page, stats.imageClipId, 0.2, 0.2)
+  expect((await getClipFadeValues(page, stats.imageClipId)).fadeIn).toBe(0.2)
+
+  await page.keyboard.press('ControlOrMeta+z')
+  expect((await getClipFadeValues(page, stats.imageClipId)).fadeIn).toBe(stats.imageFadeIn)
+  expect((await getClipFadeValues(page, stats.imageClipId)).fadeOut).toBe(stats.imageFadeOut)
+  expect(await getMediaVisualOpacityForClip(page, stats.imageClipId, 0)).toBe(0)
+})
+
+test('映像フェード: undo 後のフェード再適用で復元される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVideoFadeStress(page)
+  await applyClipFade(page, stats.videoClipId, 0, 0)
+  await page.keyboard.press('ControlOrMeta+z')
+
+  const applied = await applyClipFade(page, stats.videoClipId, stats.videoFadeIn, stats.videoFadeOut)
+  expect(applied.fadeIn).toBe(stats.videoFadeIn)
+  expect(applied.fadeOut).toBe(stats.videoFadeOut)
+  expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, stats.videoFadeIn)).toBeCloseTo(1)
+  expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, 6)).toBe(0)
+})
+
+test('書き出しプリセット: 書き出しモーダル適用で In/Outマーカーで範囲復元', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadExportPresetStress(page)
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+
+  await page.getByRole('button', { name: `${stats.highlightPresetName}を適用` }).click()
+  await expect(page.getByText(`「${stats.highlightPresetName}」プリセットを適用しました`)).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 2.0')).toBeVisible()
+  await expect(page.getByText('OUT 10.0')).toBeVisible()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '標準全体を適用' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 2.0')).toBeHidden()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: `${stats.highlightPresetName}を適用` }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 2.0')).toBeVisible()
+  await expect(page.getByText('OUT 10.0')).toBeVisible()
 })
