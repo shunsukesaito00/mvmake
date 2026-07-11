@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 215
+export const PROD_SMOKE_SCENARIO_COUNT = 218
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -470,4 +470,11 @@ export const PROD_SMOKE_V2261_ADDITIONS = [
   '動画をインポートして UI が応答',
   'ユーザーテンプレート: 破損 JSON',
   'エクスポートとインポート',
+] as const
+
+/** v2.2.62 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2262_ADDITIONS = [
+  '画像クリップを動画メディアへ差し替え',
+  '動画クリップを画像メディアへ差し替え',
+  '同名テンプレートの再インポートでラベルが重複回避',
 ] as const

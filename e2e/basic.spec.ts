@@ -84,6 +84,7 @@ import {
   loadChapterExportE2eProject,
   loadMarkerEditStress,
   loadUserProjectTemplateStress,
+  loadUserProjectTemplateExportStress,
   getUserProjectTemplateCount,
 } from './helpers'
 
@@ -3414,4 +3415,62 @@ test('ユーザーテンプレート: エクスポートとインポート', asy
   await expect(page.getByText('「E2EExportテンプレ」で新規プロジェクトを作成しました')).toBeVisible()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
   await expect(page.locator('[title="オープニング"]')).toBeVisible()
+})
+
+test('インスペクター: 画像クリップを動画メディアへ差し替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'clip.webm', mimeType: 'video/webm', buffer: webm },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'photo.png' }).click()
+  await clickTimelineClip(page, 'photo.png')
+
+  await page.getByRole('button', { name: 'メディア' }).click()
+  await page.getByRole('button', { name: 'clip.webm に差し替え' }).click()
+  await expect(page.getByText('「clip.webm」に差し替えました')).toBeVisible()
+  await expect(page.locator('footer').getByText('clip.webm')).toBeVisible()
+  await expect(page.locator('footer').getByText('photo.png')).toBeHidden()
+})
+
+test('インスペクター: 動画クリップを画像メディアへ差し替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'clip.webm', mimeType: 'video/webm', buffer: webm },
+    { name: 'still.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'clip.webm' }).click()
+  await clickTimelineClip(page, 'clip.webm')
+
+  await page.getByRole('button', { name: 'メディア' }).click()
+  await page.getByRole('button', { name: 'still.png に差し替え' }).click()
+  await expect(page.getByText('「still.png」に差し替えました')).toBeVisible()
+  await expect(page.locator('footer').getByText('still.png')).toBeVisible()
+  await expect(page.locator('footer').getByText('clip.webm')).toBeHidden()
+})
+
+test('ユーザーテンプレート: 同名テンプレートの再インポートでラベルが重複回避される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadUserProjectTemplateExportStress(page)
+
+  const exportPath = path.join(test.info().outputDir, 'duplicate-import-template.json')
+  const fs = await import('node:fs')
+  fs.mkdirSync(test.info().outputDir, { recursive: true })
+  fs.writeFileSync(exportPath, stats.exportJson, 'utf-8')
+
+  await page.getByTitle('テンプレ').click()
+  await page.getByLabel('テンプレートファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText(`「${stats.templateLabel} (インポート)」テンプレートをインポートしました`)).toBeVisible()
+
+  await page.getByLabel('テンプレートファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText(`「${stats.templateLabel} (インポート 2)」テンプレートをインポートしました`)).toBeVisible()
+  expect(await getUserProjectTemplateCount(page)).toBe(3)
 })
