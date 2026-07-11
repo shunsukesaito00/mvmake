@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 462
+export const PROD_SMOKE_SCENARIO_COUNT = 465
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1058,4 +1058,11 @@ export const PROD_SMOKE_V2525_ADDITIONS = [
   '色調補正: LUT 付きユーザールックをユーザールック適用後に組み込みルックを適用した後に再適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元できる（ウエディング暖色2回再クリック挟み）',
   '色調補正: LUT 付きユーザールックをユーザールック適用後に組み込みルックを適用した後に再適用した後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（ウエディング暖色2回再クリック挟み）',
   '色調補正: LUT 付きユーザールックをユーザールック適用後に組み込みルックを適用した後に再適用した後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（ウエディング暖色2回再クリック挟み）',
+] as const
+
+/** v2.5.26 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2526_ADDITIONS = [
+  '色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元できる（ウエディング暖色2回再クリック挟み）',
+  '色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（ウエディング暖色2回再クリック挟み）',
+  '色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（ウエディング暖色2回再クリック挟み）',
 ] as const
