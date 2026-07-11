@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -508,6 +508,37 @@ test('トーンカーブ: RGB Rチャンネル変更をundoで復元できる', 
 
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
   expect(await getRgbCurveSampleAt(page, stats.clipId, 'r', 0.5)).toBeCloseTo(beforeSample, 2)
+})
+
+test('テンプレート: ストレス投入で組み込み4種とユーザー保存が有効', async ({ page }) => {
+  const stats = await loadTemplateStress(page)
+  expect(stats.builtinTemplateCount).toBe(4)
+  expect(stats.openingClipCount).toBe(1)
+  expect(stats.endingClipCount).toBe(2)
+  expect(stats.structuredClipCount).toBe(11)
+  expect(await getTemplateStressClipCount(page)).toBe(11)
+  expect(await getTemplateStressMarkerCount(page)).toBe(5)
+  expect(await applyBuiltinTemplateById(page, 'profile-movie')).toBe(1)
+})
+
+test('テンプレート: ユーザー適用をundoで復元できる', async ({ page }) => {
+  const stats = await loadTemplateStress(page)
+  await applyBuiltinTemplateById(page, 'opening-movie')
+  const beforeCount = await getTemplateStressClipCount(page)
+
+  expect(await applyUserTemplateById(page, stats.userTemplateId)).toBe(true)
+  expect(await getTemplateStressClipCount(page)).toBe(stats.userClipCount)
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  expect(await getTemplateStressClipCount(page)).toBe(beforeCount)
+})
+
+test('テンプレート: 破損JSONインポートはエラー', async ({ page }) => {
+  const result = await tryImportTemplateStressJson(page, '{broken')
+  expect(result.ok).toBe(false)
+  if (!result.ok) {
+    expect(result.error).toContain('JSON')
+  }
 })
 
 test('音量キーフレームUI: ストレス分割で3+3に再配分される', async ({ page }) => {

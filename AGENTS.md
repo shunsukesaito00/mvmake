@@ -72,6 +72,7 @@
 | `docs/VOLUME_KEYFRAME_AUDIT.md` | 音量キーフレーム本体（補間・書き出し・分割・undo）（v2.0.1） |
 | `docs/SLIP_SLIDE_AUDIT.md` | スリップ/スライド編集（v2.0.2） |
 | `docs/TONE_CURVE_AUDIT.md` | トーンカーブ / RGB カーブ（PCHIP・ピクセルグレード）（v2.0.3） |
+| `docs/TEMPLATE_AUDIT.md` | テンプレート統合（組み込み4種・ユーザー保存・JSON）（v2.1.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 

@@ -35,6 +35,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/VOLUME_KEYFRAME_AUDIT.md',
   'docs/SLIP_SLIDE_AUDIT.md',
   'docs/TONE_CURVE_AUDIT.md',
+  'docs/TEMPLATE_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {

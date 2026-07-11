@@ -468,6 +468,48 @@ export async function applyClipRgbCurvePoint(
   }, { id: clipId, ch: channel, idx: pointIndex, out: output })
 }
 
+export async function loadTemplateStress(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadTemplateStress()
+  })
+}
+
+export async function applyBuiltinTemplateById(page: import('@playwright/test').Page, templateId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.applyBuiltinTemplateById(id)
+  }, templateId)
+}
+
+export async function applyUserTemplateById(page: import('@playwright/test').Page, templateId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.applyUserTemplateById(id)
+  }, templateId)
+}
+
+export async function tryImportTemplateStressJson(page: import('@playwright/test').Page, json: string) {
+  return page.evaluate((text) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.tryImportTemplateStressJson(text)
+  }, json)
+}
+
+export async function getTemplateStressClipCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getTemplateStressClipCount()
+  })
+}
+
+export async function getTemplateStressMarkerCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getTemplateStressMarkerCount()
+  })
+}
+
 export async function getVolumeAtClipLocalTime(
   page: import('@playwright/test').Page,
   clipId: string,

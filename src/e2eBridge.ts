@@ -115,6 +115,17 @@ import {
   seedToneCurveStress,
   type ToneCurveStressStats,
 } from './utils/toneCurveStressSetup'
+import {
+  applyBuiltinTemplateById,
+  applyUserTemplateById,
+  clearTemplateStressStorage,
+  getChapterMarkerCountFromStore,
+  getProjectClipCountFromStore,
+  importTemplateStressJson,
+  seedTemplateStress,
+  tryImportTemplateStressJson,
+  type TemplateStressStats,
+} from './utils/templateStressSetup'
 import { parseExportedExportPresetFile } from './utils/exportPresetFile'
 import { importExportPresets } from './persistence/exportPresets'
 import { filterChapterMarkers } from './utils/beatMarkers'
@@ -190,6 +201,14 @@ declare global {
       getRgbCurveSampleAt: (clipId: string, channel: 'r' | 'g' | 'b', input: number) => number
       applyClipColorMidtones: (clipId: string, midtones: number) => number
       applyClipRgbCurvePoint: (clipId: string, channel: 'r' | 'g' | 'b', pointIndex: number, output: number) => number
+      loadTemplateStress: () => TemplateStressStats
+      applyBuiltinTemplateById: (templateId: string) => number
+      applyUserTemplateById: (templateId: string) => boolean
+      importTemplateStressJson: (json: string) => string
+      tryImportTemplateStressJson: (json: string) => { ok: true; label: string } | { ok: false; error: string }
+      clearTemplateStressStorage: () => void
+      getTemplateStressClipCount: () => number
+      getTemplateStressMarkerCount: () => number
       getVolumeAtClipLocalTime: (clipId: string, localTime: number) => number
       getClipVolumeKeyframeCount: (clipId: string) => number
       listAudioClipVolumeKeyframeCounts: () => Array<{ clipId: string; count: number }>
@@ -309,6 +328,14 @@ export function installE2eBridge(): void {
     applyClipRgbCurvePoint: (clipId, channel, pointIndex, output) => (
       applyClipRgbCurvePoint(clipId, channel, pointIndex, output, true).rgbCurves[channel][pointIndex]?.y ?? output
     ),
+    loadTemplateStress: () => seedTemplateStress(),
+    applyBuiltinTemplateById: (templateId) => applyBuiltinTemplateById(templateId),
+    applyUserTemplateById: (templateId) => applyUserTemplateById(templateId),
+    importTemplateStressJson: (json) => importTemplateStressJson(json),
+    tryImportTemplateStressJson: (json) => tryImportTemplateStressJson(json),
+    clearTemplateStressStorage: () => clearTemplateStressStorage(),
+    getTemplateStressClipCount: () => getProjectClipCountFromStore(),
+    getTemplateStressMarkerCount: () => getChapterMarkerCountFromStore(),
     getVolumeAtClipLocalTime: (clipId, localTime) => getVolumeAtClipLocalTime(clipId, localTime),
     getClipVolumeKeyframeCount: (clipId) => getStressClipVolumeKeyframeCount(clipId),
     listAudioClipVolumeKeyframeCounts: () => listAudioClipVolumeKeyframeCounts(),
