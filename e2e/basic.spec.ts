@@ -60,6 +60,7 @@ import {
   countClipsWithTransition,
   loadVertical916PresetStress,
   getVertical916PresetStressStats,
+  applyVertical916Preset,
   loadExportResolutionAlignmentStress,
   loadExportPresetStress,
   applyExportPresetByName,
@@ -3612,4 +3613,94 @@ test('プロジェクト設定: ストレス JSON 往復で縦型婚礼を適用
   expect(await getProjectFps(page)).toBe(stats.verticalFps)
   expect(await getRippleDelete(page)).toBe(true)
   expect(await getLoopPlayback(page)).toBe(true)
+})
+
+test('縦型9:16: undo 後の再適用で縦型解像度と書き出しラベルが復元される', async ({ page }) => {
+  await goOnboarded(page)
+  await loadVertical916PresetStress(page)
+  await page.keyboard.press('ControlOrMeta+z')
+  expect(await getProjectWidth(page)).toBe(1920)
+
+  const stats = await applyVertical916Preset(page)
+  expect(stats.width).toBe(1080)
+  expect(stats.height).toBe(1920)
+  expect(stats.exportButtonLabel).toBe('9:16 で書き出し')
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '9:16 で書き出し' })).toBeVisible()
+})
+
+test('書き出し: 章マーカー一括書き出し UI が表示される', async ({ page }) => {
+  await goOnboarded(page)
+  await applyWeddingFullTemplate(page)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
+  await expect(page.getByText('5 章を個別 MP4 化して ZIP にまとめます')).toBeVisible()
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toContainText('5 章')
+})
+
+test('婚礼ゴールデンパス: テンプレ→写真→動画→テロップ→ルック→トランジション→章書き出し→再生停止', async ({ page }) => {
+  test.setTimeout(180_000)
+  await goOnboarded(page)
+
+  const webm = await makeTinyWebmVideo(page)
+
+  await applyWeddingFullTemplate(page)
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'golden-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'golden-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'golden-c.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible()
+  await clickTimelineClip(page, '写真: 新郎 幼少期')
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText('3枚の写真をガイド区間に配置しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('golden-a.png')).toBeVisible()
+
+  await page.setInputFiles('input[accept*="video"]', { name: 'golden-highlight.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.locator('div.group.relative').filter({ hasText: 'golden-highlight.webm' }).getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('golden-highlight.webm')).toBeVisible()
+
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /乾杯/ }).first().click()
+  await expect(page.locator('footer').getByText('乾杯')).toBeVisible()
+
+  await clickTimelineClip(page, 'golden-a.png')
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
+  await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
+
+  await timelineClip(page, 'golden-a.png').click()
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'クロスフェード', exact: true }).click()
+  await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '章「新郎プロフィール」を In/Out に設定' }).click()
+  await expect(page.getByText('書き出し範囲: 20.0–50.0s')).toBeVisible()
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
+
+  await page.keyboard.press('Escape')
+
+  await clickTimelineClip(page, 'golden-highlight.webm')
+  await assertPlaybackStops(page)
+
+  const encodersSupported = await checkEncodersSupported(page)
+  if (encodersSupported) {
+    await page.getByRole('button', { name: '書き出し' }).click()
+    const downloadPromise = page.waitForEvent('download', { timeout: 150_000 })
+    await page.getByRole('button', { name: '1080p で書き出し' }).click()
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toMatch(/\.mp4$/)
+    const savePath = test.info().outputPath('golden-path-chapter.mp4')
+    await download.saveAs(savePath)
+    const fs = await import('node:fs')
+    expect(fs.statSync(savePath).size).toBeGreaterThan(1000)
+    await expect(page.getByText('書き出しが完了しました')).toBeVisible()
+  }
 })

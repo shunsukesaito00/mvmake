@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 224
+export const PROD_SMOKE_SCENARIO_COUNT = 227
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -491,4 +491,11 @@ export const PROD_SMOKE_V2264_ADDITIONS = [
   'ストレス JSON のエクスポート往復で新規作成',
   '同名プリセットの再インポートで名前が重複回避',
   'ストレス JSON 往復で縦型婚礼を適用',
+] as const
+
+/** v2.2.65 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2265_ADDITIONS = [
+  'undo 後の再適用で縦型解像度と書き出しラベル',
+  '章マーカー一括書き出し UI',
+  '婚礼ゴールデンパス',
 ] as const
