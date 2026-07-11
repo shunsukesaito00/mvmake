@@ -4247,3 +4247,76 @@ test('書き出し: 適用中プリセットを削除して別プリセットを
   await expect(page.getByRole('button', { name: /軽量/ })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: 明るさ変更後に組み込みルックの選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'brightness-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'brightness-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  const brightness = page.getByRole('slider', { name: '明るさ' })
+  await brightness.fill('0.2')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('色調補正: コントラスト変更後に組み込みルックの選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'contrast-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'contrast-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  const contrast = page.getByRole('slider', { name: 'コントラスト' })
+  await contrast.fill('0.25')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('書き出し: 2件保存後に両方エクスポートして片方削除→再インポートできる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+
+  await page.getByRole('button', { name: /軽量/ }).click()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EDualExportA')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EDualExportA」プリセットを保存しました')).toBeVisible()
+
+  await page.getByRole('button', { name: /標準/ }).click()
+  await page.getByRole('button', { name: '解像度 プロジェクト' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EDualExportB')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EDualExportB」プリセットを保存しました')).toBeVisible()
+
+  const downloadAPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EDualExportAをエクスポート' }).click()
+  const downloadA = await downloadAPromise
+  const exportPathA = path.join(test.info().outputDir, 'e2e-dual-export-a.json')
+  await downloadA.saveAs(exportPathA)
+
+  const downloadBPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EDualExportBをエクスポート' }).click()
+  const downloadB = await downloadBPromise
+  const exportPathB = path.join(test.info().outputDir, 'e2e-dual-export-b.json')
+  await downloadB.saveAs(exportPathB)
+  expect(downloadA.suggestedFilename()).toContain('.fable-export-preset.json')
+  expect(downloadB.suggestedFilename()).toContain('.fable-export-preset.json')
+
+  await page.getByRole('button', { name: 'E2EDualExportAを削除' }).click()
+  await expect(page.getByRole('button', { name: 'E2EDualExportAを適用' })).toBeHidden()
+  await expect(page.getByRole('button', { name: 'E2EDualExportBを適用' })).toBeVisible()
+
+  await page.getByLabel('書き出しプリセットファイルをインポート').setInputFiles(exportPathA)
+  await expect(page.getByText('「E2EDualExportA」プリセットをインポートしました')).toBeVisible()
+  await page.getByRole('button', { name: 'E2EDualExportAを適用' }).click()
+  await expect(page.getByText('「E2EDualExportA」プリセットを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /軽量/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'E2EDualExportBを適用' })).toBeVisible()
+})
