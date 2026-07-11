@@ -3348,3 +3348,70 @@ test('メディア: ナレーション配置を undo でクリップから除去
   await page.keyboard.press('ControlOrMeta+z')
   await expect(page.locator('footer').getByText(/^narration-/)).toHaveCount(0)
 })
+
+test('メディア: 動画をインポートして UI が応答し続ける', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', {
+    name: 'sample-clip.webm',
+    mimeType: 'video/webm',
+    buffer: webm,
+  })
+
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('sample-clip.webm')).toBeVisible()
+
+  await page.keyboard.press('?')
+  await expect(page.getByRole('dialog', { name: 'キーボードショートカット' })).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await expect(page.getByText(/video ·/)).toBeVisible()
+})
+
+test('ユーザーテンプレート: 破損 JSON のインポートはエラー表示する', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テンプレ').click()
+  await page.getByLabel('テンプレートファイルをインポート').setInputFiles({
+    name: 'broken.fable-template.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{not-valid-json', 'utf-8'),
+  })
+  await expect(page.getByText('テンプレートファイルの JSON が読み取れません')).toBeVisible()
+})
+
+test('ユーザーテンプレート: エクスポートとインポート', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await expect(page.getByText('結婚式フル構成テンプレートを適用しました')).toBeVisible()
+
+  await page.getByLabel('テンプレート名').fill('E2EExportテンプレ')
+  await page.getByRole('button', { name: '現在の構成をテンプレート保存' }).click()
+  await expect(page.getByText('「E2EExportテンプレ」テンプレートを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EExportテンプレをエクスポート' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toContain('.fable-template.json')
+
+  const exportPath = path.join(test.info().outputDir, 'e2e-export-template.json')
+  await download.saveAs(exportPath)
+
+  await page.evaluate(() => localStorage.removeItem('fable-user-project-templates'))
+  await page.reload()
+  await expect(page.getByText('FABLE', { exact: true })).toBeVisible()
+
+  await page.getByTitle('テンプレ').click()
+  await expect(page.getByText('保存済みテンプレートはありません')).toBeVisible()
+
+  await page.getByLabel('テンプレートファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EExportテンプレ」テンプレートをインポートしました')).toBeVisible()
+
+  await page.getByTitle('プロジェクト一覧').click()
+  await page.getByRole('button', { name: 'E2EExportテンプレで新規作成' }).click()
+  await expect(page.getByText('「E2EExportテンプレ」で新規プロジェクトを作成しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+  await expect(page.locator('[title="オープニング"]')).toBeVisible()
+})
