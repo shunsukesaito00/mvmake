@@ -47,7 +47,7 @@ export function ColorAdjustmentsSection({
   const importLutFile = useProjectStore((s) => s.importLutFile)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const lutIntensityDragRef = useRef<number | null>(null)
-  const toneDragRef = useRef<{ field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast'; from: number } | null>(null)
+  const toneDragRef = useRef<{ field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast' | 'saturation'; from: number } | null>(null)
   const [userPresets, setUserPresets] = useState<UserColorLookPreset[]>([])
   const [lookCatalogFilter, setLookCatalogFilter] = useState<CatalogFilterValue>('all')
   const [lookFavorites, setLookFavorites] = useState(() => loadPresetFavorites().colorLook)
@@ -63,11 +63,13 @@ export function ColorAdjustmentsSection({
   const applyPreset = (presetId: string) => {
     const preset = COLOR_LOOK_PRESETS.find((p) => p.id === presetId)
     if (!preset) return
+    if (lutId && onLutChange) onLutChange(undefined, DEFAULT_LUT_INTENSITY, false)
     onChange({ ...preset.color }, true)
     if (preset.id !== 'none') showToast(`「${preset.label}」ルックを適用しました`, 'success')
   }
 
   const applyUserPreset = (preset: UserColorLookPreset) => {
+    if (lutId && onLutChange) onLutChange(undefined, DEFAULT_LUT_INTENSITY, false)
     onChange({ ...preset.color }, true)
     showToast(`「${preset.name}」ルックを適用しました`, 'success')
   }
@@ -76,7 +78,7 @@ export function ColorAdjustmentsSection({
     onChange({ ...(color ?? DEFAULT_COLOR), [field]: value }, recordHistory)
   }
 
-  const renderToneSlider = (label: string, field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast') => {
+  const renderToneSlider = (label: string, field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast' | 'saturation') => {
     const value = color?.[field] ?? DEFAULT_COLOR[field]
     return (
       <div className="space-y-1.5" key={field}>
@@ -291,7 +293,7 @@ export function ColorAdjustmentsSection({
       </div>
       {renderToneSlider('明るさ', 'brightness')}
       {renderToneSlider('コントラスト', 'contrast')}
-      <Slider label="彩度" value={color?.saturation ?? DEFAULT_COLOR.saturation} min={-1} max={1} step={0.05} onChange={(v) => updateField('saturation', v)} />
+      {renderToneSlider('彩度', 'saturation')}
     </div>
   )
 }
