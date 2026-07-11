@@ -1372,3 +1372,48 @@ test('BGM: ビートマーカーを配置しスナップに使える', async ({ 
   expect(after.x - before.x).toBeGreaterThan(55)
   expect(after.x - before.x).toBeLessThan(95)
 })
+
+test('インスペクター: トランスフォームキーフレームのイージングを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await page.getByLabel('補間イージング').selectOption('easeOut')
+  await expect(page.getByLabel('補間イージング')).toHaveValue('easeOut')
+})
+
+test('インスペクター: トランスフォームキーフレームのスケールを数値入力できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+
+  const scaleInput = page.getByRole('spinbutton', { name: 'スケール 数値' })
+  await scaleInput.fill('1.8')
+  await scaleInput.blur()
+  await expect(scaleInput).toHaveValue('1.8')
+
+  await page.getByTestId('transform-graph-property-rotation').click()
+  await expect(page.getByTestId('transform-graph-property-rotation')).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('調整レイヤー: 追加して色調プリセットを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByRole('button', { name: '調整レイヤーを追加 章全体へ色調を一括適用' }).click()
+  await expect(page.getByText('調整レイヤーを追加しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('調整レイヤー')).toBeVisible()
+
+  await clickTimelineClip(page, '調整レイヤー')
+  await expect(page.getByText('調整レイヤー', { exact: true }).first()).toBeVisible()
+
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
+  await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
+})
