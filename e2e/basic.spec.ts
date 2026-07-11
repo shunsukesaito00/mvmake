@@ -932,3 +932,38 @@ test('インスペクター: 複数行テキストを入力できる', async ({ 
   await expect(textarea).toHaveValue('新郎\n新婦')
   await expect(page.locator('footer').getByText('新郎')).toBeVisible()
 })
+
+test('トランジション: フィルムバーンを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'burn-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'burn-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'burn-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'burn-b.png' }).click()
+
+  await clickTimelineClip(page, 'burn-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'フィルムバーン', exact: true }).click()
+  await expect(page.getByText('フィルムバーンを適用しました')).toBeVisible()
+})
+
+test('テキスト: 新規テロップ（入場）を追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: '入場 テロップ（入場）' }).click()
+  await expect(page.locator('footer').getByText('入場')).toBeVisible()
+})
+
+test('インスペクター: テキストの行間と縦配置を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  await page.getByRole('slider', { name: '行間' }).fill('1.8')
+  await expect(page.getByRole('slider', { name: '行間' })).toHaveValue('1.8')
+
+  await page.getByLabel('縦配置').selectOption('top')
+  await expect(page.getByLabel('縦配置')).toHaveValue('top')
+})

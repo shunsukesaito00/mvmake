@@ -19,6 +19,7 @@ import {
   PROD_SMOKE_V227_ADDITIONS,
   PROD_SMOKE_V228_ADDITIONS,
   PROD_SMOKE_V229_ADDITIONS,
+  PROD_SMOKE_V2210_ADDITIONS,
 } from './prodSmokeAudit'
 
 const rootDir = resolve(import.meta.dirname, '../..')
@@ -116,6 +117,12 @@ describe('prodSmokeAudit', () => {
 
   it('v2.2.9 追加シナリオが basic.spec に含まれる', () => {
     for (const label of PROD_SMOKE_V229_ADDITIONS) {
+      expect(basic).toContain(label)
+    }
+  })
+
+  it('v2.2.10 追加シナリオが basic.spec に含まれる', () => {
+    for (const label of PROD_SMOKE_V2210_ADDITIONS) {
       expect(basic).toContain(label)
     }
   })
