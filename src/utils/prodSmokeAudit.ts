@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 43
+export const PROD_SMOKE_SCENARIO_COUNT = 46
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -58,4 +58,11 @@ export const PROD_SMOKE_V221_ADDITIONS = [
   'オーディオクリップにフェード',
   'BGM ダッキング',
   'フェード to 黒',
+] as const
+
+/** v2.2.2 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V222_ADDITIONS = [
+  '音量を正規化',
+  'オーディオ EQ',
+  'ディゾルブ',
 ] as const
