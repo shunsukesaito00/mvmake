@@ -9,6 +9,8 @@ import {
   clearTextStylePresets,
   installNarrationRecordingMocks,
   installNarrationPermissionDeniedMock,
+  installNarrationNoDeviceMock,
+  installNarrationEmptyRecordingMock,
   loadTextStylePresetStress,
   loadMediaListStress,
   loadAudioNormalizeStress,
@@ -3307,4 +3309,42 @@ test('メディア: マイク拒否時に案内と再試行を表示する', asy
   await expect(page.getByRole('button', { name: '再試行' })).toBeVisible()
   await page.getByRole('button', { name: '権限の確認方法' }).click()
   await expect(page.getByRole('dialog', { name: 'マイク権限の確認方法' })).toBeVisible()
+})
+
+test('メディア: マイク未検出時に案内と再試行を表示する', async ({ page }) => {
+  await installNarrationNoDeviceMock(page)
+  await goOnboarded(page)
+
+  await page.getByTitle('メディア').click()
+  await page.getByRole('button', { name: '録音開始' }).click()
+  await expect(page.getByRole('alert')).toContainText('マイクが見つかりません')
+  await expect(page.getByRole('button', { name: '再試行' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '権限の確認方法' })).toBeVisible()
+})
+
+test('メディア: 空の録音データはエラー表示する', async ({ page }) => {
+  await installNarrationEmptyRecordingMock(page)
+  await goOnboarded(page)
+
+  await page.getByTitle('メディア').click()
+  await page.getByRole('button', { name: '録音開始' }).click()
+  await page.getByRole('button', { name: '停止' }).click()
+  await expect(page.getByRole('alert')).toContainText('録音データが空です')
+  await expect(page.getByRole('button', { name: '録音開始' })).toBeVisible()
+})
+
+test('メディア: ナレーション配置を undo でクリップから除去できる', async ({ page }) => {
+  await installNarrationRecordingMocks(page)
+  await goOnboarded(page)
+
+  await page.getByTitle('メディア').click()
+  await page.getByRole('button', { name: '録音開始' }).click()
+  await expect(page.getByText(/録音中 0:0[1-9]/)).toBeVisible({ timeout: 3000 })
+  await page.getByRole('button', { name: '停止' }).click()
+  await page.getByRole('button', { name: 'タイムラインに配置' }).click()
+  await expect(page.getByText('ナレーションをタイムラインに配置しました')).toBeVisible()
+  await expect(page.locator('footer').getByText(/^narration-/)).toBeVisible()
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(page.locator('footer').getByText(/^narration-/)).toHaveCount(0)
 })
