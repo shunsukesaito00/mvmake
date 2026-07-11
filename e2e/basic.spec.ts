@@ -54,6 +54,10 @@ import {
   loadBatchTransitionRemovalStress,
   loadBatchTransitionStress,
   countClipsWithTransition,
+  loadVertical916PresetStress,
+  getVertical916PresetStressStats,
+  getProjectWidth,
+  getProjectHeight,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -2355,4 +2359,45 @@ test('色調補正: ルックプリセット要約にトーンカーブとRGBカ
   await page.getByRole('button', { name: 'ルック保存' }).click()
   await expect(page.getByText('「E2ESummaryLook」ルックを保存しました')).toBeVisible()
   await expect(page.getByText(/ミッド.*RGBカーブ\(R\)|RGBカーブ\(R\).*ミッド/)).toBeVisible()
+})
+
+test('テンプレート: 構造化テンプレートで章マーカーと写真ガイドを配置', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await expect(page.getByText('結婚式フル構成テンプレートを適用しました')).toBeVisible()
+
+  await expect(page.locator('[title="オープニング"]')).toBeVisible()
+  await expect(page.locator('[title="新郎プロフィール"]')).toBeVisible()
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+})
+
+test('縦型9:16: ストレス投入で1080×1920と9:16書き出しラベルが設定される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVertical916PresetStress(page)
+  expect(stats.width).toBe(1080)
+  expect(stats.height).toBe(1920)
+  expect(stats.exportButtonLabel).toBe('9:16 で書き出し')
+  expect(stats.nativeExportWidth).toBe(1080)
+  expect(stats.nativeExportHeight).toBe(1920)
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByText('プロジェクト解像度: 1080×1920')).toBeVisible()
+  await expect(page.getByRole('button', { name: '9:16 で書き出し' })).toBeVisible()
+})
+
+test('縦型9:16: 適用を undo で1080pに復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await loadVertical916PresetStress(page)
+  expect(await getProjectWidth(page)).toBe(1080)
+  expect(await getProjectHeight(page)).toBe(1920)
+
+  await page.keyboard.press('ControlOrMeta+z')
+  expect(await getProjectWidth(page)).toBe(1920)
+  expect(await getProjectHeight(page)).toBe(1080)
+
+  const stats = await getVertical916PresetStressStats(page)
+  expect(stats.exportButtonLabel).toBe('1080p で書き出し')
 })
