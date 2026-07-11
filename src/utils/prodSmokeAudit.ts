@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 395
+export const PROD_SMOKE_SCENARIO_COUNT = 398
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -890,4 +890,11 @@ export const PROD_SMOKE_V2501_ADDITIONS = [
   '色調補正: LUT 付きユーザールック適用後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元',
   '色調補正: 組み込みルック適用後にユーザールックを適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元',
   '色調補正: 組み込みルック適用後にユーザールックを適用した後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元',
+] as const
+
+/** v2.5.2 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2502_ADDITIONS = [
+  '色調補正: 組み込みルック適用後にユーザールックを適用した後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元',
+  '色調補正: ユーザールック適用後に組み込みルックを適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元',
+  '色調補正: ユーザールック適用後に組み込みルックを適用した後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元',
 ] as const
