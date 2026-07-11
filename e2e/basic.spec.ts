@@ -1315,3 +1315,60 @@ test('テキスト: MG カスタムキーフレームのスケールをタイム
 
   await expect(handle).not.toHaveAttribute('title', beforeTitle!)
 })
+
+test('色調: RGB カーブに制御点を追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-bezier-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-bezier-photo.png')
+
+  const graph = page.getByLabel('RGB カーブ (R)')
+  const box = await graph.boundingBox()
+  expect(box).not.toBeNull()
+  await graph.dblclick({ position: { x: box!.width * 0.4, y: box!.height * 0.45 } })
+  await page.getByRole('button', { name: '制御点を削除' }).click()
+  await expect(page.getByRole('button', { name: '制御点を削除' })).toHaveCount(0)
+})
+
+test('インスペクター: トランスフォームキーフレームの不透明度を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const opacitySliders = page.getByRole('slider', { name: '不透明度' })
+  await opacitySliders.nth(1).fill('0.4')
+  await expect(opacitySliders.nth(1)).toHaveValue('0.4')
+})
+
+test('BGM: ビートマーカーを配置しスナップに使える', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeWavWithPeak(0.2, 4)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'beat-bgm.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'beat-bgm.wav')
+
+  await page.getByRole('button', { name: 'ビートマーカー' }).click()
+  await page.getByRole('button', { name: 'クリップ内に等間隔配置' }).click()
+  await expect(page.getByText(/件のビートマーカーを配置しました/)).toBeVisible()
+  await expect(page.locator('[data-marker-type="beat"]')).toHaveCount(8)
+
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /Opening/ }).first().click()
+  const clip = page.locator('footer').getByText('Opening')
+  const before = (await clip.boundingBox())!
+
+  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(before.x + before.width / 2 + 70, before.y + before.height / 2, { steps: 6 })
+  await page.mouse.up()
+
+  const after = (await clip.boundingBox())!
+  expect(after.x - before.x).toBeGreaterThan(55)
+  expect(after.x - before.x).toBeLessThan(95)
+})
