@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import path from 'node:path'
 import { Buffer } from 'node:buffer'
 import {
   TINY_PNG,
@@ -2247,4 +2248,63 @@ test('効果: ストレスプロジェクトで全映像トラックへ一括適
   await page.getByRole('button', { name: '隣接クリップへ一括適用' }).click()
   await expect(page.getByText('30件のクリップにズームを一括適用しました')).toBeVisible()
   await expect.poll(() => countClipsWithTransition(page)).toBe(30)
+})
+
+test('効果: selected-track スコープで副トラックのみ一括適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadBatchTransitionStress(page)
+  await selectClipById(page, stats.firstSecondaryClipId)
+
+  await page.getByTitle('効果').click()
+  await page.getByLabel('一括適用スコープ').selectOption('selected-track')
+  await page.getByLabel('一括トランジション種類').selectOption('slideLeft')
+  await page.getByRole('button', { name: '隣接クリップへ一括適用' }).click()
+  await expect(page.getByText('10件のクリップにスライド左を一括適用しました')).toBeVisible()
+  await expect.poll(() => countClipsWithTransition(page)).toBe(10)
+})
+
+test('効果: 一括適用を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await loadBatchTransitionStress(page)
+
+  await page.getByTitle('効果').click()
+  await page.getByLabel('一括適用スコープ').selectOption('all-video-tracks')
+  await page.getByLabel('一括トランジション種類').selectOption('crossfade')
+  await page.getByRole('button', { name: '隣接クリップへ一括適用' }).click()
+  await expect.poll(() => countClipsWithTransition(page)).toBe(30)
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect.poll(() => countClipsWithTransition(page)).toBe(0)
+})
+
+test('色調補正: カラールックプリセットを JSON エクスポート/インポートできる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'photo.png')
+
+  await page.getByRole('button', { name: 'フィルム風ルック', exact: true }).click()
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EColorLook')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EColorLook」ルックを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EColorLookをエクスポート' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toContain('.fable-color-look-preset.json')
+
+  const exportPath = path.join(test.info().outputDir, 'e2e-color-look-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.getByRole('button', { name: 'E2EColorLookを削除' }).click()
+  await expect(page.getByRole('button', { name: 'E2EColorLookルック', exact: true })).toBeHidden()
+
+  await page.getByLabel('カラールックプリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EColorLook」ルックプリセットをインポートしました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await page.getByRole('button', { name: 'E2EColorLookルック', exact: true }).click()
+  await expect(page.getByText('「E2EColorLook」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'E2EColorLookルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })

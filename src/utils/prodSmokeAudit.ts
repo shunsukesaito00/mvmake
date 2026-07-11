@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 149
+export const PROD_SMOKE_SCENARIO_COUNT = 152
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -316,4 +316,11 @@ export const PROD_SMOKE_V2239_ADDITIONS = [
   '副トラックのみ一括削除',
   '一括削除を undo',
   '全映像トラックへ一括適用',
+] as const
+
+/** v2.2.40 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2240_ADDITIONS = [
+  '副トラックのみ一括適用',
+  '一括適用を undo',
+  'JSON エクスポート/インポート',
 ] as const
