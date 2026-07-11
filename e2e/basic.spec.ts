@@ -7,6 +7,7 @@ import {
   clickTimelineClip,
   clearTextStylePresets,
   installNarrationRecordingMocks,
+  loadTextStylePresetStress,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -1223,4 +1224,44 @@ test('色調: HSL の色温度を設定できる', async ({ page }) => {
   const temperature = page.getByRole('slider', { name: '色温度' })
   await temperature.fill('0.4')
   await expect(temperature).toHaveValue('0.4')
+})
+
+test('色調: トーンカーブのミッドトーンを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'tone-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'tone-photo.png')
+
+  const midtones = page.getByRole('slider', { name: 'ミッドトーン' })
+  await midtones.fill('0.3')
+  await expect(midtones).toHaveValue('0.3')
+})
+
+test('インスペクター: 保存スタイルを削除できる', async ({ page }) => {
+  await goOnboarded(page)
+  await clearTextStylePresets(page)
+  const stats = await loadTextStylePresetStress(page)
+  expect(stats.presetCount).toBeGreaterThan(0)
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: 'スタイルプリセット' }).click()
+  await page.getByRole('button', { name: `${stats.names[0]}を削除` }).click()
+  await expect(page.getByText(`「${stats.names[0]}」スタイルを削除しました`)).toBeVisible()
+  await expect(page.getByRole('button', { name: `${stats.names[0]}を適用` })).toHaveCount(0)
+})
+
+test('テキスト: MG プリセットをカスタムキーフレームに変換できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Our Wedding Story MG: タイトルリビール' }).click()
+  await clickTimelineClip(page, 'Our Wedding Story')
+
+  await page.getByRole('button', { name: 'カスタムキーフレームに変換' }).click()
+  await expect(page.getByText('MG アニメをカスタムキーフレームに変換しました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+  await expect(page.getByText('キーフレーム 2')).toBeVisible()
+  await expect(page.locator('select').filter({ hasText: 'カスタム（キーフレーム）' })).toBeVisible()
 })
