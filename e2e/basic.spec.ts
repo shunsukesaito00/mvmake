@@ -808,3 +808,62 @@ test('インスペクター: 画像クリップのメディアを差し替えで
   await expect(page.locator('footer').getByText('photo-b.png')).toBeVisible()
   await expect(page.locator('footer').getByText('photo-a.png')).toBeHidden()
 })
+
+test('テキスト: SRT 字幕ファイルをインポートしてクリップを生成できる', async ({ page }) => {
+  await goOnboarded(page)
+  const srt = `1
+00:00:01,000 --> 00:00:03,500
+乾杯のご挨拶
+
+2
+00:00:05,000 --> 00:00:08,000
+ありがとうございました`
+
+  await page.getByTitle('テキスト').click()
+  await page.setInputFiles('input[aria-label="SRT 字幕ファイル"]', {
+    name: 'subtitles.srt',
+    mimeType: 'application/x-subrip',
+    buffer: Buffer.from(srt, 'utf-8'),
+  })
+  await expect(page.getByText('2件の字幕クリップをインポートしました')).toBeVisible()
+  await expect(page.locator('footer').getByText('乾杯のご挨拶')).toBeVisible()
+  await expect(page.locator('footer').getByText('ありがとうございました')).toBeVisible()
+})
+
+test('効果: 隣接クリップへトランジションを一括適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'batch-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'batch-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  const cardA = page.locator('div.group.relative').filter({ hasText: 'batch-a.png' })
+  const cardB = page.locator('div.group.relative').filter({ hasText: 'batch-b.png' })
+  await cardA.hover()
+  await cardA.getByTitle('スライドショー用に選択').click()
+  await cardB.hover()
+  await cardB.getByTitle('スライドショー用に選択').click()
+  await page.getByRole('button', { name: 'スライドショー作成' }).click()
+  await page.getByRole('dialog').locator('select').selectOption('none')
+  await page.getByRole('button', { name: 'タイムラインに追加' }).click()
+  await expect(page.getByText('2枚の写真をタイムラインに配置しました')).toBeVisible()
+
+  await page.getByTitle('効果').click()
+  await page.getByLabel('一括適用スコープ').selectOption('all-video-tracks')
+  await page.getByLabel('一括トランジション種類').selectOption('crossfade')
+  await page.getByRole('button', { name: '隣接クリップへ一括適用' }).click()
+  await expect(page.getByText('1件のクリップにクロスフェードを一括適用しました')).toBeVisible()
+})
+
+test('色調: ガーデンパーティルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'garden-party.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'garden-party.png')
+  await page.getByRole('button', { name: 'ガーデンパーティルック', exact: true }).click()
+  await expect(page.getByText('「ガーデンパーティ」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ガーデンパーティルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
