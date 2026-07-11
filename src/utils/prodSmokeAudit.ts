@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 78
+export const PROD_SMOKE_SCENARIO_COUNT = 81
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -145,4 +145,11 @@ export const PROD_SMOKE_V2214_ADDITIONS = [
   'パールシマー',
   'エレガントネーム',
   'ブライダルホワイト',
+] as const
+
+/** v2.2.15 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2215_ADDITIONS = [
+  'スパークル誓い',
+  'スピーチ',
+  '余興',
 ] as const

@@ -1111,3 +1111,24 @@ test('色調: ブライダルホワイトルックを適用できる', async ({ 
   await expect(page.getByText('「ブライダルホワイト」ルックを適用しました')).toBeVisible()
   await expect(page.getByRole('button', { name: 'ブライダルホワイトルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('テキスト: MG スパークル誓いプリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'I Do MG: スパークル誓い' }).click()
+  await expect(page.locator('footer').getByText('I Do')).toBeVisible()
+})
+
+test('テキスト: 新規ロワーサード（スピーチ）を追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Speech by ロワーサード（スピーチ）' }).click()
+  await expect(page.locator('footer').getByText('Speech by')).toBeVisible()
+})
+
+test('テキスト: テロップ（余興）プリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: '余興 テロップ（余興）' }).click()
+  await expect(page.locator('footer').getByText('余興')).toBeVisible()
+})
