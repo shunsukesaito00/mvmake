@@ -3920,3 +3920,61 @@ test('色調補正: RGB カーブの R チャンネルを調整できる', async
   await expect(rMid).toHaveValue('0.7')
   await expect(page.getByLabel('RGB カーブ (R)')).toBeVisible()
 })
+
+test('色調補正: RGB カーブに制御点を追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-bezier-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-bezier-photo.png')
+
+  const graph = page.getByLabel('RGB カーブ (R)')
+  const box = await graph.boundingBox()
+  expect(box).not.toBeNull()
+  await graph.dblclick({ position: { x: box!.width * 0.4, y: box!.height * 0.45 } })
+  await page.getByRole('button', { name: '制御点を削除' }).click()
+  await expect(page.getByRole('button', { name: '制御点を削除' })).toHaveCount(0)
+})
+
+test('書き出し: プリセットを JSON エクスポート/インポートできる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+
+  await page.getByRole('button', { name: /軽量/ }).click()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EExportPreset')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EExportPreset」プリセットを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EExportPresetをエクスポート' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toContain('.fable-export-preset.json')
+
+  const exportPath = path.join(test.info().outputDir, 'e2e-export-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.getByRole('button', { name: 'E2EExportPresetを削除' }).click()
+  await expect(page.getByRole('button', { name: 'E2EExportPresetを適用' })).toBeHidden()
+
+  await page.getByLabel('書き出しプリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EExportPreset」プリセットをインポートしました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'E2EExportPresetを適用' }).click()
+  await expect(page.getByText('「E2EExportPreset」プリセットを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /軽量/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: RGB カーブの G チャンネルを調整できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'rgb-curve-g-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'rgb-curve-g-photo.png')
+
+  await page.getByRole('button', { name: 'G', exact: true }).click()
+  const gMid = page.getByRole('slider', { name: 'G カーブ 50%' })
+  await gMid.fill('0.65')
+  await expect(gMid).toHaveValue('0.65')
+  await expect(page.getByLabel('RGB カーブ (G)')).toBeVisible()
+})
