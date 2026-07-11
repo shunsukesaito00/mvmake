@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -1183,6 +1183,58 @@ test('縦型9:16: undo 後の再適用で縦型解像度と書き出しラベル
   await addOpeningText(page)
   await page.getByRole('button', { name: '書き出し' }).click()
   await expect(page.getByRole('button', { name: '9:16 で書き出し' })).toBeVisible()
+})
+
+test('書き出し整合: ストレス投入で4形式検証・4K状態・720pダウンスケール', async ({ page }) => {
+  const stats = await loadExportResolutionAlignmentStress(page)
+  expect(stats.verifiedPresetIds).toHaveLength(4)
+  expect(stats.verifiedPresetIds).toContain('4k')
+  expect(stats.verifiedPresetIds).toContain('square')
+  expect(stats.width).toBe(3840)
+  expect(stats.height).toBe(2160)
+  expect(stats.nativeExportLabel).toBe('4K で書き出し')
+  expect(stats.downscale720Width).toBe(1280)
+  expect(stats.downscale720Height).toBe(720)
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByText('プロジェクト解像度: 3840×2160')).toBeVisible()
+  await expect(page.getByRole('button', { name: '4K で書き出し' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '720p で書き出し' })).toBeVisible()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await expect(page.getByText('1280×720').first()).toBeVisible()
+})
+
+test('書き出し整合: 適用を undo で1080pに復元できる', async ({ page }) => {
+  await loadExportResolutionAlignmentStress(page)
+  expect(await getProjectWidth(page)).toBe(3840)
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  expect(await getProjectWidth(page)).toBe(1920)
+  expect(await getProjectHeight(page)).toBe(1080)
+
+  const stats = await getExportResolutionAlignmentStressStats(page)
+  expect(stats.nativeExportLabel).toBe('1080p で書き出し')
+  expect(stats.downscale720Width).toBe(1280)
+  expect(stats.downscale720Height).toBe(720)
+})
+
+test('書き出し整合: undo 後の再適用で正方形ネイティブと720pダウンスケール', async ({ page }) => {
+  await loadExportResolutionAlignmentStress(page)
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+
+  const stats = await applyResolutionPresetById(page, 'square')
+  expect(stats.width).toBe(1080)
+  expect(stats.height).toBe(1080)
+  expect(stats.nativeExportLabel).toBe('1080×1080 で書き出し')
+  expect(stats.downscale720Width).toBe(1280)
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByText('プロジェクト解像度: 1080×1080')).toBeVisible()
+  await expect(page.getByRole('button', { name: '1080×1080 で書き出し' })).toBeVisible()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await expect(page.getByText('1280×720').first()).toBeVisible()
 })
 
 test('写真ガイド: 選択区間にスライドショーを配置できる', async ({ page }) => {

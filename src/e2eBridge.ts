@@ -56,6 +56,12 @@ import {
   seedVertical916PresetStress,
   type Vertical916PresetStressStats,
 } from './utils/vertical916PresetStressSetup'
+import {
+  applyResolutionPresetById,
+  getExportResolutionAlignmentStressStats,
+  seedExportResolutionAlignmentStress,
+  type ExportResolutionAlignmentStressStats,
+} from './utils/exportResolutionAlignmentStressSetup'
 import { filterChapterMarkers } from './utils/beatMarkers'
 import { isPhotoGuideClip } from './utils/photoGuide'
 import { getTransformAtLocalTime } from './utils/transformKeyframes'
@@ -96,6 +102,9 @@ declare global {
       loadVertical916PresetStress: () => Vertical916PresetStressStats
       getVertical916PresetStressStats: () => Vertical916PresetStressStats
       applyVertical916Preset: () => Vertical916PresetStressStats
+      loadExportResolutionAlignmentStress: () => ExportResolutionAlignmentStressStats
+      getExportResolutionAlignmentStressStats: () => ExportResolutionAlignmentStressStats
+      applyResolutionPresetById: (presetId: string) => ExportResolutionAlignmentStressStats
       importUserProjectTemplateJson: (json: string) => string
       importProjectSettingsPresetJson: (json: string) => string[]
       clearUserProjectTemplates: () => void
@@ -167,6 +176,9 @@ export function installE2eBridge(): void {
     loadVertical916PresetStress: () => seedVertical916PresetStress(),
     getVertical916PresetStressStats: () => getVertical916PresetStressStats(),
     applyVertical916Preset: () => applyVertical916Preset(),
+    loadExportResolutionAlignmentStress: () => seedExportResolutionAlignmentStress(),
+    getExportResolutionAlignmentStressStats: () => getExportResolutionAlignmentStressStats(),
+    applyResolutionPresetById: (presetId) => applyResolutionPresetById(presetId),
     importUserProjectTemplateJson: (json) => importUserProjectTemplateFromText(json).label,
     importProjectSettingsPresetJson: (json) => {
       let raw: unknown

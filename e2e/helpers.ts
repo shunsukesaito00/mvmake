@@ -210,6 +210,29 @@ export async function applyVertical916Preset(page: import('@playwright/test').Pa
   return stats
 }
 
+export async function loadExportResolutionAlignmentStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadExportResolutionAlignmentStress()
+  })
+  return stats
+}
+
+export async function getExportResolutionAlignmentStressStats(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getExportResolutionAlignmentStressStats()
+  })
+}
+
+export async function applyResolutionPresetById(page: import('@playwright/test').Page, presetId: string) {
+  const stats = await page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.applyResolutionPresetById(id)
+  }, presetId)
+  return stats
+}
+
 export async function getClipKenBurnsEnabled(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
