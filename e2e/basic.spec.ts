@@ -5944,3 +5944,86 @@ test('色調補正: ルック適用後の RGB B チャンネル制御点追加�
   await clickTimelineClip(page, 'b-add-undo-look-photo.png')
   await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: ルック適用後の RGB G チャンネル制御点追加を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'g-add-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'g-add-undo-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('button', { name: 'G', exact: true }).click()
+  const graph = page.getByLabel('RGB カーブ (G)')
+  const box = await graph.boundingBox()
+  expect(box).not.toBeNull()
+  await graph.dblclick({ position: { x: box!.width * 0.4, y: box!.height * 0.45 } })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'g-add-undo-look-photo.png')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: ルック適用後の RGB G カーブスライダー変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'g-slider-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'g-slider-undo-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('button', { name: 'G', exact: true }).click()
+  const gMid = page.getByRole('slider', { name: 'G カーブ 50%' })
+  await gMid.dragTo(gMid, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'g-slider-undo-look-photo.png')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('書き出し: In/Out 付きプリセット適用後に品質と解像度設定がプリセット通りに反映される', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const playhead = page.locator('main input[type="range"]')
+
+  await playhead.fill('1')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('3')
+  await playhead.blur()
+  await page.keyboard.press('o')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: /高品質/ }).click()
+  await page.getByRole('button', { name: '解像度 プロジェクト' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EInOutQualityResolutionApply')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EInOutQualityResolutionApply」プリセットを保存しました')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: /軽量/ }).click()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: 'E2EInOutQualityResolutionApplyを適用' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+  expect(await getInPoint(page)).toBe(1)
+  expect(await getOutPoint(page)).toBe(3)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: /高品質/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: '解像度 プロジェクト' })).toHaveAttribute('aria-pressed', 'true')
+})

@@ -1,16 +1,16 @@
-# 本番スモーク E2E 監査（v2.2.94）
+# 本番スモーク E2E 監査（v2.2.95）
 
-最終更新: 2026-07-12（v2.2.94 / 本番スモーク 311→314）
+最終更新: 2026-07-12（v2.2.95 / 本番スモーク 314→317）
 
-## v2.2.94 追加（3件）
+## v2.2.95 追加（3件）
 
 | # | シナリオ | 根拠 |
 |---|---------|------|
-| 312 | RGB R スライダー undo→ルック復元 | 色調補正統合 |
-| 313 | In/Out+品質+解像度 JSON往復適用 | 書き出し回帰 |
-| 314 | RGB B 制御点追加 undo→ルック復元 | 色調補正統合 |
+| 315 | RGB G 制御点追加 undo→ルック復元 | 色調補正統合 |
+| 316 | RGB G スライダー undo→ルック復元 | 色調補正統合 |
+| 317 | In/Out+品質+解像度プリセット適用 | 書き出し回帰 |
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 314 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 314`
+- `e2e/basic.spec.ts` — 317 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 317`
