@@ -867,3 +867,34 @@ test('色調: ガーデンパーティルックを適用できる', async ({ pag
   await expect(page.getByText('「ガーデンパーティ」ルックを適用しました')).toBeVisible()
   await expect(page.getByRole('button', { name: 'ガーデンパーティルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('効果: 全映像トラックからトランジションを一括削除できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'clear-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'clear-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  const cardA = page.locator('div.group.relative').filter({ hasText: 'clear-a.png' })
+  const cardB = page.locator('div.group.relative').filter({ hasText: 'clear-b.png' })
+  await cardA.hover()
+  await cardA.getByTitle('スライドショー用に選択').click()
+  await cardB.hover()
+  await cardB.getByTitle('スライドショー用に選択').click()
+  await page.getByRole('button', { name: 'スライドショー作成' }).click()
+  await page.getByRole('dialog').locator('select').selectOption('none')
+  await page.getByRole('button', { name: 'タイムラインに追加' }).click()
+  await expect(page.getByText('2枚の写真をタイムラインに配置しました')).toBeVisible()
+
+  await page.getByTitle('効果').click()
+  await page.getByLabel('一括適用スコープ').selectOption('all-video-tracks')
+  await page.getByLabel('一括トランジション種類').selectOption('crossfade')
+  await page.getByRole('button', { name: '隣接クリップへ一括適用' }).click()
+  await expect(page.getByText('1件のクリップにクロスフェードを一括適用しました')).toBeVisible()
+
+  await page.getByLabel('一括削除スコープ').selectOption('all-video-tracks')
+  await page.getByRole('button', { name: 'トランジションを一括削除' }).click()
+  await expect(page.getByText('1件のクリップからトランジションを一括削除しました')).toBeVisible()
+})
