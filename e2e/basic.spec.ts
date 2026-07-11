@@ -3806,3 +3806,35 @@ test('映像フェード: undo 後の再適用でフェードが復元される'
   expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, stats.videoFadeIn)).toBeCloseTo(1)
   expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, 6)).toBe(0)
 })
+
+test('色調補正: ウエディング暖色ルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'photo.png')
+
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
+  await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
+})
+
+test('色調補正: ロマンティック夕暮れルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'sunset.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'sunset.png')
+
+  await page.getByRole('button', { name: 'ロマンティック夕暮れルック', exact: true }).click()
+  await expect(page.getByText('「ロマンティック夕暮れ」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ロマンティック夕暮れルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: 桜ピンクルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'sakura.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'sakura.png')
+
+  await page.getByRole('button', { name: '桜ピンクルック', exact: true }).click()
+  await expect(page.getByText('「桜ピンク」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: '桜ピンクルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
