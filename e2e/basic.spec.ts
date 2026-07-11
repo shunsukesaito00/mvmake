@@ -5,6 +5,7 @@ import {
   applyWeddingFullTemplate,
   assertPlaybackStops,
   clickTimelineClip,
+  clearTextStylePresets,
   installNarrationRecordingMocks,
   makeSilentWav,
   makeTinyWebmVideo,
@@ -1131,4 +1132,46 @@ test('テキスト: テロップ（余興）プリセットを追加できる', 
   await page.getByTitle('テキスト').click()
   await page.getByRole('button', { name: '余興 テロップ（余興）' }).click()
   await expect(page.locator('footer').getByText('余興')).toBeVisible()
+})
+
+test('テキスト: MG ベルの祝福プリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Wedding Bells MG: ベルの祝福' }).click()
+  await expect(page.locator('footer').getByText('Wedding Bells')).toBeVisible()
+})
+
+test('色調: フィルム風ルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'film-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'film-photo.png')
+
+  await expect(page.getByLabel('カラールックプレビュー')).toBeVisible()
+  await page.getByRole('button', { name: 'フィルム風ルック', exact: true }).click()
+  await expect(page.getByText('「フィルム風」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'フィルム風ルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('インスペクター: 同名スタイル保存は上書きする', async ({ page }) => {
+  await goOnboarded(page)
+  await clearTextStylePresets(page)
+  await addOpeningText(page)
+
+  await page.getByRole('button', { name: 'スタイルプリセット' }).click()
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('80')
+  await page.getByLabel('スタイル名').fill('大見出し')
+  await page.getByRole('button', { name: 'スタイル保存' }).click()
+  await expect(page.getByText('「大見出し」スタイルを保存しました')).toBeVisible()
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('48')
+  await page.getByLabel('スタイル名').fill('大見出し')
+  await page.getByRole('button', { name: 'スタイル保存' }).click()
+  await expect(page.getByText('「大見出し」スタイルを上書き保存しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: '大見出しを適用' })).toHaveCount(1)
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('24')
+  await page.getByRole('button', { name: '大見出しを適用' }).click()
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('48')
 })
