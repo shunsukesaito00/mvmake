@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -1099,6 +1099,53 @@ test('マーカー: インスペクターで編集しタイムライン上でド
   await page.mouse.up()
 
   await expect.poll(async () => Number(await timeInput.inputValue())).toBeGreaterThan(nudgedTime)
+})
+
+test('マーカー: ラベル編集を undo で復元できる', async ({ page }) => {
+  await loadMarkerEditStress(page)
+
+  const marker = page.locator('[title="新郎プロフィール"]')
+  await marker.click()
+  const labelInput = page.getByRole('textbox', { name: 'マーカーラベル' })
+  await labelInput.fill('新郎パート改')
+  await expect(labelInput).toHaveValue('新郎パート改')
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect(labelInput).toHaveValue('新郎プロフィール')
+})
+
+test('マーカー: インスペクターから削除できる', async ({ page }) => {
+  await loadMarkerEditStress(page)
+
+  const marker = page.locator('[title="エンディング"]')
+  await marker.click()
+  await expect(page.locator('aside').getByText('章マーカー', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'マーカーを削除' }).click()
+  await expect(marker).toHaveCount(0)
+  await expect(page.locator('aside').getByText('章マーカー', { exact: true })).toHaveCount(0)
+})
+
+test('マーカー: 境界時刻の編集と再生位置へ移動', async ({ page }) => {
+  await loadMarkerEditStress(page)
+
+  const marker = page.locator('[title="オープニング"]')
+  await marker.click()
+  const timeInput = page.getByRole('spinbutton', { name: 'マーカー時刻' })
+
+  await timeInput.fill('0')
+  await timeInput.press('Tab')
+  await expect(timeInput).toHaveValue('0')
+
+  await page.locator('input[type="range"]').evaluate((el) => {
+    el.value = '30'
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    el.dispatchEvent(new Event('change', { bubbles: true }))
+  })
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__?.getPlaybackTime() ?? -1)).toBeGreaterThan(20)
+
+  await page.getByRole('button', { name: '再生位置へ移動' }).click()
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__?.getPlaybackTime() ?? -1)).toBe(0)
 })
 
 test('書き出し: 対応環境ではMP4ダウンロード、非対応環境ではエラー表示(スモーク)', async ({ page }) => {

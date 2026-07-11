@@ -37,6 +37,7 @@ import { isPhotoGuideClip } from '../utils/photoGuide'
 import { buildGuideSlideshowImageClips } from '../utils/photoGuideSlideshow'
 import { findChapterRangeByMarkerId, isExportableChapterRange } from '../utils/chapterRangeExport'
 import { beatMarkerLabel, countBeatMarkers, generateBeatMarkerTimes } from '../utils/beatMarkers'
+import { normalizeMarkerUpdates } from '../utils/markerEdit'
 import { collectBatchTransitionClipIds, collectBatchTransitionRemovalClipIds, type BatchTransitionScope } from '../utils/batchTransition'
 import {
   buildCrossVisualClip,
@@ -1284,15 +1285,21 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   updateMarker: (id, updates, recordHistory = false) => {
     if (recordHistory) get().pushHistory()
-    set((state) => ({
-      project: {
-        ...state.project,
-        markers: (state.project.markers ?? []).map((m) =>
-          m.id === id ? { ...m, ...updates } : m,
-        ),
-      },
-      ...(recordHistory ? { future: [] } : {}),
-    }))
+    const duration = get().getProjectDuration()
+    const normalized = normalizeMarkerUpdates(updates, duration)
+    set((state) => {
+      const exists = (state.project.markers ?? []).some((m) => m.id === id)
+      if (!exists) return state
+      return {
+        project: {
+          ...state.project,
+          markers: (state.project.markers ?? []).map((m) =>
+            m.id === id ? { ...m, ...normalized } : m,
+          ),
+        },
+        ...(recordHistory ? { future: [] } : {}),
+      }
+    })
   },
 
   getSelectedClip: () => {

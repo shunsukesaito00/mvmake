@@ -2,6 +2,7 @@ import { useCallback, useRef, useEffect, useState } from 'react'
 import { useProjectStore, type TimelineDragState } from '../store/projectStore'
 import type { Clip } from '../types/project'
 import { formatTime, snapTime } from '../utils/time'
+import { resolveMarkerDragTime, clampMarkerTime } from '../utils/markerEdit'
 import { formatTimelineTextLabel } from '../utils/textWrap'
 import { snapLocalKeyframeTime, snapVolume } from '../utils/keyframeSnap'
 import { clampTrimEnd, clampTrimStart } from '../utils/clipUtils'
@@ -269,8 +270,8 @@ export function TimelinePanel() {
     } else if (dragState.mode === 'marker' && dragState.markerId) {
       const snapPoints = getSnapPoints(undefined, dragState.markerId)
       const raw = dragState.originalStartTime + dt
-      const snapped = snapTime(Math.max(0, Math.min(raw, duration)), snapPoints)
-      setSnapGuide(snapped !== raw ? snapped : null)
+      const snapped = resolveMarkerDragTime(raw, duration, snapPoints)
+      setSnapGuide(snapped !== clampMarkerTime(raw, duration) ? snapped : null)
       updateMarker(dragState.markerId, { time: snapped }, false)
     } else if (dragState.mode === 'speedKeyframe' && dragState.keyframeId != null) {
       const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)

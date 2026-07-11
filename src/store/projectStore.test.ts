@@ -670,6 +670,7 @@ describe('marker selection and editing', () => {
   })
 
   it('updateMarker でラベルと時刻を更新できる', () => {
+    setProject(makeProject([videoClip('c1', 0, 30)]))
     useProjectStore.getState().addMarker(5, 'Before')
     const markerId = useProjectStore.getState().project.markers![0].id
 
@@ -678,6 +679,54 @@ describe('marker selection and editing', () => {
     const marker = useProjectStore.getState().project.markers?.find((m) => m.id === markerId)
     expect(marker?.label).toBe('After')
     expect(marker?.time).toBe(12)
+  })
+
+  it('updateMarker はプロジェクト尺を超える時刻をクランプする', () => {
+    setProject(makeProject([videoClip('c1', 0, 30)]))
+    useProjectStore.getState().addMarker(5, 'Clamp')
+    const markerId = useProjectStore.getState().project.markers![0].id
+
+    useProjectStore.getState().updateMarker(markerId, { time: 999 }, true)
+
+    const marker = useProjectStore.getState().project.markers?.find((m) => m.id === markerId)
+    expect(marker?.time).toBe(30)
+  })
+
+  it('updateMarker は無効 ID で変更しない', () => {
+    useProjectStore.getState().addMarker(1, 'Keep')
+    const before = useProjectStore.getState().project.markers!.length
+
+    useProjectStore.getState().updateMarker('invalid-id', { label: 'X' }, true)
+
+    expect(useProjectStore.getState().project.markers).toHaveLength(before)
+    expect(useProjectStore.getState().project.markers![0].label).toBe('Keep')
+  })
+
+  it('マーカー編集の undo が復元する', () => {
+    useProjectStore.getState().addMarker(10, 'Original')
+    const markerId = useProjectStore.getState().project.markers![0].id
+
+    useProjectStore.getState().updateMarker(markerId, { label: 'Edited', time: 15 }, true)
+    expect(useProjectStore.getState().project.markers![0].label).toBe('Edited')
+
+    useProjectStore.getState().undo()
+    expect(useProjectStore.getState().project.markers![0].label).toBe('Original')
+    expect(useProjectStore.getState().project.markers![0].time).toBe(10)
+  })
+
+  it('章マーカー時刻変更後も setInOutFromMarker が有効な区間を返す', () => {
+    const template = PROJECT_TEMPLATES.find((t) => t.id === 'structured-wedding')!
+    useProjectStore.getState().applyTemplate(template)
+    const marker = useProjectStore.getState().project.markers!.find((m) => m.label === '新郎プロフィール')!
+    const duration = useProjectStore.getState().getProjectDuration()
+
+    useProjectStore.getState().updateMarker(marker.id, { time: 25 }, true)
+    expect(useProjectStore.getState().setInOutFromMarker(marker.id)).toBe(true)
+
+    const { inPoint, outPoint } = useProjectStore.getState()
+    expect(inPoint).toBe(25)
+    expect(outPoint).toBeLessThanOrEqual(duration)
+    expect(outPoint!).toBeGreaterThan(25)
   })
 
   it('removeMarker で選択中マーカーを解除する', () => {
@@ -689,6 +738,18 @@ describe('marker selection and editing', () => {
 
     expect(useProjectStore.getState().selectedMarkerId).toBeNull()
     expect(useProjectStore.getState().project.markers).toHaveLength(0)
+  })
+
+  it('removeMarker の undo でマーカーを復元する', () => {
+    useProjectStore.getState().addMarker(3, 'Restore')
+    const markerId = useProjectStore.getState().project.markers![0].id
+
+    useProjectStore.getState().removeMarker(markerId)
+    expect(useProjectStore.getState().project.markers).toHaveLength(0)
+
+    useProjectStore.getState().undo()
+    expect(useProjectStore.getState().project.markers).toHaveLength(1)
+    expect(useProjectStore.getState().project.markers![0].label).toBe('Restore')
   })
 })
 

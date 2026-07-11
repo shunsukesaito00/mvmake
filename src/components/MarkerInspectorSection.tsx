@@ -1,6 +1,7 @@
 import type { TimelineMarker } from '../types/project'
 import { useProjectStore } from '../store/projectStore'
 import { usePlaybackControls } from '../contexts/PlaybackContext'
+import { clampMarkerTime } from '../utils/markerEdit'
 import { Btn } from './ui'
 
 interface MarkerInspectorSectionProps {
@@ -18,7 +19,7 @@ export function MarkerInspectorSection({ marker }: MarkerInspectorSectionProps) 
   const duration = getProjectDuration()
   const frameStep = 1 / fps
 
-  const clampTime = (time: number) => Math.max(0, Math.min(time, duration))
+  const clampTime = (time: number) => clampMarkerTime(time, duration)
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">

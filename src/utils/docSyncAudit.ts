@@ -14,6 +14,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/CHAPTER_EXPORT_AUDIT.md',
   'docs/CHAPTER_RANGE_EXPORT_AUDIT.md',
   'docs/PHOTO_GUIDE_SLIDESHOW_AUDIT.md',
+  'docs/MARKER_EDIT_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {

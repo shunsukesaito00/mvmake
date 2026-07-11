@@ -1,5 +1,6 @@
 import { createChapterExportE2eProject, createChapterExportStressProject, getChapterExportStressProjectStats } from './engine/chapterExportStressProject'
 import { seedPhotoGuideSlideshowStress, type PhotoGuideSlideshowStressStats } from './utils/photoGuideStressSetup'
+import { seedMarkerEditStress, type MarkerEditStressStats } from './utils/markerStressSetup'
 import { useProjectStore } from './store/projectStore'
 
 declare global {
@@ -8,6 +9,8 @@ declare global {
       loadChapterExportStressProject: () => ReturnType<typeof getChapterExportStressProjectStats>
       loadChapterExportE2eProject: () => ReturnType<typeof getChapterExportStressProjectStats>
       loadPhotoGuideSlideshowStress: () => PhotoGuideSlideshowStressStats
+      loadMarkerEditStress: () => MarkerEditStressStats
+      getPlaybackTime: () => number
     }
   }
 }
@@ -28,5 +31,7 @@ export function installE2eBridge(): void {
       return getChapterExportStressProjectStats(project)
     },
     loadPhotoGuideSlideshowStress: () => seedPhotoGuideSlideshowStress(),
+    loadMarkerEditStress: () => seedMarkerEditStress(),
+    getPlaybackTime: () => useProjectStore.getState().currentTime,
   }
 }
