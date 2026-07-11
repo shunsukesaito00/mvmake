@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 221
+export const PROD_SMOKE_SCENARIO_COUNT = 224
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -484,4 +484,11 @@ export const PROD_SMOKE_V2263_ADDITIONS = [
   '画像クリップのメディア差し替えを undo',
   '動画差し替え後も音量設定を維持',
   'メディア差し替えストレス: 候補件数と Ken Burns',
+] as const
+
+/** v2.2.64 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2264_ADDITIONS = [
+  'ストレス JSON のエクスポート往復で新規作成',
+  '同名プリセットの再インポートで名前が重複回避',
+  'ストレス JSON 往復で縦型婚礼を適用',
 ] as const
