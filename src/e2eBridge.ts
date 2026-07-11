@@ -7,6 +7,10 @@ import {
   type TextStylePresetStressStats,
 } from './utils/textStylePresetStressSetup'
 import { seedMediaListStress, type MediaListStressStats } from './utils/mediaListStressSetup'
+import {
+  seedBatchTransitionStress,
+  type BatchTransitionStressStats,
+} from './utils/batchTransitionStressSetup'
 import { loadTextStylePresets } from './persistence/textStylePresets'
 import { useProjectStore } from './store/projectStore'
 
@@ -19,6 +23,9 @@ declare global {
       loadMarkerEditStress: () => MarkerEditStressStats
       loadTextStylePresetStress: () => TextStylePresetStressStats
       loadMediaListStress: () => MediaListStressStats
+      loadBatchTransitionStress: () => BatchTransitionStressStats
+      selectClip: (clipId: string) => void
+      countClipsWithTransition: () => number
       clearTextStylePresets: () => void
       getTextStylePresetCount: () => number
       getPlaybackTime: () => number
@@ -45,6 +52,12 @@ export function installE2eBridge(): void {
     loadMarkerEditStress: () => seedMarkerEditStress(),
     loadTextStylePresetStress: () => seedTextStylePresetStress(),
     loadMediaListStress: () => seedMediaListStress(),
+    loadBatchTransitionStress: () => seedBatchTransitionStress(),
+    selectClip: (clipId) => useProjectStore.getState().setSelectedClipId(clipId),
+    countClipsWithTransition: () =>
+      useProjectStore.getState().project.tracks
+        .flatMap((t) => t.clips)
+        .filter((c) => (c.type === 'video' || c.type === 'image') && c.transition).length,
     clearTextStylePresets: () => clearTextStylePresetStress(),
     getTextStylePresetCount: () => loadTextStylePresets().length,
     getPlaybackTime: () => useProjectStore.getState().currentTime,

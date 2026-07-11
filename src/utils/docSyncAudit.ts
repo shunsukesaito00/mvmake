@@ -17,6 +17,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/MARKER_EDIT_AUDIT.md',
   'docs/TEXT_STYLE_PRESET_AUDIT.md',
   'docs/MEDIA_LIST_FILTER_AUDIT.md',
+  'docs/BATCH_TRANSITION_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {

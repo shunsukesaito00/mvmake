@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, selectClipById, countClipsWithTransition } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -671,6 +671,43 @@ test('効果: 全映像トラックからトランジションを一括削除で
   await page.getByLabel('一括削除スコープ').selectOption('all-video-tracks')
   await page.getByRole('button', { name: 'トランジションを一括削除' }).click()
   await expect(page.getByText('1件のクリップからトランジションを一括削除しました')).toBeVisible()
+})
+
+test('効果: ストレスプロジェクトで全映像トラックへ一括適用できる', async ({ page }) => {
+  const stats = await loadBatchTransitionStress(page)
+  expect(stats.allVideoTargetCount).toBe(30)
+
+  await page.getByTitle('効果').click()
+  await page.getByLabel('一括適用スコープ').selectOption('all-video-tracks')
+  await page.getByLabel('一括トランジション種類').selectOption('zoom')
+  await page.getByRole('button', { name: '隣接クリップへ一括適用' }).click()
+  await expect(page.getByText('30件のクリップにズームを一括適用しました')).toBeVisible()
+  await expect.poll(() => countClipsWithTransition(page)).toBe(30)
+})
+
+test('効果: selected-track スコープで副トラックのみ一括適用できる', async ({ page }) => {
+  const stats = await loadBatchTransitionStress(page)
+  await selectClipById(page, stats.firstSecondaryClipId)
+
+  await page.getByTitle('効果').click()
+  await page.getByLabel('一括適用スコープ').selectOption('selected-track')
+  await page.getByLabel('一括トランジション種類').selectOption('slideLeft')
+  await page.getByRole('button', { name: '隣接クリップへ一括適用' }).click()
+  await expect(page.getByText('10件のクリップにスライド左を一括適用しました')).toBeVisible()
+  await expect.poll(() => countClipsWithTransition(page)).toBe(10)
+})
+
+test('効果: 一括適用を undo で復元できる', async ({ page }) => {
+  await loadBatchTransitionStress(page)
+
+  await page.getByTitle('効果').click()
+  await page.getByLabel('一括適用スコープ').selectOption('all-video-tracks')
+  await page.getByLabel('一括トランジション種類').selectOption('crossfade')
+  await page.getByRole('button', { name: '隣接クリップへ一括適用' }).click()
+  await expect.poll(() => countClipsWithTransition(page)).toBe(30)
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect.poll(() => countClipsWithTransition(page)).toBe(0)
 })
 
 test('色調補正: カラールックプリセットを適用できる', async ({ page }) => {

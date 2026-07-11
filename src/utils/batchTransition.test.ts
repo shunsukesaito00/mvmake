@@ -48,6 +48,28 @@ describe('batchTransition', () => {
     expect(getAdjacentTransitionTargets(track)).toEqual(['c2'])
   })
 
+  it('連続21枚は20件がトランジション対象', () => {
+    const clips = Array.from({ length: 21 }, (_, i) => imageClip(`c${i}`, i * 3, 3))
+    const track = makeVideoTrack(clips)
+    expect(getAdjacentTransitionTargets(track)).toHaveLength(20)
+  })
+
+  it('隙間が許容値超なら隣接とみなさない', () => {
+    const track = makeVideoTrack([
+      imageClip('c1', 0, 4),
+      imageClip('c2', 4.06, 4),
+    ])
+    expect(getAdjacentTransitionTargets(track)).toEqual([])
+  })
+
+  it('隙間が許容値内なら隣接とみなす', () => {
+    const track = makeVideoTrack([
+      imageClip('c1', 0, 4),
+      imageClip('c2', 4.04, 4),
+    ])
+    expect(getAdjacentTransitionTargets(track)).toEqual(['c2'])
+  })
+
   it('collectBatchTransitionClipIds で全映像トラックを対象にする', () => {
     const tracks: Track[] = [
       makeVideoTrack([imageClip('a1', 0, 3), imageClip('a2', 3, 3)]),

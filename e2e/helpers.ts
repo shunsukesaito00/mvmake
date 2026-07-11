@@ -72,6 +72,28 @@ export async function loadMediaListStress(page: import('@playwright/test').Page)
   return stats
 }
 
+export async function loadBatchTransitionStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadBatchTransitionStress()
+  })
+  return stats
+}
+
+export async function selectClipById(page: import('@playwright/test').Page, clipId: string) {
+  await page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.selectClip(id)
+  }, clipId)
+}
+
+export async function countClipsWithTransition(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.countClipsWithTransition()
+  })
+}
+
 export async function applyWeddingFullTemplate(page: import('@playwright/test').Page) {
   await page.getByTitle('テンプレ').click()
   await page.getByRole('button', { name: /結婚式フル構成/ }).click()

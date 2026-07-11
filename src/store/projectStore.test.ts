@@ -4,6 +4,10 @@ import { PROJECT_TEMPLATES, TEXT_PRESETS } from '../types/project'
 import { buildUserProjectTemplate } from '../utils/userProjectTemplate'
 import { PHOTO_GUIDE_SLIDESHOW_STRESS_IMAGE_COUNT } from '../utils/photoGuideSlideshow'
 import { applyTextStylePreset, buildSavedTextStylePreset } from '../utils/textStylePresetUtils'
+import {
+  createBatchTransitionStressProject,
+  getBatchTransitionStressStats,
+} from '../utils/batchTransitionStressSetup'
 import type { AudioClip, ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
 import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
 
@@ -414,6 +418,51 @@ describe('applyBatchTransitions', () => {
 
     expect(count).toBe(1)
     expect((getTrackClips(TRACK_V1)[1] as VideoClip).transition?.type).toBe('wipe')
+  })
+
+  it('ストレスプロジェクトで全映像トラックへ一括適用する', () => {
+    const project = createBatchTransitionStressProject()
+    setProject(project)
+    const stats = getBatchTransitionStressStats(project)
+
+    const count = useProjectStore.getState().applyBatchTransitions('all-video-tracks', {
+      type: 'zoom',
+      duration: 0.7,
+    })
+
+    expect(count).toBe(stats.allVideoTargetCount)
+    expect(count).toBe(30)
+  })
+
+  it('ストレスプロジェクトで副トラックのみ selected-track 適用する', () => {
+    const project = createBatchTransitionStressProject()
+    setProject(project)
+    const stats = getBatchTransitionStressStats(project)
+    useProjectStore.setState({ selectedClipId: stats.firstSecondaryClipId })
+
+    const count = useProjectStore.getState().applyBatchTransitions('selected-track', {
+      type: 'slideLeft',
+      duration: 0.5,
+    })
+
+    expect(count).toBe(stats.secondaryOnlyTargetCount)
+    expect(count).toBe(10)
+  })
+
+  it('一括適用の undo でトランジションを復元する', () => {
+    setProject(makeProject([
+      videoClip('c1', 0, 4),
+      videoClip('c2', 4, 4),
+    ]))
+
+    useProjectStore.getState().applyBatchTransitions('all-video-tracks', {
+      type: 'crossfade',
+      duration: 0.6,
+    })
+    expect((getTrackClips(TRACK_V1)[1] as VideoClip).transition).toBeDefined()
+
+    useProjectStore.getState().undo()
+    expect((getTrackClips(TRACK_V1)[1] as VideoClip).transition).toBeUndefined()
   })
 })
 

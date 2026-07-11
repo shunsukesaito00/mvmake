@@ -54,6 +54,7 @@
 | `docs/MARKER_EDIT_AUDIT.md` | マーカー編集 UI（v1.83.0） |
 | `docs/TEXT_STYLE_PRESET_AUDIT.md` | テキストスタイルのユーザー保存（v1.84.0） |
 | `docs/MEDIA_LIST_FILTER_AUDIT.md` | メディア一覧の検索・ソート（v1.85.0） |
+| `docs/BATCH_TRANSITION_AUDIT.md` | 隣接クリップへの一括トランジション（v1.86.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 
