@@ -800,10 +800,16 @@ export async function installNarrationRecordingMocks(
     ;(MockMediaRecorder as unknown as typeof MediaRecorder).isTypeSupported = () => true
     window.MediaRecorder = MockMediaRecorder as unknown as typeof MediaRecorder
 
-    navigator.mediaDevices.getUserMedia = async () =>
-      ({
-        getTracks: () => [{ stop: () => {} }],
-      }) as MediaStream
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {
+        getUserMedia: async () => {
+          const ctx = new AudioContext()
+          return ctx.createMediaStreamDestination().stream
+        },
+        enumerateDevices: async () => [],
+      },
+    })
   }, encoded)
 }
 

@@ -5,6 +5,7 @@ import {
   applyWeddingFullTemplate,
   assertPlaybackStops,
   clickTimelineClip,
+  installNarrationRecordingMocks,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -678,4 +679,54 @@ test('トランジション: ディゾルブを画像クリップに適用でき
   // 絞り込みチップと同名のため、トランジション一覧側（2番目）をクリック
   await page.getByRole('button', { name: 'ディゾルブ', exact: true }).nth(1).click()
   await expect(page.getByText('ディゾルブを適用しました')).toBeVisible()
+})
+
+test('インスペクター: オーディオノイズ除去を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'nr-narration.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'nr-narration.wav')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  await page.getByRole('slider', { name: 'ハイパス' }).fill('120')
+  await page.getByLabel('高周波ヒス除去（ローパス）').check()
+  await expect(page.getByLabel('ノイズ除去を有効化')).toBeChecked()
+  await expect(page.getByRole('slider', { name: 'ハイパス' })).toHaveValue('120')
+  await expect(page.getByLabel('高周波ヒス除去（ローパス）')).toBeChecked()
+})
+
+test('メディア: ナレーション録音をプレビューしてタイムラインに配置できる', async ({ page }) => {
+  await installNarrationRecordingMocks(page)
+  await page.goto('./')
+  await expect(page.getByText('FABLE', { exact: true })).toBeVisible()
+
+  await page.getByTitle('メディア').click()
+  await page.getByRole('button', { name: '録音開始' }).click()
+  await expect(page.getByText(/録音中/)).toBeVisible()
+  await expect(page.getByText(/録音中 0:0[1-9]/)).toBeVisible({ timeout: 3000 })
+  await page.getByRole('button', { name: '停止' }).click()
+  await expect(page.getByLabel('録音プレビュー')).toBeVisible()
+  await page.getByRole('button', { name: 'タイムラインに配置' }).click()
+  await expect(page.getByText('ナレーションをタイムラインに配置しました')).toBeVisible()
+  await expect(page.locator('footer').getByText(/^narration-/)).toBeVisible()
+})
+
+test('インスペクター: テキストスタイルを保存して適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('80')
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('80')
+  await page.getByRole('button', { name: 'スタイルプリセット' }).click()
+  await page.getByLabel('スタイル名').fill('大見出し')
+  await page.getByRole('button', { name: 'スタイル保存' }).click()
+  await expect(page.getByText('「大見出し」スタイルを保存しました')).toBeVisible()
+
+  await page.getByRole('slider', { name: 'フォントサイズ' }).fill('36')
+  await page.getByRole('button', { name: '大見出しを適用' }).click()
+  await expect(page.getByText('「大見出し」スタイルを適用しました')).toBeVisible()
+  await expect(page.getByRole('slider', { name: 'フォントサイズ' })).toHaveValue('80')
 })

@@ -2204,6 +2204,7 @@ test('メディア: ナレーション録音をプレビューしてタイムラ
   await page.getByTitle('メディア').click()
   await page.getByRole('button', { name: '録音開始' }).click()
   await expect(page.getByText(/録音中/)).toBeVisible()
+  await expect(page.getByText(/録音中 0:0[1-9]/)).toBeVisible({ timeout: 3000 })
   await page.getByRole('button', { name: '停止' }).click()
   await expect(page.getByLabel('録音プレビュー')).toBeVisible()
   await page.getByRole('button', { name: 'タイムラインに配置' }).click()
@@ -2252,6 +2253,7 @@ test('メディア: ナレーション配置を undo でクリップから除去
   await page.getByTitle('メディア').click()
 
   await page.getByRole('button', { name: '録音開始' }).click()
+  await expect(page.getByText(/録音中 0:0[1-9]/)).toBeVisible({ timeout: 3000 })
   await page.getByRole('button', { name: '停止' }).click()
   await page.getByRole('button', { name: 'タイムラインに配置' }).click()
   await expect(page.getByText('ナレーションをタイムラインに配置しました')).toBeVisible()

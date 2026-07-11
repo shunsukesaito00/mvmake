@@ -11,6 +11,7 @@ export default defineConfig({
   use: {
     baseURL: externalBaseURL ?? 'http://localhost:4173',
     trace: 'on-first-retry',
+    permissions: ['microphone'],
   },
   projects: [
     {
@@ -18,7 +19,13 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         // 再生テストで AudioContext を確実に動かすため自動再生を許可
-        launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] },
+        launchOptions: {
+          args: [
+            '--autoplay-policy=no-user-gesture-required',
+            '--use-fake-device-for-media-stream',
+            '--use-fake-ui-for-media-stream',
+          ],
+        },
       },
     },
   ],
