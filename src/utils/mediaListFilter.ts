@@ -49,3 +49,12 @@ export function formatMediaListSummary(filteredCount: number, totalCount: number
   if (filteredCount === totalCount) return `${totalCount}件のメディア`
   return `${filteredCount}/${totalCount}件表示`
 }
+
+/** 検索・フィルタ結果が空か */
+export function isMediaListEmpty(
+  assets: MediaAsset[],
+  query: string,
+  typeFilter: MediaTypeFilter,
+): boolean {
+  return filterMediaAssets(assets, query, typeFilter).length === 0
+}

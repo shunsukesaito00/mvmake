@@ -6,6 +6,7 @@ import {
   seedTextStylePresetStress,
   type TextStylePresetStressStats,
 } from './utils/textStylePresetStressSetup'
+import { seedMediaListStress, type MediaListStressStats } from './utils/mediaListStressSetup'
 import { loadTextStylePresets } from './persistence/textStylePresets'
 import { useProjectStore } from './store/projectStore'
 
@@ -17,6 +18,7 @@ declare global {
       loadPhotoGuideSlideshowStress: () => PhotoGuideSlideshowStressStats
       loadMarkerEditStress: () => MarkerEditStressStats
       loadTextStylePresetStress: () => TextStylePresetStressStats
+      loadMediaListStress: () => MediaListStressStats
       clearTextStylePresets: () => void
       getTextStylePresetCount: () => number
       getPlaybackTime: () => number
@@ -42,6 +44,7 @@ export function installE2eBridge(): void {
     loadPhotoGuideSlideshowStress: () => seedPhotoGuideSlideshowStress(),
     loadMarkerEditStress: () => seedMarkerEditStress(),
     loadTextStylePresetStress: () => seedTextStylePresetStress(),
+    loadMediaListStress: () => seedMediaListStress(),
     clearTextStylePresets: () => clearTextStylePresetStress(),
     getTextStylePresetCount: () => loadTextStylePresets().length,
     getPlaybackTime: () => useProjectStore.getState().currentTime,

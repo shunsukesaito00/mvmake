@@ -61,4 +61,12 @@ describe('mediaListFilter', () => {
     expect(formatMediaListSummary(3, 10)).toBe('3/10件表示')
     expect(formatMediaListSummary(5, 5)).toBe('5件のメディア')
   })
+
+  it('検索語の前後空白は無視する', () => {
+    expect(filterMediaAssets(assets, '  alpha  ', 'all')).toHaveLength(1)
+  })
+
+  it('大文字小文字を区別しない', () => {
+    expect(filterMediaAssets(assets, 'ALPHA', 'all')[0]?.name).toBe('alpha-photo.jpg')
+  })
 })

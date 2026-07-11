@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -185,6 +185,48 @@ test('メディア: 検索・種類フィルタ・ソートができる', async 
 
   await page.getByLabel('メディア並び順').selectOption('name')
   await expect(page.locator('.grid.grid-cols-2 > div').first().getByText('alpha-photo.png')).toBeVisible()
+})
+
+test('メディア: 52件ストレスで検索・フィルタ・ソートが動作する', async ({ page }) => {
+  const stats = await loadMediaListStress(page)
+  expect(stats.mediaCount).toBe(52)
+
+  await page.getByTitle('メディア').click()
+  await expect(page.getByText('52件のメディア')).toBeVisible()
+
+  await page.getByLabel('メディア検索').fill('alpha')
+  await expect(page.getByText('1/52件表示')).toBeVisible()
+  await expect(page.getByText('alpha-cover.jpg')).toBeVisible()
+
+  await page.getByLabel('メディア検索').fill('')
+  await page.getByLabel('メディア種類').selectOption('audio')
+  await expect(page.getByText('5/52件表示')).toBeVisible()
+  await expect(page.getByText('bgm-01.wav')).toBeVisible()
+  await expect(page.getByText('photo-001.jpg')).toBeHidden()
+
+  await page.getByLabel('メディア並び順').selectOption('name')
+  await expect(page.locator('.grid.grid-cols-2 > div').first().getByText('bgm-01.wav')).toBeVisible()
+})
+
+test('メディア: 該当なし検索で空状態を表示する', async ({ page }) => {
+  await loadMediaListStress(page)
+  await page.getByTitle('メディア').click()
+
+  await page.getByLabel('メディア検索').fill('not-found-xyz')
+  await expect(page.getByText('該当するメディアがありません')).toBeVisible()
+  await expect(page.getByText('0/52件表示')).toBeVisible()
+})
+
+test('メディア: 種類フィルタ切替で件数が更新される', async ({ page }) => {
+  await loadMediaListStress(page)
+  await page.getByTitle('メディア').click()
+
+  await page.getByLabel('メディア種類').selectOption('image')
+  await expect(page.getByText('45/52件表示')).toBeVisible()
+
+  await page.getByLabel('メディア種類').selectOption('video')
+  await expect(page.getByText('2/52件表示')).toBeVisible()
+  await expect(page.getByText('clip-01.mp4')).toBeVisible()
 })
 
 test('インスペクター: 未選択時のクイックスタートからテキストを追加できる', async ({ page }) => {

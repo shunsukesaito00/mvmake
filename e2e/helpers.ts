@@ -64,6 +64,14 @@ export async function loadTextStylePresetStress(page: import('@playwright/test')
   return stats
 }
 
+export async function loadMediaListStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadMediaListStress()
+  })
+  return stats
+}
+
 export async function applyWeddingFullTemplate(page: import('@playwright/test').Page) {
   await page.getByTitle('テンプレ').click()
   await page.getByRole('button', { name: /結婚式フル構成/ }).click()
