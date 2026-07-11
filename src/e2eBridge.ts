@@ -179,6 +179,7 @@ declare global {
       getExportPresetCount: () => number
       getInPoint: () => number | null
       getOutPoint: () => number | null
+      undo: () => void
       loadVideoFadeStress: () => VideoFadeStressStats
       getMediaVisualOpacityForClip: (clipId: string, time: number) => number
       getClipFadeValues: (clipId: string) => { fadeIn: number; fadeOut: number }
@@ -304,6 +305,7 @@ export function installE2eBridge(): void {
     getExportPresetCount: () => getExportPresetStressCount(),
     getInPoint: () => useProjectStore.getState().inPoint,
     getOutPoint: () => useProjectStore.getState().outPoint,
+    undo: () => useProjectStore.getState().undo(),
     loadVideoFadeStress: () => seedVideoFadeStress(),
     getMediaVisualOpacityForClip: (clipId, time) => getMediaVisualOpacityForClip(clipId, time),
     getClipFadeValues: (clipId) => getClipFadeValues(clipId),

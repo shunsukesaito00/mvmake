@@ -46,6 +46,7 @@ export function ColorAdjustmentsSection({
   const showToast = useToastStore((s) => s.showToast)
   const importLutFile = useProjectStore((s) => s.importLutFile)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const lutIntensityDragRef = useRef<number | null>(null)
   const [userPresets, setUserPresets] = useState<UserColorLookPreset[]>([])
   const [lookCatalogFilter, setLookCatalogFilter] = useState<CatalogFilterValue>('all')
   const [lookFavorites, setLookFavorites] = useState(() => loadPresetFavorites().colorLook)
@@ -207,15 +208,32 @@ export function ColorAdjustmentsSection({
             </select>
           </label>
           {lutId && (
-            <Slider
-              label="LUT 強度"
-              value={lutIntensity}
-              min={0}
-              max={1}
-              step={0.05}
-              format={(v) => `${Math.round(v * 100)}%`}
-              onChange={(v) => onLutChange(lutId, v)}
-            />
+            <div className="space-y-1.5">
+              <div className="flex justify-between gap-2">
+                <span className="text-[11px] text-text-secondary">LUT 強度</span>
+                <span className="text-[11px] tabular-nums text-text-muted">{Math.round(lutIntensity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                aria-label="LUT 強度"
+                min={0}
+                max={1}
+                step={0.05}
+                value={lutIntensity}
+                onPointerDown={() => { lutIntensityDragRef.current = lutIntensity }}
+                onChange={(e) => onLutChange(lutId, parseFloat(e.target.value))}
+                onPointerUp={(e) => {
+                  const next = parseFloat((e.target as HTMLInputElement).value)
+                  const from = lutIntensityDragRef.current
+                  lutIntensityDragRef.current = null
+                  if (from !== null && from !== next) {
+                    onLutChange(lutId, from, false)
+                    onLutChange(lutId, next, true)
+                  }
+                }}
+                className="w-full"
+              />
+            </div>
           )}
         </div>
       )}
