@@ -34,7 +34,8 @@ export function RgbCurveGraph({ curves, onChange }: Props) {
   const [channel, setChannel] = useState<RgbCurveChannel>('r')
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const graphDragRef = useRef<{ index: number } | null>(null)
+  const graphDragRef = useRef<{ index: number; fromX: number; fromY: number } | null>(null)
+  const captureTargetRef = useRef<EventTarget | null>(null)
   const sliderDragRef = useRef<{ channel: RgbCurveChannel; index: number; from: number } | null>(null)
   const points = curves[channel]
 
@@ -52,8 +53,10 @@ export function RgbCurveGraph({ curves, onChange }: Props) {
   }, [])
 
   const handlePointerDown = (index: number) => (event: React.PointerEvent) => {
+    const point = points[index]
     setSelectedIndex(index)
-    graphDragRef.current = { index }
+    graphDragRef.current = { index, fromX: point.x, fromY: point.y }
+    captureTargetRef.current = event.currentTarget
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
@@ -68,11 +71,19 @@ export function RgbCurveGraph({ curves, onChange }: Props) {
   const handlePointerUp = (event: React.PointerEvent) => {
     if (!graphDragRef.current) return
     const { x, y } = pointerToValues(event.clientX, event.clientY)
-    const index = graphDragRef.current.index
+    const { index, fromX, fromY } = graphDragRef.current
     const isEndpoint = index === 0 || index === points.length - 1
-    updatePoint(index, isEndpoint ? points[index].x : x, y, true)
+    const nextX = isEndpoint ? points[index].x : x
+    const nextY = y
     graphDragRef.current = null
-    event.currentTarget.releasePointerCapture(event.pointerId)
+    if (captureTargetRef.current instanceof Element) {
+      captureTargetRef.current.releasePointerCapture(event.pointerId)
+    }
+    captureTargetRef.current = null
+    if (fromX !== nextX || fromY !== nextY) {
+      updatePoint(index, fromX, fromY, false)
+      updatePoint(index, nextX, nextY, true)
+    }
   }
 
   const handleDoubleClick = (event: React.MouseEvent) => {
@@ -149,6 +160,8 @@ export function RgbCurveGraph({ curves, onChange }: Props) {
               strokeWidth={isSelected ? 0.6 : 0}
               className={isEndpoint ? 'cursor-ns-resize' : 'cursor-grab active:cursor-grabbing'}
               onPointerDown={handlePointerDown(index)}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
             />
           )
         })}
