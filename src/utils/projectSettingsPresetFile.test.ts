@@ -65,4 +65,8 @@ describe('projectSettingsPresetFile', () => {
     })
     await expect(parseProjectSettingsPresetFileText(json)).rejects.toThrow('解像度')
   })
+
+  it('不正な JSON を拒否する', async () => {
+    await expect(parseProjectSettingsPresetFileText('{not-json')).rejects.toThrow('JSON')
+  })
 })

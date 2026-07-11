@@ -9,6 +9,7 @@ import {
   loadProjectSettingsPresets,
   replaceProjectSettingsPresets,
   saveProjectSettingsPreset,
+  importProjectSettingsPresets,
 } from '../persistence/projectSettingsPresets'
 import { useProjectStore } from '../store/projectStore'
 
@@ -84,6 +85,29 @@ describe('projectSettingsPresets persistence', () => {
     replaceProjectSettingsPresets([preset])
     expect(loadProjectSettingsPresets()).toHaveLength(1)
   })
+
+  it('破損 JSON は空配列として読み込む', () => {
+    localStorage.setItem('fable-project-settings-presets', '{bad-json')
+    expect(loadProjectSettingsPresets()).toEqual([])
+  })
+
+  it('importProjectSettingsPresets で名前重複を回避する', () => {
+    const preset = buildProjectSettingsPreset('縦型婚礼', sampleSettings)
+    saveProjectSettingsPreset(preset)
+    const result = importProjectSettingsPresets([
+      {
+        name: '縦型婚礼',
+        width: 1920,
+        height: 1080,
+        fps: 30,
+        rippleDelete: false,
+        loopPlayback: true,
+      },
+    ])
+    expect(result).toHaveLength(2)
+    expect(result[1]?.name).toBe('縦型婚礼 (インポート)')
+    expect(loadProjectSettingsPresets()).toHaveLength(2)
+  })
 })
 
 describe('applyProjectSettingsPreset store', () => {
@@ -101,5 +125,19 @@ describe('applyProjectSettingsPreset store', () => {
     expect(state.project.fps).toBe(24)
     expect(state.rippleDelete).toBe(true)
     expect(state.loopPlayback).toBe(false)
+  })
+
+  it('プリセット適用を undo で復元できる', () => {
+    const before = useProjectStore.getState()
+    const preset = buildProjectSettingsPreset('縦型婚礼', sampleSettings)
+    useProjectStore.getState().applyProjectSettingsPreset(preset)
+    useProjectStore.getState().undo()
+
+    const state = useProjectStore.getState()
+    expect(state.project.width).toBe(before.project.width)
+    expect(state.project.height).toBe(before.project.height)
+    expect(state.project.fps).toBe(before.project.fps)
+    expect(state.rippleDelete).toBe(before.rippleDelete)
+    expect(state.loopPlayback).toBe(before.loopPlayback)
   })
 })

@@ -1,6 +1,9 @@
 import type { ProjectSettingsPreset } from '../types/projectSettingsPreset'
 import type { ExportedProjectSettingsPresetItem } from '../types/projectSettingsPreset'
-import { projectSettingsPresetFromImportedItem } from '../utils/projectSettingsPresetFile'
+import {
+  parseProjectSettingsPresetFileText,
+  projectSettingsPresetFromImportedItem,
+} from '../utils/projectSettingsPresetFile'
 
 const STORAGE_KEY = 'fable-project-settings-presets'
 
@@ -59,4 +62,9 @@ export function importProjectSettingsPresets(items: ExportedProjectSettingsPrese
   const next = [...existing, ...imported]
   writeRaw(next)
   return next
+}
+
+export async function importProjectSettingsPresetFromText(text: string): Promise<ProjectSettingsPreset[]> {
+  const items = await parseProjectSettingsPresetFileText(text)
+  return importProjectSettingsPresets(items)
 }

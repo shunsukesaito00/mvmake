@@ -175,6 +175,78 @@ export async function getProjectClipCount(page: import('@playwright/test').Page)
   })
 }
 
+export async function loadProjectSettingsPresetStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadProjectSettingsPresetStress()
+  })
+  return stats
+}
+
+export async function loadProjectSettingsPresetExportStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadProjectSettingsPresetExportStress()
+  })
+  return stats
+}
+
+export async function importProjectSettingsPresetJson(page: import('@playwright/test').Page, json: string) {
+  return page.evaluate((text) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.importProjectSettingsPresetJson(text)
+  }, json)
+}
+
+export async function clearProjectSettingsPresets(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.clearProjectSettingsPresets()
+  })
+}
+
+export async function getProjectSettingsPresetCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getProjectSettingsPresetCount()
+  })
+}
+
+export async function getProjectWidth(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getProjectWidth()
+  })
+}
+
+export async function getProjectHeight(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getProjectHeight()
+  })
+}
+
+export async function getProjectFps(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getProjectFps()
+  })
+}
+
+export async function getRippleDelete(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getRippleDelete()
+  })
+}
+
+export async function getLoopPlayback(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getLoopPlayback()
+  })
+}
+
 export async function selectClipById(page: import('@playwright/test').Page, clipId: string) {
   await page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

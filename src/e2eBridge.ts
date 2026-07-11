@@ -28,11 +28,25 @@ import {
   seedUserProjectTemplateExportStress,
   type UserProjectTemplateExportStressStats,
 } from './utils/userProjectTemplateExportStressSetup'
+import {
+  clearProjectSettingsPresetStress,
+  seedProjectSettingsPresetStress,
+  type ProjectSettingsPresetStressStats,
+} from './utils/projectSettingsPresetStressSetup'
+import {
+  seedProjectSettingsPresetExportStress,
+  type ProjectSettingsPresetExportStressStats,
+} from './utils/projectSettingsPresetExportStressSetup'
 import { loadTextStylePresets } from './persistence/textStylePresets'
 import {
   importUserProjectTemplateFromText,
   loadUserProjectTemplates,
 } from './persistence/userProjectTemplates'
+import {
+  importProjectSettingsPresets,
+  loadProjectSettingsPresets,
+} from './persistence/projectSettingsPresets'
+import { parseExportedProjectSettingsPresetFile } from './utils/projectSettingsPresetFile'
 import { useProjectStore } from './store/projectStore'
 import { getMediaReplaceCandidates } from './utils/clipUtils'
 import type { Clip } from './types/project'
@@ -51,10 +65,20 @@ declare global {
       loadMediaReplaceStress: () => MediaReplaceStressStats
       loadUserProjectTemplateStress: () => UserProjectTemplateStressStats
       loadUserProjectTemplateExportStress: () => UserProjectTemplateExportStressStats
+      loadProjectSettingsPresetStress: () => ProjectSettingsPresetStressStats
+      loadProjectSettingsPresetExportStress: () => ProjectSettingsPresetExportStressStats
       importUserProjectTemplateJson: (json: string) => string
+      importProjectSettingsPresetJson: (json: string) => string[]
       clearUserProjectTemplates: () => void
+      clearProjectSettingsPresets: () => void
       getUserProjectTemplateCount: () => number
+      getProjectSettingsPresetCount: () => number
       getProjectClipCount: () => number
+      getProjectWidth: () => number
+      getProjectHeight: () => number
+      getProjectFps: () => number
+      getRippleDelete: () => boolean
+      getLoopPlayback: () => boolean
       selectClip: (clipId: string) => void
       countClipsWithTransition: () => number
       getClipMediaId: (clipId: string) => string | null
@@ -93,11 +117,30 @@ export function installE2eBridge(): void {
     loadMediaReplaceStress: () => seedMediaReplaceStress(),
     loadUserProjectTemplateStress: () => seedUserProjectTemplateStress(),
     loadUserProjectTemplateExportStress: () => seedUserProjectTemplateExportStress(),
+    loadProjectSettingsPresetStress: () => seedProjectSettingsPresetStress(),
+    loadProjectSettingsPresetExportStress: () => seedProjectSettingsPresetExportStress(),
     importUserProjectTemplateJson: (json) => importUserProjectTemplateFromText(json).label,
+    importProjectSettingsPresetJson: (json) => {
+      let raw: unknown
+      try {
+        raw = JSON.parse(json)
+      } catch {
+        throw new Error('JSON の読み込みに失敗しました')
+      }
+      const items = parseExportedProjectSettingsPresetFile(raw)
+      return importProjectSettingsPresets(items).map((p) => p.name)
+    },
     clearUserProjectTemplates: () => clearUserProjectTemplateStress(),
+    clearProjectSettingsPresets: () => clearProjectSettingsPresetStress(),
     getUserProjectTemplateCount: () => loadUserProjectTemplates().length,
+    getProjectSettingsPresetCount: () => loadProjectSettingsPresets().length,
     getProjectClipCount: () =>
       useProjectStore.getState().project.tracks.flatMap((t) => t.clips).length,
+    getProjectWidth: () => useProjectStore.getState().project.width,
+    getProjectHeight: () => useProjectStore.getState().project.height,
+    getProjectFps: () => useProjectStore.getState().project.fps,
+    getRippleDelete: () => useProjectStore.getState().rippleDelete,
+    getLoopPlayback: () => useProjectStore.getState().loopPlayback,
     selectClip: (clipId) => useProjectStore.getState().setSelectedClipId(clipId),
     countClipsWithTransition: () =>
       useProjectStore.getState().project.tracks
