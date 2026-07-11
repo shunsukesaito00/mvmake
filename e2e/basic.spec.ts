@@ -15,6 +15,10 @@ import {
   selectClipById,
   loadTransformKeyframeStress,
   getClipTransformKeyframeCount,
+  getInterpolatedTransformAt,
+  listImageClipTransformKeyframeCounts,
+  loadVolumeKeyframeTimelineStress,
+  getClipVolumeKeyframeCount,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -1922,4 +1926,37 @@ test('トランスフォームキーフレーム: ストレス投入で8キー�
   const stats = await loadTransformKeyframeStress(page)
   expect(stats.keyframeCount).toBe(8)
   expect(await getClipTransformKeyframeCount(page, stats.clipId)).toBe(8)
+})
+
+test('トランスフォームキーフレーム: ストレス分割で4+4に再配分される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadTransformKeyframeStress(page)
+  await selectClipById(page, stats.clipId)
+  await clickTimelineClip(page, stats.clipName)
+
+  await page.locator('main input[type="range"]').fill(String(stats.splitAt))
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  const counts = await listImageClipTransformKeyframeCounts(page)
+  expect(counts).toHaveLength(2)
+  expect(counts.map((c) => c.count).sort()).toEqual([4, 4])
+})
+
+test('トランスフォームキーフレーム: ストレス補間値が中間時刻で安定する', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadTransformKeyframeStress(page)
+  const transform = await getInterpolatedTransformAt(page, stats.clipId, stats.midLocalTime)
+  expect(transform).not.toBeNull()
+  expect(transform!.x).toBeCloseTo(stats.expectedMidX, 3)
+  expect(transform!.opacity).toBeCloseTo(stats.expectedMidOpacity, 3)
+  expect(transform!.scale).toBeGreaterThan(1)
+  expect(transform!.rotation).toBeGreaterThan(0)
+})
+
+test('音量キーフレームUI: ストレス投入で6キーフレームがロードされる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVolumeKeyframeTimelineStress(page)
+  expect(stats.keyframeCount).toBe(6)
+  expect(stats.hasCurvePath).toBe(true)
+  expect(await getClipVolumeKeyframeCount(page, stats.clipId)).toBe(6)
 })
