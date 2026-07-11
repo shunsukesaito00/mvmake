@@ -24,6 +24,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/USER_PROJECT_TEMPLATE_AUDIT.md',
   'docs/USER_PROJECT_TEMPLATE_EXPORT_AUDIT.md',
   'docs/PROJECT_SETTINGS_PRESET_AUDIT.md',
+  'docs/AUDIO_NORMALIZE_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {

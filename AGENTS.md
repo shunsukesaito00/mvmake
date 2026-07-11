@@ -61,6 +61,7 @@
 | `docs/USER_PROJECT_TEMPLATE_AUDIT.md` | テンプレートのユーザー保存（v1.90.0） |
 | `docs/USER_PROJECT_TEMPLATE_EXPORT_AUDIT.md` | ユーザーテンプレートのエクスポート/インポート（v1.91.0） |
 | `docs/PROJECT_SETTINGS_PRESET_AUDIT.md` | プロジェクト設定プリセットのユーザー保存（v1.92.0） |
+| `docs/AUDIO_NORMALIZE_AUDIT.md` | BGM/ナレーション音量正規化（v1.93.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 

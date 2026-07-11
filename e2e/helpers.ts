@@ -110,6 +110,21 @@ export async function getClipAudioVolume(page: import('@playwright/test').Page, 
   }, clipId)
 }
 
+export async function getClipVolumeKeyframeMax(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipVolumeKeyframeMax(id)
+  }, clipId)
+}
+
+export async function loadAudioNormalizeStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadAudioNormalizeStress()
+  })
+  return stats
+}
+
 export async function getClipKenBurnsEnabled(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

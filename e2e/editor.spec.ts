@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, selectClipById, countClipsWithTransition, getClipMediaId, getClipAudioVolume, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -254,6 +254,55 @@ test('インスペクター: 音量を正規化できる', async ({ page }) => {
   await page.getByRole('button', { name: '音量を正規化' }).click()
   await expect(page.getByText('音量を正規化しました')).toBeVisible()
   await expect(volumeSlider).toHaveValue('2')
+})
+
+test('インスペクター: 音量正規化を undo で復元できる', async ({ page }) => {
+  const stats = await loadAudioNormalizeStress(page)
+  await selectClipById(page, stats.bgmClipId)
+  await clickTimelineClip(page, stats.bgmClipName)
+
+  const volumeSlider = page.getByRole('slider', { name: '音量' })
+  await expect(volumeSlider).toHaveValue('1')
+
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+  await expect(volumeSlider).toHaveValue('2')
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect.poll(() => getClipAudioVolume(page, stats.bgmClipId)).toBe(1)
+})
+
+test('インスペクター: 音量キーフレーム付きクリップを正規化すると KF も同倍率スケールする', async ({ page }) => {
+  const stats = await loadAudioNormalizeStress(page)
+  await selectClipById(page, stats.keyframedClipId)
+  await clickTimelineClip(page, stats.keyframedClipName)
+
+  expect(await getClipAudioVolume(page, stats.keyframedClipId)).toBe(0.5)
+  expect(await getClipVolumeKeyframeMax(page, stats.keyframedClipId)).toBe(0.8)
+
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+
+  await expect.poll(() => getClipAudioVolume(page, stats.keyframedClipId)).toBeCloseTo(1.25, 1)
+  await expect.poll(() => getClipVolumeKeyframeMax(page, stats.keyframedClipId)).toBe(2)
+})
+
+test('インスペクター: ストレス投入の BGM とナレーションを順次正規化できる', async ({ page }) => {
+  const stats = await loadAudioNormalizeStress(page)
+  expect(stats.clipCount).toBe(3)
+
+  await selectClipById(page, stats.bgmClipId)
+  await clickTimelineClip(page, stats.bgmClipName)
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+  expect(await getClipAudioVolume(page, stats.bgmClipId)).toBe(2)
+
+  await selectClipById(page, stats.narrationClipId)
+  await clickTimelineClip(page, stats.narrationClipName)
+  await expect(page.getByRole('slider', { name: '音量' })).toHaveValue('0.75')
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+  await expect.poll(() => getClipAudioVolume(page, stats.narrationClipId)).toBe(2)
 })
 
 test('インスペクター: トランスフォームキーフレームを追加・編集できる', async ({ page }) => {

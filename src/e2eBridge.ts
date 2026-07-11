@@ -37,6 +37,10 @@ import {
   seedProjectSettingsPresetExportStress,
   type ProjectSettingsPresetExportStressStats,
 } from './utils/projectSettingsPresetExportStressSetup'
+import {
+  seedAudioNormalizeStress,
+  type AudioNormalizeStressStats,
+} from './utils/audioNormalizeStressSetup'
 import { loadTextStylePresets } from './persistence/textStylePresets'
 import {
   importUserProjectTemplateFromText,
@@ -67,6 +71,7 @@ declare global {
       loadUserProjectTemplateExportStress: () => UserProjectTemplateExportStressStats
       loadProjectSettingsPresetStress: () => ProjectSettingsPresetStressStats
       loadProjectSettingsPresetExportStress: () => ProjectSettingsPresetExportStressStats
+      loadAudioNormalizeStress: () => AudioNormalizeStressStats
       importUserProjectTemplateJson: (json: string) => string
       importProjectSettingsPresetJson: (json: string) => string[]
       clearUserProjectTemplates: () => void
@@ -83,6 +88,7 @@ declare global {
       countClipsWithTransition: () => number
       getClipMediaId: (clipId: string) => string | null
       getClipAudioVolume: (clipId: string) => number | null
+      getClipVolumeKeyframeMax: (clipId: string) => number | null
       getClipKenBurnsEnabled: (clipId: string) => boolean | null
       getMediaReplaceCandidateCount: (clipId: string) => number
       getMediaAssetName: (mediaId: string) => string | null
@@ -119,6 +125,7 @@ export function installE2eBridge(): void {
     loadUserProjectTemplateExportStress: () => seedUserProjectTemplateExportStress(),
     loadProjectSettingsPresetStress: () => seedProjectSettingsPresetStress(),
     loadProjectSettingsPresetExportStress: () => seedProjectSettingsPresetExportStress(),
+    loadAudioNormalizeStress: () => seedAudioNormalizeStress(),
     importUserProjectTemplateJson: (json) => importUserProjectTemplateFromText(json).label,
     importProjectSettingsPresetJson: (json) => {
       let raw: unknown
@@ -156,6 +163,13 @@ export function installE2eBridge(): void {
       const clip = findClipInProject(useProjectStore.getState().project, clipId)
       if (!clip || (clip.type !== 'video' && clip.type !== 'audio')) return null
       return clip.audio.volume
+    },
+    getClipVolumeKeyframeMax: (clipId) => {
+      const clip = findClipInProject(useProjectStore.getState().project, clipId)
+      if (!clip || (clip.type !== 'video' && clip.type !== 'audio')) return null
+      const keyframes = clip.audio.volumeKeyframes
+      if (!keyframes?.length) return null
+      return Math.max(...keyframes.map((kf) => kf.volume))
     },
     getClipKenBurnsEnabled: (clipId) => {
       const clip = findClipInProject(useProjectStore.getState().project, clipId)

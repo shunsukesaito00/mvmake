@@ -3,9 +3,11 @@ import {
   applyVolumeNormalizeToAudio,
   computeNormalizeMultiplier,
   formatNormalizeResult,
+  getEffectiveAudioPeak,
   measurePeakAmplitude,
   MIN_MEASURABLE_PEAK,
   MAX_AUDIO_VOLUME,
+  DEFAULT_NORMALIZE_TARGET_PEAK,
 } from './audioNormalize'
 import { DEFAULT_AUDIO } from '../types/project'
 
@@ -57,6 +59,34 @@ describe('audioNormalize', () => {
   it('formatNormalizeResult にピークと倍率を含める', () => {
     expect(formatNormalizeResult(0.2, 2)).toContain('20%')
     expect(formatNormalizeResult(0.9, 1)).toContain('目標ピーク')
+  })
+
+  it('getEffectiveAudioPeak はキーフレームの最大値を考慮する', () => {
+    const audio = {
+      ...DEFAULT_AUDIO,
+      volume: 0.4,
+      volumeKeyframes: [{ id: 'kf1', time: 0.5, volume: 0.9 }],
+    }
+    expect(getEffectiveAudioPeak(audio)).toBe(0.9)
+  })
+
+  it('音量上限 2 を超えないよう倍率をクランプする', () => {
+    const audio = { ...DEFAULT_AUDIO, volume: 1.5 }
+    const multiplier = computeNormalizeMultiplier(0.05, audio)
+    const { audio: next } = applyVolumeNormalizeToAudio(audio, 0.05)
+    expect(multiplier).toBeLessThanOrEqual(MAX_AUDIO_VOLUME / 1.5)
+    expect(next.volume).toBeLessThanOrEqual(MAX_AUDIO_VOLUME)
+  })
+
+  it('measurePeakAmplitude は sourceStart 以降のみ計測する', () => {
+    const buffer = mockAudioBuffer([0.9, 0.1, 0.1, 0.1], 4)
+    expect(measurePeakAmplitude(buffer, 0, 4 / 4)).toBeCloseTo(0.9, 5)
+    expect(measurePeakAmplitude(buffer, 1 / 4, 3 / 4)).toBeCloseTo(0.1, 5)
+  })
+
+  it('目標ピーク付近の素材は倍率 1 のまま', () => {
+    const multiplier = computeNormalizeMultiplier(DEFAULT_NORMALIZE_TARGET_PEAK, DEFAULT_AUDIO)
+    expect(multiplier).toBeCloseTo(1, 2)
   })
 
   it('decodeAudioBlob は AudioContext でデコードする', async () => {
