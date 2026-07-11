@@ -46,6 +46,12 @@ import {
   getTemplateStressClipCount,
   getTemplateStressMarkerCount,
   loadStructuredWeddingTemplateStress,
+  getStructuredWeddingTemplateStressStats,
+  getProjectClipCount,
+  getChapterMarkerCount,
+  getPhotoGuideClipCount,
+  loadBatchTransitionRemovalStress,
+  countClipsWithTransition,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -2163,4 +2169,42 @@ test('構造化ウェディング: ストレス投入で11クリップ・5章マ
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
   await expect(page.locator('[title="オープニング"]')).toBeVisible()
   await expect(page.locator('footer').getByText(stats.firstPhotoGuideLabel)).toBeVisible()
+})
+
+test('構造化ウェディング: 適用を undo で復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadStructuredWeddingTemplateStress(page)
+  expect(stats.totalClipCount).toBe(11)
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect.poll(() => getProjectClipCount(page)).toBe(0)
+  expect(await getChapterMarkerCount(page)).toBe(0)
+  expect(await getPhotoGuideClipCount(page)).toBe(0)
+})
+
+test('構造化ウェディング: undo 後の再適用で章マーカーと写真ガイドが復元される', async ({ page }) => {
+  await goOnboarded(page)
+  await loadStructuredWeddingTemplateStress(page)
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect.poll(() => getProjectClipCount(page)).toBe(0)
+
+  await applyWeddingFullTemplate(page)
+  const stats = await getStructuredWeddingTemplateStressStats(page)
+  expect(stats.totalClipCount).toBe(11)
+  expect(stats.photoGuideCount).toBe(8)
+  expect(stats.markerCount).toBe(5)
+  expect(stats.chapterLabels).toContain('新郎プロフィール')
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
+})
+
+test('効果: ストレスプロジェクトで全映像トラックから30件一括削除できる', async ({ page }) => {
+  await goOnboarded(page)
+  await loadBatchTransitionRemovalStress(page)
+  await expect.poll(() => countClipsWithTransition(page)).toBe(30)
+
+  await page.getByTitle('効果').click()
+  await page.getByLabel('一括削除スコープ').selectOption('all-video-tracks')
+  await page.getByRole('button', { name: 'トランジションを一括削除' }).click()
+  await expect(page.getByText('30件のクリップからトランジションを一括削除しました')).toBeVisible()
+  await expect.poll(() => countClipsWithTransition(page)).toBe(0)
 })

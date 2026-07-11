@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 143
+export const PROD_SMOKE_SCENARIO_COUNT = 146
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -302,4 +302,11 @@ export const PROD_SMOKE_V2237_ADDITIONS = [
   'ユーザー適用をundo',
   '破損JSONインポートはエラー',
   '11クリップ・5章マーカー',
+] as const
+
+/** v2.2.38 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2238_ADDITIONS = [
+  '構造化ウェディング: 適用を undo',
+  '再適用で章マーカーと写真ガイド',
+  '30件一括削除',
 ] as const
