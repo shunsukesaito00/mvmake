@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { LutAsset } from '../types/project'
 import { DEFAULT_LUT_INTENSITY } from '../types/project'
 import type { ColorAdjustments } from '../types/project'
@@ -13,6 +13,14 @@ import { ColorLookPreview, useColorLookHoverPreview } from './ColorLookPreview'
 import { ColorLookPresetsSection } from './ColorLookPresetsSection'
 import { LutPreview, useLutHoverPreview } from './LutPreview'
 import { RgbCurveGraph } from './RgbCurveGraph'
+import { PresetCatalogControls, PresetFavoriteToggle } from './PresetCatalogControls'
+import { loadPresetFavorites, togglePresetFavorite } from '../persistence/presetFavorites'
+import {
+  buildCatalogFilterOptions,
+  COLOR_LOOK_CATALOG_CATEGORIES,
+  filterCatalogItems,
+  type CatalogFilterValue,
+} from '../utils/presetCatalog'
 
 interface Props {
   color: ColorAdjustments
@@ -39,6 +47,13 @@ export function ColorAdjustmentsSection({
   const importLutFile = useProjectStore((s) => s.importLutFile)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [userPresets, setUserPresets] = useState<UserColorLookPreset[]>([])
+  const [lookCatalogFilter, setLookCatalogFilter] = useState<CatalogFilterValue>('all')
+  const [lookFavorites, setLookFavorites] = useState(() => loadPresetFavorites().colorLook)
+  const lookFilterOptions = useMemo(() => buildCatalogFilterOptions(COLOR_LOOK_CATALOG_CATEGORIES), [])
+  const filteredLookPresets = useMemo(
+    () => filterCatalogItems(COLOR_LOOK_PRESETS, lookCatalogFilter, (p) => p.id, (p) => p.category, lookFavorites),
+    [lookCatalogFilter, lookFavorites],
+  )
   const activePresetId = matchColorLookPreset(color, userPresets)
   const { setHoverPresetId, previewColor, previewLabel } = useColorLookHoverPreview(color)
   const { setHoverLutId, previewLutId, previewLabel: lutPreviewLabel } = useLutHoverPreview(lutId, lutAssets)
@@ -88,27 +103,43 @@ export function ColorAdjustmentsSection({
         <p className="mb-2 text-[10px] leading-relaxed text-text-muted">
           適用順: LUT → トーンカーブ → RGB カーブ → 色温度/ティント → 色相/明るさ/コントラスト/彩度。プリセットと LUT は併用できます。
         </p>
-        <div className="flex flex-wrap gap-1.5">
-          {COLOR_LOOK_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              aria-pressed={activePresetId === preset.id}
-              aria-label={`${preset.label}ルック`}
-              title={preset.description}
-              onClick={() => applyPreset(preset.id)}
-              onMouseEnter={() => setHoverPresetId(preset.id)}
-              onMouseLeave={() => setHoverPresetId(null)}
-              className={`rounded-lg px-2.5 py-1.5 text-[10px] font-medium ring-1 transition-all ${
-                activePresetId === preset.id
-                  ? 'bg-accent-muted text-accent ring-accent/40'
-                  : 'bg-surface-3 text-text-secondary ring-border hover:ring-accent/30'
-              }`}
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
+        <PresetCatalogControls
+          options={lookFilterOptions}
+          value={lookCatalogFilter}
+          onChange={setLookCatalogFilter}
+          ariaLabel="ルックプリセット絞り込み"
+        />
+        {filteredLookPresets.length === 0 ? (
+          <p className="text-[10px] text-text-muted">該当するルックがありません。よく使うに登録するか、絞り込みを変更してください。</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {filteredLookPresets.map((preset) => (
+              <div key={preset.id} className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-pressed={activePresetId === preset.id}
+                  aria-label={`${preset.label}ルック`}
+                  title={preset.description}
+                  onClick={() => applyPreset(preset.id)}
+                  onMouseEnter={() => setHoverPresetId(preset.id)}
+                  onMouseLeave={() => setHoverPresetId(null)}
+                  className={`rounded-lg px-2.5 py-1.5 text-[10px] font-medium ring-1 transition-all ${
+                    activePresetId === preset.id
+                      ? 'bg-accent-muted text-accent ring-accent/40'
+                      : 'bg-surface-3 text-text-secondary ring-border hover:ring-accent/30'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+                <PresetFavoriteToggle
+                  active={lookFavorites.includes(preset.id)}
+                  label={preset.label}
+                  onToggle={() => setLookFavorites(togglePresetFavorite('colorLook', preset.id).colorLook)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       <ColorLookPresetsSection
         color={color}

@@ -15,7 +15,17 @@ import {
 import { formatBatchTransitionSummary, formatBatchTransitionRemovalSummary, type BatchTransitionScope } from '../utils/batchTransition'
 import { SrtImportSection } from '../components/SrtImportSection'
 import { SrtExportSection } from '../components/SrtExportSection'
+import { PresetCatalogControls, PresetFavoriteToggle } from '../components/PresetCatalogControls'
 import { NarrationRecorderSection } from '../components/NarrationRecorderSection'
+import { loadPresetFavorites, togglePresetFavorite } from '../persistence/presetFavorites'
+import {
+  buildCatalogFilterOptions,
+  filterCatalogItems,
+  getTextPresetCatalogCategory,
+  TEXT_CATALOG_CATEGORIES,
+  TRANSITION_CATALOG_CATEGORIES,
+  type CatalogFilterValue,
+} from '../utils/presetCatalog'
 import { LARGE_FILE_BYTES, formatStorageUsageLabel } from '../persistence/storageUtils'
 import { formatBytes } from '../utils/formatBytes'
 import { useStorageEstimate } from '../hooks/useStorageEstimate'
@@ -206,7 +216,29 @@ export function MediaPanel() {
   const [batchScope, setBatchScope] = useState<BatchTransitionScope>('selected-track')
   const [batchType, setBatchType] = useState<TransitionType>('crossfade')
   const [batchDuration, setBatchDuration] = useState(0.8)
+  const [textCatalogFilter, setTextCatalogFilter] = useState<CatalogFilterValue>('all')
+  const [transitionCatalogFilter, setTransitionCatalogFilter] = useState<CatalogFilterValue>('all')
+  const [textFavorites, setTextFavorites] = useState(() => loadPresetFavorites().text)
+  const [transitionFavorites, setTransitionFavorites] = useState(() => loadPresetFavorites().transition)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const textFilterOptions = useMemo(() => buildCatalogFilterOptions(TEXT_CATALOG_CATEGORIES), [])
+  const transitionFilterOptions = useMemo(() => buildCatalogFilterOptions(TRANSITION_CATALOG_CATEGORIES), [])
+  const filteredTextPresets = useMemo(
+    () => filterCatalogItems(TEXT_PRESETS, textCatalogFilter, (p) => p.id, getTextPresetCatalogCategory, textFavorites),
+    [textCatalogFilter, textFavorites],
+  )
+  const filteredTransitionOptions = useMemo(
+    () => filterCatalogItems(TRANSITION_OPTIONS, transitionCatalogFilter, (t) => t.type, (t) => t.category, transitionFavorites),
+    [transitionCatalogFilter, transitionFavorites],
+  )
+
+  const toggleTextFavorite = (id: string) => {
+    setTextFavorites(togglePresetFavorite('text', id).text)
+  }
+  const toggleTransitionFavorite = (type: TransitionType) => {
+    setTransitionFavorites(togglePresetFavorite('transition', type).transition)
+  }
 
   const mediaAssets = useProjectStore((s) => s.project.mediaAssets)
   const filteredMediaAssets = useMemo(
@@ -558,23 +590,58 @@ export function MediaPanel() {
           <div className="flex-1 overflow-y-auto p-3">
             <SrtImportSection />
             <SrtExportSection />
-            <p className="mb-3 text-[11px] text-text-muted">プリセットをクリックで追加</p>
-            {(['title', 'lowerThird', 'subtitle'] as const).map((category) => {
-              const presets = TEXT_PRESETS.filter((p) => (p.category ?? 'title') === category)
-              if (presets.length === 0) return null
-              return (
-                <div key={category} className="mb-4">
-                  <p className="mb-2 text-[10px] font-semibold tracking-wider text-accent uppercase">
-                    {TEXT_PRESET_CATEGORY_LABELS[category]}
-                  </p>
-                  <div className="space-y-2">
-                    {presets.map((preset) => (
-                      <TextPresetButton key={preset.id} preset={preset} onAdd={() => addTextClip(preset)} />
-                    ))}
+            <p className="mb-2 text-[11px] text-text-muted">プリセットをクリックで追加</p>
+            <PresetCatalogControls
+              options={textFilterOptions}
+              value={textCatalogFilter}
+              onChange={setTextCatalogFilter}
+              ariaLabel="テキストプリセット絞り込み"
+            />
+            {filteredTextPresets.length === 0 ? (
+              <EmptyState
+                icon={<Icons.Type size={20} />}
+                title="該当するプリセットがありません"
+                description="よく使うに登録するか、絞り込みを変更してください"
+              />
+            ) : textCatalogFilter === 'all' ? (
+              ([
+                ['title', TEXT_PRESET_CATEGORY_LABELS.title],
+                ['lowerThird', TEXT_PRESET_CATEGORY_LABELS.lowerThird],
+                ['subtitle', TEXT_PRESET_CATEGORY_LABELS.subtitle],
+                ['motion', 'MG'],
+              ] as const).map(([category, label]) => {
+                const presets = filteredTextPresets.filter((p) => getTextPresetCatalogCategory(p) === category)
+                if (presets.length === 0) return null
+                return (
+                  <div key={category} className="mb-4">
+                    <p className="mb-2 text-[10px] font-semibold tracking-wider text-accent uppercase">{label}</p>
+                    <div className="space-y-2">
+                      {presets.map((preset) => (
+                        <TextPresetButton
+                          key={preset.id}
+                          preset={preset}
+                          isFavorite={textFavorites.includes(preset.id)}
+                          onToggleFavorite={() => toggleTextFavorite(preset.id)}
+                          onAdd={() => addTextClip(preset)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })
+            ) : (
+              <div className="space-y-2">
+                {filteredTextPresets.map((preset) => (
+                  <TextPresetButton
+                    key={preset.id}
+                    preset={preset}
+                    isFavorite={textFavorites.includes(preset.id)}
+                    onToggleFavorite={() => toggleTextFavorite(preset.id)}
+                    onAdd={() => addTextClip(preset)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -589,20 +656,34 @@ export function MediaPanel() {
                 調整レイヤーを追加
               </Btn>
             </div>
-            <p className="mb-3 text-[11px] text-text-muted">選択中のクリップにトランジションを適用</p>
+            <p className="mb-2 text-[11px] text-text-muted">選択中のクリップにトランジションを適用</p>
+            <PresetCatalogControls
+              options={transitionFilterOptions}
+              value={transitionCatalogFilter}
+              onChange={setTransitionCatalogFilter}
+              ariaLabel="トランジション絞り込み"
+            />
             {!selectedClip || (selectedClip.type !== 'video' && selectedClip.type !== 'image') ? (
               <EmptyState icon={<Icons.Sparkles size={20} />} title="クリップ未選択" description="タイムラインで映像・画像クリップを選択してください" />
+            ) : filteredTransitionOptions.length === 0 ? (
+              <EmptyState icon={<Icons.Sparkles size={20} />} title="該当するトランジションがありません" description="よく使うに登録するか、絞り込みを変更してください" />
             ) : (
               <div className="space-y-1.5">
-                {TRANSITION_OPTIONS.map(({ type, label }) => (
-                  <button
-                    key={type}
-                    onClick={() => { setClipTransition(selectedClip.id, { type, duration: 0.8 }); showToast(`${label}を適用しました`, 'success') }}
-                    className="flex w-full items-center gap-3 rounded-lg bg-surface-3 px-3 py-2 text-left text-sm text-text-secondary ring-1 ring-border transition-all hover:text-text-primary hover:ring-accent/40"
-                  >
-                    <TransitionPreview type={type} />
-                    {label}
-                  </button>
+                {filteredTransitionOptions.map(({ type, label }) => (
+                  <div key={type} className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => { setClipTransition(selectedClip.id, { type, duration: 0.8 }); showToast(`${label}を適用しました`, 'success') }}
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg bg-surface-3 px-3 py-2 text-left text-sm text-text-secondary ring-1 ring-border transition-all hover:text-text-primary hover:ring-accent/40"
+                    >
+                      <TransitionPreview type={type} />
+                      {label}
+                    </button>
+                    <PresetFavoriteToggle
+                      active={transitionFavorites.includes(type)}
+                      label={label}
+                      onToggle={() => toggleTransitionFavorite(type)}
+                    />
+                  </div>
                 ))}
                 <button
                   onClick={() => { setClipTransition(selectedClip.id, undefined); showToast('トランジションを削除しました', 'info') }}
@@ -700,17 +781,30 @@ export function MediaPanel() {
   )
 }
 
-function TextPresetButton({ preset, onAdd }: { preset: TextPreset; onAdd: () => void }) {
+function TextPresetButton({
+  preset,
+  onAdd,
+  isFavorite,
+  onToggleFavorite,
+}: {
+  preset: TextPreset
+  onAdd: () => void
+  isFavorite: boolean
+  onToggleFavorite: () => void
+}) {
   const preview = preset.text.content?.split('\n')[0] ?? preset.label
   return (
-    <button
-      onClick={onAdd}
-      className="w-full rounded-xl bg-surface-3 p-3 text-left ring-1 ring-border transition-all hover:ring-accent/40"
-    >
-      <p className="truncate text-sm font-bold" style={{ fontFamily: preset.text.fontFamily, color: preset.text.color }}>
-        {preview}
-      </p>
-      <p className="mt-1 text-[10px] text-text-muted">{preset.label}</p>
-    </button>
+    <div className="flex items-center gap-1.5">
+      <button
+        onClick={onAdd}
+        className="min-w-0 flex-1 rounded-xl bg-surface-3 p-3 text-left ring-1 ring-border transition-all hover:ring-accent/40"
+      >
+        <p className="truncate text-sm font-bold" style={{ fontFamily: preset.text.fontFamily, color: preset.text.color }}>
+          {preview}
+        </p>
+        <p className="mt-1 text-[10px] text-text-muted">{preset.label}</p>
+      </button>
+      <PresetFavoriteToggle active={isFavorite} label={preset.label} onToggle={onToggleFavorite} />
+    </div>
   )
 }

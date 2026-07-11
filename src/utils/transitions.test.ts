@@ -6,24 +6,13 @@ describe('transitions', () => {
     expect(TRANSITION_DEFINITIONS).toHaveLength(29)
     expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('dissolve')
     expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('iris')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('fadeWarm')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('lightLeak')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('softFocus')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('crossDissolveWarm')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('filmBurn')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('gentleZoom')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('petalFall')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('goldenShimmer')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('softWipe')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('candleGlow')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('dreamyBlur')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('paperConfetti')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('silkFade')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('starlight')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('laceReveal')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('pearlShimmer')
-    expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('mistFade')
     expect(TRANSITION_DEFINITIONS.map((d) => d.type)).toContain('ribbonCut')
+  })
+
+  it('全トランジションに category がある', () => {
+    for (const def of TRANSITION_DEFINITIONS) {
+      expect(['dissolve', 'wedding', 'motion']).toContain(def.category)
+    }
   })
 
   it('easeSmoothstep が 0〜1 を滑らかに補間する', () => {

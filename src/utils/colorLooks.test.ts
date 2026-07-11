@@ -7,6 +7,12 @@ describe('colorLooks', () => {
     expect(COLOR_LOOK_PRESETS).toHaveLength(22)
   })
 
+  it('全プリセットに category がある', () => {
+    for (const preset of COLOR_LOOK_PRESETS) {
+      expect(['basic', 'wedding', 'mood', 'film']).toContain(preset.category)
+    }
+  })
+
   it('colorAdjustmentsEqual が近似値を判定する', () => {
     expect(colorAdjustmentsEqual(
       { ...DEFAULT_COLOR, brightness: 0.08, contrast: 0.05, saturation: 0.12 },

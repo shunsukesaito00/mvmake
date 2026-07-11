@@ -23,7 +23,7 @@
 | `src/engine/mediaLoader.ts` | File → `MediaAsset` 変換(duration・サムネイル・波形の抽出) |
 | `src/engine/demoProject.ts` | `createDemoProject()`。サンプルプロジェクト（6 映像・BGM・3 章・33 秒） |
 | `docs/ONBOARDING_AUDIT.md` | 初回体験・15 分ジャーニー監査（Q9） |
-| `docs/ONBOARDING_AUDIT.md` | 初回体験・15 分ジャーニー監査（Q9） |
+| `docs/PRESET_CATALOG_AUDIT.md` | プリセットカタログ・よく使う監査（Q10） |
 | `src/engine/stressTestProject.ts` | `createStressTestProject()`。10 分・100 クリップのパフォーマンス計測用プロジェクト |
 | `docs/TEXT_SRT_AUDIT.md` | テキスト・SRT・フォント描画監査（Q8） |
 | `src/persistence/db.ts` | IndexedDB への保存・復元・プロジェクト一覧/複製/削除 |
