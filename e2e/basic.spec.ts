@@ -3098,3 +3098,47 @@ test('タイムライン: リップルトリムで後続クリップが連動', 
   expect(thankYouAfter.x).toBeLessThan(thankYouBefore.x)
   expect(thankYouBefore.x - thankYouAfter.x).toBeGreaterThan(60)
 })
+
+test('自動保存: 編集後にインジケータが表示される', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: /Opening/ }).first().click()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+
+  await expect(page.getByLabel(/自動保存:/)).toBeVisible({ timeout: 8_000 })
+})
+
+test('タイムラインズーム: 選択クリップへズームとフィット', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テンプレ').click()
+  await page.getByRole('button', { name: /結婚式フル構成/ }).click()
+  await expect(page.getByText('結婚式フル構成テンプレートを適用しました')).toBeVisible()
+
+  await clickTimelineClip(page, 'Opening')
+
+  const zoomLabel = page.getByTestId('timeline-zoom-label')
+  const before = Number((await zoomLabel.textContent())?.replace('px/s', '') ?? '0')
+
+  await page.getByTitle('選択クリップへズーム (Z)').click()
+  const afterZoom = Number((await zoomLabel.textContent())?.replace('px/s', '') ?? '0')
+  expect(afterZoom).toBeGreaterThan(before)
+
+  await page.getByTitle('フィット').click()
+  const afterFit = Number((await zoomLabel.textContent())?.replace('px/s', '') ?? '0')
+  expect(afterFit).toBeLessThan(afterZoom)
+})
+
+test('写真ガイド: 配置後に undo でガイドが復元される', async ({ page }) => {
+  await goOnboarded(page)
+  await applyWeddingFullTemplate(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', { name: 'undo-guide.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await clickTimelineClip(page, '写真: 新郎 幼少期')
+  await page.getByRole('button', { name: 'ガイド区間にスライドショーを配置' }).click()
+  await expect(page.getByText('1枚の写真をガイド区間に配置しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeHidden()
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(page.locator('footer').getByText('写真: 新郎 幼少期')).toBeVisible()
+  await expect(page.locator('footer').getByText('undo-guide.png')).toBeHidden()
+})
