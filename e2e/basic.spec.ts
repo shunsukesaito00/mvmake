@@ -76,6 +76,8 @@ import {
   makeTinyWebmVideo,
   makeWavWithPeak,
   timelineClip,
+  checkEncodersSupported,
+  loadChapterExportStressProject,
 } from './helpers'
 
 async function goOnboarded(page: Page) {
@@ -2742,4 +2744,53 @@ test('書き出し: 先頭章・末尾章の In/Out 境界', async ({ page }) =>
 
   await page.getByRole('button', { name: '章「エンディング」を In/Out に設定' }).click()
   await expect(page.getByText(/書き出し範囲: 110\.0–/)).toBeVisible()
+})
+
+test('書き出し: 大容量プロジェクトで章 ZIP UI（6 章・50+ クリップ）', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadChapterExportStressProject(page)
+  expect(stats.totalClips).toBeGreaterThanOrEqual(50)
+  expect(stats.chapterCount).toBeGreaterThanOrEqual(6)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
+  await expect(page.getByText('6 章を個別 MP4 化して ZIP にまとめます')).toBeVisible()
+  await expect(page.getByRole('button', { name: /章「オープニング」を In\/Out に設定/ })).toBeVisible()
+})
+
+test('書き出し: 章 In/Out 範囲の書き出しをキャンセルできる', async ({ page }) => {
+  test.setTimeout(120_000)
+
+  await goOnboarded(page)
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await applyWeddingFullTemplate(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '章「新郎プロフィール」を In/Out に設定' }).click()
+  await page.getByRole('button', { name: '軽量' }).click()
+  await page.getByRole('button', { name: '1080p で書き出し' }).click()
+  await page.getByRole('button', { name: 'キャンセル' }).click()
+  await expect(page.getByRole('status', { name: '書き出し結果' })).toBeVisible()
+  await expect(page.getByText('書き出しをキャンセルしました')).toBeVisible()
+  await expect(page.getByText('書き出し範囲: 20.0–50.0s')).toBeVisible()
+})
+
+test('書き出し: 章 In/Out 範囲の MP4 をダウンロード（対応環境）', async ({ page }) => {
+  test.setTimeout(180_000)
+
+  await goOnboarded(page)
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await applyWeddingFullTemplate(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '章「オープニング」を In/Out に設定' }).click()
+  await expect(page.getByText('書き出し範囲: 0.0–20.0s')).toBeVisible()
+  await page.getByRole('button', { name: '軽量' }).click()
+  const downloadPromise = page.waitForEvent('download', { timeout: 150_000 })
+  await page.getByRole('button', { name: '1080p で書き出し' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toMatch(/\.mp4$/)
+  await expect(page.getByText('書き出しが完了しました')).toBeVisible()
 })

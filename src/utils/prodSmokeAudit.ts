@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 179
+export const PROD_SMOKE_SCENARIO_COUNT = 182
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -386,4 +386,11 @@ export const PROD_SMOKE_V2249_ADDITIONS = [
   '52 枚を1区間に配置',
   '複数区間に順次配置',
   '先頭章・末尾章の In/Out',
+] as const
+
+/** v2.2.50 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2250_ADDITIONS = [
+  '6 章・50+ クリップ',
+  '章 In/Out 範囲の書き出しをキャンセル',
+  '章 In/Out 範囲の MP4',
 ] as const
