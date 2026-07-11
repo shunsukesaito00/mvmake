@@ -1630,3 +1630,18 @@ test('色調: カラールックプリセットを適用できる', async ({ pag
   await expect(page.getByText('「フィルム風」ルックを適用しました')).toBeVisible()
   await expect(page.getByRole('button', { name: 'フィルム風ルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('インスペクター: 速度キーフレームを追加・編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.setInputFiles('input[accept*="video"]', { name: 'speed-kf.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'speed-kf.webm')
+
+  await page.getByRole('button', { name: '再生速度' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+  await expect(page.getByRole('slider', { name: '基本速度' })).toBeVisible()
+})
