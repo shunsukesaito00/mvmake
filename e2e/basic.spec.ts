@@ -8,6 +8,7 @@ import {
   clearTextStylePresets,
   installNarrationRecordingMocks,
   loadTextStylePresetStress,
+  loadMediaListStress,
   makeSilentWav,
   makeTinyWebmVideo,
   makeWavWithPeak,
@@ -1790,4 +1791,38 @@ test('メディア: 検索・種類フィルタ・ソートができる', async 
 
   await page.getByLabel('メディア並び順').selectOption('name')
   await expect(page.locator('.grid.grid-cols-2 > div').first().getByText('alpha-photo.png')).toBeVisible()
+})
+
+test('モーダル: 開くと最初の要素にフォーカスし、Escape で閉じる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('プロジェクト一覧').click()
+  await expect(page.getByRole('dialog', { name: 'プロジェクト' })).toBeVisible()
+
+  await expect(page.getByRole('button', { name: '+ 新規プロジェクト' })).toBeFocused()
+
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: 'プロジェクト' })).toBeHidden()
+})
+
+test('メディア: 該当なし検索で空状態を表示する', async ({ page }) => {
+  await goOnboarded(page)
+  await loadMediaListStress(page)
+  await page.getByTitle('メディア', { exact: true }).click()
+
+  await page.getByLabel('メディア検索').fill('not-found-xyz')
+  await expect(page.getByText('該当するメディアがありません')).toBeVisible()
+  await expect(page.getByText('0/52件表示')).toBeVisible()
+})
+
+test('メディア: 種類フィルタ切替で件数が更新される', async ({ page }) => {
+  await goOnboarded(page)
+  await loadMediaListStress(page)
+  await page.getByTitle('メディア', { exact: true }).click()
+
+  await page.getByLabel('メディア種類').selectOption('image')
+  await expect(page.getByText('45/52件表示')).toBeVisible()
+
+  await page.getByLabel('メディア種類').selectOption('video')
+  await expect(page.getByText('2/52件表示')).toBeVisible()
+  await expect(page.getByText('clip-01.mp4')).toBeVisible()
 })
