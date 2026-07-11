@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 134
+export const PROD_SMOKE_SCENARIO_COUNT = 137
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -281,4 +281,11 @@ export const PROD_SMOKE_V2234_ADDITIONS = [
   'ストレス分割で3+3',
   '隣接3クリップとKF',
   'sourceStartが変化しKF時刻',
+] as const
+
+/** v2.2.35 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2235_ADDITIONS = [
+  'スライドで隣接が連動',
+  '音量キーフレームUI: キーフレーム変更',
+  'トーン・RGBカーブが有効',
 ] as const
