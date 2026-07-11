@@ -3704,3 +3704,67 @@ test('婚礼ゴールデンパス: テンプレ→写真→動画→テロップ
     await expect(page.getByText('書き出しが完了しました')).toBeVisible()
   }
 })
+
+test('トランジション: 画像クリップへの適用フロー', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  const clip = timelineClip(page, 'photo.png')
+  await expect(clip).toBeVisible()
+
+  await clip.click()
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'クロスフェード', exact: true }).click()
+  await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
+})
+
+test('プレビュー: 動画クリップを配置して再生・停止できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'playback.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('playback.webm')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  const transport = page.locator('main input[type="range"]').first()
+  const before = parseFloat(await transport.inputValue())
+
+  await page.keyboard.press('Space')
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(before + 0.05)
+
+  await page.keyboard.press('Space')
+  await expect.poll(async () => {
+    const paused = parseFloat(await transport.inputValue())
+    await page.waitForTimeout(400)
+    return Math.abs(parseFloat(await transport.inputValue()) - paused)
+  }, { timeout: 3000 }).toBeLessThan(0.05)
+
+  await page.getByRole('button', { name: '再生 (Space)' }).click()
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(before + 0.05)
+
+  await page.getByRole('button', { name: '再生 (Space)' }).click()
+  const atPause = parseFloat(await transport.inputValue())
+  await page.waitForTimeout(400)
+  expect(Math.abs(parseFloat(await transport.inputValue()) - atPause)).toBeLessThan(0.05)
+
+  await page.keyboard.press('l')
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(atPause + 0.05)
+
+  await page.keyboard.press('k')
+  const atStop = parseFloat(await transport.inputValue())
+  await page.waitForTimeout(400)
+  expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
+})
+
+test('効果タブ: 調整レイヤーを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: '調整レイヤーを追加', exact: true }).click()
+  await expect(page.getByText('調整レイヤーを追加しました')).toBeVisible()
+  await expect(page.locator('footer').getByText('調整レイヤー')).toBeVisible()
+})

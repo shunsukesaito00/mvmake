@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 227
+export const PROD_SMOKE_SCENARIO_COUNT = 230
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -498,4 +498,11 @@ export const PROD_SMOKE_V2265_ADDITIONS = [
   'undo 後の再適用で縦型解像度と書き出しラベル',
   '章マーカー一括書き出し UI',
   '婚礼ゴールデンパス',
+] as const
+
+/** v2.2.66 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2266_ADDITIONS = [
+  '画像クリップへの適用フロー',
+  '動画クリップを配置して再生・停止',
+  '効果タブ: 調整レイヤーを追加',
 ] as const
