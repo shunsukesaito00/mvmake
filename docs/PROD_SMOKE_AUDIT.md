@@ -1,16 +1,16 @@
-# 本番スモーク E2E 監査（v2.4.3）
+# 本番スモーク E2E 監査（v2.4.4）
 
-最終更新: 2026-07-12（v2.4.3 / 本番スモーク 368→371）
+最終更新: 2026-07-12（v2.4.4 / 本番スモーク 371→374）
 
-## v2.4.3 追加（3件）
+## v2.4.4 追加（3件）
 
 | # | シナリオ | 根拠 |
 |---|---------|------|
-| 369 | LUT切替 undo→元LUT復元 | 色調補正統合 |
-| 370 | 組み込みルック+LUT「なし」選択 undo→LUT/ルック復元 | 色調補正統合 |
-| 371 | LUT適用後ユーザールック適用 undo→LUT復元 | 色調補正統合 |
+| 372 | LUT適用後組み込みルック適用 undo→LUT復元 | 色調補正統合 |
+| 373 | 組み込みルック+LUT切替 undo→元LUT復元 | 色調補正統合 |
+| 374 | ユーザールック後組み込みルック適用 undo→ユーザールック復元 | 色調補正統合 |
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 371 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 371`
+- `e2e/basic.spec.ts` — 374 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 374`
