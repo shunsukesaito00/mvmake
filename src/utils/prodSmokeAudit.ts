@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 332
+export const PROD_SMOKE_SCENARIO_COUNT = 335
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -743,4 +743,11 @@ export const PROD_SMOKE_V2300_ADDITIONS = [
   '書き出し: In/Out 付きプリセットを JSON エクスポート→インポート→適用で In/Out と高品質と720p解像度が復元',
   '書き出し: In/Out 付きプリセット適用後に軽量品質とプロジェクト解像度設定がプリセット通りに反映',
   '色調補正: ルック適用後の RGB カーブ R チャンネルリセットを undo でルック選択まで復元',
+] as const
+
+/** v2.3.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2301_ADDITIONS = [
+  '書き出し: In/Out 付きプリセットを JSON エクスポート→インポート→適用で In/Out と標準品質とプロジェクト解像度が復元',
+  '書き出し: In/Out 付きプリセット適用後に標準品質とプロジェクト解像度設定がプリセット通りに反映',
+  '書き出し: In/Out 付きプリセットを JSON エクスポート→インポート→適用で In/Out と軽量品質と720p解像度が復元',
 ] as const
