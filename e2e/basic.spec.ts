@@ -5009,3 +5009,94 @@ test('色調補正: ルック適用後のトーンカーブ変更を undo でル
   await clickTimelineClip(page, 'tone-undo-look-photo.png')
   await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: ユーザールック適用後に別のユーザールックを適用すると前のユーザールック選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-switch-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-switch-look-photo.png')
+
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserSwitchA')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserSwitchA」ルックを保存しました')).toBeVisible()
+
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.25')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserSwitchB')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserSwitchB」ルックを保存しました')).toBeVisible()
+
+  const userButtonA = page.getByRole('button', { name: 'E2EUserSwitchAルック', exact: true })
+  const userButtonB = page.getByRole('button', { name: 'E2EUserSwitchBルック', exact: true })
+  await userButtonA.click()
+  await expect(userButtonA).toHaveAttribute('aria-pressed', 'true')
+
+  await userButtonB.click()
+  await expect(page.getByText('「E2EUserSwitchB」ルックを適用しました')).toBeVisible()
+  await expect(userButtonB).toHaveAttribute('aria-pressed', 'true')
+  await expect(userButtonA).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('書き出し: In/Out 付きプリセット適用後に In/Out をクリアして再適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.keyboard.press('m')
+  const playhead = page.locator('main input[type="range"]')
+
+  await playhead.fill('1')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('3')
+  await playhead.blur()
+  await page.keyboard.press('o')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EInOutClearReapply')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EInOutClearReapply」プリセットを保存しました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'E2EInOutClearReapplyを適用' }).click()
+  await expect(page.getByText('「E2EInOutClearReapply」プリセットを適用しました')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+  expect(await getInPoint(page)).toBe(1)
+  expect(await getOutPoint(page)).toBe(3)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '範囲をクリア' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeHidden()
+  expect(await getInPoint(page)).toBeNull()
+  expect(await getOutPoint(page)).toBeNull()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: 'E2EInOutClearReapplyを適用' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+  expect(await getInPoint(page)).toBe(1)
+  expect(await getOutPoint(page)).toBe(3)
+})
+
+test('色調補正: ルック適用後のシャドウ変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'shadow-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'shadow-undo-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  const shadows = page.getByRole('slider', { name: 'シャドウ' })
+  await shadows.dragTo(shadows, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'shadow-undo-look-photo.png')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+})
