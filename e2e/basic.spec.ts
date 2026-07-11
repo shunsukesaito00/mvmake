@@ -5100,3 +5100,107 @@ test('色調補正: ルック適用後のシャドウ変更を undo でルック
   await clickTimelineClip(page, 'shadow-undo-look-photo.png')
   await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: ルック適用後のハイライト変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'highlight-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'highlight-undo-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  const highlights = page.getByRole('slider', { name: 'ハイライト' })
+  await highlights.dragTo(highlights, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'highlight-undo-look-photo.png')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('書き出し: In/Out なしプリセット適用後に In/Out 付きプリセットを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: /軽量/ }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2ENoInOutPreset')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2ENoInOutPreset」プリセットを保存しました')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  const playhead = page.locator('main input[type="range"]')
+  await playhead.fill('1')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('3')
+  await playhead.blur()
+  await page.keyboard.press('o')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EWithInOutPreset')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EWithInOutPreset」プリセットを保存しました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'E2ENoInOutPresetを適用' }).click()
+  await expect(page.getByText('「E2ENoInOutPreset」プリセットを適用しました')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeHidden()
+  expect(await getInPoint(page)).toBeNull()
+  expect(await getOutPoint(page)).toBeNull()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: 'E2EWithInOutPresetを適用' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+  expect(await getInPoint(page)).toBe(1)
+  expect(await getOutPoint(page)).toBe(3)
+})
+
+test('色調補正: LUT 適用後に別 LUT を適用すると前の LUT 選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  const cubeA = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+  const cubeB = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.2 0
+0 1 0
+1 0.3 0
+0 0 1
+1 0.2 1
+0 1 1
+1 0.3 1
+`)
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'lut-switch-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'lut-switch-photo.png')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'lut-switch-warm.cube', mimeType: 'text/plain', buffer: cubeA })
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'lut-switch-cool.cube', mimeType: 'text/plain', buffer: cubeB })
+
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'lut-switch-warm (2³)' })
+  await expect(page.getByText('「lut-switch-warm」LUT を適用しました')).toBeVisible()
+  const warmLutId = await lutSelect.inputValue()
+  expect(warmLutId).not.toBe('')
+
+  await lutSelect.selectOption({ label: 'lut-switch-cool (2³)' })
+  await expect(page.getByText('「lut-switch-cool」LUT を適用しました')).toBeVisible()
+  await expect(lutSelect).not.toHaveValue(warmLutId)
+  await expect(lutSelect).toHaveValue(/.+/)
+})
