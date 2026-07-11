@@ -898,3 +898,37 @@ test('効果: 全映像トラックからトランジションを一括削除で
   await page.getByRole('button', { name: 'トランジションを一括削除' }).click()
   await expect(page.getByText('1件のクリップからトランジションを一括削除しました')).toBeVisible()
 })
+
+test('トランジション: フェード to 暖色を画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'warm-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'warm-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'warm-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'warm-b.png' }).click()
+
+  await clickTimelineClip(page, 'warm-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'フェード to 暖色', exact: true }).click()
+  await expect(page.getByText('フェード to 暖色を適用しました')).toBeVisible()
+})
+
+test('テキスト: ロワーサードプリセットを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('テキスト').click()
+  await page.getByRole('button', { name: 'Taro & Hanako ロワーサード（名前）' }).click()
+  await expect(page.locator('footer').getByText('Taro & Hanako')).toBeVisible()
+})
+
+test('インスペクター: 複数行テキストを入力できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+
+  const textarea = page.getByRole('textbox', { name: 'テキスト内容' })
+  await textarea.fill('新郎\n新婦')
+  await expect(textarea).toHaveValue('新郎\n新婦')
+  await expect(page.locator('footer').getByText('新郎')).toBeVisible()
+})
