@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 305
+export const PROD_SMOKE_SCENARIO_COUNT = 308
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -680,4 +680,11 @@ export const PROD_SMOKE_V2291_ADDITIONS = [
   '色調補正: ルック適用後の色温度変更を undo でルック選択まで復元',
   '書き出し: In/Out 付きプリセット適用後に解像度設定がプリセット通りに反映',
   '色調補正: 組み込みルック適用後にユーザールックを適用すると組み込みルック選択が解除',
+] as const
+
+/** v2.2.92 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2292_ADDITIONS = [
+  '色調補正: ルック適用後のティント変更を undo でルック選択まで復元',
+  '書き出し: In/Out 付きプリセットを JSON エクスポート→インポート→適用で In/Out と解像度が復元',
+  '色調補正: ユーザールック適用後に「なし」ルックを適用するとユーザールック選択が解除',
 ] as const

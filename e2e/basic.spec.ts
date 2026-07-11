@@ -5665,3 +5665,96 @@ test('色調補正: 組み込みルック適用後にユーザールックを適
   await expect(userButton).toHaveAttribute('aria-pressed', 'true')
   await expect(weddingButton).toHaveAttribute('aria-pressed', 'false')
 })
+
+test('色調補正: ルック適用後のティント変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'tint-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'tint-undo-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  const tint = page.getByRole('slider', { name: 'ティント' })
+  await tint.dragTo(tint, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'tint-undo-look-photo.png')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('書き出し: In/Out 付きプリセットを JSON エクスポート→インポート→適用で In/Out と解像度が復元される', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const playhead = page.locator('main input[type="range"]')
+
+  await playhead.fill('1')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('3')
+  await playhead.blur()
+  await page.keyboard.press('o')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EInOutJsonResolution')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EInOutJsonResolution」プリセットを保存しました')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'E2EInOutJsonResolutionをエクスポート' }).click()
+  const download = await downloadPromise
+  const exportPath = path.join(test.info().outputDir, 'e2e-inout-json-resolution-preset.json')
+  await download.saveAs(exportPath)
+
+  await page.keyboard.press('Escape')
+  await playhead.fill('1.5')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('2.5')
+  await playhead.blur()
+  await page.keyboard.press('o')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: 'E2EInOutJsonResolutionを削除' }).click()
+  await page.getByRole('button', { name: '解像度 プロジェクト' }).click()
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByLabel('書き出しプリセットファイルをインポート').setInputFiles(exportPath)
+  await expect(page.getByText('「E2EInOutJsonResolution」プリセットをインポートしました')).toBeVisible()
+  await page.getByRole('button', { name: 'E2EInOutJsonResolutionを適用' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+  expect(await getInPoint(page)).toBe(1)
+  expect(await getOutPoint(page)).toBe(3)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: ユーザールック適用後に「なし」ルックを適用するとユーザールック選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'user-none-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'user-none-look-photo.png')
+
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.15')
+  await page.getByLabel('ルックプリセット名').fill('E2EUserNoneClear')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EUserNoneClear」ルックを保存しました')).toBeVisible()
+
+  const userButton = page.getByRole('button', { name: 'E2EUserNoneClearルック', exact: true })
+  await userButton.click()
+  await expect(userButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await expect(userButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('button', { name: 'なしルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
