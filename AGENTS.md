@@ -22,14 +22,11 @@
 | `src/engine/exporter.ts` | `exportProject()`。WebCodecs でエンコードし mp4-muxer で MP4 化 |
 | `src/engine/mediaLoader.ts` | File → `MediaAsset` 変換(duration・サムネイル・波形の抽出) |
 | `src/engine/demoProject.ts` | `createDemoProject()`。サンプルプロジェクト（6 映像・BGM・3 章・33 秒） |
-| `docs/ONBOARDING_AUDIT.md` | 初回体験・15 分ジャーニー監査（Q9） |
-| `docs/PRESET_CATALOG_AUDIT.md` | プリセットカタログ・よく使う監査（Q10） |
 | `src/engine/stressTestProject.ts` | `createStressTestProject()`。10 分・100 クリップのパフォーマンス計測用プロジェクト |
-| `docs/TEXT_SRT_AUDIT.md` | テキスト・SRT・フォント描画監査（Q8） |
 | `src/persistence/db.ts` | IndexedDB への保存・復元・プロジェクト一覧/複製/削除 |
 | `src/persistence/projectFile.ts` | `.fable` ファイル(JSON+メディアZIP)のエクスポート/インポート |
 | `src/hooks/` | `usePlayback`(再生ループ・`PlaybackProvider` 経由で単一マウント)、`useAutoSave` / `useProjectRestore`、`usePanelSize`(リサイズ可能レイアウト) |
-| `src/utils/` | `createId()`(uuid)、`formatTime` / `snapTime` / `getProjectDuration` |
+| `src/utils/` | `createId()`(uuid)、`formatTime` / `snapTime` / `getProjectDuration`、`docSyncAudit`（ドキュメント数値乖離検知） |
 | `src/layout/AppLayout.tsx` | 全体レイアウト。メディア(左)・プレビュー(中央)・インスペクタ(右)・タイムライン(下)の 4 ペイン |
 | `src/panels/` | `MediaPanel` / `PreviewPanel` / `InspectorPanel` / `TimelinePanel` |
 | `src/components/` | `Toolbar`、`ExportButton`、モーダル類、`ToastContainer`、共通 UI(`ui.tsx` / `icons.tsx`) |
@@ -37,6 +34,21 @@
 | `e2e/` | Playwright E2E テスト(`npm run test:e2e`、本番スモークは `test:e2e:prod`) |
 | `scripts/` | README スクリーンショット生成(`npm run screenshot`)、maskable アイコン生成 |
 | `.github/workflows/` | `ci.yml`(lint・test・build・E2E)、`deploy.yml`(Pages デプロイ + 本番スモーク) |
+
+### 品質監査ドキュメント（`docs/*_AUDIT.md`）
+
+| ファイル | 内容 |
+|----------|------|
+| `docs/RENDER_PATH_AUDIT.md` | プレビュー/書き出し compositor 経路（Q3） |
+| `docs/COLOR_STACK_AUDIT.md` | 色調スタック複合適用（Q5） |
+| `docs/AUDIO_STACK_AUDIT.md` | オーディオミックス書き出し一致（Q6） |
+| `docs/PERFORMANCE_AUDIT.md` | 長尺パフォーマンス計測（Q7） |
+| `docs/TEXT_SRT_AUDIT.md` | テキスト・SRT・フォント描画（Q8） |
+| `docs/ONBOARDING_AUDIT.md` | 初回体験・15 分ジャーニー（Q9） |
+| `docs/PRESET_CATALOG_AUDIT.md` | プリセットカタログ・よく使う（Q10） |
+| `docs/DOC_SYNC_AUDIT.md` | README / FEATURE_COMPARISON / AGENTS 同期（Q11） |
+
+`src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 
 エディタ UI は実装済み。`src/App.tsx` はキーボードショートカット(再生・undo/redo・コピペ・分割・イン/アウト点など)の登録と `AppLayout` の描画を担う。
 
