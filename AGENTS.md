@@ -23,6 +23,7 @@
 | `src/engine/mediaLoader.ts` | File → `MediaAsset` 変換(duration・サムネイル・波形の抽出) |
 | `src/engine/demoProject.ts` | `createDemoProject()`。サンプルプロジェクト（6 映像・BGM・3 章・33 秒） |
 | `src/engine/stressTestProject.ts` | `createStressTestProject()`。10 分・100 クリップのパフォーマンス計測用プロジェクト |
+| `src/engine/chapterExportStressProject.ts` | `createChapterExportStressProject()`。章 6・100 クリップの章 ZIP 検証用 |
 | `src/persistence/db.ts` | IndexedDB への保存・復元・プロジェクト一覧/複製/削除 |
 | `src/persistence/projectFile.ts` | `.fable` ファイル(JSON+メディアZIP)のエクスポート/インポート |
 | `src/hooks/` | `usePlayback`(再生ループ・`PlaybackProvider` 経由で単一マウント)、`useAutoSave` / `useProjectRestore`、`usePanelSize`(リサイズ可能レイアウト) |
@@ -47,6 +48,7 @@
 | `docs/ONBOARDING_AUDIT.md` | 初回体験・15 分ジャーニー（Q9） |
 | `docs/PRESET_CATALOG_AUDIT.md` | プリセットカタログ・よく使う（Q10） |
 | `docs/DOC_SYNC_AUDIT.md` | README / FEATURE_COMPARISON / AGENTS 同期（Q11） |
+| `docs/CHAPTER_EXPORT_AUDIT.md` | 章マーカー一括 ZIP 書き出し（v1.80.0） |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 

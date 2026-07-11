@@ -1,6 +1,29 @@
 import { zip, type Zippable } from 'fflate'
 import type { MarkerChapterRange } from './markerExport'
 
+export class ChapterBatchExportError extends Error {
+  readonly chapterLabel: string
+  readonly chapterIndex: number
+
+  constructor(chapterLabel: string, chapterIndex: number, totalChapters: number, cause: unknown) {
+    const detail = cause instanceof Error ? cause.message : '不明なエラー'
+    super(`章「${chapterLabel}」(${chapterIndex + 1}/${totalChapters}章目)の書き出しに失敗しました: ${detail}`)
+    this.name = 'ChapterBatchExportError'
+    this.chapterLabel = chapterLabel
+    this.chapterIndex = chapterIndex
+    if (cause instanceof Error) this.cause = cause
+  }
+}
+
+export class ChapterZipBuildError extends Error {
+  constructor(entryCount: number, cause: unknown) {
+    const detail = cause instanceof Error ? cause.message : '不明なエラー'
+    super(`ZIP の作成に失敗しました（${entryCount} 章分の MP4 は生成済み）: ${detail}`)
+    this.name = 'ChapterZipBuildError'
+    if (cause instanceof Error) this.cause = cause
+  }
+}
+
 export interface ChapterExportEntry {
   filename: string
   label: string
@@ -14,9 +37,13 @@ function zipAsync(data: Zippable): Promise<Uint8Array> {
   })
 }
 
-async function zipZippable(zippable: Zippable): Promise<Blob> {
-  const zipped = await zipAsync(zippable)
-  return new Blob([zipped as BlobPart], { type: 'application/zip' })
+async function zipZippable(zippable: Zippable, entryCount: number): Promise<Blob> {
+  try {
+    const zipped = await zipAsync(zippable)
+    return new Blob([zipped as BlobPart], { type: 'application/zip' })
+  } catch (err) {
+    throw new ChapterZipBuildError(entryCount, err)
+  }
 }
 
 /** ZIP 内ファイル名に使えない文字を除去 */
@@ -50,7 +77,7 @@ export async function zipMp4Blobs(files: { name: string; blob: Blob }[]): Promis
   for (const file of files) {
     zippable[file.name] = new Uint8Array(await file.blob.arrayBuffer())
   }
-  return zipZippable(zippable)
+  return zipZippable(zippable, files.length)
 }
 
 /** 各章を順次エクスポートし ZIP 化。章ごとに ZIP へ追加するため中間 Blob 配列を保持しない */
@@ -60,17 +87,27 @@ export async function exportAllChaptersToZip(
   onOverallProgress: (progress: number) => void,
   signal?: AbortSignal,
 ): Promise<Blob> {
+  if (entries.length === 0) {
+    throw new Error('書き出し可能な章がありません')
+  }
+
   const zippable: Zippable = {}
   for (let i = 0; i < entries.length; i++) {
     if (signal?.aborted) throw new DOMException('Export cancelled', 'AbortError')
     const entry = entries[i]
-    const blob = await exportChapter(entry, (chapterProgress) => {
-      onOverallProgress((i + chapterProgress) / entries.length)
-    })
+    let blob: Blob
+    try {
+      blob = await exportChapter(entry, (chapterProgress) => {
+        onOverallProgress((i + chapterProgress) / entries.length)
+      })
+    } catch (err) {
+      if (signal?.aborted || (err instanceof DOMException && err.name === 'AbortError')) throw err
+      throw new ChapterBatchExportError(entry.label, i, entries.length, err)
+    }
     zippable[entry.filename] = new Uint8Array(await blob.arrayBuffer())
   }
   onOverallProgress(1)
-  return zipZippable(zippable)
+  return zipZippable(zippable, entries.length)
 }
 
 /** 各章を順次エクスポートし、全体進捗を 0〜1 で報告 */
@@ -84,9 +121,15 @@ export async function exportAllChapters(
   for (let i = 0; i < entries.length; i++) {
     if (signal?.aborted) throw new DOMException('Export cancelled', 'AbortError')
     const entry = entries[i]
-    const blob = await exportChapter(entry, (chapterProgress) => {
-      onOverallProgress((i + chapterProgress) / entries.length)
-    })
+    let blob: Blob
+    try {
+      blob = await exportChapter(entry, (chapterProgress) => {
+        onOverallProgress((i + chapterProgress) / entries.length)
+      })
+    } catch (err) {
+      if (signal?.aborted || (err instanceof DOMException && err.name === 'AbortError')) throw err
+      throw new ChapterBatchExportError(entry.label, i, entries.length, err)
+    }
     results.push({ name: entry.filename, blob })
   }
   onOverallProgress(1)

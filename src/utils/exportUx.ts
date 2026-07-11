@@ -33,6 +33,8 @@ export function estimateExportEta(progress: number, elapsedMs: number): ExportEt
   }
 }
 
+import { ChapterBatchExportError } from './chapterBatchExport'
+
 export function isExportAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError'
 }
@@ -46,6 +48,13 @@ export function formatExportError(err: unknown, context: 'single' | 'batch' = 's
   }
 
   const action = context === 'batch' ? '一括書き出し' : '書き出し'
+
+  if (err instanceof ChapterBatchExportError) {
+    return {
+      title: `${action}に失敗しました`,
+      detail: err.message,
+    }
+  }
 
   if (err instanceof Error) {
     return {

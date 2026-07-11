@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ChapterBatchExportError } from './chapterBatchExport'
 import {
   estimateExportEta,
   formatExportDuration,
@@ -45,6 +46,14 @@ describe('formatExportError', () => {
   it('一括書き出しの文脈を反映する', () => {
     const result = formatExportError(new Error('ZIP 失敗'), 'batch')
     expect(result.title).toBe('一括書き出しに失敗しました')
+  })
+
+  it('ChapterBatchExportError の章名を詳細に含める', () => {
+    const err = new ChapterBatchExportError('新郎プロフィール', 1, 5, new Error('encode failed'))
+    const result = formatExportError(err, 'batch')
+    expect(result.title).toBe('一括書き出しに失敗しました')
+    expect(result.detail).toContain('新郎プロフィール')
+    expect(result.detail).toContain('2/5章目')
   })
 })
 

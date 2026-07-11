@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -912,6 +912,51 @@ test('書き出し: 章マーカー一括書き出し UI が表示される', as
   await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
   await expect(page.getByText('5 章を個別 MP4 化して ZIP にまとめます')).toBeVisible()
   await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toContainText('5 章')
+})
+
+test('書き出し: 大容量プロジェクトで章 ZIP UI（6 章・50+ クリップ）', async ({ page }) => {
+  const stats = await loadChapterExportStressProject(page)
+  expect(stats.totalClips).toBeGreaterThanOrEqual(50)
+  expect(stats.chapterCount).toBeGreaterThanOrEqual(6)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
+  await expect(page.getByText('6 章を個別 MP4 化して ZIP にまとめます')).toBeVisible()
+  await expect(page.getByRole('button', { name: /章「オープニング」を In\/Out に設定/ })).toBeVisible()
+})
+
+test('書き出し: 章 ZIP 一括をキャンセルできる', async ({ page }) => {
+  test.setTimeout(120_000)
+
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await loadChapterExportE2eProject(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '軽量' }).click()
+  await page.getByRole('button', { name: '全章を ZIP で書き出し' }).click()
+  await expect(page.getByText(/章「.+」を書き出し中/)).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('button', { name: 'キャンセル' }).click()
+  await expect(page.getByRole('status', { name: '書き出し結果' })).toBeVisible()
+  await expect(page.getByText('書き出しをキャンセルしました')).toBeVisible()
+  await page.getByRole('button', { name: '設定に戻る' }).click()
+  await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
+})
+
+test('書き出し: 短尺プロジェクトで章 ZIP をダウンロード（対応環境）', async ({ page }) => {
+  test.setTimeout(300_000)
+
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await loadChapterExportE2eProject(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '軽量' }).click()
+  const downloadPromise = page.waitForEvent('download', { timeout: 240_000 })
+  await page.getByRole('button', { name: '全章を ZIP で書き出し' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toMatch(/_chapters\.zip$/)
+  await expect(page.getByText(/6 章を ZIP で書き出しました/)).toBeVisible({ timeout: 30_000 })
 })
 
 test('マーカー: インスペクターで編集しタイムライン上でドラッグ移動できる', async ({ page }) => {

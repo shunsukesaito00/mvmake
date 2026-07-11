@@ -11,6 +11,7 @@ export const REQUIRED_AUDIT_DOCS = [
   'docs/ONBOARDING_AUDIT.md',
   'docs/PRESET_CATALOG_AUDIT.md',
   'docs/DOC_SYNC_AUDIT.md',
+  'docs/CHAPTER_EXPORT_AUDIT.md',
 ] as const
 
 export const DOC_SYNC_PATHS = {

@@ -39,6 +39,7 @@ export function ExportButton() {
   const [showDialog, setShowDialog] = useState(false)
   const [panelView, setPanelView] = useState<ExportPanelView>('form')
   const [exportErrorDetail, setExportErrorDetail] = useState<string | null>(null)
+  const [exportErrorTitle, setExportErrorTitle] = useState('書き出しに失敗しました')
   const [etaLabel, setEtaLabel] = useState('残り時間を計算中…')
   const [quality, setQuality] = useState<ExportQuality>('standard')
   const [resolution, setResolution] = useState<ExportResolution>('project')
@@ -99,6 +100,7 @@ export function ExportButton() {
   const resetExportPanel = () => {
     setPanelView('form')
     setExportErrorDetail(null)
+    setExportErrorTitle('書き出しに失敗しました')
     setBatchExportLabel('')
     setEtaLabel('残り時間を計算中…')
     exportStartedAtRef.current = null
@@ -132,6 +134,7 @@ export function ExportButton() {
         showToast(presentation.title, 'info')
       } else {
         setPanelView('error')
+        setExportErrorTitle(presentation.title)
         setExportErrorDetail(presentation.detail)
         showToast(presentation.title, 'error')
       }
@@ -376,7 +379,7 @@ export function ExportButton() {
         ) : panelView === 'error' ? (
           <div className="space-y-4" role="alert" aria-label="書き出しエラー">
             <div className="rounded-xl bg-red-500/10 p-4 ring-1 ring-red-500/20">
-              <p className="text-sm font-medium text-red-300">書き出しに失敗しました</p>
+              <p className="text-sm font-medium text-red-300">{exportErrorTitle}</p>
               <p className="mt-2 text-xs leading-relaxed text-red-200/90">{exportErrorDetail}</p>
             </div>
             <Btn variant="accent" className="w-full" onClick={resetExportPanel}>
