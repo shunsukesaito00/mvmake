@@ -47,7 +47,7 @@ export function ColorAdjustmentsSection({
   const importLutFile = useProjectStore((s) => s.importLutFile)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const lutIntensityDragRef = useRef<number | null>(null)
-  const toneDragRef = useRef<{ field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast' | 'saturation'; from: number } | null>(null)
+  const toneDragRef = useRef<{ field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast' | 'saturation' | 'hue'; from: number } | null>(null)
   const [userPresets, setUserPresets] = useState<UserColorLookPreset[]>([])
   const [lookCatalogFilter, setLookCatalogFilter] = useState<CatalogFilterValue>('all')
   const [lookFavorites, setLookFavorites] = useState(() => loadPresetFavorites().colorLook)
@@ -78,20 +78,24 @@ export function ColorAdjustmentsSection({
     onChange({ ...(color ?? DEFAULT_COLOR), [field]: value }, recordHistory)
   }
 
-  const renderToneSlider = (label: string, field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast' | 'saturation') => {
+  const renderToneSlider = (
+    label: string,
+    field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast' | 'saturation' | 'hue',
+    step = 0.05,
+  ) => {
     const value = color?.[field] ?? DEFAULT_COLOR[field]
     return (
       <div className="space-y-1.5" key={field}>
         <div className="flex justify-between gap-2">
           <span className="text-[11px] text-text-secondary">{label}</span>
-          <span className="text-[11px] tabular-nums text-text-muted">{value.toFixed(2)}</span>
+          <span className="text-[11px] tabular-nums text-text-muted">{value.toFixed(step < 1 ? 2 : 0)}</span>
         </div>
         <input
           type="range"
           aria-label={label}
           min={-1}
           max={1}
-          step={0.05}
+          step={step}
           value={value}
           onPointerDown={() => { toneDragRef.current = { field, from: value } }}
           onChange={(e) => updateField(field, parseFloat(e.target.value))}
@@ -287,7 +291,7 @@ export function ColorAdjustmentsSection({
       </div>
       <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border">
         <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">HSL 補正</p>
-        <Slider label="色相" value={color?.hue ?? DEFAULT_COLOR.hue} min={-1} max={1} step={0.01} format={(v) => `${Math.round(v * 180)}°`} onChange={(v) => updateField('hue', v)} />
+        {renderToneSlider('色相', 'hue', 0.01)}
         <Slider label="色温度" value={color?.temperature ?? DEFAULT_COLOR.temperature} min={-1} max={1} step={0.05} format={(v) => (v < 0 ? '寒色' : v > 0 ? '暖色' : '標準')} onChange={(v) => updateField('temperature', v)} />
         <Slider label="ティント" value={color?.tint ?? DEFAULT_COLOR.tint} min={-1} max={1} step={0.05} format={(v) => (v < 0 ? '緑' : v > 0 ? 'マゼンタ' : '標準')} onChange={(v) => updateField('tint', v)} />
       </div>
