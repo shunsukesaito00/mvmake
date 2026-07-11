@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 236
+export const PROD_SMOKE_SCENARIO_COUNT = 239
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -519,4 +519,11 @@ export const PROD_SMOKE_V2268_ADDITIONS = [
   '色調補正: ウエディング暖色ルックを適用',
   '色調補正: ロマンティック夕暮れルックを適用',
   '色調補正: 桜ピンクルックを適用',
+] as const
+
+/** v2.2.69 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2269_ADDITIONS = [
+  '色調補正: ブライダルホワイトルックを適用',
+  '色調補正: ガーデンパーティルックを適用',
+  '色調補正: LUT をインポートして適用',
 ] as const

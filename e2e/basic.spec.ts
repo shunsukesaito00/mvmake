@@ -3838,3 +3838,51 @@ test('色調補正: 桜ピンクルックを適用できる', async ({ page }) =
   await expect(page.getByText('「桜ピンク」ルックを適用しました')).toBeVisible()
   await expect(page.getByRole('button', { name: '桜ピンクルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('色調補正: ブライダルホワイトルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'bridal.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'bridal.png')
+
+  await page.getByRole('button', { name: 'ブライダルホワイトルック', exact: true }).click()
+  await expect(page.getByText('「ブライダルホワイト」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ブライダルホワイトルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: ガーデンパーティルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'garden-party.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'garden-party.png')
+
+  await page.getByRole('button', { name: 'ガーデンパーティルック', exact: true }).click()
+  await expect(page.getByText('「ガーデンパーティ」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ガーデンパーティルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: LUT をインポートして適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+
+  await page.setInputFiles('input[accept*="image"]', { name: 'lut-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'lut-photo.png')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'wedding-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await expect(page.getByText('「wedding-warm」をインポートしました')).toBeVisible()
+
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'wedding-warm (2³)' })
+  await expect(page.getByText('「wedding-warm」LUT を適用しました')).toBeVisible()
+  await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
+  await expect(page.getByLabel('LUTプレビュー')).toBeVisible()
+})
