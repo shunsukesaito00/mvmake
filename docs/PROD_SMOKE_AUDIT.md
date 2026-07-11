@@ -1,18 +1,18 @@
-# 本番スモーク E2E 監査（v2.5.24）
+# 本番スモーク E2E 監査（v2.5.25）
 
-最終更新: 2026-07-12（v2.5.24 / 本番スモーク 459 シナリオ・+3件）
+最終更新: 2026-07-12（v2.5.25 / 本番スモーク 462 シナリオ・+3件）
 
-## v2.5.24 追加（3件）
+## v2.5.25 追加（3件）
 
 | # | シナリオ | 根拠 |
 |---|---------|------|
-| 457 | 組み込み→ユーザールック後組み込みルック2回再クリック挟みLUT付き再適用+強度+切替 undo→LUT/ルック復元 | 色調補正統合 |
-| 458 | 組み込み→ユーザールック後組み込みルック2回再クリック挟みLUT付き再適用+強度+なし undo→LUT/ルック復元 | 色調補正統合 |
-| 459 | 組み込み→ユーザールック後組み込みルック2回再クリック挟みLUT付き再適用+強度+切替+なし undo→LUT/ルック復元 | 色調補正統合 |
+| 460 | ユーザールック→組み込みルック後ウエディング暖色2回再クリック挟みLUT付き再適用+強度+切替 undo→LUT/ルック復元 | 色調補正統合 |
+| 461 | ユーザールック→組み込みルック後ウエディング暖色2回再クリック挟みLUT付き再適用+強度+なし undo→LUT/ルック復元 | 色調補正統合 |
+| 462 | ユーザールック→組み込みルック後ウエディング暖色2回再クリック挟みLUT付き再適用+強度+切替+なし undo→LUT/ルック復元 | 色調補正統合 |
 
-※ 既存 builtin-double-reclick / v2518-double-reclick 3件のタイトルに `・builtin-double-reclick` 接尾辞を付与して重複解消。builtin→user 組み込みルック2回 named-reclick 経路を新規追加。
+※ 既存 wedding-double-reclick 3件のタイトルに `・wedding-double-reclick` 接尾辞を付与して重複解消。user→builtin ウエディング暖色2回 named-reclick 経路を新規追加。
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 459 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 459`
+- `e2e/basic.spec.ts` — 462 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 462`
