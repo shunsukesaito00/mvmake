@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -375,6 +375,35 @@ test('クリップ分割: トランスフォームキーフレームを両側に
 
   await expect(page.locator('footer').getByText('Opening')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toHaveCount(2)
+})
+
+test('トランスフォームキーフレーム: ストレス投入で8キーフレームがロードされる', async ({ page }) => {
+  const stats = await loadTransformKeyframeStress(page)
+  expect(stats.keyframeCount).toBe(8)
+  expect(await getClipTransformKeyframeCount(page, stats.clipId)).toBe(8)
+})
+
+test('トランスフォームキーフレーム: ストレス分割で4+4に再配分される', async ({ page }) => {
+  const stats = await loadTransformKeyframeStress(page)
+  await selectClipById(page, stats.clipId)
+  await clickTimelineClip(page, stats.clipName)
+
+  await page.locator('main input[type="range"]').fill(String(stats.splitAt))
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  const counts = await listImageClipTransformKeyframeCounts(page)
+  expect(counts).toHaveLength(2)
+  expect(counts.map((c) => c.count).sort()).toEqual([4, 4])
+})
+
+test('トランスフォームキーフレーム: ストレス補間値が中間時刻で安定する', async ({ page }) => {
+  const stats = await loadTransformKeyframeStress(page)
+  const transform = await getInterpolatedTransformAt(page, stats.clipId, stats.midLocalTime)
+  expect(transform).not.toBeNull()
+  expect(transform!.x).toBeCloseTo(stats.expectedMidX, 3)
+  expect(transform!.opacity).toBeCloseTo(stats.expectedMidOpacity, 3)
+  expect(transform!.scale).toBeGreaterThan(1)
+  expect(transform!.rotation).toBeGreaterThan(0)
 })
 
 test('クリップ分割: 音量キーフレームを両側に再配分する', async ({ page }) => {

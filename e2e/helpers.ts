@@ -125,6 +125,39 @@ export async function loadAudioNormalizeStress(page: import('@playwright/test').
   return stats
 }
 
+export async function loadTransformKeyframeStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadTransformKeyframeStress()
+  })
+  return stats
+}
+
+export async function getClipTransformKeyframeCount(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipTransformKeyframeCount(id)
+  }, clipId)
+}
+
+export async function getInterpolatedTransformAt(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  localTime: number,
+) {
+  return page.evaluate(({ id, time }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getInterpolatedTransformAt(id, time)
+  }, { id: clipId, time: localTime })
+}
+
+export async function listImageClipTransformKeyframeCounts(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.listImageClipTransformKeyframeCounts()
+  })
+}
+
 export async function getClipKenBurnsEnabled(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
