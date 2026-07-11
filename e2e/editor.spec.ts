@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -1273,6 +1273,39 @@ test('書き出しプリセット: JSON往復で4件が維持される', async (
   const names = await importExportPresetJson(page, stats.exportJson)
   expect(names).toHaveLength(stats.presetCount)
   expect(await getExportPresetCount(page)).toBe(stats.presetCount)
+})
+
+test('映像フェード: ストレス投入で2クリップ・開始/終端不透明度が整合', async ({ page }) => {
+  const stats = await loadVideoFadeStress(page)
+  expect(stats.clipCount).toBe(2)
+  expect(stats.imageOpacityAtStart).toBe(0)
+  expect(stats.imageOpacityAtMid).toBeCloseTo(0.5)
+  expect(stats.videoOpacityAtEnd).toBe(0)
+  expect(await getMediaVisualOpacityForClip(page, stats.imageClipId, 0)).toBe(0)
+  expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, stats.videoFadeIn)).toBeCloseTo(1)
+})
+
+test('映像フェード: 適用を undo で復元できる', async ({ page }) => {
+  const stats = await loadVideoFadeStress(page)
+  await applyClipFade(page, stats.imageClipId, 0.2, 0.2)
+  expect((await getClipFadeValues(page, stats.imageClipId)).fadeIn).toBe(0.2)
+
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  expect((await getClipFadeValues(page, stats.imageClipId)).fadeIn).toBe(stats.imageFadeIn)
+  expect((await getClipFadeValues(page, stats.imageClipId)).fadeOut).toBe(stats.imageFadeOut)
+  expect(await getMediaVisualOpacityForClip(page, stats.imageClipId, 0)).toBe(0)
+})
+
+test('映像フェード: undo 後の再適用でフェードが復元される', async ({ page }) => {
+  const stats = await loadVideoFadeStress(page)
+  await applyClipFade(page, stats.videoClipId, 0, 0)
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+
+  const applied = await applyClipFade(page, stats.videoClipId, stats.videoFadeIn, stats.videoFadeOut)
+  expect(applied.fadeIn).toBe(stats.videoFadeIn)
+  expect(applied.fadeOut).toBe(stats.videoFadeOut)
+  expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, stats.videoFadeIn)).toBeCloseTo(1)
+  expect(await getMediaVisualOpacityForClip(page, stats.videoClipId, 6)).toBe(0)
 })
 
 test('写真ガイド: 選択区間にスライドショーを配置できる', async ({ page }) => {

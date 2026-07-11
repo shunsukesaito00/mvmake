@@ -74,6 +74,13 @@ import {
   seedExportPresetExportStress,
   type ExportPresetExportStressStats,
 } from './utils/exportPresetExportStressSetup'
+import {
+  applyClipFade,
+  getClipFadeValues,
+  getMediaVisualOpacityForClip,
+  seedVideoFadeStress,
+  type VideoFadeStressStats,
+} from './utils/videoFadeStressSetup'
 import { parseExportedExportPresetFile } from './utils/exportPresetFile'
 import { importExportPresets } from './persistence/exportPresets'
 import { filterChapterMarkers } from './utils/beatMarkers'
@@ -127,6 +134,10 @@ declare global {
       getExportPresetCount: () => number
       getInPoint: () => number | null
       getOutPoint: () => number | null
+      loadVideoFadeStress: () => VideoFadeStressStats
+      getMediaVisualOpacityForClip: (clipId: string, time: number) => number
+      getClipFadeValues: (clipId: string) => { fadeIn: number; fadeOut: number }
+      applyClipFade: (clipId: string, fadeIn: number, fadeOut: number) => { fadeIn: number; fadeOut: number }
       importUserProjectTemplateJson: (json: string) => string
       importProjectSettingsPresetJson: (json: string) => string[]
       clearUserProjectTemplates: () => void
@@ -218,6 +229,10 @@ export function installE2eBridge(): void {
     getExportPresetCount: () => getExportPresetStressCount(),
     getInPoint: () => useProjectStore.getState().inPoint,
     getOutPoint: () => useProjectStore.getState().outPoint,
+    loadVideoFadeStress: () => seedVideoFadeStress(),
+    getMediaVisualOpacityForClip: (clipId, time) => getMediaVisualOpacityForClip(clipId, time),
+    getClipFadeValues: (clipId) => getClipFadeValues(clipId),
+    applyClipFade: (clipId, fadeIn, fadeOut) => applyClipFade(clipId, fadeIn, fadeOut),
     importUserProjectTemplateJson: (json) => importUserProjectTemplateFromText(json).label,
     importProjectSettingsPresetJson: (json) => {
       let raw: unknown

@@ -291,6 +291,44 @@ export async function getOutPoint(page: import('@playwright/test').Page) {
   })
 }
 
+export async function loadVideoFadeStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadVideoFadeStress()
+  })
+  return stats
+}
+
+export async function getMediaVisualOpacityForClip(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  time: number,
+) {
+  return page.evaluate(({ id, t }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getMediaVisualOpacityForClip(id, t)
+  }, { id: clipId, t: time })
+}
+
+export async function getClipFadeValues(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getClipFadeValues(id)
+  }, clipId)
+}
+
+export async function applyClipFade(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  fadeIn: number,
+  fadeOut: number,
+) {
+  return page.evaluate(({ id, inVal, outVal }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.applyClipFade(id, inVal, outVal)
+  }, { id: clipId, inVal: fadeIn, outVal: fadeOut })
+}
+
 export async function getClipKenBurnsEnabled(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
