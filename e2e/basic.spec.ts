@@ -5586,3 +5586,82 @@ test('色調補正: ユーザールック適用後にウエディング暖色ル
   await expect(weddingButton).toHaveAttribute('aria-pressed', 'true')
   await expect(userButton).toHaveAttribute('aria-pressed', 'false')
 })
+
+test('色調補正: ルック適用後の色温度変更を undo でルック選択まで復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'temp-undo-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'temp-undo-look-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  const temperature = page.getByRole('slider', { name: '色温度' })
+  await temperature.dragTo(temperature, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  await clickTimelineClip(page, 'temp-undo-look-photo.png')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('書き出し: In/Out 付きプリセット適用後に解像度設定がプリセット通りに反映される', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  const playhead = page.locator('main input[type="range"]')
+
+  await playhead.fill('1')
+  await playhead.blur()
+  await page.keyboard.press('i')
+  await playhead.fill('3')
+  await playhead.blur()
+  await page.keyboard.press('o')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await page.getByPlaceholder('プリセット名').fill('E2EInOutResolution')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「E2EInOutResolution」プリセットを保存しました')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '解像度 プロジェクト' }).click()
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: 'E2EInOutResolutionを適用' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('IN 1.0')).toBeVisible()
+  await expect(page.getByText('OUT 3.0')).toBeVisible()
+  expect(await getInPoint(page)).toBe(1)
+  expect(await getOutPoint(page)).toBe(3)
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '解像度 720p' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('色調補正: 組み込みルック適用後にユーザールックを適用すると組み込みルック選択が解除される', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'builtin-user-look-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'builtin-user-look-photo.png')
+
+  const weddingButton = page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true })
+  await weddingButton.click()
+  await expect(weddingButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.2')
+  await page.getByLabel('ルックプリセット名').fill('E2EBuiltinUserClear')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EBuiltinUserClear」ルックを保存しました')).toBeVisible()
+
+  const userButton = page.getByRole('button', { name: 'E2EBuiltinUserClearルック', exact: true })
+  await userButton.click()
+  await expect(page.getByText('「E2EBuiltinUserClear」ルックを適用しました')).toBeVisible()
+  await expect(userButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(weddingButton).toHaveAttribute('aria-pressed', 'false')
+})
