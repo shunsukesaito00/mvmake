@@ -534,3 +534,49 @@ test('プロジェクト設定: モーダルを開いて解像度を変更でき
   await page.getByRole('dialog', { name: 'プロジェクト設定' }).getByRole('button', { name: '適用', exact: true }).click()
   await expect(page.getByText('1080×1080 · 30fps')).toBeVisible()
 })
+
+test('プロジェクト設定: 縦型9:16に変更して書き出しラベルを確認', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: /縦型 9:16/ }).click()
+  await page.getByRole('dialog', { name: 'プロジェクト設定' }).getByRole('button', { name: '適用', exact: true }).click()
+  await expect(page.getByText('1080×1920 · 30fps')).toBeVisible()
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByRole('button', { name: '9:16 で書き出し' })).toBeVisible()
+})
+
+test('書き出し: プリセットを保存して適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: /軽量/ }).click()
+  await page.getByRole('button', { name: '解像度 720p' }).click()
+  await page.getByPlaceholder('プリセット名').fill('SNS用')
+  await page.getByRole('button', { name: 'プリセット保存' }).click()
+  await expect(page.getByText('「SNS用」プリセットを保存しました')).toBeVisible()
+  await page.getByRole('button', { name: 'SNS用を適用' }).click()
+  await expect(page.getByText('「SNS用」プリセットを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: /軽量/ })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('メディア: スライドショーを作成してタイムラインに配置できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'ss-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'ss-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  const cardA = page.locator('div.group.relative').filter({ hasText: 'ss-a.png' })
+  const cardB = page.locator('div.group.relative').filter({ hasText: 'ss-b.png' })
+  await cardA.hover()
+  await cardA.getByTitle('スライドショー用に選択').click()
+  await cardB.hover()
+  await cardB.getByTitle('スライドショー用に選択').click()
+  await page.getByRole('button', { name: 'スライドショー作成' }).click()
+  await page.getByRole('dialog').locator('select').selectOption('none')
+  await page.getByRole('button', { name: 'タイムラインに追加' }).click()
+  await expect(page.getByText('2枚の写真をタイムラインに配置しました')).toBeVisible()
+})

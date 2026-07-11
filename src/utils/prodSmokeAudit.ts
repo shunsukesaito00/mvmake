@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 37
+export const PROD_SMOKE_SCENARIO_COUNT = 40
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -44,4 +44,11 @@ export const PROD_SMOKE_V215_ADDITIONS = [
   'VTT 字幕',
   '調整レイヤー',
   'プロジェクト設定',
+] as const
+
+/** v2.2.0 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V220_ADDITIONS = [
+  '縦型9:16',
+  'プリセットを保存',
+  'スライドショー',
 ] as const
