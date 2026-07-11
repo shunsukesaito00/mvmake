@@ -2401,3 +2401,48 @@ test('縦型9:16: 適用を undo で1080pに復元できる', async ({ page }) =
   const stats = await getVertical916PresetStressStats(page)
   expect(stats.exportButtonLabel).toBe('1080p で書き出し')
 })
+
+test('縦型9:16: undo 後の再適用で1080×1920に復元できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: /縦型 9:16/ }).click()
+  await page.getByRole('dialog', { name: 'プロジェクト設定' }).getByRole('button', { name: 'キャンセル' }).click()
+  await expect(page.getByText('1080×1920 · 30fps')).toBeVisible()
+
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(page.getByText('1920×1080 · 30fps')).toBeVisible()
+
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: /縦型 9:16/ }).click()
+  await page.getByRole('dialog', { name: 'プロジェクト設定' }).getByRole('button', { name: 'キャンセル' }).click()
+  await expect(page.getByText('1080×1920 · 30fps')).toBeVisible()
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByText('プロジェクト解像度: 1080×1920')).toBeVisible()
+  await expect(page.getByRole('button', { name: '9:16 で書き出し' })).toBeVisible()
+})
+
+test('書き出し: 正方形プロジェクトはネイティブ解像度で書き出せる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: /正方形/ }).click()
+  await page.getByRole('button', { name: '適用' }).click()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByText('プロジェクト解像度: 1080×1080')).toBeVisible()
+  await expect(page.getByRole('button', { name: '1080×1080 で書き出し' })).toBeVisible()
+})
+
+test('書き出し: 縦型9:16プロジェクトはネイティブ解像度で書き出せる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await page.getByTitle('プロジェクト設定').click()
+  await page.getByRole('button', { name: /縦型 9:16/ }).click()
+  await page.getByRole('button', { name: '適用' }).click()
+
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await expect(page.getByText('プロジェクト解像度: 1080×1920')).toBeVisible()
+  await expect(page.getByRole('button', { name: '9:16 で書き出し' })).toBeVisible()
+})
