@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 161
+export const PROD_SMOKE_SCENARIO_COUNT = 164
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -344,4 +344,11 @@ export const PROD_SMOKE_V2243_ADDITIONS = [
   '再適用で1080×1920',
   '正方形プロジェクトはネイティブ',
   '縦型9:16プロジェクトはネイティブ',
+] as const
+
+/** v2.2.44 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2244_ADDITIONS = [
+  '4形式検証・4K状態',
+  '4Kプロジェクトはネイティブ',
+  '720pダウンスケール書き出し',
 ] as const
