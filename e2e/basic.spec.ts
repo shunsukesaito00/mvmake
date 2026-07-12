@@ -17861,3 +17861,97 @@ test('インスペクター: 動画クリップのノイズ除去を設定でき
   await expect(page.getByLabel('ノイズ除去を有効化')).toBeChecked()
   await expect(page.getByRole('slider', { name: 'ハイパス' })).toHaveValue('120')
 })
+
+test('インスペクター: 動画クリップのイコライザーを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-eq.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-eq.webm')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  await page.getByLabel('イコライザーを有効化').check()
+  await page.getByRole('slider', { name: '低域' }).fill('3')
+  await expect(page.getByRole('slider', { name: '低域' })).toHaveValue('3')
+  await expect(page.getByLabel('イコライザーを有効化')).toBeChecked()
+})
+
+test('インスペクター: 動画クリップのノイズ除去を無効化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-nr-off.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-nr-off.webm')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  const nrCheckbox = page.getByLabel('ノイズ除去を有効化')
+  await nrCheckbox.check()
+  await expect(page.getByRole('slider', { name: 'ハイパス' })).toBeVisible()
+
+  await nrCheckbox.uncheck()
+  await expect(nrCheckbox).not.toBeChecked()
+  await expect(page.getByRole('slider', { name: 'ハイパス' })).toBeHidden()
+})
+
+test('インスペクター: 動画クリップの音量を正規化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = Buffer.from(await page.evaluate(async () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 160
+    canvas.height = 90
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#1a1a2e'
+    ctx.fillRect(0, 0, 160, 90)
+
+    const videoStream = canvas.captureStream(10)
+    const audioCtx = new AudioContext()
+    const osc = audioCtx.createOscillator()
+    const gain = audioCtx.createGain()
+    gain.gain.value = 0.05
+    osc.connect(gain)
+    const dest = audioCtx.createMediaStreamDestination()
+    gain.connect(dest)
+    osc.start()
+
+    const combined = new MediaStream([
+      ...videoStream.getVideoTracks(),
+      ...dest.stream.getAudioTracks(),
+    ])
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
+      ? 'video/webm;codecs=vp8,opus'
+      : 'video/webm'
+    const recorder = new MediaRecorder(combined, { mimeType })
+    const chunks: Blob[] = []
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data)
+      }
+      recorder.onerror = () => reject(new Error('MediaRecorder failed'))
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }))
+      recorder.start(100)
+      window.setTimeout(() => {
+        recorder.stop()
+        osc.stop()
+        void audioCtx.close()
+        combined.getTracks().forEach((track) => track.stop())
+      }, 600)
+    })
+    return Array.from(new Uint8Array(await blob.arrayBuffer()))
+  }))
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-normalize.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-normalize.webm')
+
+  const volumeSlider = page.getByRole('slider', { name: '音量' })
+  await expect(volumeSlider).toHaveValue('1')
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+  await expect(volumeSlider).not.toHaveValue('1')
+})
