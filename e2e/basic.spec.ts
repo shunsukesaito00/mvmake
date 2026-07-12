@@ -16355,3 +16355,48 @@ test('インスペクター: テキストの縁色を変更できる', async ({ 
   await strokeColorInput.fill('#3366cc')
   await expect(strokeColorInput).toHaveValue('#3366cc')
 })
+
+test('トランジション: 紙吹雪を画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'paper-confetti-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'paper-confetti-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'paper-confetti-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'paper-confetti-b.png' }).click()
+
+  await clickTimelineClip(page, 'paper-confetti-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: '紙吹雪', exact: true }).click()
+  await expect(page.getByText('紙吹雪を適用しました')).toBeVisible()
+})
+
+test('トランジション: ゴールドシマーを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'golden-shimmer-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'golden-shimmer-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'golden-shimmer-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'golden-shimmer-b.png' }).click()
+
+  await clickTimelineClip(page, 'golden-shimmer-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'ゴールドシマー', exact: true }).click()
+  await expect(page.getByText('ゴールドシマーを適用しました')).toBeVisible()
+})
+
+test('インスペクター: 字幕帯の背景色を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('checkbox', { name: '字幕帯' }).check()
+  const backgroundColorInput = page.getByLabel('字幕帯の背景色')
+  await backgroundColorInput.fill('#224466')
+  await expect(backgroundColorInput).toHaveValue('#224466')
+})

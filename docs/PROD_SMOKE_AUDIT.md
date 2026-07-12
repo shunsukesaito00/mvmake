@@ -1,6 +1,23 @@
-# 本番スモーク E2E 監査（v2.5.84）
+# 本番スモーク E2E 監査（v2.5.85）
 
-最終更新: 2026-07-12（v2.5.84 / 本番スモーク 537 シナリオ・レースリビール/リボンカット/縁色3件追加）
+最終更新: 2026-07-12（v2.5.85 / 本番スモーク 540 シナリオ・紙吹雪/ゴールドシマー/字幕帯背景色3件追加・トランジション29種カバー完了）
+
+## v2.5.85 拡充（537→540）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **540**（+3） |
+| 追加シナリオ | 紙吹雪トランジション / ゴールドシマートランジション / 字幕帯背景色変更 |
+| トランジション29種カバー | **完了**（`auditTransitionCoverage`） |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.85）
+
+1. トランジション: 紙吹雪を画像クリップに適用できる
+2. トランジション: ゴールドシマーを画像クリップに適用できる
+3. インスペクター: 字幕帯の背景色を変更できる
+
+選定根拠: 未カバーだったトランジション2種（紙吹雪/ゴールドシマー）で29種カバーを完了。字幕帯は背景色 UI が未検証だったため追加。
 
 ## v2.5.84 拡充（534→537）
 
@@ -186,9 +203,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 537 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 537`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2584_ADDITIONS`
+- `e2e/basic.spec.ts` — 540 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 540`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2585_ADDITIONS`
+- `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.84 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.85 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

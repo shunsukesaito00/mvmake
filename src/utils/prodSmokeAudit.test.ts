@@ -213,9 +213,12 @@ import {
   PROD_SMOKE_V2582_ADDITIONS,
   PROD_SMOKE_V2583_ADDITIONS,
   PROD_SMOKE_V2584_ADDITIONS,
+  PROD_SMOKE_V2585_ADDITIONS,
+  PROD_SMOKE_TRANSITION_DEFINITION_COUNT,
   PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_LAYER_COUNT,
   PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_ROUTES,
   auditPhase4DoubleNamedReclickLayers,
+  auditTransitionCoverage,
 } from './prodSmokeAudit'
 
 const rootDir = resolve(import.meta.dirname, '../..')
@@ -1479,6 +1482,18 @@ describe('prodSmokeAudit', () => {
     for (const label of PROD_SMOKE_V2584_ADDITIONS) {
       expect(basic).toContain(label)
     }
+  })
+
+  it('v2.5.85 追加シナリオが basic.spec.ts に含まれる', () => {
+    for (const label of PROD_SMOKE_V2585_ADDITIONS) {
+      expect(basic).toContain(label)
+    }
+  })
+
+  it('トランジション29種が basic.spec.ts でカバーされている', () => {
+    const coverage = auditTransitionCoverage(basic)
+    expect(coverage.missing).toEqual([])
+    expect(coverage.covered).toHaveLength(PROD_SMOKE_TRANSITION_DEFINITION_COUNT)
   })
 
   it('v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである', () => {

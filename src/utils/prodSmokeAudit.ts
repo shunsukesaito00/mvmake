@@ -1,5 +1,7 @@
+import { TRANSITION_DEFINITIONS } from './transitions'
+
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 537
+export const PROD_SMOKE_SCENARIO_COUNT = 540
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1466,6 +1468,13 @@ export const PROD_SMOKE_V2584_ADDITIONS = [
   'インスペクター: テキストの縁色を変更できる',
 ] as const
 
+/** v2.5.85 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2585_ADDITIONS = [
+  'トランジション: 紙吹雪を画像クリップに適用できる',
+  'トランジション: ゴールドシマーを画像クリップに適用できる',
+  'インスペクター: 字幕帯の背景色を変更できる',
+] as const
+
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */
 export const PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_LAYER_COUNT = 3
 
@@ -1549,4 +1558,30 @@ export function auditPhase4DoubleNamedReclickLayers(basic: string): Record<strin
   }
 
   return result
+}
+
+/** 本番スモークでカバーすべきトランジション定義数 */
+export const PROD_SMOKE_TRANSITION_DEFINITION_COUNT = TRANSITION_DEFINITIONS.length
+
+export type TransitionCoverageAudit = {
+  covered: string[]
+  missing: string[]
+}
+
+function isTransitionLabelCovered(basic: string, label: string): boolean {
+  return basic.includes(`${label}を適用しました`) || basic.includes(`${label}を一括適用`)
+}
+
+/** basic.spec 本文からトランジション29種のカバー状況を監査する */
+export function auditTransitionCoverage(basic: string): TransitionCoverageAudit {
+  const covered: string[] = []
+  const missing: string[] = []
+  for (const def of TRANSITION_DEFINITIONS) {
+    if (isTransitionLabelCovered(basic, def.label)) {
+      covered.push(def.label)
+    } else {
+      missing.push(def.label)
+    }
+  }
+  return { covered, missing }
 }
