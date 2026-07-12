@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.49）
+# 本番スモーク E2E 監査（v2.6.50）
 
-最終更新: 2026-07-13（v2.6.49 / 本番スモーク 732 シナリオ・画像/テキストTFグラフKF再追加/動画TFグラフ3点全削除3件追加）
+最終更新: 2026-07-13（v2.6.50 / 本番スモーク 735 シナリオ・画像/テキストTFグラフ3点全削除/動画TFグラフ2点再追加カーブ3件追加）
+
+## v2.6.50 拡充（732→735）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **735**（+3） |
+| 追加シナリオ | 画像/テキストTFグラフ3点全削除 / 動画TFグラフ2点再追加カーブ |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.50）
+
+1. インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除するとグラフが非表示になる
+2. インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除するとグラフが非表示になる
+3. インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターでキーフレーム削除後に2点再追加するとカーブを表示できる
+
+選定根拠: 動画のみだった3点全削除時のグラフ非表示を画像/テキストでも検証し、削除後の2点再追加でカーブが描画されることを確認するため追加。
 
 ## v2.6.49 拡充（729→732）
 
@@ -1227,11 +1243,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 732 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 732`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2649_ADDITIONS`
+- `e2e/basic.spec.ts` — 735 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 735`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2650_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.49 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.50 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
