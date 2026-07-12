@@ -17624,3 +17624,71 @@ test('インスペクター: 画像クリップにルックを適用できる', 
   await expect(page.getByText('「ガーデンパーティ」ルックを適用しました')).toBeVisible()
   await expect(page.getByRole('button', { name: 'ガーデンパーティルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('インスペクター: 動画クリップに LUT を適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-lut.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-lut.webm')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'video-lut-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await expect(page.getByText('「video-lut-warm」をインポートしました')).toBeVisible()
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'video-lut-warm (2³)' })
+  await expect(page.getByText('「video-lut-warm」LUT を適用しました')).toBeVisible()
+  await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
+})
+
+test('インスペクター: 画像クリップに LUT を適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-lut.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-lut.png')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'image-lut-warm.cube', mimeType: 'text/plain', buffer: cube })
+  await expect(page.getByText('「image-lut-warm」をインポートしました')).toBeVisible()
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'image-lut-warm (2³)' })
+  await expect(page.getByText('「image-lut-warm」LUT を適用しました')).toBeVisible()
+  await expect(page.getByRole('slider', { name: 'LUT 強度' })).toBeVisible()
+})
+
+test('インスペクター: 動画クリップにトランジションを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'video-tr-a.webm', mimeType: 'video/webm', buffer: webm },
+    { name: 'video-tr-b.webm', mimeType: 'video/webm', buffer: webm },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'video-tr-a.webm' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'video-tr-b.webm' }).click()
+
+  await clickTimelineClip(page, 'video-tr-b.webm')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'クロスフェード', exact: true }).click()
+  await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
+})

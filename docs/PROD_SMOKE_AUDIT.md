@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.16）
+# 本番スモーク E2E 監査（v2.6.17）
 
-最終更新: 2026-07-12（v2.6.16 / 本番スモーク 633 シナリオ・ダッキングフェード/動画ルック/画像ルック3件追加）
+最終更新: 2026-07-13（v2.6.17 / 本番スモーク 636 シナリオ・動画LUT/画像LUT/動画トランジション3件追加）
+
+## v2.6.17 拡充（633→636）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **636**（+3） |
+| 追加シナリオ | 動画LUT / 画像LUT / 動画トランジション |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.17）
+
+1. インスペクター: 動画クリップに LUT を適用できる
+2. インスペクター: 画像クリップに LUT を適用できる
+3. インスペクター: 動画クリップにトランジションを適用できる
+
+選定根拠: 動画/画像LUT適用・動画トランジションが「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.16 拡充（630→633）
 
@@ -699,11 +715,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 633 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 633`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2616_ADDITIONS`
+- `e2e/basic.spec.ts` — 636 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 636`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2617_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.16 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.17 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
