@@ -16703,3 +16703,46 @@ test('インスペクター: 動画クリップのスケールを変更できる
   await scaleSlider.fill('1.15')
   await expect(scaleSlider).toHaveValue('1.15')
 })
+
+test('インスペクター: 動画クリップの回転を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-rotate.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-rotate.webm')
+
+  const rotationSlider = page.getByRole('slider', { name: '回転' })
+  await rotationSlider.fill('20')
+  await expect(rotationSlider).toHaveValue('20')
+})
+
+test('インスペクター: 動画クリップにフェードインを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-fade-in.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-fade-in.webm')
+
+  await page.getByRole('button', { name: 'フェード' }).click()
+  const fadeIn = page.getByRole('slider', { name: 'フェードイン' })
+  await fadeIn.fill('0.6')
+  await expect(fadeIn).toHaveValue('0.6')
+})
+
+test('インスペクター: 動画クリップの長さを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-duration.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-duration.webm')
+
+  const durationSlider = page.getByRole('slider', { name: '長さ (秒)' })
+  await durationSlider.fill('10')
+  await expect(durationSlider).toHaveValue('10')
+})
