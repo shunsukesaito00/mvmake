@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.99）
+# 本番スモーク E2E 監査（v2.6.00）
 
-最終更新: 2026-07-12（v2.5.99 / 本番スモーク 582 シナリオ・動画色相/色温度/オーディオフェードイン3件追加）
+最終更新: 2026-07-12（v2.6.00 / 本番スモーク 585 シナリオ・動画フェードイン/アウト/オーディオフェードアウト3件追加）
+
+## v2.6.00 拡充（582→585）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **585**（+3） |
+| 追加シナリオ | 動画フェードイン設定 / フェードアウト設定 / オーディオフェードアウト設定 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.00）
+
+1. インスペクター: 動画クリップのフェードインを設定できる
+2. インスペクター: 動画クリップのフェードアウトを設定できる
+3. インスペクター: オーディオクリップのフェードアウトを設定できる
+
+選定根拠: 動画フェードイン/アウト・オーディオフェードアウト単独が「の」表記で未カバーだったため追加。
 
 ## v2.5.99 拡充（579→582）
 
@@ -427,11 +443,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 582 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 582`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2599_ADDITIONS`
+- `e2e/basic.spec.ts` — 585 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 585`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2600_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.99 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.00 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

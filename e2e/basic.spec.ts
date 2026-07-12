@@ -16962,3 +16962,46 @@ test('インスペクター: オーディオクリップのフェードインを
   await fadeInSlider.fill('0.5')
   await expect(fadeInSlider).toHaveValue('0.5')
 })
+
+test('インスペクター: 動画クリップのフェードインを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-fade-in-no.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-fade-in-no.webm')
+
+  await page.getByRole('button', { name: 'フェード' }).click()
+  const fadeInSlider = page.getByRole('slider', { name: 'フェードイン' })
+  await fadeInSlider.fill('0.6')
+  await expect(fadeInSlider).toHaveValue('0.6')
+})
+
+test('インスペクター: 動画クリップのフェードアウトを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-fade-out-no.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-fade-out-no.webm')
+
+  await page.getByRole('button', { name: 'フェード' }).click()
+  const fadeOutSlider = page.getByRole('slider', { name: 'フェードアウト' })
+  await fadeOutSlider.fill('0.7')
+  await expect(fadeOutSlider).toHaveValue('0.7')
+})
+
+test('インスペクター: オーディオクリップのフェードアウトを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-fade-out.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-fade-out.wav')
+
+  const fadeOutSlider = page.getByRole('slider', { name: 'フェードアウト' })
+  await fadeOutSlider.fill('1')
+  await expect(fadeOutSlider).toHaveValue('1')
+})
