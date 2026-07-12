@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.46）
+# 本番スモーク E2E 監査（v2.6.47）
 
-最終更新: 2026-07-13（v2.6.46 / 本番スモーク 723 シナリオ・画像/テキストTFグラフKF削除/動画TFグラフ最終KF削除3件追加）
+最終更新: 2026-07-13（v2.6.47 / 本番スモーク 726 シナリオ・画像/テキストTFグラフ最終KF削除/動画TFグラフ2点全削除3件追加）
+
+## v2.6.47 拡充（723→726）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **726**（+3） |
+| 追加シナリオ | 画像/テキストTFグラフ最終KF削除で非表示 / 動画TFグラフ2点全削除 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.47）
+
+1. インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで最後のキーフレームを削除するとグラフが非表示になる
+2. インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで最後のキーフレームを削除するとグラフが非表示になる
+3. インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで2点のキーフレームをすべて削除するとグラフが非表示になる
+
+選定根拠: 動画のみだった最終KF削除時のグラフ非表示を画像/テキストでも検証し、2点すべて削除した際の空状態表示を確認するため追加。
 
 ## v2.6.46 拡充（720→723）
 
@@ -1179,11 +1195,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 723 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 723`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2646_ADDITIONS`
+- `e2e/basic.spec.ts` — 726 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 726`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2647_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.46 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.47 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
