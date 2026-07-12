@@ -18350,3 +18350,82 @@ test('タイムライン: 画像クリップのトランスフォームキーフ
   const newBox = (await handle.boundingBox())!
   expect(newBox.y).not.toBeCloseTo(box.y, 0)
 })
+
+test('タイムライン: 動画クリップのトランスフォームキーフレームの全属性を同時表示できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-show-all.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-show-all.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('1')
+  await page.getByRole('slider', { name: '不透明度' }).nth(1).fill('0.3')
+  await page.getByRole('slider', { name: 'スケール' }).nth(1).fill('1.5')
+
+  await page.getByTestId('transform-kf-show-all').click()
+  await expect(page.getByTestId('transform-kf-show-all')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('transform-kf-legend')).toBeVisible()
+  await expect(page.getByTestId('transform-kf-curve-opacity')).toBeVisible()
+  await expect(page.getByTestId('transform-kf-curve-scale')).toBeVisible()
+
+  await page.getByTestId('transform-kf-property-x').click()
+  await expect(page.getByTestId('transform-kf-curve-x')).toHaveAttribute('stroke-width', '2')
+
+  await page.getByTestId('transform-kf-show-all').click()
+  await expect(page.getByTestId('transform-kf-curve-opacity')).toBeHidden()
+  await expect(page.getByTestId('transform-kf-curve-scale')).toBeHidden()
+})
+
+test('タイムライン: 画像クリップのトランスフォームキーフレームの全属性を同時表示できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-show-all.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-show-all.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('2')
+  await page.getByRole('slider', { name: '不透明度' }).nth(1).fill('0.3')
+  await page.getByRole('slider', { name: 'スケール' }).nth(1).fill('1.5')
+
+  const showAll = page.locator('footer').getByTestId('transform-kf-show-all')
+  await showAll.scrollIntoViewIfNeeded()
+  await showAll.dispatchEvent('click')
+  await expect(showAll).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('footer').getByTestId('transform-kf-legend')).toBeVisible()
+  await expect(page.locator('footer').getByTestId('transform-kf-curve-opacity')).toBeVisible()
+  await expect(page.locator('footer').getByTestId('transform-kf-curve-scale')).toBeVisible()
+
+  const xTab = page.locator('footer').getByTestId('transform-kf-property-x')
+  await xTab.scrollIntoViewIfNeeded()
+  await xTab.dispatchEvent('click')
+  await expect(page.locator('footer').getByTestId('transform-kf-curve-x')).toHaveAttribute('stroke-width', '2')
+
+  await showAll.dispatchEvent('click')
+  await expect(page.locator('footer').getByTestId('transform-kf-curve-opacity')).toBeHidden()
+  await expect(page.locator('footer').getByTestId('transform-kf-curve-scale')).toBeHidden()
+})
+
+test('タイムライン: レーンをダブルクリックで動画クリップのトランスフォームキーフレームを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-dblclick.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-dblclick.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+
+  const lane = page.locator('footer').getByTestId('transform-property-lane')
+  await lane.scrollIntoViewIfNeeded()
+  await lane.dispatchEvent('dblclick')
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
+})
