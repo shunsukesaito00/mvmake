@@ -17005,3 +17005,39 @@ test('インスペクター: オーディオクリップのフェードアウト
   await fadeOutSlider.fill('1')
   await expect(fadeOutSlider).toHaveValue('1')
 })
+
+test('インスペクター: 画像クリップの明るさを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'brightness-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'brightness-photo.png')
+
+  const brightnessSlider = page.getByRole('slider', { name: '明るさ' })
+  await brightnessSlider.fill('0.15')
+  await expect(brightnessSlider).toHaveValue('0.15')
+})
+
+test('インスペクター: 画像クリップの彩度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'saturation-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'saturation-photo.png')
+
+  const saturationSlider = page.getByRole('slider', { name: '彩度' })
+  await saturationSlider.fill('0.25')
+  await expect(saturationSlider).toHaveValue('0.25')
+})
+
+test('インスペクター: 画像クリップの色相を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'hue-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'hue-photo.png')
+
+  const hueSlider = page.getByRole('slider', { name: '色相' })
+  await hueSlider.fill('0.2')
+  await expect(hueSlider).toHaveValue('0.2')
+})
