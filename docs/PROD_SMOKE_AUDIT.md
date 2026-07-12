@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.27）
+# 本番スモーク E2E 監査（v2.6.28）
 
-最終更新: 2026-07-13（v2.6.27 / 本番スモーク 666 シナリオ・動画/画像TFキーフレームドラッグ/動画TF分割3件追加）
+最終更新: 2026-07-13（v2.6.28 / 本番スモーク 669 シナリオ・画像TF分割/動画・画像TFベジェ3件追加）
+
+## v2.6.28 拡充（666→669）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **669**（+3） |
+| 追加シナリオ | 画像TF分割 / 動画・画像TFベジェハンドル |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.28）
+
+1. クリップ分割: 画像クリップのトランスフォームキーフレームを両側に再配分する
+2. タイムライン: 動画クリップのトランスフォームキーフレームのベジェハンドルをドラッグ編集できる
+3. タイムライン: 画像クリップのトランスフォームキーフレームのベジェハンドルをドラッグ編集できる
+
+選定根拠: 画像TF分割再配分・動画/画像TFベジェハンドルが「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.27 拡充（663→666）
 
@@ -875,11 +891,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 666 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 666`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2627_ADDITIONS`
+- `e2e/basic.spec.ts` — 669 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 669`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2628_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.27 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.28 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

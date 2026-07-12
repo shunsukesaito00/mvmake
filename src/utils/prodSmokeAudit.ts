@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 666
+export const PROD_SMOKE_SCENARIO_COUNT = 669
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1767,6 +1767,13 @@ export const PROD_SMOKE_V2627_ADDITIONS = [
   'タイムライン: 動画クリップのトランスフォームキーフレームをドラッグ編集できる',
   'タイムライン: 画像クリップのトランスフォームキーフレームをドラッグ編集できる',
   'クリップ分割: 動画クリップのトランスフォームキーフレームを両側に再配分する',
+] as const
+
+/** v2.6.28 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2628_ADDITIONS = [
+  'クリップ分割: 画像クリップのトランスフォームキーフレームを両側に再配分する',
+  'タイムライン: 動画クリップのトランスフォームキーフレームのベジェハンドルをドラッグ編集できる',
+  'タイムライン: 画像クリップのトランスフォームキーフレームのベジェハンドルをドラッグ編集できる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */

@@ -18275,3 +18275,78 @@ test('クリップ分割: 動画クリップのトランスフォームキーフ
   await expect(page.locator('footer').getByText('video-tf-split.webm')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toHaveCount(2)
 })
+
+test('クリップ分割: 画像クリップのトランスフォームキーフレームを両側に再配分する', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-split.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-split.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const timeSliders = page.getByRole('slider', { name: '位置 (秒)' })
+  await timeSliders.nth(1).fill('2')
+
+  await page.locator('main input[type="range"]').fill('2')
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  await expect(page.locator('footer').getByText('image-tf-split.png')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toHaveCount(2)
+})
+
+test('タイムライン: 動画クリップのトランスフォームキーフレームのベジェハンドルをドラッグ編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-bezier.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-bezier.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('1')
+  await page.getByLabel('補間イージング').selectOption('bezier')
+
+  const handle = page.getByTestId('transform-bezier-handle-out-1')
+  await expect(handle).toBeVisible()
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 30, box.y - 20, { steps: 10 })
+  await page.mouse.up()
+
+  const newBox = (await handle.boundingBox())!
+  expect(newBox.y).not.toBeCloseTo(box.y, 0)
+})
+
+test('タイムライン: 画像クリップのトランスフォームキーフレームのベジェハンドルをドラッグ編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-bezier.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-bezier.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('2')
+  await page.getByLabel('補間イージング').selectOption('bezier')
+
+  const handle = page.getByTestId('transform-bezier-handle-out-1')
+  await expect(handle).toBeVisible()
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 30, box.y - 20, { steps: 10 })
+  await page.mouse.up()
+
+  const newBox = (await handle.boundingBox())!
+  expect(newBox.y).not.toBeCloseTo(box.y, 0)
+})
