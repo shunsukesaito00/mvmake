@@ -16223,3 +16223,47 @@ test('インスペクター: テキストの縁取りを変更できる', async 
   await stroke.fill('4')
   await expect(stroke).toHaveValue('4')
 })
+
+test('トランジション: 暖色ディゾルブを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'warm-dissolve-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'warm-dissolve-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'warm-dissolve-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'warm-dissolve-b.png' }).click()
+
+  await clickTimelineClip(page, 'warm-dissolve-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: '暖色ディゾルブ', exact: true }).click()
+  await expect(page.getByText('暖色ディゾルブを適用しました')).toBeVisible()
+})
+
+test('トランジション: ドリーミーブラーを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'dreamy-blur-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'dreamy-blur-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'dreamy-blur-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'dreamy-blur-b.png' }).click()
+
+  await clickTimelineClip(page, 'dreamy-blur-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'ドリーミーブラー', exact: true }).click()
+  await expect(page.getByText('ドリーミーブラーを適用しました')).toBeVisible()
+})
+
+test('インスペクター: テキストの影のぼかしを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const shadowBlur = page.getByRole('slider', { name: '影のぼかし' })
+  await shadowBlur.fill('12')
+  await expect(shadowBlur).toHaveValue('12')
+})
