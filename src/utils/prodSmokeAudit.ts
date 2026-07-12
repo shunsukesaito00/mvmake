@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 522
+export const PROD_SMOKE_SCENARIO_COUNT = 525
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1429,6 +1429,13 @@ export const PROD_SMOKE_V2579_ADDITIONS = [
   'インスペクター: テキストの縦配置を center に設定できる',
   'インスペクター: テキストを左揃えに設定できる',
   'トランジション: ブラーディゾルブを画像クリップに適用できる',
+] as const
+
+/** v2.5.80 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2580_ADDITIONS = [
+  'インスペクター: テキストを右揃えに設定できる',
+  'トランジション: ソフトワイプを画像クリップに適用できる',
+  'トランジション: ソフトフォーカスを画像クリップに適用できる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */

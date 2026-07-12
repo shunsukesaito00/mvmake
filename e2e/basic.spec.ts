@@ -16135,3 +16135,47 @@ test('トランジション: ブラーディゾルブを画像クリップに適
   await page.getByRole('button', { name: 'ブラーディゾルブ', exact: true }).click()
   await expect(page.getByText('ブラーディゾルブを適用しました')).toBeVisible()
 })
+
+test('インスペクター: テキストを右揃えに設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const alignSelect = page.locator('select').filter({ has: page.locator('option[value="right"]') })
+  await alignSelect.selectOption('right')
+  await expect(alignSelect).toHaveValue('right')
+})
+
+test('トランジション: ソフトワイプを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'soft-wipe-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'soft-wipe-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'soft-wipe-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'soft-wipe-b.png' }).click()
+
+  await clickTimelineClip(page, 'soft-wipe-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'ソフトワイプ', exact: true }).click()
+  await expect(page.getByText('ソフトワイプを適用しました')).toBeVisible()
+})
+
+test('トランジション: ソフトフォーカスを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'soft-focus-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'soft-focus-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'soft-focus-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'soft-focus-b.png' }).click()
+
+  await clickTimelineClip(page, 'soft-focus-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'ソフトフォーカス', exact: true }).click()
+  await expect(page.getByText('ソフトフォーカスを適用しました')).toBeVisible()
+})
