@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.80）
+# 本番スモーク E2E 監査（v2.5.81）
 
-最終更新: 2026-07-12（v2.5.80 / 本番スモーク 525 シナリオ・右揃え/ソフトワイプ/ソフトフォーカス3件追加）
+最終更新: 2026-07-12（v2.5.81 / 本番スモーク 528 シナリオ・ライトリーク/ジェントルズーム/縁取り3件追加）
+
+## v2.5.81 拡充（525→528）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **528**（+3） |
+| 追加シナリオ | ライトリークトランジション / ジェントルズームトランジション / テキスト縁取り変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.81）
+
+1. トランジション: ライトリークを画像クリップに適用できる
+2. トランジション: ジェントルズームを画像クリップに適用できる
+3. インスペクター: テキストの縁取りを変更できる
+
+選定根拠: MVP バックログ未カバー領域（ライトリーク/ジェントルズームトランジション、テキスト縁取り変更）から選定。
 
 ## v2.5.80 拡充（522→525）
 
@@ -122,9 +138,9 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 525 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 525`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2580_ADDITIONS`
+- `e2e/basic.spec.ts` — 528 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 528`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2581_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.80 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.81 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

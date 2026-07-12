@@ -16179,3 +16179,47 @@ test('トランジション: ソフトフォーカスを画像クリップに適
   await page.getByRole('button', { name: 'ソフトフォーカス', exact: true }).click()
   await expect(page.getByText('ソフトフォーカスを適用しました')).toBeVisible()
 })
+
+test('トランジション: ライトリークを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'light-leak-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'light-leak-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'light-leak-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'light-leak-b.png' }).click()
+
+  await clickTimelineClip(page, 'light-leak-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'ライトリーク', exact: true }).click()
+  await expect(page.getByText('ライトリークを適用しました')).toBeVisible()
+})
+
+test('トランジション: ジェントルズームを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'gentle-zoom-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'gentle-zoom-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'gentle-zoom-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'gentle-zoom-b.png' }).click()
+
+  await clickTimelineClip(page, 'gentle-zoom-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'ジェントルズーム', exact: true }).click()
+  await expect(page.getByText('ジェントルズームを適用しました')).toBeVisible()
+})
+
+test('インスペクター: テキストの縁取りを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const stroke = page.getByRole('slider', { name: '縁取り' })
+  await stroke.fill('4')
+  await expect(stroke).toHaveValue('4')
+})
