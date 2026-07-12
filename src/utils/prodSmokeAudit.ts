@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 708
+export const PROD_SMOKE_SCENARIO_COUNT = 711
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1865,6 +1865,13 @@ export const PROD_SMOKE_V2641_ADDITIONS = [
   'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターでYプロパティを切り替えできる',
   'インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターでYプロパティを切り替えできる',
   'インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターでキーフレームを選択できる',
+] as const
+
+/** v2.6.42 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2642_ADDITIONS = [
+  'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターでキーフレームを選択できる',
+  'インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターでキーフレームを選択できる',
+  'インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで2点以上のキーフレームカーブを表示できる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */
