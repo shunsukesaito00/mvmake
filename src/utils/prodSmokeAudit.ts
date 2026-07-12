@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 768
+export const PROD_SMOKE_SCENARIO_COUNT = 771
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -2005,6 +2005,13 @@ export const PROD_SMOKE_V2661_ADDITIONS = [
   'インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除後に再追加すると件数表示が1件になる',
   'インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除後に再追加すると件数表示が1件になる',
   'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで2点のキーフレームを削除後に再追加すると件数表示が2件になる',
+] as const
+
+/** v2.6.62 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2662_ADDITIONS = [
+  'インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで2点のキーフレームを削除後に再追加すると件数表示が2件になる',
+  'インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで2点のキーフレームを削除後に再追加すると件数表示が2件になる',
+  'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームから1点削除後に再追加すると件数表示が3件になる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */
