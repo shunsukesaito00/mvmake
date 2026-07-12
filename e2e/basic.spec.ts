@@ -17367,3 +17367,50 @@ test('インスペクター: テキストクリップのテキスト内容を編
   await expect(page.locator('footer').getByText('乾杯のご挨拶')).toBeVisible()
   await expect(page.locator('footer').getByText('Opening')).toBeHidden()
 })
+
+test('インスペクター: オーディオクリップのイコライザーを無効化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-eq-off.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-eq-off.wav')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  const eqCheckbox = page.getByLabel('イコライザーを有効化')
+  await eqCheckbox.check()
+  await expect(page.getByRole('slider', { name: '低域' })).toBeVisible()
+
+  await eqCheckbox.uncheck()
+  await expect(eqCheckbox).not.toBeChecked()
+  await expect(page.getByRole('slider', { name: '低域' })).toBeHidden()
+})
+
+test('インスペクター: オーディオクリップのノイズ除去を無効化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-nr-off.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-nr-off.wav')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  const nrCheckbox = page.getByLabel('ノイズ除去を有効化')
+  await nrCheckbox.check()
+  await expect(page.getByRole('slider', { name: 'ハイパス' })).toBeVisible()
+
+  await nrCheckbox.uncheck()
+  await expect(nrCheckbox).not.toBeChecked()
+  await expect(page.getByRole('slider', { name: 'ハイパス' })).toBeHidden()
+})
+
+test('インスペクター: テキストクリップのタイプライターアニメーションを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="typewriter"]') })
+  await animSelect.selectOption('typewriter')
+  await expect(animSelect).toHaveValue('typewriter')
+  await expect(page.getByRole('slider', { name: 'アニメーション長' })).toBeVisible()
+})

@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 615
+export const PROD_SMOKE_SCENARIO_COUNT = 618
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1648,6 +1648,13 @@ export const PROD_SMOKE_V2610_ADDITIONS = [
   'インスペクター: オーディオクリップのイコライザー中域を変更できる',
   'インスペクター: オーディオクリップのイコライザー高域を変更できる',
   'インスペクター: テキストクリップのテキスト内容を編集できる',
+] as const
+
+/** v2.6.11 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2611_ADDITIONS = [
+  'インスペクター: オーディオクリップのイコライザーを無効化できる',
+  'インスペクター: オーディオクリップのノイズ除去を無効化できる',
+  'インスペクター: テキストクリップのタイプライターアニメーションを設定できる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */

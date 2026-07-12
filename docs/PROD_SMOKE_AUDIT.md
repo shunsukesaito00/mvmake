@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.10）
+# 本番スモーク E2E 監査（v2.6.11）
 
-最終更新: 2026-07-12（v2.6.10 / 本番スモーク 615 シナリオ・EQ中域/高域/テキスト内容3件追加）
+最終更新: 2026-07-12（v2.6.11 / 本番スモーク 618 シナリオ・EQ無効化/ノイズ除去無効化/タイプライター3件追加）
+
+## v2.6.11 拡充（615→618）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **618**（+3） |
+| 追加シナリオ | EQ無効化 / ノイズ除去無効化 / タイプライターアニメ設定 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.11）
+
+1. インスペクター: オーディオクリップのイコライザーを無効化できる
+2. インスペクター: オーディオクリップのノイズ除去を無効化できる
+3. インスペクター: テキストクリップのタイプライターアニメーションを設定できる
+
+選定根拠: イコライザー無効化・ノイズ除去無効化・タイプライターアニメが「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.10 拡充（612→615）
 
@@ -603,11 +619,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 615 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 615`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2610_ADDITIONS`
+- `e2e/basic.spec.ts` — 618 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 618`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2611_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.10 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.11 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
