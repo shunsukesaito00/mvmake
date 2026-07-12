@@ -17759,3 +17759,53 @@ test('インスペクター: 画像クリップの LUT 強度を変更できる'
   await intensity.fill('0.6')
   await expect(intensity).toHaveValue('0.6')
 })
+
+test('インスペクター: 動画クリップのトランジション長を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', [
+    { name: 'video-tr-dur-a.webm', mimeType: 'video/webm', buffer: webm },
+    { name: 'video-tr-dur-b.webm', mimeType: 'video/webm', buffer: webm },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'video-tr-dur-a.webm' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'video-tr-dur-b.webm' }).click()
+
+  await clickTimelineClip(page, 'video-tr-dur-b.webm')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'クロスフェード', exact: true }).click()
+  await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'トランジション', exact: true }).click()
+  const durationSlider = page.getByRole('slider', { name: '長さ', exact: true })
+  await durationSlider.fill('1.5')
+  await expect(durationSlider).toHaveValue('1.5')
+})
+
+test('インスペクター: 動画クリップの音量キーフレームを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-vol-kf.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-vol-kf.webm')
+
+  await page.getByRole('button', { name: '音量キーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+})
+
+test('インスペクター: オーディオクリップの音量キーフレームを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(0.5)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-vol-kf.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-vol-kf.wav')
+
+  await page.getByRole('button', { name: '音量キーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+})

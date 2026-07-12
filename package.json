@@ -1,7 +1,7 @@
 {
   "name": "fable",
   "private": true,
-  "version": "2.6.18",
+  "version": "2.6.19",
   "description": "ブラウザ完結型の結婚式ムービー編集アプリ。サーバー不要、すべての処理はローカルで実行。",
   "type": "module",
   "scripts": {

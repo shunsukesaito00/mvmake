@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.18）
+# 本番スモーク E2E 監査（v2.6.19）
 
-最終更新: 2026-07-13（v2.6.18 / 本番スモーク 639 シナリオ・画像トランジション/動画LUT強度/画像LUT強度3件追加）
+最終更新: 2026-07-13（v2.6.19 / 本番スモーク 642 シナリオ・トランジション長/動画音量KF/オーディオ音量KF3件追加）
+
+## v2.6.19 拡充（639→642）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **642**（+3） |
+| 追加シナリオ | トランジション長 / 動画音量KF / オーディオ音量KF |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.19）
+
+1. インスペクター: 動画クリップのトランジション長を変更できる
+2. インスペクター: 動画クリップの音量キーフレームを追加できる
+3. インスペクター: オーディオクリップの音量キーフレームを追加できる
+
+選定根拠: トランジション長・動画/オーディオ音量キーフレームが「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.18 拡充（636→639）
 
@@ -731,11 +747,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 639 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 639`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2618_ADDITIONS`
+- `e2e/basic.spec.ts` — 642 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 642`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2619_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.18 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.19 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
