@@ -16469,3 +16469,42 @@ test('インスペクター: 字幕帯をオフにできる', async ({ page }) =
   await expect(page.getByRole('slider', { name: '背景余白' })).toBeHidden()
   await expect(page.getByLabel('字幕帯の背景色')).toBeHidden()
 })
+
+test('インスペクター: テキストクリップの回転を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const rotationSlider = page.getByRole('slider', { name: '回転' })
+  await rotationSlider.fill('15')
+  await expect(rotationSlider).toHaveValue('15')
+})
+
+test('インスペクター: 画像クリップの Ken Burns ズームパンを有効化できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'ken-burns-toggle.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'ken-burns-toggle.png')
+
+  await page.getByRole('button', { name: 'Ken Burns', exact: true }).click()
+  const zoomPanCheckbox = page.getByRole('checkbox', { name: 'ズームパン効果' })
+  await zoomPanCheckbox.uncheck()
+  await expect(zoomPanCheckbox).not.toBeChecked()
+
+  await zoomPanCheckbox.check()
+  await expect(zoomPanCheckbox).toBeChecked()
+})
+
+test('インスペクター: テキストクリップの X/Y 位置を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const xSlider = page.getByRole('slider', { name: 'X' })
+  const ySlider = page.getByRole('slider', { name: 'Y' })
+  await xSlider.fill('0.35')
+  await ySlider.fill('0.65')
+  await expect(xSlider).toHaveValue('0.35')
+  await expect(ySlider).toHaveValue('0.65')
+})
