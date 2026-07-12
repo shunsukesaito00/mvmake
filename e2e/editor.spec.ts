@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, getSelectedClipCount, getAudioTrackIds, getTrackVolume, setTrackVolume, toggleTrackSolo, getTrackSolo, getTimelineEditTool, setTimelineEditTool, getColorPreviewMode, getShowColorScope, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName, getTrackCount, getTrackSummaries, getTrackName, removeTrack } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, getSelectedClipCount, getAudioTrackIds, getTrackVolume, setTrackVolume, toggleTrackSolo, getTrackSolo, getTimelineEditTool, setTimelineEditTool, getColorPreviewMode, getShowColorScope, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName, getTrackCount, getTrackSummaries, getTrackName, removeTrack, getPlaybackShuttleRate, getIsPlaying, shuttleForward } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -3441,4 +3441,49 @@ test('トラック管理: レーン高さをリサイズできる', async ({ pag
   await page.mouse.up()
   const after = await row.evaluate((el) => el.getBoundingClientRect().height)
   expect(after).toBeGreaterThan(before + 10)
+})
+
+test('JKLシャトル: L連打で 2x/4x に切り替わる', async ({ page }) => {
+  await page.setInputFiles('input[accept*="audio"]', {
+    name: 'shuttle-bgm.wav',
+    mimeType: 'audio/wav',
+    buffer: makeSilentWav(30),
+  })
+  await page.getByTitle('クリックで再生位置に追加').click()
+
+  await page.keyboard.press('l')
+  expect(await getIsPlaying(page)).toBe(true)
+  expect(await getPlaybackShuttleRate(page)).toBe(1)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveCount(0)
+
+  await page.keyboard.press('l')
+  expect(await getPlaybackShuttleRate(page)).toBe(2)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveText('2x')
+
+  await page.keyboard.press('l')
+  expect(await getPlaybackShuttleRate(page)).toBe(4)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveText('4x')
+})
+
+test('JKLシャトル: K で停止するとレートが 1x に戻る', async ({ page }) => {
+  await page.setInputFiles('input[accept*="audio"]', {
+    name: 'shuttle-stop.wav',
+    mimeType: 'audio/wav',
+    buffer: makeSilentWav(30),
+  })
+  await page.getByTitle('クリックで再生位置に追加').click()
+
+  await shuttleForward(page)
+  await shuttleForward(page)
+  expect(await getPlaybackShuttleRate(page)).toBe(2)
+
+  await page.keyboard.press('k')
+  expect(await getIsPlaying(page)).toBe(false)
+  expect(await getPlaybackShuttleRate(page)).toBe(1)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveCount(0)
+
+  const transport = page.locator('main input[type="range"]').first()
+  const atStop = parseFloat(await transport.inputValue())
+  await page.waitForTimeout(400)
+  expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
 })

@@ -862,6 +862,34 @@ export async function countClipsWithTransition(page: import('@playwright/test').
   })
 }
 
+export async function getPlaybackShuttleRate(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getPlaybackShuttleRate()
+  })
+}
+
+export async function getIsPlaying(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getIsPlaying()
+  })
+}
+
+export async function shuttleForward(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.shuttleForward()
+  })
+}
+
+export async function shuttleStop(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.shuttleStop()
+  })
+}
+
 export async function applyWeddingFullTemplate(page: import('@playwright/test').Page) {
   await page.getByTitle('テンプレ').click()
   await page.getByRole('button', { name: /結婚式フル構成/ }).click()

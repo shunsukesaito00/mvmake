@@ -96,9 +96,10 @@ export function scheduleSpeedAutomation(
   localOffset: number,
   segmentDuration: number,
   clip: VideoClip,
+  shuttleRate = 1,
 ): void {
   const hasKeyframes = (clip.speedKeyframes?.length ?? 0) > 0
-  const baseSpeed = clip.speed ?? 1
+  const baseSpeed = (clip.speed ?? 1) * shuttleRate
 
   if (!hasKeyframes) {
     playbackRateParam.setValueAtTime(baseSpeed, when)
@@ -109,10 +110,10 @@ export function scheduleSpeedAutomation(
   const steps = Math.max(8, Math.ceil(segmentDuration * 24))
   for (let i = 0; i <= steps; i++) {
     const localT = localOffset + (i / steps) * segmentDuration
-    const speed = getSpeedAtLocalTime(clip, localT)
+    const speed = getSpeedAtLocalTime(clip, localT) * shuttleRate
     playbackRateParam.setValueAtTime(speed, when + (localT - localOffset))
   }
   if (segmentDuration > 0) {
-    playbackRateParam.setValueAtTime(getSpeedAtLocalTime(clip, endLocal), when + segmentDuration)
+    playbackRateParam.setValueAtTime(getSpeedAtLocalTime(clip, endLocal) * shuttleRate, when + segmentDuration)
   }
 }

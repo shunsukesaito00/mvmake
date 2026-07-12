@@ -16,6 +16,7 @@ class AudioEngine {
   private startTime = 0
   private pausedAt = 0
   private playing = false
+  private shuttleRate = 1
 
   async init(): Promise<void> {
     if (!this.context) {
@@ -113,9 +114,9 @@ class AudioEngine {
       : timelineDuration * speed
 
     if (isVideo) {
-      scheduleSpeedAutomation(source.playbackRate, when, localOffset, timelineDuration, clip as VideoClip)
+      scheduleSpeedAutomation(source.playbackRate, when, localOffset, timelineDuration, clip as VideoClip, this.shuttleRate)
     } else {
-      source.playbackRate.value = speed
+      source.playbackRate.value = speed * this.shuttleRate
     }
 
     scheduleVolumeAutomation(clipGain.gain, when, localOffset, timelineDuration, clip.duration, audio)
@@ -140,10 +141,11 @@ class AudioEngine {
     this.sources.set(clip.id, source)
   }
 
-  async play(project: Project, fromTime: number): Promise<void> {
+  async play(project: Project, fromTime: number, shuttleRate = 1): Promise<void> {
     await this.init()
     this.stop()
     this.playing = true
+    this.shuttleRate = shuttleRate
     this.pausedAt = fromTime
     this.startTime = this.context!.currentTime - fromTime
     this.updateTrackGains(project)

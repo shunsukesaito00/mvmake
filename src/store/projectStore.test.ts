@@ -1241,3 +1241,29 @@ describe('track management', () => {
     expect(useProjectStore.getState().project.tracks.find((t) => t.id === trackId)?.name).not.toBe('メイン映像')
   })
 })
+
+describe('playback shuttle', () => {
+  beforeEach(() => {
+    useProjectStore.getState().resetProject()
+  })
+
+  it('shuttleForward starts at 1x then cycles to 2x and 4x', () => {
+    useProjectStore.getState().shuttleForward()
+    expect(useProjectStore.getState().isPlaying).toBe(true)
+    expect(useProjectStore.getState().playbackShuttleRate).toBe(1)
+
+    useProjectStore.getState().shuttleForward()
+    expect(useProjectStore.getState().playbackShuttleRate).toBe(2)
+
+    useProjectStore.getState().shuttleForward()
+    expect(useProjectStore.getState().playbackShuttleRate).toBe(4)
+  })
+
+  it('shuttleStop halts playback and resets rate', () => {
+    useProjectStore.getState().shuttleForward()
+    useProjectStore.getState().shuttleForward()
+    useProjectStore.getState().shuttleStop()
+    expect(useProjectStore.getState().isPlaying).toBe(false)
+    expect(useProjectStore.getState().playbackShuttleRate).toBe(1)
+  })
+})

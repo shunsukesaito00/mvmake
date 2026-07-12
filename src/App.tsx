@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { AppLayout } from './layout/AppLayout'
 import { ToastContainer } from './components/ToastContainer'
 import { OnboardingModal } from './components/OnboardingModal'
@@ -14,6 +14,7 @@ installE2eBridge()
 function App() {
   useProjectRestore()
   useAutoSave()
+  const lastShuttleKeyRef = useRef(0)
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -25,6 +26,7 @@ function App() {
         e.preventDefault()
         const { start, end } = store.getPlaybackRange()
         if (store.currentTime >= end) store.setCurrentTime(start)
+        if (!store.isPlaying) store.setPlaybackShuttleRate(1)
         store.setIsPlaying(!store.isPlaying)
       }
 
@@ -90,13 +92,16 @@ function App() {
 
       if (e.key === 'k' || e.key === 'K') {
         e.preventDefault()
-        store.setIsPlaying(false)
+        store.shuttleStop()
       }
       if (e.key === 'l' || e.key === 'L') {
         e.preventDefault()
-        const { start, end } = store.getPlaybackRange()
-        if (store.currentTime >= end) store.setCurrentTime(start)
-        store.setIsPlaying(true)
+        if (e.repeat) {
+          const now = Date.now()
+          if (now - lastShuttleKeyRef.current < 400) return
+          lastShuttleKeyRef.current = now
+        }
+        store.shuttleForward()
       }
       if (e.key === 'j' || e.key === 'J') {
         e.preventDefault()

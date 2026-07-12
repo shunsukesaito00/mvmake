@@ -77,6 +77,7 @@ import { ensureProjectFontsLoaded } from '../utils/googleFonts'
 import { splitSpeedKeyframes } from '../utils/speedKeyframesTimeline'
 import { getSourceOffsetAtLocalTime } from '../utils/speedKeyframes'
 import { canRemoveTrack, createTrack, findTrackInsertIndex } from '../utils/trackManagement'
+import { type PlaybackShuttleRate, cycleForwardShuttleRate } from '../utils/playbackShuttle'
 
 const MAX_HISTORY = 50
 
@@ -178,9 +179,13 @@ interface ProjectState {
   timelineEditTool: TimelineEditTool
   colorPreviewMode: ColorPreviewMode
   showColorScope: boolean
+  playbackShuttleRate: PlaybackShuttleRate
 
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
+  setPlaybackShuttleRate: (rate: PlaybackShuttleRate) => void
+  shuttleForward: () => void
+  shuttleStop: () => void
   setSelectedClipId: (id: string | null) => void
   setSelectedClipIds: (ids: string[]) => void
   selectClipAtClick: (clipId: string, additive: boolean) => void
@@ -353,9 +358,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   timelineEditTool: 'selection',
   colorPreviewMode: 'normal',
   showColorScope: false,
+  playbackShuttleRate: 1,
 
   setCurrentTime: (time) => set({ currentTime: Math.max(0, time) }),
-  setIsPlaying: (playing) => set({ isPlaying: playing }),
+  setIsPlaying: (playing) => set((state) => ({
+    isPlaying: playing,
+    playbackShuttleRate: playing ? state.playbackShuttleRate : 1,
+  })),
+  setPlaybackShuttleRate: (rate) => set({ playbackShuttleRate: rate }),
+  shuttleForward: () => {
+    const state = get()
+    const { start, end } = state.getPlaybackRange()
+    if (state.currentTime >= end) set({ currentTime: start })
+
+    if (!state.isPlaying) {
+      set({ playbackShuttleRate: 1, isPlaying: true })
+      return
+    }
+    set({ playbackShuttleRate: cycleForwardShuttleRate(state.playbackShuttleRate) })
+  },
+  shuttleStop: () => set({ isPlaying: false, playbackShuttleRate: 1 }),
   setSelectedClipId: (id) => set({ ...syncClipSelection(id ? [id] : []), selectedMarkerId: null }),
   setSelectedClipIds: (ids) => set({ ...syncClipSelection(ids), selectedMarkerId: null }),
   selectClipAtClick: (clipId, additive) => {
@@ -1553,6 +1575,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       showPlayHint: false,
       showExportHint: false,
       coachmarkFromSample: false,
+      playbackShuttleRate: 1,
     })
   },
 
@@ -1563,6 +1586,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       project: normalized,
       currentTime: 0,
       isPlaying: false,
+      playbackShuttleRate: 1,
       ...clearClipSelectionState(),
       selectedMarkerId: null,
       past: [],

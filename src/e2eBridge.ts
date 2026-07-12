@@ -267,6 +267,10 @@ declare global {
       clearTextStylePresets: () => void
       getTextStylePresetCount: () => number
       getPlaybackTime: () => number
+      getPlaybackShuttleRate: () => number
+      getIsPlaying: () => boolean
+      shuttleForward: () => void
+      shuttleStop: () => void
       getTimelineEditTool: () => string
       setTimelineEditTool: (tool: 'selection' | 'slip' | 'slide') => void
       getColorPreviewMode: () => string
@@ -495,6 +499,10 @@ export function installE2eBridge(): void {
     clearTextStylePresets: () => clearTextStylePresetStress(),
     getTextStylePresetCount: () => loadTextStylePresets().length,
     getPlaybackTime: () => useProjectStore.getState().currentTime,
+    getPlaybackShuttleRate: () => useProjectStore.getState().playbackShuttleRate,
+    getIsPlaying: () => useProjectStore.getState().isPlaying,
+    shuttleForward: () => useProjectStore.getState().shuttleForward(),
+    shuttleStop: () => useProjectStore.getState().shuttleStop(),
     getTimelineEditTool: () => useProjectStore.getState().timelineEditTool,
     setTimelineEditTool: (tool) => useProjectStore.getState().setTimelineEditTool(tool),
     getColorPreviewMode: () => useProjectStore.getState().colorPreviewMode,

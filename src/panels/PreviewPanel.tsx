@@ -20,6 +20,7 @@ export function PreviewPanel() {
   const project = useProjectStore((s) => s.project)
   const currentTime = useProjectStore((s) => s.currentTime)
   const isPlaying = useProjectStore((s) => s.isPlaying)
+  const playbackShuttleRate = useProjectStore((s) => s.playbackShuttleRate)
   const showSafeAreas = useProjectStore((s) => s.showSafeAreas)
   const colorPreviewMode = useProjectStore((s) => s.colorPreviewMode)
   const showColorScope = useProjectStore((s) => s.showColorScope)
@@ -241,6 +242,14 @@ export function PreviewPanel() {
         <div className="mx-2 h-5 w-px bg-border" />
 
         <Timecode current={currentTime} total={duration} fps={fps} />
+        {isPlaying && playbackShuttleRate > 1 && (
+          <span
+            data-testid="playback-shuttle-rate"
+            className="rounded bg-accent/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-accent"
+          >
+            {playbackShuttleRate}x
+          </span>
+        )}
 
         <input
           type="range"
