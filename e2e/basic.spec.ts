@@ -16789,3 +16789,46 @@ test('インスペクター: 動画クリップのクロップを有効化でき
   await page.getByRole('checkbox', { name: 'クロップ有効' }).check()
   await expect(page.getByRole('slider', { name: '幅' })).toBeVisible()
 })
+
+test('インスペクター: 動画クリップのクロップ幅を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-crop-width.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-crop-width.webm')
+
+  await page.getByRole('button', { name: 'クロップ', exact: true }).click()
+  await page.getByRole('checkbox', { name: 'クロップ有効' }).check()
+  const widthSlider = page.getByRole('slider', { name: '幅' })
+  await widthSlider.fill('0.7')
+  await expect(widthSlider).toHaveValue('0.7')
+})
+
+test('インスペクター: 動画クリップの明るさを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-brightness.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-brightness.webm')
+
+  const brightnessSlider = page.getByRole('slider', { name: '明るさ' })
+  await brightnessSlider.fill('0.15')
+  await expect(brightnessSlider).toHaveValue('0.15')
+})
+
+test('インスペクター: オーディオクリップの音量を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-volume.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-volume.wav')
+
+  const volumeSlider = page.getByRole('slider', { name: '音量' })
+  await volumeSlider.fill('0.6')
+  await expect(volumeSlider).toHaveValue('0.6')
+})
