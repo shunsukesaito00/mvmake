@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.22）
+# 本番スモーク E2E 監査（v2.6.23）
 
-最終更新: 2026-07-13（v2.6.22 / 本番スモーク 651 シナリオ・動画EQ低域/ノイズ除去ハイパス/ローパス3件追加）
+最終更新: 2026-07-13（v2.6.23 / 本番スモーク 654 シナリオ・動画EQ中域/高域/無効化3件追加）
+
+## v2.6.23 拡充（651→654）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **654**（+3） |
+| 追加シナリオ | 動画EQ中域 / 高域 / 無効化 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.23）
+
+1. インスペクター: 動画クリップのイコライザー中域を変更できる
+2. インスペクター: 動画クリップのイコライザー高域を変更できる
+3. インスペクター: 動画クリップのイコライザーを無効化できる
+
+選定根拠: 動画EQ中域・高域・無効化が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.22 拡充（648→651）
 
@@ -795,11 +811,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 651 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 651`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2622_ADDITIONS`
+- `e2e/basic.spec.ts` — 654 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 654`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2623_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.22 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.23 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

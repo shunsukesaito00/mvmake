@@ -18005,3 +18005,54 @@ test('インスペクター: 動画クリップのノイズ除去ローパスを
   await lowpassCheckbox.uncheck()
   await expect(lowpassCheckbox).not.toBeChecked()
 })
+
+test('インスペクター: 動画クリップのイコライザー中域を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-eq-mid.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-eq-mid.webm')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  await page.getByLabel('イコライザーを有効化').check()
+  const midSlider = page.getByRole('slider', { name: '中域' })
+  await midSlider.fill('2')
+  await expect(midSlider).toHaveValue('2')
+})
+
+test('インスペクター: 動画クリップのイコライザー高域を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-eq-high.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-eq-high.webm')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  await page.getByLabel('イコライザーを有効化').check()
+  const highSlider = page.getByRole('slider', { name: '高域' })
+  await highSlider.fill('4')
+  await expect(highSlider).toHaveValue('4')
+})
+
+test('インスペクター: 動画クリップのイコライザーを無効化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-eq-off.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-eq-off.webm')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  const eqCheckbox = page.getByLabel('イコライザーを有効化')
+  await eqCheckbox.check()
+  await expect(page.getByRole('slider', { name: '低域' })).toBeVisible()
+
+  await eqCheckbox.uncheck()
+  await expect(eqCheckbox).not.toBeChecked()
+  await expect(page.getByRole('slider', { name: '低域' })).toBeHidden()
+})
