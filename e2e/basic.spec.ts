@@ -16544,3 +16544,41 @@ test('インスペクター: テキストクリップの長さを変更できる
   await durationSlider.fill('8')
   await expect(durationSlider).toHaveValue('8')
 })
+
+test('インスペクター: 画像クリップの Ken Burns 開始 X/Y を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'ken-burns-xy.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'ken-burns-xy.png')
+
+  await page.getByRole('button', { name: 'Ken Burns', exact: true }).click()
+  const startXSlider = page.getByRole('slider', { name: '開始 X' })
+  const startYSlider = page.getByRole('slider', { name: '開始 Y' })
+  await startXSlider.fill('0.4')
+  await startYSlider.fill('0.6')
+  await expect(startXSlider).toHaveValue('0.4')
+  await expect(startYSlider).toHaveValue('0.6')
+})
+
+test('インスペクター: 画像クリップの長さを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'duration-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'duration-photo.png')
+
+  const durationSlider = page.getByRole('slider', { name: '長さ (秒)' })
+  await durationSlider.fill('12')
+  await expect(durationSlider).toHaveValue('12')
+})
+
+test('インスペクター: テキストの行間を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const lineHeightSlider = page.getByRole('slider', { name: '行間' })
+  await lineHeightSlider.fill('2.1')
+  await expect(lineHeightSlider).toHaveValue('2.1')
+})

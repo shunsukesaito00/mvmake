@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.89）
+# 本番スモーク E2E 監査（v2.5.90）
 
-最終更新: 2026-07-12（v2.5.89 / 本番スモーク 552 シナリオ・Ken Burns終了スケール/画像フェードアウト/テキスト長さ3件追加）
+最終更新: 2026-07-12（v2.5.90 / 本番スモーク 555 シナリオ・Ken Burns開始X-Y/画像長さ/テキスト行間3件追加）
+
+## v2.5.90 拡充（552→555）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **555**（+3） |
+| 追加シナリオ | Ken Burns 開始 X/Y 変更 / 画像クリップ長さ変更 / テキスト行間変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.90）
+
+1. インスペクター: 画像クリップの Ken Burns 開始 X/Y を変更できる
+2. インスペクター: 画像クリップの長さを変更できる
+3. インスペクター: テキストの行間を変更できる
+
+選定根拠: Ken Burns 開始 X/Y・画像インスペクター長さ・テキスト行間（単独）が未カバーだったため追加。
 
 ## v2.5.89 拡充（549→552）
 
@@ -267,11 +283,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 552 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 552`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2589_ADDITIONS`
+- `e2e/basic.spec.ts` — 555 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 555`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2590_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.89 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.90 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
