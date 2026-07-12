@@ -16875,3 +16875,49 @@ test('インスペクター: オーディオクリップの再生速度を変更
   await speedSlider.fill('1.5')
   await expect(speedSlider).toHaveValue('1.5')
 })
+
+test('インスペクター: 動画クリップの彩度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-saturation.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-saturation.webm')
+
+  const saturationSlider = page.getByRole('slider', { name: '彩度' })
+  await saturationSlider.fill('0.25')
+  await expect(saturationSlider).toHaveValue('0.25')
+})
+
+test('インスペクター: 動画クリップのクロップ X/Y を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-crop-xy.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-crop-xy.webm')
+
+  await page.getByRole('button', { name: 'クロップ', exact: true }).click()
+  await page.getByRole('checkbox', { name: 'クロップ有効' }).check()
+  const cropXSlider = page.getByRole('slider', { name: 'X' }).nth(1)
+  const cropYSlider = page.getByRole('slider', { name: 'Y' }).nth(1)
+  await cropXSlider.fill('0.15')
+  await cropYSlider.fill('0.25')
+  await expect(cropXSlider).toHaveValue('0.15')
+  await expect(cropYSlider).toHaveValue('0.25')
+})
+
+test('インスペクター: オーディオクリップの長さを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-duration.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-duration.wav')
+
+  const durationSlider = page.getByRole('slider', { name: '長さ (秒)' })
+  await durationSlider.fill('5')
+  await expect(durationSlider).toHaveValue('5')
+})
