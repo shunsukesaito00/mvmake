@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.25）
+# 本番スモーク E2E 監査（v2.6.26）
 
-最終更新: 2026-07-13（v2.6.25 / 本番スモーク 660 シナリオ・動画TFキーフレーム/不透明度キーフレーム3件追加）
+最終更新: 2026-07-13（v2.6.26 / 本番スモーク 663 シナリオ・テキスト不透明度KF/プレビュー不透明度ハンドル3件追加）
+
+## v2.6.26 拡充（660→663）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **663**（+3） |
+| 追加シナリオ | テキスト不透明度KF / 動画・画像プレビュー不透明度ハンドル |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.26）
+
+1. インスペクター: テキストクリップの不透明度キーフレームを追加できる
+2. プレビュー: 動画クリップの不透明度ハンドルで transform キーフレームを更新できる
+3. プレビュー: 画像クリップの不透明度ハンドルで transform キーフレームを更新できる
+
+選定根拠: テキスト不透明度キーフレーム・動画/画像プレビュー不透明度ハンドルが未カバーだったため追加。
 
 ## v2.6.25 拡充（657→660）
 
@@ -843,11 +859,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 660 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 660`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2625_ADDITIONS`
+- `e2e/basic.spec.ts` — 663 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 663`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2626_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.25 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.26 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
