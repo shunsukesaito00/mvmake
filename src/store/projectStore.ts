@@ -147,6 +147,7 @@ function clearClipSelectionState() {
 }
 
 export type TimelineEditTool = 'selection' | 'slip' | 'slide'
+export type ColorPreviewMode = 'normal' | 'beforeAfter'
 
 interface ProjectState {
   project: Project
@@ -173,6 +174,8 @@ interface ProjectState {
   showExportHint: boolean
   coachmarkFromSample: boolean
   timelineEditTool: TimelineEditTool
+  colorPreviewMode: ColorPreviewMode
+  showColorScope: boolean
 
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
@@ -195,6 +198,8 @@ interface ProjectState {
   setShowExportHint: (v: boolean) => void
   setCoachmarkFromSample: (v: boolean) => void
   setTimelineEditTool: (tool: TimelineEditTool) => void
+  setColorPreviewMode: (mode: ColorPreviewMode) => void
+  setShowColorScope: (show: boolean) => void
   setInPoint: (time: number | null) => void
   setOutPoint: (time: number | null) => void
   clearInOut: () => void
@@ -341,6 +346,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   showExportHint: false,
   coachmarkFromSample: false,
   timelineEditTool: 'selection',
+  colorPreviewMode: 'normal',
+  showColorScope: false,
 
   setCurrentTime: (time) => set({ currentTime: Math.max(0, time) }),
   setIsPlaying: (playing) => set({ isPlaying: playing }),
@@ -383,6 +390,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setShowExportHint: (v) => set({ showExportHint: v }),
   setCoachmarkFromSample: (v) => set({ coachmarkFromSample: v }),
   setTimelineEditTool: (tool) => set({ timelineEditTool: tool }),
+  setColorPreviewMode: (mode) => set({ colorPreviewMode: mode }),
+  setShowColorScope: (show) => set({ showColorScope: show }),
   setInPoint: (time) => set({ inPoint: time }),
   setOutPoint: (time) => set({ outPoint: time }),
   clearInOut: () => set({ inPoint: null, outPoint: null }),

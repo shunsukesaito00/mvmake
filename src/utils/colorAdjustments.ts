@@ -1,9 +1,24 @@
-import type { AdjustmentClip, Clip, ColorAdjustments, Project } from '../types/project'
-import { DEFAULT_COLOR } from '../types/project'
+import type { AdjustmentClip, Clip, ColorAdjustments, Project, SelectiveHsl } from '../types/project'
+import { DEFAULT_COLOR, DEFAULT_SELECTIVE_HSL } from '../types/project'
 import { isRgbCurvesActive, mergeRgbCurves } from './colorRgbCurve'
 
 export function isAdjustmentClip(clip: Clip): clip is AdjustmentClip {
   return clip.type === 'adjustment'
+}
+
+import { isSelectiveHslActive } from './colorSelectiveHsl'
+
+function mergeSelectiveHsl(base: SelectiveHsl, overlay: SelectiveHsl): SelectiveHsl {
+  if (!overlay.enabled) return base
+  if (!base.enabled) return { ...overlay }
+  return {
+    enabled: true,
+    targetHue: overlay.targetHue,
+    hueRange: Math.max(base.hueRange, overlay.hueRange),
+    hueShift: Math.max(-1, Math.min(1, base.hueShift + overlay.hueShift)),
+    saturation: Math.max(-1, Math.min(1, base.saturation + overlay.saturation)),
+    luminance: Math.max(-1, Math.min(1, base.luminance + overlay.luminance)),
+  }
 }
 
 export function mergeColorAdjustments(base: ColorAdjustments, overlay: ColorAdjustments): ColorAdjustments {
@@ -18,6 +33,7 @@ export function mergeColorAdjustments(base: ColorAdjustments, overlay: ColorAdju
     midtones: base.midtones + (overlay.midtones ?? 0),
     highlights: base.highlights + (overlay.highlights ?? 0),
     rgbCurves: mergeRgbCurves(base.rgbCurves, overlay.rgbCurves ?? base.rgbCurves),
+    selectiveHsl: mergeSelectiveHsl(base.selectiveHsl ?? DEFAULT_SELECTIVE_HSL, overlay.selectiveHsl ?? DEFAULT_SELECTIVE_HSL),
   }
 }
 
@@ -33,6 +49,7 @@ export function isNeutralColorAdjustments(color: ColorAdjustments): boolean {
     && (color.midtones ?? 0) === 0
     && (color.highlights ?? 0) === 0
     && !isRgbCurvesActive(color.rgbCurves)
+    && !isSelectiveHslActive(color.selectiveHsl ?? DEFAULT_SELECTIVE_HSL)
   )
 }
 

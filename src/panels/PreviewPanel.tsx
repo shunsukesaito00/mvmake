@@ -5,17 +5,26 @@ import { usePlaybackControls } from '../contexts/PlaybackContext'
 import { PanelHeader, IconButton, Timecode } from '../components/ui'
 import { Icons } from '../components/icons'
 import { PreviewOverlay } from '../components/PreviewOverlay'
+import { ColorWaveformScope } from '../components/ColorWaveformScope'
+import { downsampleImageData } from '../utils/colorScope'
 
 export function PreviewPanel() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const beforeCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const afterCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const [displaySize, setDisplaySize] = useState({ width: 0, height: 0 })
+  const [scopeImageData, setScopeImageData] = useState<ImageData | null>(null)
 
   const project = useProjectStore((s) => s.project)
   const currentTime = useProjectStore((s) => s.currentTime)
   const isPlaying = useProjectStore((s) => s.isPlaying)
   const showSafeAreas = useProjectStore((s) => s.showSafeAreas)
+  const colorPreviewMode = useProjectStore((s) => s.colorPreviewMode)
+  const showColorScope = useProjectStore((s) => s.showColorScope)
+  const setColorPreviewMode = useProjectStore((s) => s.setColorPreviewMode)
+  const setShowColorScope = useProjectStore((s) => s.setShowColorScope)
   const showPlayHint = useProjectStore((s) => s.showPlayHint)
   const setShowPlayHint = useProjectStore((s) => s.setShowPlayHint)
   const coachmarkFromSample = useProjectStore((s) => s.coachmarkFromSample)
@@ -36,8 +45,44 @@ export function PreviewPanel() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     if (!playing) await seekVideosToTime(project, time)
-    await renderFrame(ctx, project, time, { showSafeAreas, playing })
-  }, [project, showSafeAreas])
+
+    if (colorPreviewMode === 'beforeAfter') {
+      if (!beforeCanvasRef.current) beforeCanvasRef.current = document.createElement('canvas')
+      if (!afterCanvasRef.current) afterCanvasRef.current = document.createElement('canvas')
+      const beforeCanvas = beforeCanvasRef.current
+      const afterCanvas = afterCanvasRef.current
+      beforeCanvas.width = project.width
+      beforeCanvas.height = project.height
+      afterCanvas.width = project.width
+      afterCanvas.height = project.height
+      const beforeCtx = beforeCanvas.getContext('2d')
+      const afterCtx = afterCanvas.getContext('2d')
+      if (!beforeCtx || !afterCtx) return
+
+      await renderFrame(beforeCtx, project, time, { showSafeAreas, playing, bypassColorGrade: true })
+      await renderFrame(afterCtx, project, time, { showSafeAreas, playing, bypassColorGrade: false })
+
+      const mid = Math.floor(project.width / 2)
+      ctx.clearRect(0, 0, project.width, project.height)
+      ctx.drawImage(beforeCanvas, 0, 0, mid, project.height, 0, 0, mid, project.height)
+      ctx.drawImage(afterCanvas, mid, 0, project.width - mid, project.height, mid, 0, project.width - mid, project.height)
+      ctx.save()
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(mid, 0)
+      ctx.lineTo(mid, project.height)
+      ctx.stroke()
+      ctx.restore()
+    } else {
+      await renderFrame(ctx, project, time, { showSafeAreas, playing })
+    }
+
+    if (showColorScope) {
+      const sample = downsampleImageData(ctx.getImageData(0, 0, project.width, project.height))
+      setScopeImageData(sample)
+    }
+  }, [project, showSafeAreas, colorPreviewMode, showColorScope])
 
   useEffect(() => subscribeFrame(() => {
     const { currentTime: t, isPlaying: p } = useProjectStore.getState()
@@ -97,6 +142,25 @@ export function PreviewPanel() {
   return (
     <div ref={containerRef} className="flex h-full flex-col bg-surface-0" data-preview-container>
       <PanelHeader title="プレビュー" icon={<Icons.Film size={14} />}>
+        <IconButton
+          active={colorPreviewMode === 'beforeAfter'}
+          aria-pressed={colorPreviewMode === 'beforeAfter'}
+          onClick={() => setColorPreviewMode(colorPreviewMode === 'beforeAfter' ? 'normal' : 'beforeAfter')}
+          tooltip="Before/After 分割プレビュー"
+          size="sm"
+          data-testid="color-before-after-toggle"
+        >
+          <span className="text-[9px] font-bold">B/A</span>
+        </IconButton>
+        <IconButton
+          active={showColorScope}
+          onClick={() => setShowColorScope(!showColorScope)}
+          tooltip="輝度波形スコープ"
+          size="sm"
+          data-testid="color-scope-toggle"
+        >
+          <span className="text-[9px] font-bold">SCOPE</span>
+        </IconButton>
         <IconButton active={showSafeAreas} onClick={() => setShowSafeAreas(!showSafeAreas)} tooltip="セーフエリア (G)" size="sm">
           <Icons.SafeArea size={13} />
         </IconButton>
@@ -122,6 +186,17 @@ export function PreviewPanel() {
             <span>IN {inPoint?.toFixed(1) ?? '—'}</span>
             <span className="text-text-muted">|</span>
             <span>OUT {outPoint?.toFixed(1) ?? '—'}</span>
+          </div>
+        )}
+        {colorPreviewMode === 'beforeAfter' && (
+          <div className="pointer-events-none absolute top-3 right-3 flex gap-2 text-[9px] font-semibold text-white/90">
+            <span className="rounded bg-black/50 px-1.5 py-0.5">Before</span>
+            <span className="rounded bg-black/50 px-1.5 py-0.5">After</span>
+          </div>
+        )}
+        {showColorScope && (
+          <div className="absolute right-3 bottom-3 left-3 max-w-xs">
+            <ColorWaveformScope imageData={scopeImageData} />
           </div>
         )}
       </div>

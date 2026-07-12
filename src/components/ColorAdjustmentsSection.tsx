@@ -1,12 +1,9 @@
 import { useMemo, useRef, useState } from 'react'
-import type { LutAsset } from '../types/project'
-import { DEFAULT_LUT_INTENSITY } from '../types/project'
-import type { ColorAdjustments } from '../types/project'
-import { DEFAULT_COLOR } from '../types/project'
+import type { ColorAdjustments, LutAsset, SelectiveHsl } from '../types/project'
+import { DEFAULT_COLOR, DEFAULT_LUT_INTENSITY, DEFAULT_SELECTIVE_HSL } from '../types/project'
 import type { UserColorLookPreset } from '../types/colorLookPreset'
 import { COLOR_LOOK_PRESETS, matchColorLookPreset } from '../utils/colorLooks'
 import type { ColorLookPreviewFade } from '../utils/colorLookPreview'
-import { Slider } from './ui'
 import { useToastStore } from '../store/toastStore'
 import { useProjectStore } from '../store/projectStore'
 import { ColorLookPreview, useColorLookHoverPreview } from './ColorLookPreview'
@@ -45,6 +42,10 @@ export function ColorAdjustmentsSection({
 }: Props) {
   const showToast = useToastStore((s) => s.showToast)
   const importLutFile = useProjectStore((s) => s.importLutFile)
+  const colorPreviewMode = useProjectStore((s) => s.colorPreviewMode)
+  const showColorScope = useProjectStore((s) => s.showColorScope)
+  const setColorPreviewMode = useProjectStore((s) => s.setColorPreviewMode)
+  const setShowColorScope = useProjectStore((s) => s.setShowColorScope)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const lutIntensityDragRef = useRef<number | null>(null)
   const toneDragRef = useRef<{ field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast' | 'saturation' | 'hue' | 'temperature' | 'tint'; from: number } | null>(null)
@@ -118,6 +119,13 @@ export function ColorAdjustmentsSection({
     onChange({ ...(color ?? DEFAULT_COLOR), rgbCurves }, recordHistory)
   }
 
+  const updateSelectiveHsl = (patch: Partial<SelectiveHsl>, recordHistory = false) => {
+    const current = color?.selectiveHsl ?? DEFAULT_SELECTIVE_HSL
+    onChange({ ...(color ?? DEFAULT_COLOR), selectiveHsl: { ...current, ...patch } }, recordHistory)
+  }
+
+  const selective = color?.selectiveHsl ?? DEFAULT_SELECTIVE_HSL
+
   const handleImportLut = async (file: File | undefined) => {
     if (!file) return
     const ok = await importLutFile(file)
@@ -130,6 +138,37 @@ export function ColorAdjustmentsSection({
 
   return (
     <div className="space-y-3">
+      <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border">
+        <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">カラーワークフロー</p>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            data-testid="inspector-color-before-after"
+            aria-pressed={colorPreviewMode === 'beforeAfter'}
+            className={`rounded-md px-2 py-1 text-[10px] font-medium ring-1 transition-colors ${
+              colorPreviewMode === 'beforeAfter'
+                ? 'bg-accent-muted text-accent ring-accent/40'
+                : 'bg-surface-3 text-text-secondary ring-border hover:text-text-primary'
+            }`}
+            onClick={() => setColorPreviewMode(colorPreviewMode === 'beforeAfter' ? 'normal' : 'beforeAfter')}
+          >
+            Before/After
+          </button>
+          <button
+            type="button"
+            data-testid="inspector-color-scope"
+            aria-pressed={showColorScope}
+            className={`rounded-md px-2 py-1 text-[10px] font-medium ring-1 transition-colors ${
+              showColorScope
+                ? 'bg-accent-muted text-accent ring-accent/40'
+                : 'bg-surface-3 text-text-secondary ring-border hover:text-text-primary'
+            }`}
+            onClick={() => setShowColorScope(!showColorScope)}
+          >
+            輝度スコープ
+          </button>
+        </div>
+      </div>
       <ColorLookPreview
         previewImageUrl={previewImageUrl}
         previewColor={previewColor}
@@ -294,6 +333,110 @@ export function ColorAdjustmentsSection({
         {renderToneSlider('色相', 'hue', 0.01)}
         {renderToneSlider('色温度', 'temperature')}
         {renderToneSlider('ティント', 'tint')}
+      </div>
+      <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border" data-testid="selective-hsl-section">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">セレクティブ HSL</p>
+          <label className="flex items-center gap-1.5 text-[10px] text-text-secondary">
+            <input
+              type="checkbox"
+              aria-label="セレクティブ HSL を有効化"
+              checked={selective.enabled}
+              onChange={(e) => updateSelectiveHsl({ enabled: e.target.checked }, true)}
+            />
+            有効
+          </label>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between gap-2">
+            <span className="text-[11px] text-text-secondary">対象色相</span>
+            <span className="text-[11px] tabular-nums text-text-muted">{Math.round(selective.targetHue)}°</span>
+          </div>
+          <input
+            type="range"
+            aria-label="対象色相"
+            min={0}
+            max={360}
+            step={1}
+            value={selective.targetHue}
+            onChange={(e) => updateSelectiveHsl({ targetHue: parseFloat(e.target.value) })}
+            onPointerUp={() => updateSelectiveHsl({}, true)}
+            className="w-full"
+            disabled={!selective.enabled}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between gap-2">
+            <span className="text-[11px] text-text-secondary">色域幅</span>
+            <span className="text-[11px] tabular-nums text-text-muted">{Math.round(selective.hueRange)}°</span>
+          </div>
+          <input
+            type="range"
+            aria-label="色域幅"
+            min={5}
+            max={90}
+            step={1}
+            value={selective.hueRange}
+            onChange={(e) => updateSelectiveHsl({ hueRange: parseFloat(e.target.value) })}
+            onPointerUp={() => updateSelectiveHsl({}, true)}
+            className="w-full"
+            disabled={!selective.enabled}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between gap-2">
+            <span className="text-[11px] text-text-secondary">色相シフト</span>
+            <span className="text-[11px] tabular-nums text-text-muted">{selective.hueShift.toFixed(2)}</span>
+          </div>
+          <input
+            type="range"
+            aria-label="セレクティブ色相シフト"
+            min={-1}
+            max={1}
+            step={0.05}
+            value={selective.hueShift}
+            onChange={(e) => updateSelectiveHsl({ hueShift: parseFloat(e.target.value) })}
+            onPointerUp={() => updateSelectiveHsl({}, true)}
+            className="w-full"
+            disabled={!selective.enabled}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between gap-2">
+            <span className="text-[11px] text-text-secondary">彩度シフト</span>
+            <span className="text-[11px] tabular-nums text-text-muted">{selective.saturation.toFixed(2)}</span>
+          </div>
+          <input
+            type="range"
+            aria-label="セレクティブ彩度"
+            min={-1}
+            max={1}
+            step={0.05}
+            value={selective.saturation}
+            onChange={(e) => updateSelectiveHsl({ saturation: parseFloat(e.target.value) })}
+            onPointerUp={() => updateSelectiveHsl({}, true)}
+            className="w-full"
+            disabled={!selective.enabled}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between gap-2">
+            <span className="text-[11px] text-text-secondary">明度シフト</span>
+            <span className="text-[11px] tabular-nums text-text-muted">{selective.luminance.toFixed(2)}</span>
+          </div>
+          <input
+            type="range"
+            aria-label="セレクティブ明度"
+            min={-1}
+            max={1}
+            step={0.05}
+            value={selective.luminance}
+            onChange={(e) => updateSelectiveHsl({ luminance: parseFloat(e.target.value) })}
+            onPointerUp={() => updateSelectiveHsl({}, true)}
+            className="w-full"
+            disabled={!selective.enabled}
+          />
+        </div>
       </div>
       {renderToneSlider('明るさ', 'brightness')}
       {renderToneSlider('コントラスト', 'contrast')}

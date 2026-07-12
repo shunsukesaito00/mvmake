@@ -736,6 +736,34 @@ export async function setTimelineEditTool(
   }, tool)
 }
 
+export async function getColorPreviewMode(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getColorPreviewMode()
+  })
+}
+
+export async function setColorPreviewMode(page: import('@playwright/test').Page, mode: 'normal' | 'beforeAfter') {
+  await page.evaluate((value) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.setColorPreviewMode(value)
+  }, mode)
+}
+
+export async function getShowColorScope(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getShowColorScope()
+  })
+}
+
+export async function setShowColorScope(page: import('@playwright/test').Page, show: boolean) {
+  await page.evaluate((value) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.setShowColorScope(value)
+  }, show)
+}
+
 export async function getTrackVolume(page: import('@playwright/test').Page, trackId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

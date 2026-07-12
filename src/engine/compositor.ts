@@ -9,6 +9,7 @@ import type {
   Transform,
   VideoClip,
 } from '../types/project'
+import { DEFAULT_COLOR } from '../types/project'
 import { getTextLineHeight, getTextLineYPositions, splitTextLines } from '../utils/textLayout'
 import { computeTextAnimationState, easeOutCubic, getTextAnimProgress, getTextOpacity, usesCustomTextKeyframes } from '../utils/textAnimation'
 import { wrapTextLinesToCanvasWidth } from '../utils/textWrap'
@@ -653,9 +654,10 @@ export async function renderFrame(
   ctx: CanvasRenderingContext2D,
   project: Project,
   time: number,
-  options?: { showSafeAreas?: boolean; playing?: boolean },
+  options?: { showSafeAreas?: boolean; playing?: boolean; bypassColorGrade?: boolean },
 ): Promise<void> {
   const { width, height } = project
+  const bypassColorGrade = options?.bypassColorGrade === true
   ctx.fillStyle = '#000'
   ctx.fillRect(0, 0, width, height)
 
@@ -664,16 +666,18 @@ export async function renderFrame(
 
   for (let visualTrackIndex = 0; visualTrackIndex < visualTracks.length; visualTrackIndex++) {
     const track = visualTracks[visualTrackIndex]
-    const adjustmentColor = getAdjustmentColorForVisualTrack(project, visualTrackIndex, time)
-    const adjustmentLut = getAdjustmentLutForVisualTrack(project, visualTrackIndex, time)
+    const adjustmentColor = bypassColorGrade ? DEFAULT_COLOR : getAdjustmentColorForVisualTrack(project, visualTrackIndex, time)
+    const adjustmentLut = bypassColorGrade ? null : getAdjustmentLutForVisualTrack(project, visualTrackIndex, time)
     const layers = getTrackLayersAtTime(track, time)
     for (const layer of layers) {
       const { clip, opacity, transitionType, transitionProgress } = layer
       if (clip.type === 'video' || clip.type === 'image') {
         const asset = assetMap.get(clip.mediaId)
         if (asset) {
-          const effectiveColor = mergeClipColorWithAdjustment(clip.color, adjustmentColor)
-          const resolvedLut = resolveClipLut(clip, adjustmentLut)
+          const effectiveColor = bypassColorGrade
+            ? DEFAULT_COLOR
+            : mergeClipColorWithAdjustment(clip.color, adjustmentColor)
+          const resolvedLut = bypassColorGrade ? null : resolveClipLut(clip, adjustmentLut)
           drawMediaClip(ctx, clip, asset, time, width, height, opacity, effectiveColor, resolvedLut, transitionType, transitionProgress, options?.playing)
         }
       } else if (clip.type === 'text') {

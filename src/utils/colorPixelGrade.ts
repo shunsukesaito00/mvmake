@@ -2,11 +2,17 @@ import type { ColorAdjustments } from '../types/project'
 import type { ParsedCubeLut } from './cubeLut'
 import { applyLutToImageData } from './cubeLut'
 import { applyPixelHslAdjustments, isPixelHslActive } from './colorHsl'
+import { applyPixelSelectiveHslAdjustments, isSelectiveHslActive } from './colorSelectiveHsl'
 import { applyPixelRgbCurveAdjustments, isPixelRgbCurvesActive } from './colorRgbCurve'
 import { applyPixelToneCurveAdjustments, isPixelToneCurveActive } from './colorToneCurve'
 
 export function isPixelColorGradeActive(color: ColorAdjustments): boolean {
-  return isPixelToneCurveActive(color) || isPixelRgbCurvesActive(color) || isPixelHslActive(color)
+  return (
+    isPixelToneCurveActive(color)
+    || isPixelRgbCurvesActive(color)
+    || isPixelHslActive(color)
+    || isSelectiveHslActive(color.selectiveHsl)
+  )
 }
 
 /** LUT 適用後のピクセル色調: トーンカーブ → RGB カーブ → 色温度/ティント */
@@ -19,6 +25,9 @@ export function applyPixelColorGradeAdjustments(imageData: ImageData, color: Col
   }
   if (isPixelHslActive(color)) {
     applyPixelHslAdjustments(imageData, color)
+  }
+  if (isSelectiveHslActive(color.selectiveHsl)) {
+    applyPixelSelectiveHslAdjustments(imageData, color.selectiveHsl)
   }
 }
 

@@ -260,6 +260,10 @@ declare global {
       getPlaybackTime: () => number
       getTimelineEditTool: () => string
       setTimelineEditTool: (tool: 'selection' | 'slip' | 'slide') => void
+      getColorPreviewMode: () => string
+      setColorPreviewMode: (mode: 'normal' | 'beforeAfter') => void
+      getShowColorScope: () => boolean
+      setShowColorScope: (show: boolean) => void
     }
   }
 }
@@ -465,6 +469,10 @@ export function installE2eBridge(): void {
     getPlaybackTime: () => useProjectStore.getState().currentTime,
     getTimelineEditTool: () => useProjectStore.getState().timelineEditTool,
     setTimelineEditTool: (tool) => useProjectStore.getState().setTimelineEditTool(tool),
+    getColorPreviewMode: () => useProjectStore.getState().colorPreviewMode,
+    setColorPreviewMode: (mode) => useProjectStore.getState().setColorPreviewMode(mode),
+    getShowColorScope: () => useProjectStore.getState().showColorScope,
+    setShowColorScope: (show) => useProjectStore.getState().setShowColorScope(show),
   }
 }
 

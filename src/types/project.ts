@@ -97,6 +97,23 @@ export interface ColorAdjustments {
   highlights: number
   /** RGB 各チャンネルのトーンカーブ（可変制御点・単調スプライン補間） */
   rgbCurves: RgbCurves
+  /** 色相範囲を指定したセレクティブ HSL 補正（1色） */
+  selectiveHsl: SelectiveHsl
+}
+
+/** 1色セレクティブ HSL（色相マスクで局所補正） */
+export interface SelectiveHsl {
+  enabled: boolean
+  /** 対象色相 0〜360° */
+  targetHue: number
+  /** マスク幅（半幅・度）5〜90 */
+  hueRange: number
+  /** 色相シフト -1〜1 → ±90° */
+  hueShift: number
+  /** 彩度シフト -1〜1 */
+  saturation: number
+  /** 明度シフト -1〜1 */
+  luminance: number
 }
 
 export interface RgbCurvePoint {
@@ -462,6 +479,15 @@ export const DEFAULT_RGB_CURVES: RgbCurves = {
   b: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
 }
 
+export const DEFAULT_SELECTIVE_HSL: SelectiveHsl = {
+  enabled: false,
+  targetHue: 30,
+  hueRange: 30,
+  hueShift: 0,
+  saturation: 0,
+  luminance: 0,
+}
+
 export const DEFAULT_COLOR: ColorAdjustments = {
   brightness: 0,
   contrast: 0,
@@ -477,6 +503,7 @@ export const DEFAULT_COLOR: ColorAdjustments = {
     g: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
     b: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
   },
+  selectiveHsl: { ...DEFAULT_SELECTIVE_HSL },
 }
 
 function clampRgb01(value: number): number {
@@ -540,6 +567,23 @@ export function normalizeColorAdjustments(color?: Partial<ColorAdjustments>): Co
     midtones: color?.midtones ?? DEFAULT_COLOR.midtones,
     highlights: color?.highlights ?? DEFAULT_COLOR.highlights,
     rgbCurves: normalizeRgbCurves(color?.rgbCurves),
+    selectiveHsl: normalizeSelectiveHsl(color?.selectiveHsl),
+  }
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value))
+}
+
+export function normalizeSelectiveHsl(sel?: Partial<SelectiveHsl>): SelectiveHsl {
+  const clampSigned = (v: number) => Math.max(-1, Math.min(1, v))
+  return {
+    enabled: sel?.enabled ?? DEFAULT_SELECTIVE_HSL.enabled,
+    targetHue: ((sel?.targetHue ?? DEFAULT_SELECTIVE_HSL.targetHue) % 360 + 360) % 360,
+    hueRange: Math.max(5, Math.min(90, sel?.hueRange ?? DEFAULT_SELECTIVE_HSL.hueRange)),
+    hueShift: clampSigned(sel?.hueShift ?? 0),
+    saturation: clampSigned(sel?.saturation ?? 0),
+    luminance: clampSigned(sel?.luminance ?? 0),
   }
 }
 
