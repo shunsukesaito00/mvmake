@@ -142,6 +142,7 @@ import {
 } from './persistence/projectSettingsPresets'
 import { parseExportedProjectSettingsPresetFile } from './utils/projectSettingsPresetFile'
 import { useProjectStore } from './store/projectStore'
+import { getTrackHeight as resolveTrackHeight, loadTimelineTrackHeightSettings, saveTimelineTrackHeightSettings, clampTrackHeight } from './persistence/timelineTrackHeights'
 import { getMediaReplaceCandidates } from './utils/clipUtils'
 import type { Clip } from './types/project'
 
@@ -233,6 +234,14 @@ declare global {
       toggleTrackSolo: (trackId: string) => void
       getTrackSolo: (trackId: string) => boolean
       getAudioTrackIds: () => string[]
+      getTrackCount: () => number
+      getTrackSummaries: () => Array<{ id: string; name: string; type: 'video' | 'text' | 'audio'; clipCount: number }>
+      getTrackName: (trackId: string) => string | null
+      addTrack: (type: 'video' | 'text' | 'audio') => string
+      removeTrack: (trackId: string) => boolean
+      renameTrack: (trackId: string, name: string) => void
+      getTrackHeight: (trackId: string) => number
+      setTrackHeight: (trackId: string, height: number) => void
       selectClip: (clipId: string) => void
       getSelectedClipIds: () => string[]
       getSelectedClipCount: () => number
@@ -394,6 +403,25 @@ export function installE2eBridge(): void {
     toggleTrackSolo: (trackId) => useProjectStore.getState().toggleTrackSolo(trackId),
     getTrackSolo: (trackId) => useProjectStore.getState().project.tracks.find((t) => t.id === trackId)?.solo === true,
     getAudioTrackIds: () => useProjectStore.getState().project.tracks.filter((t) => t.type === 'audio').map((t) => t.id),
+    getTrackCount: () => useProjectStore.getState().project.tracks.length,
+    getTrackSummaries: () => useProjectStore.getState().project.tracks.map((t) => ({
+      id: t.id,
+      name: t.name,
+      type: t.type,
+      clipCount: t.clips.length,
+    })),
+    getTrackName: (trackId) => useProjectStore.getState().project.tracks.find((t) => t.id === trackId)?.name ?? null,
+    addTrack: (type) => useProjectStore.getState().addTrack(type),
+    removeTrack: (trackId) => useProjectStore.getState().removeTrack(trackId),
+    renameTrack: (trackId, name) => useProjectStore.getState().renameTrack(trackId, name),
+    getTrackHeight: (trackId) => resolveTrackHeight(trackId, loadTimelineTrackHeightSettings()),
+    setTrackHeight: (trackId, height) => {
+      const settings = loadTimelineTrackHeightSettings()
+      saveTimelineTrackHeightSettings({
+        ...settings,
+        byTrackId: { ...settings.byTrackId, [trackId]: clampTrackHeight(height) },
+      })
+    },
     selectClip: (clipId) => useProjectStore.getState().setSelectedClipId(clipId),
     getSelectedClipIds: () => useProjectStore.getState().selectedClipIds,
     getSelectedClipCount: () => useProjectStore.getState().selectedClipIds.length,

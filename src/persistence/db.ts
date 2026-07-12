@@ -1,4 +1,4 @@
-import type { LutAsset, MediaAsset, Project, Track } from '../types/project'
+import { normalizeProject, type LutAsset, type MediaAsset, type Project, type Track } from '../types/project'
 
 const DB_NAME = 'fable-editor'
 const DB_VERSION = 2
@@ -196,7 +196,7 @@ async function hydrateProject(db: IDBDatabase, stored: StoredProject): Promise<P
     }
   }
 
-  return {
+  return normalizeProject({
     id: stored.id,
     name: stored.name,
     width: stored.width,
@@ -206,7 +206,7 @@ async function hydrateProject(db: IDBDatabase, stored: StoredProject): Promise<P
     mediaAssets,
     lutAssets,
     markers: stored.markers ?? [],
-  }
+  })
 }
 
 export async function loadLatestProject(): Promise<Project | null> {

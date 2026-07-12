@@ -1,6 +1,6 @@
-import { useCallback, useRef, useEffect, useState } from 'react'
+import { useCallback, useRef, useEffect, useState, useMemo } from 'react'
 import { useProjectStore, type TimelineDragState, type TimelineEditTool } from '../store/projectStore'
-import type { Clip } from '../types/project'
+import type { Clip, Track } from '../types/project'
 import { formatTime, snapTime } from '../utils/time'
 import { resolveMarkerDragTime, clampMarkerTime } from '../utils/markerEdit'
 import { formatTimelineTextLabel } from '../utils/textWrap'
@@ -35,8 +35,11 @@ import { useToastStore } from '../store/toastStore'
 import { PanelHeader, IconButton } from '../components/ui'
 import { Icons } from '../components/icons'
 import { TimelineEditTools } from '../components/TimelineEditTools'
+import { useTimelineTrackHeights } from '../hooks/useTimelineTrackHeights'
+import { findTrackIndexAtY, sumTrackHeights } from '../persistence/timelineTrackHeights'
+import { canRemoveTrack } from '../utils/trackManagement'
+import { startResize } from '../hooks/usePanelSize'
 
-const TRACK_HEIGHT = 52
 const HEADER_WIDTH = 110
 const RULER_HEIGHT = 28
 
@@ -58,16 +61,16 @@ const CLIP_STYLES: Record<Clip['type'], string> = {
  * 再生ヘッドだけを currentTime に購読させる。
  * TimelinePanel 本体が購読すると再生中に毎フレーム全クリップが再レンダリングされるため分離している。
  */
-function Playhead({ pixelsPerSecond, trackCount, onMouseDown }: {
+function Playhead({ pixelsPerSecond, totalTrackHeight, onMouseDown }: {
   pixelsPerSecond: number
-  trackCount: number
+  totalTrackHeight: number
   onMouseDown: (e: React.MouseEvent) => void
 }) {
   const currentTime = useProjectStore((s) => s.currentTime)
   return (
     <div
       className="absolute z-30 w-px cursor-ew-resize bg-accent shadow-[0_0_8px_rgba(201,169,110,0.5)]"
-      style={{ left: HEADER_WIDTH + currentTime * pixelsPerSecond, top: RULER_HEIGHT, height: trackCount * TRACK_HEIGHT }}
+      style={{ left: HEADER_WIDTH + currentTime * pixelsPerSecond, top: RULER_HEIGHT, height: totalTrackHeight }}
       onMouseDown={onMouseDown}
     >
       <div className="absolute -top-0 -left-[5px] h-2.5 w-2.5 rounded-sm bg-accent" />
@@ -94,9 +97,15 @@ export function TimelinePanel() {
   const shiftGestureRef = useRef<{ clip: Clip; startX: number; startY: number } | null>(null)
   // スナップが効いている間、その位置に縦のガイドラインを表示する
   const [snapGuide, setSnapGuide] = useState<number | null>(null)
+  const [showAddTrackMenu, setShowAddTrackMenu] = useState(false)
+  const [editingTrackId, setEditingTrackId] = useState<string | null>(null)
+  const [editingTrackName, setEditingTrackName] = useState('')
 
   const project = useProjectStore((s) => s.project)
   const tracks = project.tracks
+  const trackIds = useMemo(() => tracks.map((t) => t.id), [tracks])
+  const { heights: trackHeights, setTrackHeight } = useTimelineTrackHeights(trackIds)
+  const totalTrackHeight = sumTrackHeights(trackHeights)
   const markers = project.markers ?? []
   const mediaAssets = project.mediaAssets
   const fps = project.fps
@@ -125,6 +134,9 @@ export function TimelinePanel() {
   const timelineEditTool = useProjectStore((s) => s.timelineEditTool)
   const toggleTrackMute = useProjectStore((s) => s.toggleTrackMute)
   const toggleTrackLock = useProjectStore((s) => s.toggleTrackLock)
+  const addTrack = useProjectStore((s) => s.addTrack)
+  const removeTrack = useProjectStore((s) => s.removeTrack)
+  const renameTrack = useProjectStore((s) => s.renameTrack)
   const removeMarker = useProjectStore((s) => s.removeMarker)
   const showToast = useToastStore((s) => s.showToast)
 
@@ -198,10 +210,10 @@ export function TimelinePanel() {
     if (!container) return null
     const rect = container.getBoundingClientRect()
     const y = clientY - rect.top + container.scrollTop - RULER_HEIGHT
-    const index = Math.floor(y / TRACK_HEIGHT)
+    const index = findTrackIndexAtY(y, trackHeights)
     if (index < 0 || index >= tracks.length) return null
     return tracks[index].id
-  }, [tracks])
+  }, [tracks, trackHeights])
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!dragState) return
@@ -775,9 +787,64 @@ export function TimelinePanel() {
     })
   }
 
+  const commitTrackRename = (trackId: string) => {
+    const trimmed = editingTrackName.trim()
+    if (trimmed) renameTrack(trackId, trimmed)
+    setEditingTrackId(null)
+    setEditingTrackName('')
+  }
+
+  const handleRemoveTrack = (track: Track) => {
+    const result = canRemoveTrack(tracks, track.id)
+    if (!result.ok) {
+      if (result.reason === 'has-clips') showToast('クリップがあるトラックは削除できません', 'error')
+      else if (result.reason === 'min-count') showToast('この種別のトラックは最低1本必要です', 'error')
+      return
+    }
+    if (!removeTrack(track.id)) showToast('トラックを削除できません', 'error')
+  }
+
   return (
     <div className="flex h-full flex-col">
       <PanelHeader title="タイムライン" icon={<Icons.Grid size={14} />}>
+        <div className="relative">
+          <IconButton
+            onClick={() => setShowAddTrackMenu((v) => !v)}
+            tooltip="トラック追加"
+            size="sm"
+            data-testid="timeline-add-track-menu"
+          >
+            <span className="text-sm font-bold leading-none">+</span>
+          </IconButton>
+          {showAddTrackMenu && (
+            <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border border-border bg-surface-2 py-1 shadow-lg">
+              <button
+                type="button"
+                className="block w-full px-3 py-1.5 text-left text-[11px] text-text-secondary hover:bg-surface-3"
+                data-testid="timeline-add-track-video"
+                onClick={() => { addTrack('video'); setShowAddTrackMenu(false) }}
+              >
+                映像トラック
+              </button>
+              <button
+                type="button"
+                className="block w-full px-3 py-1.5 text-left text-[11px] text-text-secondary hover:bg-surface-3"
+                data-testid="timeline-add-track-text"
+                onClick={() => { addTrack('text'); setShowAddTrackMenu(false) }}
+              >
+                テキストトラック
+              </button>
+              <button
+                type="button"
+                className="block w-full px-3 py-1.5 text-left text-[11px] text-text-secondary hover:bg-surface-3"
+                data-testid="timeline-add-track-audio"
+                onClick={() => { addTrack('audio'); setShowAddTrackMenu(false) }}
+              >
+                オーディオトラック
+              </button>
+            </div>
+          )}
+        </div>
         <IconButton onClick={fitToContent} tooltip="フィット" size="sm"><Icons.Fit size={13} /></IconButton>
         <IconButton onClick={zoomToSelectedClip} tooltip="選択クリップへズーム (Z)" size="sm"><Icons.Focus size={13} /></IconButton>
         <IconButton onClick={scrollPlayheadToCenter} tooltip="再生位置を中央へ" size="sm"><Icons.Locate size={13} /></IconButton>
@@ -789,9 +856,9 @@ export function TimelinePanel() {
       <TimelineEditTools />
 
       <div ref={containerRef} className="flex-1 overflow-auto" onWheel={(e) => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); setPixelsPerSecond(pixelsPerSecond + (e.deltaY > 0 ? -10 : 10)) } }}>
-        <div ref={tracksContainerRef} className="relative" style={{ width: timelineWidth + HEADER_WIDTH, minHeight: tracks.length * TRACK_HEIGHT + RULER_HEIGHT }}>
+        <div ref={tracksContainerRef} className="relative" style={{ width: timelineWidth + HEADER_WIDTH, minHeight: totalTrackHeight + RULER_HEIGHT }}>
           {inPoint !== null && outPoint !== null && (
-            <div className="pointer-events-none absolute z-0 bg-accent/8" style={{ left: HEADER_WIDTH + inPoint * pixelsPerSecond, top: RULER_HEIGHT, width: (outPoint - inPoint) * pixelsPerSecond, height: tracks.length * TRACK_HEIGHT }} />
+            <div className="pointer-events-none absolute z-0 bg-accent/8" style={{ left: HEADER_WIDTH + inPoint * pixelsPerSecond, top: RULER_HEIGHT, width: (outPoint - inPoint) * pixelsPerSecond, height: totalTrackHeight }} />
           )}
 
           {/* Ruler */}
@@ -834,19 +901,64 @@ export function TimelinePanel() {
             </div>
           </div>
 
-          {tracks.map((track) => (
-            <div key={track.id} className="flex" style={{ height: TRACK_HEIGHT }}>
-              <div className="sticky left-0 z-10 flex shrink-0 items-center gap-1.5 border-r border-b border-border bg-surface-2 px-2" style={{ width: HEADER_WIDTH }}>
+          {tracks.map((track, trackIndex) => {
+            const laneHeight = trackHeights[trackIndex] ?? 52
+            const removable = canRemoveTrack(tracks, track.id).ok
+            return (
+            <div key={track.id} className="relative flex" style={{ height: laneHeight }} data-testid={`track-row-${track.id}`}>
+              <div
+                className="sticky left-0 z-10 flex shrink-0 items-center gap-1 border-r border-b border-border bg-surface-2 px-1.5"
+                style={{ width: HEADER_WIDTH }}
+                data-testid={`track-header-${track.id}`}
+              >
                 <IconButton active={track.muted} onClick={() => toggleTrackMute(track.id)} tooltip="ミュート" size="sm" variant={track.muted ? 'danger' : 'ghost'}>
                   {track.muted ? <Icons.VolumeOff size={12} /> : <Icons.Volume size={12} />}
                 </IconButton>
                 <IconButton active={track.locked} onClick={() => toggleTrackLock(track.id)} tooltip="ロック" size="sm">
                   {track.locked ? <Icons.Lock size={12} /> : <Icons.Unlock size={12} />}
                 </IconButton>
-                <span className="truncate text-[10px] font-medium text-text-secondary">{track.name}</span>
+                {editingTrackId === track.id ? (
+                  <input
+                    className="min-w-0 flex-1 rounded bg-surface-3 px-1 py-0.5 text-[10px] text-text-primary ring-1 ring-accent/50"
+                    data-testid={`track-rename-input-${track.id}`}
+                    value={editingTrackName}
+                    autoFocus
+                    onChange={(e) => setEditingTrackName(e.target.value)}
+                    onBlur={() => commitTrackRename(track.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitTrackRename(track.id)
+                      if (e.key === 'Escape') { setEditingTrackId(null); setEditingTrackName('') }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span
+                    className="min-w-0 flex-1 truncate text-[10px] font-medium text-text-secondary"
+                    title={track.name}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation()
+                      setEditingTrackId(track.id)
+                      setEditingTrackName(track.name)
+                    }}
+                  >
+                    {track.name}
+                  </span>
+                )}
+                {removable && (
+                  <IconButton
+                    onClick={() => handleRemoveTrack(track)}
+                    tooltip="トラック削除"
+                    size="sm"
+                    variant="ghost"
+                    data-testid={`track-delete-${track.id}`}
+                  >
+                    <Icons.Trash size={11} />
+                  </IconButton>
+                )}
               </div>
               <div
                 className={`track-lane relative flex-1 border-b border-border ${track.muted ? 'bg-surface-0/60 opacity-60' : 'bg-surface-1'}`}
+                data-testid={`track-lane-${track.id}`}
                 onClick={handleTimelineClick}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -948,17 +1060,27 @@ export function TimelinePanel() {
                   )
                 })}
               </div>
+              <div
+                className="absolute right-0 bottom-0 left-0 z-20 h-1 cursor-row-resize hover:bg-accent/35"
+                data-testid={`track-resize-handle-${track.id}`}
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  startResize(e, 'y', laneHeight, 1, (height) => setTrackHeight(track.id, height))
+                }}
+              />
             </div>
-          ))}
+            )
+          })}
 
           {snapGuide !== null && (
             <div
               className="pointer-events-none absolute z-20 w-0 border-l border-dashed border-accent/80"
-              style={{ left: HEADER_WIDTH + snapGuide * pixelsPerSecond, top: RULER_HEIGHT, height: tracks.length * TRACK_HEIGHT }}
+              style={{ left: HEADER_WIDTH + snapGuide * pixelsPerSecond, top: RULER_HEIGHT, height: totalTrackHeight }}
             />
           )}
 
-          <Playhead pixelsPerSecond={pixelsPerSecond} trackCount={tracks.length} onMouseDown={startPlayheadDrag} />
+          <Playhead pixelsPerSecond={pixelsPerSecond} totalTrackHeight={totalTrackHeight} onMouseDown={startPlayheadDrag} />
         </div>
       </div>
     </div>

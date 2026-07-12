@@ -25,6 +25,7 @@ import {
   type TextStyle,
   type TimelineMarker,
   type Track,
+  type TrackType,
   type Transition,
   type TransitionType,
   type VideoClip,
@@ -75,6 +76,7 @@ import { splitVolumeKeyframes } from '../utils/volumeKeyframesTimeline'
 import { ensureProjectFontsLoaded } from '../utils/googleFonts'
 import { splitSpeedKeyframes } from '../utils/speedKeyframesTimeline'
 import { getSourceOffsetAtLocalTime } from '../utils/speedKeyframes'
+import { canRemoveTrack, createTrack, findTrackInsertIndex } from '../utils/trackManagement'
 
 const MAX_HISTORY = 50
 
@@ -246,6 +248,9 @@ interface ProjectState {
   toggleTrackSolo: (trackId: string) => void
   setTrackVolume: (trackId: string, volume: number, recordHistory?: boolean) => void
   toggleTrackLock: (trackId: string) => void
+  addTrack: (type: TrackType, afterTrackId?: string) => string
+  removeTrack: (trackId: string) => boolean
+  renameTrack: (trackId: string, name: string) => void
   setProjectSettings: (settings: { width?: number; height?: number; fps?: number }) => void
   applyProjectSettingsPreset: (preset: ProjectSettingsPreset) => void
   applyTemplate: (template: ProjectTemplate) => void
@@ -1254,6 +1259,56 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         ...state.project,
         tracks: state.project.tracks.map((t) =>
           t.id === trackId ? { ...t, locked: !t.locked } : t,
+        ),
+      },
+      future: [],
+    }))
+  },
+
+  addTrack: (type, afterTrackId) => {
+    const { project } = get()
+    const newTrack = createTrack(type, project.tracks, createId())
+    const insertIndex = findTrackInsertIndex(project.tracks, type, afterTrackId)
+    get().pushHistory()
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: [
+          ...state.project.tracks.slice(0, insertIndex),
+          newTrack,
+          ...state.project.tracks.slice(insertIndex),
+        ],
+      },
+      future: [],
+    }))
+    audioEngine.updateTrackGains(get().project)
+    return newTrack.id
+  },
+
+  removeTrack: (trackId) => {
+    const { project } = get()
+    if (!canRemoveTrack(project.tracks, trackId).ok) return false
+    get().pushHistory()
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.filter((t) => t.id !== trackId),
+      },
+      future: [],
+    }))
+    audioEngine.updateTrackGains(get().project)
+    return true
+  },
+
+  renameTrack: (trackId, name) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    get().pushHistory()
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((t) =>
+          t.id === trackId ? { ...t, name: trimmed } : t,
         ),
       },
       future: [],

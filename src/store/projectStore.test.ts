@@ -1206,3 +1206,38 @@ describe('multi clip selection', () => {
     expect(useProjectStore.getState().timelineEditTool).toBe('slide')
   })
 })
+
+describe('track management', () => {
+  beforeEach(() => {
+    useProjectStore.getState().resetProject()
+  })
+
+  it('addTrack inserts a new track and supports undo', () => {
+    const before = useProjectStore.getState().project.tracks.length
+    const newId = useProjectStore.getState().addTrack('video')
+    expect(useProjectStore.getState().project.tracks.length).toBe(before + 1)
+    expect(useProjectStore.getState().project.tracks.some((t) => t.id === newId)).toBe(true)
+
+    useProjectStore.getState().undo()
+    expect(useProjectStore.getState().project.tracks.length).toBe(before)
+  })
+
+  it('removeTrack rejects tracks with clips or below minimum count', () => {
+    setProject(makeProject([videoClip('c1', 0, 4)]))
+    const trackId = useProjectStore.getState().project.tracks[0].id
+    expect(useProjectStore.getState().removeTrack(trackId)).toBe(false)
+
+    const emptySecondary = useProjectStore.getState().addTrack('video')
+    expect(useProjectStore.getState().removeTrack(emptySecondary)).toBe(true)
+    expect(useProjectStore.getState().project.tracks.some((t) => t.id === emptySecondary)).toBe(false)
+  })
+
+  it('renameTrack updates the track name with undo', () => {
+    const trackId = useProjectStore.getState().project.tracks[0].id
+    useProjectStore.getState().renameTrack(trackId, 'メイン映像')
+    expect(useProjectStore.getState().project.tracks.find((t) => t.id === trackId)?.name).toBe('メイン映像')
+
+    useProjectStore.getState().undo()
+    expect(useProjectStore.getState().project.tracks.find((t) => t.id === trackId)?.name).not.toBe('メイン映像')
+  })
+})
