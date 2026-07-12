@@ -15969,3 +15969,40 @@ test('テキスト: スケールインアニメーションを設定できる', 
   await expect(animSelect).toHaveValue('scaleIn')
   await expect(page.getByRole('slider', { name: 'アニメーション長' })).toBeVisible()
 })
+
+test('テキスト: フェードアウトアニメーションを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="fadeOut"]') })
+  await animSelect.selectOption('fadeOut')
+  await expect(animSelect).toHaveValue('fadeOut')
+  await expect(page.getByRole('slider', { name: 'アニメーション長' })).toBeVisible()
+})
+
+test('トランジション: フェード to 白を画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'white-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'white-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'white-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'white-b.png' }).click()
+
+  await clickTimelineClip(page, 'white-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'フェード to 白', exact: true }).click()
+  await expect(page.getByText('フェード to 白を適用しました')).toBeVisible()
+})
+
+test('インスペクター: テキストの縦配置を bottom に設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByLabel('縦配置').selectOption('bottom')
+  await expect(page.getByLabel('縦配置')).toHaveValue('bottom')
+})
