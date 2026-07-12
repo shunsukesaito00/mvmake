@@ -20067,3 +20067,56 @@ test('インスペクター: 動画クリップのトランスフォームキー
   await expect(page.getByText('再生ヘッド位置(クリップ内)に位置・スケール・回転・不透明度のキーフレームを追加できます')).toBeVisible()
   await expect(graph).toBeHidden()
 })
+
+test('インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで最終キーフレーム削除後に件数表示が非表示になる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-graph-kf-count-last-delete.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-graph-kf-count-last-delete.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('1件', { exact: true })).toBeVisible()
+
+  const graph = page.getByTestId('transform-kf-graph-editor')
+  await expect(graph).toBeVisible()
+  await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 1' }).getByRole('button', { name: '削除' }).click()
+
+  await expect(page.getByText('1件', { exact: true })).toBeHidden()
+  await expect(page.getByText('再生ヘッド位置(クリップ内)に位置・スケール・回転・不透明度のキーフレームを追加できます')).toBeVisible()
+  await expect(graph).toBeHidden()
+})
+
+test('インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで最終キーフレーム削除後に件数表示が非表示になる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('1件', { exact: true })).toBeVisible()
+
+  const graph = page.getByTestId('transform-kf-graph-editor')
+  await expect(graph).toBeVisible()
+  await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 1' }).getByRole('button', { name: '削除' }).click()
+
+  await expect(page.getByText('1件', { exact: true })).toBeHidden()
+  await expect(page.getByText('再生ヘッド位置(クリップ内)に位置・スケール・回転・不透明度のキーフレームを追加できます')).toBeVisible()
+  await expect(graph).toBeHidden()
+})
+
+test('インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターでキーフレーム0件時に件数表示が0件になる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-graph-kf-count-zero.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-graph-kf-count-zero.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await expect(page.getByText('0件', { exact: true })).toBeVisible()
+  await expect(page.getByText('再生ヘッド位置(クリップ内)に位置・スケール・回転・不透明度のキーフレームを追加できます')).toBeVisible()
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeHidden()
+})
