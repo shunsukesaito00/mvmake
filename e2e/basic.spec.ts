@@ -17692,3 +17692,70 @@ test('インスペクター: 動画クリップにトランジションを適用
   await page.getByRole('button', { name: 'クロスフェード', exact: true }).click()
   await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
 })
+
+test('インスペクター: 画像クリップにトランジションを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'image-tr-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'image-tr-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'image-tr-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'image-tr-b.png' }).click()
+
+  await clickTimelineClip(page, 'image-tr-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'クロスフェード', exact: true }).click()
+  await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
+})
+
+test('インスペクター: 動画クリップの LUT 強度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-lut-intensity.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-lut-intensity.webm')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'video-lut-intensity.cube', mimeType: 'text/plain', buffer: cube })
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'video-lut-intensity (2³)' })
+  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
+  await intensity.fill('0.6')
+  await expect(intensity).toHaveValue('0.6')
+})
+
+test('インスペクター: 画像クリップの LUT 強度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const cube = Buffer.from(`LUT_3D_SIZE 2
+0 0 0
+1 0.1 0
+0 1 0
+1 0.2 0
+0 0 1
+1 0.1 1
+0 1 1
+1 0.2 1
+`)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-lut-intensity.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-lut-intensity.png')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'image-lut-intensity.cube', mimeType: 'text/plain', buffer: cube })
+  await page.getByLabel('LUT', { exact: true }).selectOption({ label: 'image-lut-intensity (2³)' })
+  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
+  await intensity.fill('0.6')
+  await expect(intensity).toHaveValue('0.6')
+})
