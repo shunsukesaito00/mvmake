@@ -18547,3 +18547,47 @@ test('タイムライン: テキストクリップのトランスフォームキ
   await expect(page.getByTestId('transform-kf-curve-opacity')).toBeHidden()
   await expect(page.getByTestId('transform-kf-curve-scale')).toBeHidden()
 })
+
+test('インスペクター: テキストクリップのトランスフォームキーフレームを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
+})
+
+test('プレビュー: テキストクリップの不透明度ハンドルで transform キーフレームを更新できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const opacityHandle = page.getByTitle(/不透明度 .*上下ドラッグ/)
+  await expect(opacityHandle).toBeVisible()
+
+  const box = (await opacityHandle.boundingBox())!
+  await opacityHandle.hover()
+  await page.mouse.down()
+  await page.mouse.move(box.x, box.y + 40, { steps: 6 })
+  await page.mouse.up()
+
+  await expect(opacityHandle).not.toHaveAttribute('title', /不透明度 100%/)
+})
+
+test('インスペクター: テキストクリップのトランスフォームキーフレームのイージングを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await page.getByLabel('補間イージング').selectOption('easeOut')
+  await expect(page.getByLabel('補間イージング')).toHaveValue('easeOut')
+})
