@@ -18591,3 +18591,53 @@ test('インスペクター: テキストクリップのトランスフォーム
   await page.getByLabel('補間イージング').selectOption('easeOut')
   await expect(page.getByLabel('補間イージング')).toHaveValue('easeOut')
 })
+
+test('インスペクター: テキストクリップのトランスフォームキーフレームの不透明度を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const opacitySliders = page.getByRole('slider', { name: '不透明度' })
+  await opacitySliders.nth(1).fill('0.4')
+  await expect(opacitySliders.nth(1)).toHaveValue('0.4')
+})
+
+test('インスペクター: テキストクリップのトランスフォームキーフレームのスケールを数値入力できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+
+  const scaleInput = page.getByRole('spinbutton', { name: 'スケール 数値' })
+  await scaleInput.fill('1.8')
+  await scaleInput.blur()
+  await expect(scaleInput).toHaveValue('1.8')
+
+  await page.getByTestId('transform-graph-property-rotation').click()
+  await expect(page.getByTestId('transform-graph-property-rotation')).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('インスペクター: 動画クリップのトランスフォームキーフレームのイージングを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-easing.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-easing.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await page.getByLabel('補間イージング').selectOption('easeOut')
+  await expect(page.getByLabel('補間イージング')).toHaveValue('easeOut')
+})

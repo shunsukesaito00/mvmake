@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.32）
+# 本番スモーク E2E 監査（v2.6.33）
 
-最終更新: 2026-07-13（v2.6.32 / 本番スモーク 681 シナリオ・テキストTFインスペクター追加/プレビュー不透明度/イージング3件追加）
+最終更新: 2026-07-13（v2.6.33 / 本番スモーク 684 シナリオ・テキストTF不透明度/スケール/動画TFイージング3件追加）
+
+## v2.6.33 拡充（681→684）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **684**（+3） |
+| 追加シナリオ | テキストTF不透明度 / スケール数値入力 / 動画TFイージング |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.33）
+
+1. インスペクター: テキストクリップのトランスフォームキーフレームの不透明度を設定できる
+2. インスペクター: テキストクリップのトランスフォームキーフレームのスケールを数値入力できる
+3. インスペクター: 動画クリップのトランスフォームキーフレームのイージングを設定できる
+
+選定根拠: テキストTF不透明度・スケール数値入力・動画TFイージングが「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.32 拡充（678→681）
 
@@ -955,11 +971,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 681 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 681`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2632_ADDITIONS`
+- `e2e/basic.spec.ts` — 684 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 684`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2633_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.32 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.33 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
