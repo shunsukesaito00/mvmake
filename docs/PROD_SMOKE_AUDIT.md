@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.94）
+# 本番スモーク E2E 監査（v2.5.95）
 
-最終更新: 2026-07-12（v2.5.94 / 本番スモーク 567 シナリオ・動画回転/フェードイン/長さ3件追加）
+最終更新: 2026-07-12（v2.5.95 / 本番スモーク 570 シナリオ・動画フェードアウト/音量/クロップ3件追加）
+
+## v2.5.95 拡充（567→570）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **570**（+3） |
+| 追加シナリオ | 動画クリップフェードアウト設定 / 音量変更 / クロップ有効化 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.95）
+
+1. インスペクター: 動画クリップにフェードアウトを設定できる
+2. インスペクター: 動画クリップの音量を変更できる
+3. インスペクター: 動画クリップのクロップを有効化できる
+
+選定根拠: 動画クリップのフェードアウト・動画音声音量・クロップ有効化が未カバーだったため追加。
 
 ## v2.5.94 拡充（564→567）
 
@@ -347,11 +363,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 567 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 567`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2594_ADDITIONS`
+- `e2e/basic.spec.ts` — 570 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 570`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2595_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.94 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.95 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

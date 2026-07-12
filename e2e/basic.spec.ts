@@ -16746,3 +16746,46 @@ test('インスペクター: 動画クリップの長さを変更できる', asy
   await durationSlider.fill('10')
   await expect(durationSlider).toHaveValue('10')
 })
+
+test('インスペクター: 動画クリップにフェードアウトを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-fade-out.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-fade-out.webm')
+
+  await page.getByRole('button', { name: 'フェード' }).click()
+  const fadeOut = page.getByRole('slider', { name: 'フェードアウト' })
+  await fadeOut.fill('0.7')
+  await expect(fadeOut).toHaveValue('0.7')
+})
+
+test('インスペクター: 動画クリップの音量を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-volume.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-volume.webm')
+
+  const volumeSlider = page.getByRole('slider', { name: '音量' })
+  await volumeSlider.fill('0.8')
+  await expect(volumeSlider).toHaveValue('0.8')
+})
+
+test('インスペクター: 動画クリップのクロップを有効化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-crop.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-crop.webm')
+
+  await page.getByRole('button', { name: 'クロップ', exact: true }).click()
+  await page.getByRole('checkbox', { name: 'クロップ有効' }).check()
+  await expect(page.getByRole('slider', { name: '幅' })).toBeVisible()
+})
