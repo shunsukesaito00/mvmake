@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.82）
+# 本番スモーク E2E 監査（v2.5.83）
 
-最終更新: 2026-07-12（v2.5.82 / 本番スモーク 531 シナリオ・暖色ディゾルブ/ドリーミーブラー/影のぼかし3件追加）
+最終更新: 2026-07-12（v2.5.83 / 本番スモーク 534 シナリオ・ミストフェード/スターライト/文字色3件追加）
+
+## v2.5.83 拡充（531→534）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **534**（+3） |
+| 追加シナリオ | ミストフェードトランジション / スターライトトランジション / テキスト文字色変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.83）
+
+1. トランジション: ミストフェードを画像クリップに適用できる
+2. トランジション: スターライトを画像クリップに適用できる
+3. インスペクター: テキストの文字色を変更できる
+
+選定根拠: MVP バックログ未カバー領域（ミストフェード/スターライトトランジション、テキスト文字色変更）から選定。
 
 ## v2.5.82 拡充（528→531）
 
@@ -154,9 +170,9 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 531 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 531`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2582_ADDITIONS`
+- `e2e/basic.spec.ts` — 534 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 534`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2583_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.82 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.83 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

@@ -16267,3 +16267,47 @@ test('インスペクター: テキストの影のぼかしを変更できる', 
   await shadowBlur.fill('12')
   await expect(shadowBlur).toHaveValue('12')
 })
+
+test('トランジション: ミストフェードを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'mist-fade-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'mist-fade-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'mist-fade-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'mist-fade-b.png' }).click()
+
+  await clickTimelineClip(page, 'mist-fade-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'ミストフェード', exact: true }).click()
+  await expect(page.getByText('ミストフェードを適用しました')).toBeVisible()
+})
+
+test('トランジション: スターライトを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'starlight-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'starlight-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'starlight-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'starlight-b.png' }).click()
+
+  await clickTimelineClip(page, 'starlight-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'スターライト', exact: true }).click()
+  await expect(page.getByText('スターライトを適用しました')).toBeVisible()
+})
+
+test('インスペクター: テキストの文字色を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const colorInput = page.locator('label').filter({ hasText: '文字色' }).locator('input[type="color"]')
+  await colorInput.fill('#ff6600')
+  await expect(colorInput).toHaveValue('#ff6600')
+})
