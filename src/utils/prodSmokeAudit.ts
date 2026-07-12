@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 762
+export const PROD_SMOKE_SCENARIO_COUNT = 765
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1991,6 +1991,13 @@ export const PROD_SMOKE_V2659_ADDITIONS = [
   'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除後に件数表示が0件になる',
   'インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除後に件数表示が0件になる',
   'インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで0件表示からキーフレーム追加後に件数表示が1件になる',
+] as const
+
+/** v2.6.60 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2660_ADDITIONS = [
+  'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで0件表示からキーフレーム追加後に件数表示が1件になる',
+  'インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで0件表示からキーフレーム追加後に件数表示が1件になる',
+  'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除後に再追加すると件数表示が1件になる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */
