@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 579
+export const PROD_SMOKE_SCENARIO_COUNT = 582
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1564,6 +1564,13 @@ export const PROD_SMOKE_V2598_ADDITIONS = [
   'インスペクター: 動画クリップの彩度を変更できる',
   'インスペクター: 動画クリップのクロップ X/Y を変更できる',
   'インスペクター: オーディオクリップの長さを変更できる',
+] as const
+
+/** v2.5.99 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2599_ADDITIONS = [
+  'インスペクター: 動画クリップの色相を変更できる',
+  'インスペクター: 動画クリップの色温度を変更できる',
+  'インスペクター: オーディオクリップのフェードインを設定できる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */

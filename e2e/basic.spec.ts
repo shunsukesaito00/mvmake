@@ -16921,3 +16921,44 @@ test('インスペクター: オーディオクリップの長さを変更でき
   await durationSlider.fill('5')
   await expect(durationSlider).toHaveValue('5')
 })
+
+test('インスペクター: 動画クリップの色相を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-hue.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-hue.webm')
+
+  const hueSlider = page.getByRole('slider', { name: '色相' })
+  await hueSlider.fill('0.2')
+  await expect(hueSlider).toHaveValue('0.2')
+})
+
+test('インスペクター: 動画クリップの色温度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-temperature.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-temperature.webm')
+
+  const temperatureSlider = page.getByRole('slider', { name: '色温度' })
+  await temperatureSlider.fill('0.3')
+  await expect(temperatureSlider).toHaveValue('0.3')
+})
+
+test('インスペクター: オーディオクリップのフェードインを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-fade-in.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-fade-in.wav')
+
+  const fadeInSlider = page.getByRole('slider', { name: 'フェードイン' })
+  await fadeInSlider.fill('0.5')
+  await expect(fadeInSlider).toHaveValue('0.5')
+})
