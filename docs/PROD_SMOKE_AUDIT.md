@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.15）
+# 本番スモーク E2E 監査（v2.6.16）
 
-最終更新: 2026-07-12（v2.6.15 / 本番スモーク 630 シナリオ・再生速度/Ken Burns無効化/ダッキング無効化3件追加）
+最終更新: 2026-07-12（v2.6.16 / 本番スモーク 633 シナリオ・ダッキングフェード/動画ルック/画像ルック3件追加）
+
+## v2.6.16 拡充（630→633）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **633**（+3） |
+| 追加シナリオ | ダッキングフェード時間 / 動画ルック / 画像ルック |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.16）
+
+1. インスペクター: オーディオクリップのダッキングフェード時間を変更できる
+2. インスペクター: 動画クリップにルックを適用できる
+3. インスペクター: 画像クリップにルックを適用できる
+
+選定根拠: ダッキングフェード時間・動画/画像ルック適用が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.15 拡充（627→630）
 
@@ -683,11 +699,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 630 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 630`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2615_ADDITIONS`
+- `e2e/basic.spec.ts` — 633 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 633`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2616_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.15 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.16 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

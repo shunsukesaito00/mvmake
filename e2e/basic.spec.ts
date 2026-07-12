@@ -17583,3 +17583,44 @@ test('インスペクター: オーディオクリップのダッキングを無
   await expect(duckingCheckbox).not.toBeChecked()
   await expect(page.getByRole('slider', { name: 'ダッキング音量' })).toBeHidden()
 })
+
+test('インスペクター: オーディオクリップのダッキングフェード時間を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeWavWithPeak(0.8, 2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-ducking-fade.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-ducking-fade.wav')
+
+  await page.getByRole('button', { name: 'ダッキング' }).click()
+  await page.getByRole('checkbox', { name: '動画音声がある区間でBGMを下げる' }).check()
+  const fadeSlider = page.getByRole('slider', { name: 'フェード時間' })
+  await fadeSlider.fill('1.5')
+  await expect(fadeSlider).toHaveValue('1.5')
+})
+
+test('インスペクター: 動画クリップにルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-look.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-look.webm')
+
+  await page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true }).click()
+  await expect(page.getByText('「ウエディング暖色」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ウエディング暖色ルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('インスペクター: 画像クリップにルックを適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-look.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-look.png')
+
+  await page.getByRole('button', { name: 'ガーデンパーティルック', exact: true }).click()
+  await expect(page.getByText('「ガーデンパーティ」ルックを適用しました')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ガーデンパーティルック', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
