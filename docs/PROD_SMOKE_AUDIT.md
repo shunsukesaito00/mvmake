@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.02）
+# 本番スモーク E2E 監査（v2.6.03）
 
-最終更新: 2026-07-12（v2.6.02 / 本番スモーク 591 シナリオ・画像色温度/コントラスト/フェードイン3件追加）
+最終更新: 2026-07-12（v2.6.03 / 本番スモーク 594 シナリオ・画像フェードアウト/テキスト行間/縦配置3件追加）
+
+## v2.6.03 拡充（591→594）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **594**（+3） |
+| 追加シナリオ | 画像フェードアウト設定 / テキスト行間変更 / 縦配置変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.03）
+
+1. インスペクター: 画像クリップのフェードアウトを設定できる
+2. インスペクター: テキストクリップの行間を変更できる
+3. インスペクター: テキストクリップの縦配置を変更できる
+
+選定根拠: 画像フェードアウト・テキスト行間・縦配置が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.02 拡充（588→591）
 
@@ -475,11 +491,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 591 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 591`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2602_ADDITIONS`
+- `e2e/basic.spec.ts` — 594 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 594`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2603_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.02 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.03 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

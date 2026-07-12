@@ -17078,3 +17078,35 @@ test('インスペクター: 画像クリップのフェードインを設定で
   await fadeInSlider.fill('0.6')
   await expect(fadeInSlider).toHaveValue('0.6')
 })
+
+test('インスペクター: 画像クリップのフェードアウトを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'fade-out-no-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'fade-out-no-photo.png')
+
+  await page.getByRole('button', { name: 'フェード' }).click()
+  const fadeOutSlider = page.getByRole('slider', { name: 'フェードアウト' })
+  await fadeOutSlider.fill('0.8')
+  await expect(fadeOutSlider).toHaveValue('0.8')
+})
+
+test('インスペクター: テキストクリップの行間を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const lineHeightSlider = page.getByRole('slider', { name: '行間' })
+  await lineHeightSlider.fill('2.1')
+  await expect(lineHeightSlider).toHaveValue('2.1')
+})
+
+test('インスペクター: テキストクリップの縦配置を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByLabel('縦配置').selectOption('bottom')
+  await expect(page.getByLabel('縦配置')).toHaveValue('bottom')
+})
