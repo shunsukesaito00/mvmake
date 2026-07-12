@@ -690,6 +690,51 @@ test('インスペクター: 音量キーフレームを追加・編集できる
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()
   await expect(page.getByText('キーフレーム 1')).toBeVisible()
   await expect(page.getByText('1件', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('volume-kf-graph-editor')).toBeVisible()
+})
+
+test('インスペクター: 音量キーフレームのグラフで削除と再追加ができる', async ({ page }) => {
+  const wav = makeSilentWav(0.5)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'vol-graph.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'vol-graph.wav')
+
+  await page.getByRole('button', { name: '音量キーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('2件', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'グラフ上のキーフレーム 2' }).click()
+  await page.locator('.ring-emerald-400\\/40').getByRole('button', { name: '削除' }).click()
+  await expect(page.getByText('1件', { exact: true })).toBeVisible()
+
+  await page.locator('.ring-emerald-400\\/40').getByRole('button', { name: '削除' }).click()
+  await expect(page.getByText('0件', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('volume-kf-graph-editor')).toBeHidden()
+
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('1件', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('volume-kf-graph-editor')).toBeVisible()
+})
+
+test('インスペクター: 音量キーフレームの音量を数値入力できる', async ({ page }) => {
+  const wav = makeSilentWav(0.5)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'vol-num.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'vol-num.wav')
+
+  await page.getByRole('button', { name: '音量キーフレーム' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByTestId('volume-kf-graph-editor')).toBeVisible()
+
+  const volumeInput = page.getByRole('spinbutton', { name: '音量 数値' })
+  await volumeInput.fill('1.5')
+  await volumeInput.blur()
+  await expect(volumeInput).toHaveValue('1.5')
 })
 
 test('インスペクター: 速度キーフレームを追加・編集できる', async ({ page }) => {
