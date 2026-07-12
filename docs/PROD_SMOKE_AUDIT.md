@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.09）
+# 本番スモーク E2E 監査（v2.6.10）
 
-最終更新: 2026-07-12（v2.6.09 / 本番スモーク 612 シナリオ・イコライザー/ノイズ除去/音量正規化3件追加）
+最終更新: 2026-07-12（v2.6.10 / 本番スモーク 615 シナリオ・EQ中域/高域/テキスト内容3件追加）
+
+## v2.6.10 拡充（612→615）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **615**（+3） |
+| 追加シナリオ | EQ中域変更 / EQ高域変更 / テキスト内容編集 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.10）
+
+1. インスペクター: オーディオクリップのイコライザー中域を変更できる
+2. インスペクター: オーディオクリップのイコライザー高域を変更できる
+3. インスペクター: テキストクリップのテキスト内容を編集できる
+
+選定根拠: イコライザー中域・高域・テキスト内容編集が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.09 拡充（609→612）
 
@@ -587,11 +603,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 612 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 612`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2609_ADDITIONS`
+- `e2e/basic.spec.ts` — 615 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 615`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2610_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.09 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.10 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

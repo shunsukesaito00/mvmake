@@ -17325,3 +17325,45 @@ test('インスペクター: オーディオクリップの音量を正規化で
   await expect(page.getByText('音量を正規化しました')).toBeVisible()
   await expect(volumeSlider).toHaveValue('2')
 })
+
+test('インスペクター: オーディオクリップのイコライザー中域を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-eq-mid.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-eq-mid.wav')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  await page.getByLabel('イコライザーを有効化').check()
+  const midSlider = page.getByRole('slider', { name: '中域' })
+  await midSlider.fill('2')
+  await expect(midSlider).toHaveValue('2')
+})
+
+test('インスペクター: オーディオクリップのイコライザー高域を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-eq-high.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-eq-high.wav')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  await page.getByLabel('イコライザーを有効化').check()
+  const highSlider = page.getByRole('slider', { name: '高域' })
+  await highSlider.fill('4')
+  await expect(highSlider).toHaveValue('4')
+})
+
+test('インスペクター: テキストクリップのテキスト内容を編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const textarea = page.locator('textarea')
+  await expect(textarea).toBeVisible()
+  await textarea.fill('乾杯のご挨拶')
+  await expect(page.locator('footer').getByText('乾杯のご挨拶')).toBeVisible()
+  await expect(page.locator('footer').getByText('Opening')).toBeHidden()
+})
