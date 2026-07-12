@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.96）
+# 本番スモーク E2E 監査（v2.5.97）
 
-最終更新: 2026-07-12（v2.5.96 / 本番スモーク 573 シナリオ・動画クロップ幅/明るさ/オーディオ音量3件追加）
+最終更新: 2026-07-12（v2.5.97 / 本番スモーク 576 シナリオ・動画コントラスト/クロップ高さ/オーディオ再生速度3件追加）
+
+## v2.5.97 拡充（573→576）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **576**（+3） |
+| 追加シナリオ | 動画コントラスト変更 / クロップ高さ変更 / オーディオ再生速度変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.97）
+
+1. インスペクター: 動画クリップのコントラストを変更できる
+2. インスペクター: 動画クリップのクロップ高さを変更できる
+3. インスペクター: オーディオクリップの再生速度を変更できる
+
+選定根拠: 動画色調コントラスト・クロップ高さ・オーディオ再生速度が未カバーだったため追加（クロップ幅/明るさは v2.5.96 でカバー済み）。
 
 ## v2.5.96 拡充（570→573）
 
@@ -379,11 +395,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 573 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 573`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2596_ADDITIONS`
+- `e2e/basic.spec.ts` — 576 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 576`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2597_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.96 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.97 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

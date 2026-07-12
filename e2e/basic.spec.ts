@@ -16832,3 +16832,46 @@ test('インスペクター: オーディオクリップの音量を変更でき
   await volumeSlider.fill('0.6')
   await expect(volumeSlider).toHaveValue('0.6')
 })
+
+test('インスペクター: 動画クリップのコントラストを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-contrast.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-contrast.webm')
+
+  const contrastSlider = page.getByRole('slider', { name: 'コントラスト' })
+  await contrastSlider.fill('0.2')
+  await expect(contrastSlider).toHaveValue('0.2')
+})
+
+test('インスペクター: 動画クリップのクロップ高さを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-crop-height.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-crop-height.webm')
+
+  await page.getByRole('button', { name: 'クロップ', exact: true }).click()
+  await page.getByRole('checkbox', { name: 'クロップ有効' }).check()
+  const heightSlider = page.getByRole('slider', { name: '高さ' })
+  await heightSlider.fill('0.65')
+  await expect(heightSlider).toHaveValue('0.65')
+})
+
+test('インスペクター: オーディオクリップの再生速度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-speed.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-speed.wav')
+
+  const speedSlider = page.getByRole('slider', { name: '再生速度' })
+  await speedSlider.fill('1.5')
+  await expect(speedSlider).toHaveValue('1.5')
+})
