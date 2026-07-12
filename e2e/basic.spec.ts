@@ -17278,3 +17278,50 @@ test('インスペクター: オーディオクリップのダッキングを設
   await duckAmountSlider.fill('0.25')
   await expect(duckAmountSlider).toHaveValue('0.25')
 })
+
+test('インスペクター: オーディオクリップのイコライザーを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-eq.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-eq.wav')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  await page.getByLabel('イコライザーを有効化').check()
+  await page.getByRole('slider', { name: '低域' }).fill('3')
+  await expect(page.getByRole('slider', { name: '低域' })).toHaveValue('3')
+  await expect(page.getByLabel('イコライザーを有効化')).toBeChecked()
+})
+
+test('インスペクター: オーディオクリップのノイズ除去を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-nr.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-nr.wav')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  await page.getByRole('slider', { name: 'ハイパス' }).fill('120')
+  await page.getByLabel('高周波ヒス除去（ローパス）').check()
+  await expect(page.getByLabel('ノイズ除去を有効化')).toBeChecked()
+  await expect(page.getByRole('slider', { name: 'ハイパス' })).toHaveValue('120')
+  await expect(page.getByLabel('高周波ヒス除去（ローパス）')).toBeChecked()
+})
+
+test('インスペクター: オーディオクリップの音量を正規化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeWavWithPeak(0.1, 0.5)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-normalize.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-normalize.wav')
+
+  const volumeSlider = page.getByRole('slider', { name: '音量' })
+  await expect(volumeSlider).toHaveValue('1')
+  await page.getByRole('button', { name: '音量を正規化' }).click()
+  await expect(page.getByText('音量を正規化しました')).toBeVisible()
+  await expect(volumeSlider).toHaveValue('2')
+})
