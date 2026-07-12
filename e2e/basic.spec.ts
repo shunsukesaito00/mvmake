@@ -18690,3 +18690,64 @@ test('インスペクター: 画像クリップのトランスフォームキー
   await opacitySliders.nth(1).fill('0.4')
   await expect(opacitySliders.nth(1)).toHaveValue('0.4')
 })
+
+test('インスペクター: 動画クリップのトランスフォームキーフレームのスケールを数値入力できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-scale.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-scale.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+
+  const scaleInput = page.getByRole('spinbutton', { name: 'スケール 数値' })
+  await scaleInput.fill('1.8')
+  await scaleInput.blur()
+  await expect(scaleInput).toHaveValue('1.8')
+
+  await page.getByTestId('transform-graph-property-rotation').click()
+  await expect(page.getByTestId('transform-graph-property-rotation')).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('インスペクター: 画像クリップのトランスフォームキーフレームのスケールを数値入力できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-scale.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-scale.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+
+  const scaleInput = page.getByRole('spinbutton', { name: 'スケール 数値' })
+  await scaleInput.fill('1.8')
+  await scaleInput.blur()
+  await expect(scaleInput).toHaveValue('1.8')
+
+  await page.getByTestId('transform-graph-property-rotation').click()
+  await expect(page.getByTestId('transform-graph-property-rotation')).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターを表示できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-graph.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-graph.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+  await expect(page.getByTestId('transform-graph-property-scale')).toBeVisible()
+  await expect(page.getByTestId('transform-graph-property-rotation')).toBeVisible()
+})
