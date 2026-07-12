@@ -19021,3 +19021,58 @@ test('インスペクター: 動画クリップのトランスフォームキー
   await expect(page.getByTestId('transform-graph-property-y')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByTestId('transform-graph-property-scale')).toHaveAttribute('aria-pressed', 'false')
 })
+
+test('インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターでYプロパティを切り替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-graph-y.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-graph-y.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+  await expect(page.getByTestId('transform-graph-property-scale')).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByTestId('transform-graph-property-y').click()
+  await expect(page.getByTestId('transform-graph-property-y')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('transform-graph-property-scale')).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターでYプロパティを切り替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+  await expect(page.getByTestId('transform-graph-property-scale')).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByTestId('transform-graph-property-y').click()
+  await expect(page.getByTestId('transform-graph-property-y')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('transform-graph-property-scale')).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターでキーフレームを選択できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-graph-select.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-graph-select.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.locator('main input[type="range"]').fill('2')
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+  await page.getByRole('button', { name: 'グラフ上のキーフレーム 1' }).click()
+  await expect(page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 1' })).toBeVisible()
+  await page.getByRole('button', { name: 'グラフ上のキーフレーム 2' }).click()
+  await expect(page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 2' })).toBeVisible()
+})
