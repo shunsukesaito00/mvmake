@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.42）
+# 本番スモーク E2E 監査（v2.6.43）
 
-最終更新: 2026-07-13（v2.6.42 / 本番スモーク 711 シナリオ・画像/テキストTFグラフキーフレーム選択/動画TFグラフカーブ3件追加）
+最終更新: 2026-07-13（v2.6.43 / 本番スモーク 714 シナリオ・画像/テキストTFグラフカーブ/動画TFグラフプロパティ切替後カーブ3件追加）
+
+## v2.6.43 拡充（711→714）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **714**（+3） |
+| 追加シナリオ | 画像/テキストTFグラフ2点カーブ / 動画TFグラフプロパティ切替後カーブ |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.43）
+
+1. インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで2点以上のキーフレームカーブを表示できる
+2. インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで2点以上のキーフレームカーブを表示できる
+3. インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターでプロパティ切替後もカーブを表示できる
+
+選定根拠: 動画のみだった2点カーブ表示を画像/テキストでも検証し、プロパティ切替後もカーブ path が維持されることを確認するため追加。
 
 ## v2.6.42 拡充（708→711）
 
@@ -1115,11 +1131,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 711 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 711`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2642_ADDITIONS`
+- `e2e/basic.spec.ts` — 714 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 714`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2643_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.42 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.43 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
