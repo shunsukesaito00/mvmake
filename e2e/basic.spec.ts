@@ -16051,3 +16051,50 @@ test('テキスト: アニメーションなしに切り替えできる', async 
   await expect(animSelect).toHaveValue('none')
   await expect(page.getByRole('slider', { name: 'アニメーション長' })).toHaveCount(0)
 })
+
+test('トランジション: スライド上を画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'slide-up-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'slide-up-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'slide-up-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'slide-up-b.png' }).click()
+
+  await clickTimelineClip(page, 'slide-up-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'スライド上', exact: true }).click()
+  await expect(page.getByText('スライド上を適用しました')).toBeVisible()
+})
+
+test('トランジション: アイリスを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'iris-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'iris-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'iris-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'iris-b.png' }).click()
+
+  await clickTimelineClip(page, 'iris-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'アイリス', exact: true }).click()
+  await expect(page.getByText('アイリスを適用しました')).toBeVisible()
+})
+
+test('テキスト: フェードインアニメーションを設定して長さを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="fadeIn"]') })
+  await expect(animSelect).toHaveValue('fadeIn')
+
+  const duration = page.getByRole('slider', { name: 'アニメーション長' })
+  await duration.fill('2')
+  await expect(duration).toHaveValue('2')
+})

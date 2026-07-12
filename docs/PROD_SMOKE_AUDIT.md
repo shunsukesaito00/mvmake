@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.77）
+# 本番スモーク E2E 監査（v2.5.78）
 
-最終更新: 2026-07-12（v2.5.77 / 本番スモーク 516 シナリオ・ワイプ/スライド右/アニメなし3件追加）
+最終更新: 2026-07-12（v2.5.78 / 本番スモーク 519 シナリオ・スライド上/アイリス/フェードイン3件追加）
+
+## v2.5.78 拡充（516→519）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **519**（+3） |
+| 追加シナリオ | スライド上トランジション / アイリストランジション / テキストフェードイン+長さ変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.78）
+
+1. トランジション: スライド上を画像クリップに適用できる
+2. トランジション: アイリスを画像クリップに適用できる
+3. テキスト: フェードインアニメーションを設定して長さを変更できる
+
+選定根拠: MVP バックログ未カバー領域（クラシックトランジション slideUp/iris、テキストフェードイン+長さ変更）から選定。
 
 ## v2.5.77 拡充（513→516）
 
@@ -74,9 +90,9 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 516 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 516`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2577_ADDITIONS`
+- `e2e/basic.spec.ts` — 519 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 519`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2578_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.77 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.78 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
