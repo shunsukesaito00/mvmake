@@ -17240,3 +17240,41 @@ test('インスペクター: テキストクリップのアニメーション種
   await animSelect.selectOption('slideUp')
   await expect(animSelect).toHaveValue('slideUp')
 })
+
+test('インスペクター: テキストクリップのフォントを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const fontSelect = page.getByLabel('フォント', { exact: true })
+  await fontSelect.selectOption('Zen Old Mincho')
+  await expect(fontSelect).toHaveValue('Zen Old Mincho')
+})
+
+test('インスペクター: テキストクリップのアニメーションをなしに切り替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="none"]') })
+  await animSelect.selectOption('none')
+  await expect(animSelect).toHaveValue('none')
+  await expect(page.getByRole('slider', { name: 'アニメーション長' })).toHaveCount(0)
+})
+
+test('インスペクター: オーディオクリップのダッキングを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeWavWithPeak(0.8, 2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-ducking.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-ducking.wav')
+
+  await page.getByRole('button', { name: 'ダッキング' }).click()
+  await page.getByText('動画音声がある区間でBGMを下げる').click()
+  await expect(page.getByRole('slider', { name: 'ダッキング音量' })).toBeVisible()
+
+  const duckAmountSlider = page.getByRole('slider', { name: 'ダッキング音量' })
+  await duckAmountSlider.fill('0.25')
+  await expect(duckAmountSlider).toHaveValue('0.25')
+})

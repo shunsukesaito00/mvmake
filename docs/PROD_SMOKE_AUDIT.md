@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.07）
+# 本番スモーク E2E 監査（v2.6.08）
 
-最終更新: 2026-07-12（v2.6.07 / 本番スモーク 606 シナリオ・字幕帯余白/オフ/アニメ種別3件追加）
+最終更新: 2026-07-12（v2.6.08 / 本番スモーク 609 シナリオ・フォント/アニメなし/ダッキング3件追加）
+
+## v2.6.08 拡充（606→609）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **609**（+3） |
+| 追加シナリオ | テキストフォント変更 / アニメなし切替 / オーディオダッキング設定 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.08）
+
+1. インスペクター: テキストクリップのフォントを変更できる
+2. インスペクター: テキストクリップのアニメーションをなしに切り替えできる
+3. インスペクター: オーディオクリップのダッキングを設定できる
+
+選定根拠: テキストフォント・アニメなし・オーディオダッキングが「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.07 拡充（603→606）
 
@@ -555,11 +571,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 606 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 606`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2607_ADDITIONS`
+- `e2e/basic.spec.ts` — 609 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 609`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2608_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.07 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.08 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
