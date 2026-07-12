@@ -146,6 +146,8 @@ function clearClipSelectionState() {
   return syncClipSelection([])
 }
 
+export type TimelineEditTool = 'selection' | 'slip' | 'slide'
+
 interface ProjectState {
   project: Project
   currentTime: number
@@ -170,6 +172,7 @@ interface ProjectState {
   showPlayHint: boolean
   showExportHint: boolean
   coachmarkFromSample: boolean
+  timelineEditTool: TimelineEditTool
 
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
@@ -191,6 +194,7 @@ interface ProjectState {
   setShowPlayHint: (v: boolean) => void
   setShowExportHint: (v: boolean) => void
   setCoachmarkFromSample: (v: boolean) => void
+  setTimelineEditTool: (tool: TimelineEditTool) => void
   setInPoint: (time: number | null) => void
   setOutPoint: (time: number | null) => void
   clearInOut: () => void
@@ -336,6 +340,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   showPlayHint: false,
   showExportHint: false,
   coachmarkFromSample: false,
+  timelineEditTool: 'selection',
 
   setCurrentTime: (time) => set({ currentTime: Math.max(0, time) }),
   setIsPlaying: (playing) => set({ isPlaying: playing }),
@@ -377,6 +382,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setShowPlayHint: (v) => set({ showPlayHint: v }),
   setShowExportHint: (v) => set({ showExportHint: v }),
   setCoachmarkFromSample: (v) => set({ coachmarkFromSample: v }),
+  setTimelineEditTool: (tool) => set({ timelineEditTool: tool }),
   setInPoint: (time) => set({ inPoint: time }),
   setOutPoint: (time) => set({ outPoint: time }),
   clearInOut: () => set({ inPoint: null, outPoint: null }),

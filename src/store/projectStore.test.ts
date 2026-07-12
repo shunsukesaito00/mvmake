@@ -1197,4 +1197,12 @@ describe('multi clip selection', () => {
     expect(useProjectStore.getState().selectedClipIds).toHaveLength(2)
     expect(useProjectStore.getState().selectedClipIds.every((id) => clips.some((c) => c.id === id))).toBe(true)
   })
+
+  it('setTimelineEditTool switches timeline edit mode', () => {
+    expect(useProjectStore.getState().timelineEditTool).toBe('selection')
+    useProjectStore.getState().setTimelineEditTool('slip')
+    expect(useProjectStore.getState().timelineEditTool).toBe('slip')
+    useProjectStore.getState().setTimelineEditTool('slide')
+    expect(useProjectStore.getState().timelineEditTool).toBe('slide')
+  })
 })

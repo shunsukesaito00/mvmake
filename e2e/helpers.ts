@@ -719,6 +719,23 @@ export async function removeSelectedClips(page: import('@playwright/test').Page)
   })
 }
 
+export async function getTimelineEditTool(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getTimelineEditTool()
+  })
+}
+
+export async function setTimelineEditTool(
+  page: import('@playwright/test').Page,
+  tool: 'selection' | 'slip' | 'slide',
+) {
+  await page.evaluate((value) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.setTimelineEditTool(value)
+  }, tool)
+}
+
 export async function getTrackVolume(page: import('@playwright/test').Page, trackId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect, useState } from 'react'
-import { useProjectStore, type TimelineDragState } from '../store/projectStore'
+import { useProjectStore, type TimelineDragState, type TimelineEditTool } from '../store/projectStore'
 import type { Clip } from '../types/project'
 import { formatTime, snapTime } from '../utils/time'
 import { resolveMarkerDragTime, clampMarkerTime } from '../utils/markerEdit'
@@ -34,10 +34,17 @@ import { usePlaybackControls } from '../contexts/PlaybackContext'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, IconButton } from '../components/ui'
 import { Icons } from '../components/icons'
+import { TimelineEditTools } from '../components/TimelineEditTools'
 
 const TRACK_HEIGHT = 52
 const HEADER_WIDTH = 110
 const RULER_HEIGHT = 28
+
+const CLIP_MOVE_CURSORS: Record<TimelineEditTool, string> = {
+  selection: 'cursor-grab',
+  slip: 'cursor-col-resize',
+  slide: 'cursor-ew-resize',
+}
 
 const CLIP_STYLES: Record<Clip['type'], string> = {
   video: 'bg-gradient-to-r from-clip-video/90 to-clip-video/70',
@@ -115,6 +122,7 @@ export function TimelinePanel() {
   const pushHistory = useProjectStore((s) => s.pushHistory)
   const moveClip = useProjectStore((s) => s.moveClip)
   const getSnapPoints = useProjectStore((s) => s.getSnapPoints)
+  const timelineEditTool = useProjectStore((s) => s.timelineEditTool)
   const toggleTrackMute = useProjectStore((s) => s.toggleTrackMute)
   const toggleTrackLock = useProjectStore((s) => s.toggleTrackLock)
   const removeMarker = useProjectStore((s) => s.removeMarker)
@@ -175,6 +183,7 @@ export function TimelinePanel() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
       if ((e.key === 'z' || e.key === 'Z') && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault()
         zoomToSelectedClip()
@@ -448,11 +457,16 @@ export function TimelinePanel() {
 
     let dragClipId = clip.id
     let dragMode: TimelineDragState['mode'] = mode
+    const editTool = useProjectStore.getState().timelineEditTool
 
     if (mode === 'move') {
-      if (e.altKey) {
+      if (e.altKey && editTool === 'selection') {
         const newId = useProjectStore.getState().duplicateClipInPlace(clip.id)
         if (newId) dragClipId = newId
+      } else if (editTool === 'slip' && canSlipClip(clip)) {
+        dragMode = 'slip'
+      } else if (editTool === 'slide' && canSlideClip(track.clips, clip.id)) {
+        dragMode = 'slide'
       } else if (e.ctrlKey && canSlipClip(clip)) {
         dragMode = 'slip'
       } else if (e.shiftKey && canSlideClip(track.clips, clip.id)) {
@@ -532,7 +546,7 @@ export function TimelinePanel() {
   }, [selectClipAtClick])
 
   const beginClipMouseDown = (clip: Clip, mode: 'move' | 'trimStart' | 'trimEnd', e: React.MouseEvent) => {
-    if (mode === 'move' && e.shiftKey) {
+    if (mode === 'move' && e.shiftKey && timelineEditTool === 'selection') {
       e.stopPropagation()
       e.preventDefault()
       shiftGestureRef.current = { clip, startX: e.clientX, startY: e.clientY }
@@ -772,6 +786,8 @@ export function TimelinePanel() {
         <IconButton onClick={() => setPixelsPerSecond(pixelsPerSecond + 20)} tooltip="ズームイン" size="sm"><Icons.ZoomIn size={13} /></IconButton>
       </PanelHeader>
 
+      <TimelineEditTools />
+
       <div ref={containerRef} className="flex-1 overflow-auto" onWheel={(e) => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); setPixelsPerSecond(pixelsPerSecond + (e.deltaY > 0 ? -10 : 10)) } }}>
         <div ref={tracksContainerRef} className="relative" style={{ width: timelineWidth + HEADER_WIDTH, minHeight: tracks.length * TRACK_HEIGHT + RULER_HEIGHT }}>
           {inPoint !== null && outPoint !== null && (
@@ -861,7 +877,7 @@ export function TimelinePanel() {
                   return (
                     <div
                       key={clip.id}
-                      className={`absolute top-1.5 bottom-1.5 cursor-grab rounded-md ${CLIP_STYLES[clip.type]} ${isSelected ? 'clip-selected z-10' : 'ring-1 ring-white/10'} ${track.locked ? 'opacity-50' : ''} ${hasVolumeKeyframes || hasSpeedKeyframes || hasTransformKeyframes ? 'overflow-visible' : 'overflow-hidden'}`}
+                      className={`absolute top-1.5 bottom-1.5 rounded-md ${CLIP_MOVE_CURSORS[timelineEditTool]} ${CLIP_STYLES[clip.type]} ${isSelected ? 'clip-selected z-10' : 'ring-1 ring-white/10'} ${track.locked ? 'opacity-50' : ''} ${hasVolumeKeyframes || hasSpeedKeyframes || hasTransformKeyframes ? 'overflow-visible' : 'overflow-hidden'}`}
                       style={{ left, width }}
                       onMouseDown={(e) => beginClipMouseDown(clip, 'move', e)}
                       onClick={(e) => {

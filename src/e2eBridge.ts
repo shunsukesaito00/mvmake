@@ -258,6 +258,8 @@ declare global {
       clearTextStylePresets: () => void
       getTextStylePresetCount: () => number
       getPlaybackTime: () => number
+      getTimelineEditTool: () => string
+      setTimelineEditTool: (tool: 'selection' | 'slip' | 'slide') => void
     }
   }
 }
@@ -461,6 +463,8 @@ export function installE2eBridge(): void {
     clearTextStylePresets: () => clearTextStylePresetStress(),
     getTextStylePresetCount: () => loadTextStylePresets().length,
     getPlaybackTime: () => useProjectStore.getState().currentTime,
+    getTimelineEditTool: () => useProjectStore.getState().timelineEditTool,
+    setTimelineEditTool: (tool) => useProjectStore.getState().setTimelineEditTool(tool),
   }
 }
 

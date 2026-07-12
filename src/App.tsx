@@ -61,6 +61,13 @@ function App() {
         if (e.shiftKey) store.addBeatMarker(store.currentTime)
         else store.addMarker(store.currentTime)
       }
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        const toolKey = e.key.toLowerCase()
+        if (toolKey === 'v') store.setTimelineEditTool('selection')
+        if (toolKey === 'y') store.setTimelineEditTool('slip')
+        if (toolKey === 'u') store.setTimelineEditTool('slide')
+      }
+
       if (e.key === 'g' || e.key === 'G') store.setShowSafeAreas(!store.showSafeAreas)
       if (e.key === 'f' || e.key === 'F') {
         const preview = document.querySelector('[data-preview-container]') as HTMLElement | null
