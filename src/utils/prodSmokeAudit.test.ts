@@ -274,6 +274,7 @@ import {
   PROD_SMOKE_V2643_ADDITIONS,
   PROD_SMOKE_V2644_ADDITIONS,
   PROD_SMOKE_V2645_ADDITIONS,
+  PROD_SMOKE_V2646_ADDITIONS,
   PROD_SMOKE_TRANSITION_DEFINITION_COUNT,
   PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_LAYER_COUNT,
   PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_ROUTES,
@@ -1906,6 +1907,12 @@ describe('prodSmokeAudit', () => {
 
   it('v2.6.45 追加シナリオが basic.spec.ts に含まれる', () => {
     for (const label of PROD_SMOKE_V2645_ADDITIONS) {
+      expect(basic).toContain(label)
+    }
+  })
+
+  it('v2.6.46 追加シナリオが basic.spec.ts に含まれる', () => {
+    for (const label of PROD_SMOKE_V2646_ADDITIONS) {
       expect(basic).toContain(label)
     }
   })
