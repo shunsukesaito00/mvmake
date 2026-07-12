@@ -18751,3 +18751,49 @@ test('インスペクター: 動画クリップのトランスフォームキー
   await expect(page.getByTestId('transform-graph-property-scale')).toBeVisible()
   await expect(page.getByTestId('transform-graph-property-rotation')).toBeVisible()
 })
+
+test('インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターを表示できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-graph.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-graph.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+  await expect(page.getByTestId('transform-graph-property-scale')).toBeVisible()
+  await expect(page.getByTestId('transform-graph-property-rotation')).toBeVisible()
+})
+
+test('インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターを表示できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+  await expect(page.getByTestId('transform-graph-property-scale')).toBeVisible()
+  await expect(page.getByTestId('transform-graph-property-rotation')).toBeVisible()
+})
+
+test('インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで回転プロパティを切り替えできる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-graph-rotation.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-graph-rotation.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(page.getByTestId('transform-kf-graph-editor')).toBeVisible()
+  await expect(page.getByTestId('transform-graph-property-scale')).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByTestId('transform-graph-property-rotation').click()
+  await expect(page.getByTestId('transform-graph-property-rotation')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('transform-graph-property-scale')).toHaveAttribute('aria-pressed', 'false')
+})
