@@ -16658,3 +16658,48 @@ test('インスペクター: 画像クリップの回転を変更できる', asy
   await rotationSlider.fill('-12')
   await expect(rotationSlider).toHaveValue('-12')
 })
+
+test('インスペクター: 動画クリップの不透明度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-opacity.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-opacity.webm')
+
+  const opacitySlider = page.getByRole('slider', { name: '不透明度' })
+  await opacitySlider.fill('0.55')
+  await expect(opacitySlider).toHaveValue('0.55')
+})
+
+test('インスペクター: 動画クリップの X/Y 位置を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-xy.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-xy.webm')
+
+  const xSlider = page.getByRole('slider', { name: 'X' })
+  const ySlider = page.getByRole('slider', { name: 'Y' })
+  await xSlider.fill('0.4')
+  await ySlider.fill('0.6')
+  await expect(xSlider).toHaveValue('0.4')
+  await expect(ySlider).toHaveValue('0.6')
+})
+
+test('インスペクター: 動画クリップのスケールを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-scale.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-scale.webm')
+
+  const scaleSlider = page.getByRole('slider', { name: 'スケール' })
+  await scaleSlider.fill('1.15')
+  await expect(scaleSlider).toHaveValue('1.15')
+})

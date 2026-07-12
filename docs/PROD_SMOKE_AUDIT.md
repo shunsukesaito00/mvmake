@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.92）
+# 本番スモーク E2E 監査（v2.5.93）
 
-最終更新: 2026-07-12（v2.5.92 / 本番スモーク 561 シナリオ・画像X-Y/スケール/回転3件追加）
+最終更新: 2026-07-12（v2.5.93 / 本番スモーク 564 シナリオ・動画不透明度/X-Y/スケール3件追加）
+
+## v2.5.93 拡充（561→564）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **564**（+3） |
+| 追加シナリオ | 動画クリップ不透明度変更 / X/Y 位置変更 / スケール変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.93）
+
+1. インスペクター: 動画クリップの不透明度を変更できる
+2. インスペクター: 動画クリップの X/Y 位置を変更できる
+3. インスペクター: 動画クリップのスケールを変更できる
+
+選定根拠: 動画クリップの位置・変形（不透明度/X/Y/スケール）が未カバーだったため追加。
 
 ## v2.5.92 拡充（558→561）
 
@@ -315,11 +331,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 561 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 561`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2592_ADDITIONS`
+- `e2e/basic.spec.ts` — 564 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 564`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2593_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.92 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.93 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
