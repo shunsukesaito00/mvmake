@@ -9799,197 +9799,6 @@ test('色調補正: LUT 付きユーザールックを組み込みルック適�
   await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
 })
 
-test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み・film-named-reclick）', async ({ page }) => {
-  await goOnboarded(page)
-  await page.setInputFiles('input[accept*="image"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
-  await page.getByTitle('クリックで再生位置に追加').click()
-  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-undo-photo.png')
-
-  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
-  await filmButton.click()
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
-
-  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
-  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-cool.cube', mimeType: 'text/plain', buffer: USER_LUT_SWITCH_CUBE_COOL })
-  const lutSelect = page.getByLabel('LUT', { exact: true })
-  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-warm (2³)' })
-  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.2')
-  await page.getByLabel('ルックプリセット名').fill('E2EBuiltinThenUserBundledLutIntensitySwitchFilmNamedReclickUndo')
-  await page.getByRole('button', { name: 'ルック保存' }).click()
-  await expect(page.getByText('「E2EBuiltinThenUserBundledLutIntensitySwitchFilmNamedReclickUndo」ルックを保存しました')).toBeVisible()
-
-  const savedButton = page.getByRole('button', { name: 'E2EBuiltinThenUserBundledLutIntensitySwitchFilmNamedReclickUndoルック', exact: true })
-  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
-  await filmButton.click()
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
-
-  await savedButton.click()
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
-
-  await filmButton.click()
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
-
-  await savedButton.click()
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
-
-  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-warm (2³)' })
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
-  const warmLutId = await lutSelect.inputValue()
-  expect(warmLutId).not.toBe('')
-
-  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
-  await intensity.dragTo(intensity, {
-    sourcePosition: { x: 40, y: 4 },
-    targetPosition: { x: 8, y: 4 },
-  })
-  await expect(intensity).not.toHaveValue('1')
-
-  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-cool (2³)' })
-  await expect(lutSelect).not.toHaveValue(warmLutId)
-
-  await page.evaluate(() => {
-    const undo = window.__FABLE_E2E__!.undo
-    for (let i = 0; i < 2; i++) undo()
-  })
-  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-undo-photo.png')
-  await expect(lutSelect).toHaveValue(warmLutId)
-  await expect(intensity).toHaveValue('1')
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
-  await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
-})
-
-test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み・film-named-reclick）', async ({ page }) => {
-  await goOnboarded(page)
-  await page.setInputFiles('input[accept*="image"]', { name: 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
-  await page.getByTitle('クリックで再生位置に追加').click()
-  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-undo-photo.png')
-
-  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
-  await filmButton.click()
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
-
-  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
-  const lutSelect = page.getByLabel('LUT', { exact: true })
-  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-warm (2³)' })
-  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.2')
-  await page.getByLabel('ルックプリセット名').fill('E2EBuiltinThenUserBundledLutIntensityNoneFilmNamedReclickUndo')
-  await page.getByRole('button', { name: 'ルック保存' }).click()
-  await expect(page.getByText('「E2EBuiltinThenUserBundledLutIntensityNoneFilmNamedReclickUndo」ルックを保存しました')).toBeVisible()
-
-  const savedButton = page.getByRole('button', { name: 'E2EBuiltinThenUserBundledLutIntensityNoneFilmNamedReclickUndoルック', exact: true })
-  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
-  await filmButton.click()
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
-
-  await savedButton.click()
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
-
-  await filmButton.click()
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
-
-  await savedButton.click()
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
-
-  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-warm (2³)' })
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
-  const lutId = await lutSelect.inputValue()
-  expect(lutId).not.toBe('')
-
-  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
-  await intensity.dragTo(intensity, {
-    sourcePosition: { x: 40, y: 4 },
-    targetPosition: { x: 8, y: 4 },
-  })
-  await expect(intensity).not.toHaveValue('1')
-
-  await lutSelect.selectOption({ label: 'なし' })
-  await expect(lutSelect).toHaveValue('')
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
-
-  await page.evaluate(() => {
-    const undo = window.__FABLE_E2E__!.undo
-    for (let i = 0; i < 2; i++) undo()
-  })
-  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-undo-photo.png')
-  await expect(lutSelect).toHaveValue(lutId)
-  await expect(intensity).toHaveValue('1')
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
-  await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
-})
-
-test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み・film-named-reclick）', async ({ page }) => {
-  await goOnboarded(page)
-  await page.setInputFiles('input[accept*="image"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
-  await page.getByTitle('クリックで再生位置に追加').click()
-  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-undo-photo.png')
-
-  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
-  await filmButton.click()
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
-
-  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
-  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-cool.cube', mimeType: 'text/plain', buffer: USER_LUT_SWITCH_CUBE_COOL })
-  const lutSelect = page.getByLabel('LUT', { exact: true })
-  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-warm (2³)' })
-  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.2')
-  await page.getByLabel('ルックプリセット名').fill('E2EBuiltinThenUserBundledLutIntensitySwitchNoneFilmNamedReclickUndo')
-  await page.getByRole('button', { name: 'ルック保存' }).click()
-  await expect(page.getByText('「E2EBuiltinThenUserBundledLutIntensitySwitchNoneFilmNamedReclickUndo」ルックを保存しました')).toBeVisible()
-
-  const savedButton = page.getByRole('button', { name: 'E2EBuiltinThenUserBundledLutIntensitySwitchNoneFilmNamedReclickUndoルック', exact: true })
-  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
-  await filmButton.click()
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
-
-  await savedButton.click()
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
-
-  await filmButton.click()
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
-
-  await savedButton.click()
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
-
-  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-warm (2³)' })
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
-  const warmLutId = await lutSelect.inputValue()
-  expect(warmLutId).not.toBe('')
-
-  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
-  await intensity.dragTo(intensity, {
-    sourcePosition: { x: 40, y: 4 },
-    targetPosition: { x: 8, y: 4 },
-  })
-  await expect(intensity).not.toHaveValue('1')
-
-  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-cool (2³)' })
-  await expect(lutSelect).not.toHaveValue(warmLutId)
-
-  await lutSelect.selectOption({ label: 'なし' })
-  await expect(lutSelect).toHaveValue('')
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
-
-  await page.evaluate(() => {
-    const undo = window.__FABLE_E2E__!.undo
-    for (let i = 0; i < 3; i++) undo()
-  })
-  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-undo-photo.png')
-  await expect(lutSelect).toHaveValue(warmLutId)
-  await expect(intensity).toHaveValue('1')
-  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
-  await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
-})
-
-
 test('色調補正: LUT 付きユーザールックをユーザールック適用後に組み込みルックを適用した後に再適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元できる（ウエディング暖色2回再クリック挟み・wedding-double-named-reclick）', async ({ page }) => {
   await goOnboarded(page)
   await page.setInputFiles('input[accept*="image"]', { name: 'user-then-builtin-bundled-lut-intensity-switch-wedding-double-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
@@ -13413,7 +13222,7 @@ test('色調補正: LUT 付きユーザールックをユーザールック適�
   await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.15')
 })
 
-test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み）', async ({ page }) => {
+test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み・film-named-reclick）', async ({ page }) => {
   await goOnboarded(page)
   await page.setInputFiles('input[accept*="image"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
   await page.getByTitle('クリックで再生位置に追加').click()
@@ -13475,12 +13284,7 @@ test('色調補正: LUT 付きユーザールックを組み込みルック適�
   await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
 })
 
-
-
-
-
-
-test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み）', async ({ page }) => {
+test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み・film-named-reclick）', async ({ page }) => {
   await goOnboarded(page)
   await page.setInputFiles('input[accept*="image"]', { name: 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
   await page.getByTitle('クリックで再生位置に追加').click()
@@ -13542,12 +13346,7 @@ test('色調補正: LUT 付きユーザールックを組み込みルック適�
   await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
 })
 
-
-
-
-
-
-test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み）', async ({ page }) => {
+test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み・film-named-reclick）', async ({ page }) => {
   await goOnboarded(page)
   await page.setInputFiles('input[accept*="image"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
   await page.getByTitle('クリックで再生位置に追加').click()
@@ -13612,12 +13411,6 @@ test('色調補正: LUT 付きユーザールックを組み込みルック適�
   await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
 })
-
-
-
-
-
-
 
 
 test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元できる（組み込みルック2回再クリック挟み）', async ({ page }) => {
@@ -15855,6 +15648,222 @@ test('色調補正: LUT 付きユーザールックを組み込みルック適�
   await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
 })
+
+
+
+
+
+
+test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み）', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-undo-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-cool.cube', mimeType: 'text/plain', buffer: USER_LUT_SWITCH_CUBE_COOL })
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-warm (2³)' })
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.2')
+  await page.getByLabel('ルックプリセット名').fill('E2EBuiltinThenUserBundledLutIntensitySwitchFilmNamedReclickUndo')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EBuiltinThenUserBundledLutIntensitySwitchFilmNamedReclickUndo」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EBuiltinThenUserBundledLutIntensitySwitchFilmNamedReclickUndoルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-warm (2³)' })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  const warmLutId = await lutSelect.inputValue()
+  expect(warmLutId).not.toBe('')
+
+  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
+  await intensity.dragTo(intensity, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(intensity).not.toHaveValue('1')
+
+  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-cool (2³)' })
+  await expect(lutSelect).not.toHaveValue(warmLutId)
+
+  await page.evaluate(() => {
+    const undo = window.__FABLE_E2E__!.undo
+    for (let i = 0; i < 2; i++) undo()
+  })
+  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-switch-film-named-reclick-undo-photo.png')
+  await expect(lutSelect).toHaveValue(warmLutId)
+  await expect(intensity).toHaveValue('1')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
+})
+
+
+
+
+
+
+
+
+
+test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み）', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-undo-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-warm (2³)' })
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.2')
+  await page.getByLabel('ルックプリセット名').fill('E2EBuiltinThenUserBundledLutIntensityNoneFilmNamedReclickUndo')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EBuiltinThenUserBundledLutIntensityNoneFilmNamedReclickUndo」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EBuiltinThenUserBundledLutIntensityNoneFilmNamedReclickUndoルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-warm (2³)' })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  const lutId = await lutSelect.inputValue()
+  expect(lutId).not.toBe('')
+
+  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
+  await intensity.dragTo(intensity, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(intensity).not.toHaveValue('1')
+
+  await lutSelect.selectOption({ label: 'なし' })
+  await expect(lutSelect).toHaveValue('')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.evaluate(() => {
+    const undo = window.__FABLE_E2E__!.undo
+    for (let i = 0; i < 2; i++) undo()
+  })
+  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-none-film-named-reclick-undo-photo.png')
+  await expect(lutSelect).toHaveValue(lutId)
+  await expect(intensity).toHaveValue('1')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
+})
+
+
+
+
+
+
+
+
+
+test('色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風再クリック挟み）', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-undo-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-undo-photo.png')
+
+  const filmButton = page.getByRole('button', { name: 'フィルム風ルック', exact: true })
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-warm.cube', mimeType: 'text/plain', buffer: USER_LUT_UNDO_CUBE })
+  await page.setInputFiles('input[accept*=".cube"]', { name: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-cool.cube', mimeType: 'text/plain', buffer: USER_LUT_SWITCH_CUBE_COOL })
+  const lutSelect = page.getByLabel('LUT', { exact: true })
+  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-warm (2³)' })
+  await page.getByRole('slider', { name: 'ミッドトーン' }).fill('0.2')
+  await page.getByLabel('ルックプリセット名').fill('E2EBuiltinThenUserBundledLutIntensitySwitchNoneFilmNamedReclickUndo')
+  await page.getByRole('button', { name: 'ルック保存' }).click()
+  await expect(page.getByText('「E2EBuiltinThenUserBundledLutIntensitySwitchNoneFilmNamedReclickUndo」ルックを保存しました')).toBeVisible()
+
+  const savedButton = page.getByRole('button', { name: 'E2EBuiltinThenUserBundledLutIntensitySwitchNoneFilmNamedReclickUndoルック', exact: true })
+  await page.getByRole('button', { name: 'なしルック', exact: true }).click()
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await filmButton.click()
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+
+  await savedButton.click()
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(filmButton).toHaveAttribute('aria-pressed', 'false')
+
+  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-warm (2³)' })
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  const warmLutId = await lutSelect.inputValue()
+  expect(warmLutId).not.toBe('')
+
+  const intensity = page.getByRole('slider', { name: 'LUT 強度' })
+  await intensity.dragTo(intensity, {
+    sourcePosition: { x: 40, y: 4 },
+    targetPosition: { x: 8, y: 4 },
+  })
+  await expect(intensity).not.toHaveValue('1')
+
+  await lutSelect.selectOption({ label: 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-cool (2³)' })
+  await expect(lutSelect).not.toHaveValue(warmLutId)
+
+  await lutSelect.selectOption({ label: 'なし' })
+  await expect(lutSelect).toHaveValue('')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+  await page.evaluate(() => {
+    const undo = window.__FABLE_E2E__!.undo
+    for (let i = 0; i < 3; i++) undo()
+  })
+  await clickTimelineClip(page, 'builtin-then-user-bundled-lut-intensity-switch-none-film-named-reclick-undo-photo.png')
+  await expect(lutSelect).toHaveValue(warmLutId)
+  await expect(intensity).toHaveValue('1')
+  await expect(savedButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('slider', { name: 'ミッドトーン' })).toHaveValue('0.2')
+})
+
+
+
+
+
 
 
 
