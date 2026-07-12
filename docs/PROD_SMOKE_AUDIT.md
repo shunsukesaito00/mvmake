@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.76）
+# 本番スモーク E2E 監査（v2.5.77）
 
-最終更新: 2026-07-12（v2.5.76 / 本番スモーク 513 シナリオ・テキストフェードアウト/トランジション/縦配置3件追加）
+最終更新: 2026-07-12（v2.5.77 / 本番スモーク 516 シナリオ・ワイプ/スライド右/アニメなし3件追加）
+
+## v2.5.77 拡充（513→516）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **516**（+3） |
+| 追加シナリオ | ワイプトランジション / スライド右トランジション / テキストアニメなし切替 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.77）
+
+1. トランジション: ワイプを画像クリップに適用できる
+2. トランジション: スライド右を画像クリップに適用できる
+3. テキスト: アニメーションなしに切り替えできる
+
+選定根拠: MVP バックログ未カバー領域（クラシックトランジション wipe/slideRight、テキストアニメなし切替）から選定。
 
 ## v2.5.76 拡充（510→513）
 
@@ -58,9 +74,9 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 513 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 513`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2576_ADDITIONS`
+- `e2e/basic.spec.ts` — 516 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 516`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2577_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.76 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.77 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

@@ -1,5 +1,5 @@
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 513
+export const PROD_SMOKE_SCENARIO_COUNT = 516
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1408,6 +1408,13 @@ export const PROD_SMOKE_V2576_ADDITIONS = [
   'テキスト: フェードアウトアニメーションを設定できる',
   'トランジション: フェード to 白を画像クリップに適用できる',
   'インスペクター: テキストの縦配置を bottom に設定できる',
+] as const
+
+/** v2.5.77 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2577_ADDITIONS = [
+  'トランジション: ワイプを画像クリップに適用できる',
+  'トランジション: スライド右を画像クリップに適用できる',
+  'テキスト: アニメーションなしに切り替えできる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */
