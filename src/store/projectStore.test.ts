@@ -104,6 +104,7 @@ function setProject(project: Project): void {
   useProjectStore.setState({
     project,
     currentTime: 0,
+    selectedClipIds: [],
     selectedClipId: null,
     past: [],
     future: [],
@@ -1147,5 +1148,53 @@ describe('user project template', () => {
     )
     useProjectStore.getState().createProjectFromUserTemplate(template)
     expect(useProjectStore.getState().project.mediaAssets).toHaveLength(0)
+  })
+})
+
+describe('multi clip selection', () => {
+  it('selectClipAtClick toggles selection with additive mode', () => {
+    setProject(makeProject([videoClip('c1', 0, 4), videoClip('c2', 4, 4)]))
+
+    useProjectStore.getState().selectClipAtClick('c1', false)
+    expect(useProjectStore.getState().selectedClipIds).toEqual(['c1'])
+    expect(useProjectStore.getState().selectedClipId).toBe('c1')
+
+    useProjectStore.getState().selectClipAtClick('c2', true)
+    expect(useProjectStore.getState().selectedClipIds).toEqual(['c1', 'c2'])
+
+    useProjectStore.getState().selectClipAtClick('c1', true)
+    expect(useProjectStore.getState().selectedClipIds).toEqual(['c2'])
+  })
+
+  it('selectAllClipsOnActiveTrack selects every clip on the anchor track', () => {
+    setProject(makeProject([videoClip('c1', 0, 4), videoClip('c2', 4, 4)]))
+    useProjectStore.getState().setSelectedClipId('c1')
+    useProjectStore.getState().selectAllClipsOnActiveTrack()
+    expect(useProjectStore.getState().selectedClipIds.sort()).toEqual(['c1', 'c2'])
+  })
+
+  it('removeSelectedClips deletes multiple clips with ripple', () => {
+    setProject(makeProject([videoClip('c1', 0, 4), videoClip('c2', 4, 4), videoClip('c3', 8, 4)]))
+    useProjectStore.setState({ selectedClipIds: ['c1', 'c3'], selectedClipId: 'c1', rippleDelete: true })
+
+    useProjectStore.getState().removeSelectedClips()
+
+    const clips = getTrackClips(TRACK_V1)
+    expect(clips).toHaveLength(1)
+    expect(clips[0].id).toBe('c2')
+    expect(clips[0].startTime).toBe(0)
+    expect(useProjectStore.getState().selectedClipIds).toEqual([])
+  })
+
+  it('duplicateSelectedClip duplicates all selected clips', () => {
+    setProject(makeProject([videoClip('c1', 0, 4), videoClip('c2', 4, 4)]))
+    useProjectStore.setState({ selectedClipIds: ['c1', 'c2'], selectedClipId: 'c1' })
+
+    useProjectStore.getState().duplicateSelectedClip()
+
+    const clips = getTrackClips(TRACK_V1)
+    expect(clips).toHaveLength(4)
+    expect(useProjectStore.getState().selectedClipIds).toHaveLength(2)
+    expect(useProjectStore.getState().selectedClipIds.every((id) => clips.some((c) => c.id === id))).toBe(true)
   })
 })

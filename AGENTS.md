@@ -74,6 +74,7 @@
 | `docs/TONE_CURVE_AUDIT.md` | トーンカーブ / RGB カーブ（PCHIP・ピクセルグレード）（v2.0.3） |
 | `docs/TEMPLATE_AUDIT.md` | テンプレート統合（組み込み4種・ユーザー保存・JSON）（v2.1.0） |
 | `docs/PROD_SMOKE_AUDIT.md` | 本番スモーク E2E（`test:e2e:prod`・777 シナリオ）（v2.6.64） |
+| `docs/FEATURE_COMPARISON.md` | 機能比較・**ロードマップ正本**（Phase A〜E）・Premiere/CapCut 操作性ギャップ分析 |
 
 `src/utils/docSyncAudit.test.ts` が上記一覧の存在と AGENTS 参照を `npm test` で検証する。
 

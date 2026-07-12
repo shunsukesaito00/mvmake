@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, getSelectedClipCount, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -3197,4 +3197,70 @@ test('色調補正: RGB カーブに制御点を追加できる', async ({ page 
   await graph.dblclick({ position: { x: box!.width * 0.4, y: box!.height * 0.45 } })
   await page.getByRole('button', { name: '制御点を削除' }).click()
   await expect(page.getByRole('button', { name: '制御点を削除' })).toHaveCount(0)
+})
+
+test('マルチ選択: Shift+クリックで追加選択し一括削除できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'msel-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'msel-b.png', mimeType: 'image/png', buffer: png },
+    { name: 'msel-c.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible()
+
+  const cardA = page.locator('div.group.relative').filter({ hasText: 'msel-a.png' })
+  const cardB = page.locator('div.group.relative').filter({ hasText: 'msel-b.png' })
+  const cardC = page.locator('div.group.relative').filter({ hasText: 'msel-c.png' })
+  for (const card of [cardA, cardB, cardC]) {
+    await card.hover()
+    await card.getByTitle('スライドショー用に選択').click()
+  }
+  await page.getByRole('button', { name: 'スライドショー作成' }).click()
+  await page.getByRole('dialog').locator('select').selectOption('none')
+  await page.getByRole('button', { name: 'タイムラインに追加' }).click()
+  await expect(page.getByText('3枚の写真をタイムラインに配置しました')).toBeVisible()
+
+  const beforeCount = await getProjectClipCount(page)
+  await timelineClip(page, 'msel-a.png').click()
+  await timelineClip(page, 'msel-b.png').click({ modifiers: ['Shift'] })
+  await expect(page.getByText('2件選択中')).toBeVisible()
+  expect(await getSelectedClipCount(page)).toBe(2)
+
+  await page.keyboard.press('Delete')
+  expect(await getProjectClipCount(page)).toBe(beforeCount - 2)
+  expect(await getSelectedClipCount(page)).toBe(0)
+})
+
+test('マルチ選択: Cmd+A でトラック内の全クリップを選択できる', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'selall-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'selall-b.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  const cardA = page.locator('div.group.relative').filter({ hasText: 'selall-a.png' })
+  const cardB = page.locator('div.group.relative').filter({ hasText: 'selall-b.png' })
+  await cardA.hover()
+  await cardA.getByTitle('スライドショー用に選択').click()
+  await cardB.hover()
+  await cardB.getByTitle('スライドショー用に選択').click()
+  await page.getByRole('button', { name: 'スライドショー作成' }).click()
+  await page.getByRole('dialog').locator('select').selectOption('none')
+  await page.getByRole('button', { name: 'タイムラインに追加' }).click()
+
+  await timelineClip(page, 'selall-a.png').click()
+  await page.keyboard.press('Meta+a')
+  expect(await getSelectedClipCount(page)).toBe(2)
+  await expect(page.getByText('2件選択中')).toBeVisible()
 })

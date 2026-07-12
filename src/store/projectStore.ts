@@ -133,12 +133,24 @@ export interface TimelineDragState {
   transformTimelineLaneHeight?: number
   markerId?: string
   slideSnapshot?: SlideSnapshot
+  /** 複数選択時の一括移動用（主クリップ以外） */
+  companionMoves?: Array<{ clipId: string; originalStartTime: number; originalTrackId: string }>
+}
+
+function syncClipSelection(ids: string[]) {
+  return { selectedClipIds: ids, selectedClipId: ids[0] ?? null }
+}
+
+function clearClipSelectionState() {
+  return syncClipSelection([])
 }
 
 interface ProjectState {
   project: Project
   currentTime: number
   isPlaying: boolean
+  selectedClipIds: string[]
+  /** 後方互換: 先頭の選択クリップ ID */
   selectedClipId: string | null
   selectedMarkerId: string | null
   pixelsPerSecond: number
@@ -161,6 +173,10 @@ interface ProjectState {
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
   setSelectedClipId: (id: string | null) => void
+  setSelectedClipIds: (ids: string[]) => void
+  selectClipAtClick: (clipId: string, additive: boolean) => void
+  selectAllClipsOnActiveTrack: () => void
+  clearClipSelection: () => void
   setSelectedMarkerId: (id: string | null) => void
   setPixelsPerSecond: (pps: number) => void
   setDragState: (state: TimelineDragState | null) => void
@@ -199,6 +215,7 @@ interface ProjectState {
   updateClip: (clipId: string, updates: Partial<Clip>, recordHistory?: boolean) => void
   replaceClipMedia: (clipId: string, newMediaId: string) => boolean
   removeClip: (clipId: string, ripple?: boolean) => void
+  removeSelectedClips: (ripple?: boolean) => void
   duplicateSelectedClip: () => void
   /** クリップを同位置に複製して新IDを返す。履歴は呼び出し側で積むこと(Alt+ドラッグ用) */
   duplicateClipInPlace: (clipId: string) => string | null
@@ -297,6 +314,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   project: createDefaultProject(),
   currentTime: 0,
   isPlaying: false,
+  selectedClipIds: [],
   selectedClipId: null,
   selectedMarkerId: null,
   pixelsPerSecond: loadTimelinePixelsPerSecond() ?? 80,
@@ -318,8 +336,29 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   setCurrentTime: (time) => set({ currentTime: Math.max(0, time) }),
   setIsPlaying: (playing) => set({ isPlaying: playing }),
-  setSelectedClipId: (id) => set({ selectedClipId: id, selectedMarkerId: null }),
-  setSelectedMarkerId: (id) => set({ selectedMarkerId: id, selectedClipId: null }),
+  setSelectedClipId: (id) => set({ ...syncClipSelection(id ? [id] : []), selectedMarkerId: null }),
+  setSelectedClipIds: (ids) => set({ ...syncClipSelection(ids), selectedMarkerId: null }),
+  selectClipAtClick: (clipId, additive) => {
+    const { selectedClipIds } = get()
+    if (additive) {
+      const next = selectedClipIds.includes(clipId)
+        ? selectedClipIds.filter((id) => id !== clipId)
+        : [...selectedClipIds, clipId]
+      set({ ...syncClipSelection(next), selectedMarkerId: null })
+      return
+    }
+    set({ ...syncClipSelection([clipId]), selectedMarkerId: null })
+  },
+  selectAllClipsOnActiveTrack: () => {
+    const { project, selectedClipId, selectedClipIds } = get()
+    const anchorId = selectedClipId ?? selectedClipIds[0]
+    if (!anchorId) return
+    const found = findClip(project, anchorId)
+    if (!found) return
+    set({ ...syncClipSelection(found.track.clips.map((c) => c.id)), selectedMarkerId: null })
+  },
+  clearClipSelection: () => set({ ...clearClipSelectionState(), selectedMarkerId: null }),
+  setSelectedMarkerId: (id) => set({ selectedMarkerId: id, ...clearClipSelectionState() }),
   setPixelsPerSecond: (pps) => {
     const clamped = clampTimelinePixelsPerSecond(pps)
     saveTimelinePixelsPerSecond(clamped)
@@ -364,6 +403,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       project: previous,
       past: past.slice(0, -1),
       future: [cloneProject(project), ...future].slice(0, MAX_HISTORY),
+      selectedClipIds: [],
       selectedClipId: null,
       selectedMarkerId: null,
     })
@@ -377,6 +417,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       project: next,
       past: [...past, cloneProject(project)].slice(-MAX_HISTORY),
       future: future.slice(1),
+      selectedClipIds: [],
       selectedClipId: null,
       selectedMarkerId: null,
     })
@@ -494,7 +535,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           t.id === targetTrack!.id ? { ...t, clips: [...t.clips, clip] } : t,
         ),
       },
-      selectedClipId: clip.id,
+      ...syncClipSelection([clip.id]),
       future: [],
     }))
     return true
@@ -544,7 +585,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           t.id === targetTrack.id ? { ...t, clips: [...t.clips, ...newClips] } : t,
         ),
       },
-      selectedClipId: null,
+      ...clearClipSelectionState(),
       future: [],
     }))
     return newClips.length
@@ -585,7 +626,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           return t
         }),
       },
-      selectedClipId: firstClipId,
+      ...syncClipSelection(firstClipId ? [firstClipId] : []),
       future: [],
     }))
     return newClips.length
@@ -640,7 +681,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           t.id === textTrack.id ? { ...t, clips: [...t.clips, clip] } : t,
         ),
       },
-      selectedClipId: clip.id,
+      ...syncClipSelection([clip.id]),
       future: [],
     }))
   },
@@ -676,7 +717,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           t.id === videoTrack.id ? { ...t, clips: [...t.clips, clip] } : t,
         ),
       },
-      selectedClipId: clip.id,
+      ...syncClipSelection([clip.id]),
       currentTime: Math.max(state.currentTime, clipStart),
       future: [],
     }))
@@ -704,7 +745,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     set({
       project: nextProject,
-      selectedClipId: clips[clips.length - 1]?.id ?? null,
+      ...syncClipSelection(clips[clips.length - 1] ? [clips[clips.length - 1].id] : []),
       future: [],
     })
 
@@ -798,27 +839,74 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           return { ...track, clips }
         }),
       },
-      selectedClipId: state.selectedClipId === clipId ? null : state.selectedClipId,
+      ...syncClipSelection(
+        state.selectedClipIds.filter((id) => id !== clipId),
+      ),
       future: [],
     }))
   },
 
-  duplicateSelectedClip: () => {
-    const { selectedClipId, project } = get()
-    if (!selectedClipId) return
-    const found = findClip(project, selectedClipId)
-    if (!found) return
+  removeSelectedClips: (ripple) => {
+    const { selectedClipIds, project, rippleDelete } = get()
+    if (selectedClipIds.length === 0) return
 
     get().pushHistory()
-    const newClip = duplicateClip(found.clip, createId)
+    const useRipple = ripple ?? rippleDelete
+    const idsSet = new Set(selectedClipIds)
+
+    const tracks = project.tracks.map((track) => {
+      const toRemove = track.clips
+        .filter((c) => idsSet.has(c.id))
+        .sort((a, b) => b.startTime - a.startTime)
+      if (toRemove.length === 0) return track
+
+      let clips = [...track.clips]
+      for (const clip of toRemove) {
+        const current = clips.find((c) => c.id === clip.id)
+        if (!current) continue
+        const clipEnd = current.startTime + current.duration
+        const delta = useRipple ? getRippleDeleteDelta(current) : 0
+        clips = clips.filter((c) => c.id !== clip.id)
+        if (useRipple) clips = rippleShiftClips(clips, clipEnd, delta)
+      }
+      return { ...track, clips }
+    })
+
+    set({
+      project: { ...project, tracks },
+      ...clearClipSelectionState(),
+      future: [],
+    })
+  },
+
+  duplicateSelectedClip: () => {
+    const { selectedClipIds, project } = get()
+    if (selectedClipIds.length === 0) return
+
+    get().pushHistory()
+    const additions = new Map<string, Clip[]>()
+    const newIds: string[] = []
+
+    for (const clipId of selectedClipIds) {
+      const found = findClip(project, clipId)
+      if (!found) continue
+      const newClip = duplicateClip(found.clip, createId)
+      newIds.push(newClip.id)
+      const list = additions.get(found.track.id) ?? []
+      list.push(newClip)
+      additions.set(found.track.id, list)
+    }
+    if (newIds.length === 0) return
+
     set((state) => ({
       project: {
         ...state.project,
-        tracks: state.project.tracks.map((t) =>
-          t.id === found.track.id ? { ...t, clips: [...t.clips, newClip] } : t,
-        ),
+        tracks: state.project.tracks.map((t) => {
+          const added = additions.get(t.id)
+          return added ? { ...t, clips: [...t.clips, ...added] } : t
+        }),
       },
-      selectedClipId: newClip.id,
+      ...syncClipSelection(newIds),
       future: [],
     }))
   },
@@ -867,7 +955,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           t.id === track.id ? { ...t, clips: [...t.clips, newClip] } : t,
         ),
       },
-      selectedClipId: newClip.id,
+      ...syncClipSelection([newClip.id]),
       future: [],
     }))
   },
@@ -931,7 +1019,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           clips: track.clips.flatMap((c) => (c.id !== clipId ? [c] : [firstClip, secondClip])),
         })),
       },
-      selectedClipId: secondClip.id,
+      ...syncClipSelection([secondClip.id]),
       future: [],
     }))
   },
@@ -1183,7 +1271,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         tracks,
         markers,
       },
-      selectedClipId: null,
+      ...clearClipSelectionState(),
       selectedMarkerId: null,
       future: [],
     }))
@@ -1208,7 +1296,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       }),
       currentTime: 0,
       isPlaying: false,
-      selectedClipId: null,
+      ...clearClipSelectionState(),
       selectedMarkerId: null,
       clipboard: null,
       inPoint: null,
@@ -1352,7 +1440,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       project: createDefaultProject(),
       currentTime: 0,
       isPlaying: false,
-      selectedClipId: null,
+      ...clearClipSelectionState(),
       selectedMarkerId: null,
       clipboard: null,
       inPoint: null,
@@ -1372,7 +1460,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       project: normalized,
       currentTime: 0,
       isPlaying: false,
-      selectedClipId: null,
+      ...clearClipSelectionState(),
       selectedMarkerId: null,
       past: [],
       future: [],

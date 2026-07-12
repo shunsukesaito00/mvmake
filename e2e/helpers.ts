@@ -691,6 +691,34 @@ export async function selectClipById(page: import('@playwright/test').Page, clip
   }, clipId)
 }
 
+export async function getSelectedClipCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getSelectedClipCount()
+  })
+}
+
+export async function toggleClipInSelection(page: import('@playwright/test').Page, clipId: string) {
+  await page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.toggleClipInSelection(id)
+  }, clipId)
+}
+
+export async function selectAllClipsOnActiveTrack(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.selectAllClipsOnActiveTrack()
+  })
+}
+
+export async function removeSelectedClips(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.removeSelectedClips()
+  })
+}
+
 export async function countClipsWithTransition(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

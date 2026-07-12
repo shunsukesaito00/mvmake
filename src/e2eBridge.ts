@@ -229,6 +229,11 @@ declare global {
       getRippleDelete: () => boolean
       getLoopPlayback: () => boolean
       selectClip: (clipId: string) => void
+      getSelectedClipIds: () => string[]
+      getSelectedClipCount: () => number
+      toggleClipInSelection: (clipId: string) => void
+      selectAllClipsOnActiveTrack: () => void
+      removeSelectedClips: () => void
       countClipsWithTransition: () => number
       getClipMediaId: (clipId: string) => string | null
       getClipAudioVolume: (clipId: string) => number | null
@@ -371,6 +376,11 @@ export function installE2eBridge(): void {
     getRippleDelete: () => useProjectStore.getState().rippleDelete,
     getLoopPlayback: () => useProjectStore.getState().loopPlayback,
     selectClip: (clipId) => useProjectStore.getState().setSelectedClipId(clipId),
+    getSelectedClipIds: () => useProjectStore.getState().selectedClipIds,
+    getSelectedClipCount: () => useProjectStore.getState().selectedClipIds.length,
+    toggleClipInSelection: (clipId) => useProjectStore.getState().selectClipAtClick(clipId, true),
+    selectAllClipsOnActiveTrack: () => useProjectStore.getState().selectAllClipsOnActiveTrack(),
+    removeSelectedClips: () => useProjectStore.getState().removeSelectedClips(),
     countClipsWithTransition: () =>
       useProjectStore.getState().project.tracks
         .flatMap((t) => t.clips)

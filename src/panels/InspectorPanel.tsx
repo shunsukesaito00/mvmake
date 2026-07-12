@@ -117,9 +117,40 @@ function CollapsibleSection({ title, defaultOpen = true, children }: { title: st
   )
 }
 
+function MultiClipInspectorSummary({ count }: { count: number }) {
+  const removeSelectedClips = useProjectStore((s) => s.removeSelectedClips)
+  const clearClipSelection = useProjectStore((s) => s.clearClipSelection)
+  const duplicateSelectedClip = useProjectStore((s) => s.duplicateSelectedClip)
+  const rippleDelete = useProjectStore((s) => s.rippleDelete)
+
+  return (
+    <div className="flex flex-1 flex-col overflow-y-auto">
+      <div className="space-y-4 px-4 py-6">
+        <EmptyState
+          icon={<Icons.Grid size={20} />}
+          title={`${count}件選択中`}
+          description="個別プロパティの編集は1件選択時のみ利用できます。一括削除・複製やドラッグ移動が可能です。"
+        />
+        <div className="flex flex-wrap gap-2">
+          <Btn variant="danger" className="text-xs" onClick={() => removeSelectedClips()}>
+            一括削除{rippleDelete ? '（リップル）' : ''}
+          </Btn>
+          <Btn variant="default" className="text-xs" onClick={() => duplicateSelectedClip()}>
+            一括複製
+          </Btn>
+          <Btn variant="ghost" className="text-xs" onClick={() => clearClipSelection()}>
+            選択解除
+          </Btn>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function InspectorPanel() {
   const project = useProjectStore((s) => s.project)
   const currentTime = useProjectStore((s) => s.currentTime)
+  const selectedClipIds = useProjectStore((s) => s.selectedClipIds)
   const selectedMarker = useProjectStore((s) => s.getSelectedMarker())
   const selectedClip = useProjectStore((s) => s.getSelectedClip())
   const mediaAssets = useProjectStore((s) => s.project.mediaAssets)
@@ -159,6 +190,15 @@ export function InspectorPanel() {
           <p className="font-mono text-[10px] text-text-muted">{selectedMarker.time.toFixed(1)}s</p>
         </div>
         <MarkerInspectorSection marker={selectedMarker} />
+      </div>
+    )
+  }
+
+  if (selectedClipIds.length > 1) {
+    return (
+      <div className="flex h-full flex-col">
+        <PanelHeader title="インスペクター" icon={<Icons.Settings size={14} />} />
+        <MultiClipInspectorSummary count={selectedClipIds.length} />
       </div>
     )
   }

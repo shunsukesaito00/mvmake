@@ -79,9 +79,12 @@ function Waveform({ data }: { data?: number[] }) {
   )
 }
 
+const SHIFT_DRAG_THRESHOLD = 4
+
 export function TimelinePanel() {
   const containerRef = useRef<HTMLDivElement>(null)
   const tracksContainerRef = useRef<HTMLDivElement>(null)
+  const shiftGestureRef = useRef<{ clip: Clip; startX: number; startY: number } | null>(null)
   // スナップが効いている間、その位置に縦のガイドラインを表示する
   const [snapGuide, setSnapGuide] = useState<number | null>(null)
 
@@ -93,6 +96,7 @@ export function TimelinePanel() {
   const pixelsPerSecond = useProjectStore((s) => s.pixelsPerSecond)
   const currentTime = useProjectStore((s) => s.currentTime)
   const isPlaying = useProjectStore((s) => s.isPlaying)
+  const selectedClipIds = useProjectStore((s) => s.selectedClipIds)
   const selectedClipId = useProjectStore((s) => s.selectedClipId)
   const selectedMarkerId = useProjectStore((s) => s.selectedMarkerId)
   const dragState = useProjectStore((s) => s.dragState)
@@ -102,6 +106,8 @@ export function TimelinePanel() {
 
   const setPixelsPerSecond = useProjectStore((s) => s.setPixelsPerSecond)
   const setSelectedClipId = useProjectStore((s) => s.setSelectedClipId)
+  const selectClipAtClick = useProjectStore((s) => s.selectClipAtClick)
+  const clearClipSelection = useProjectStore((s) => s.clearClipSelection)
   const setSelectedMarkerId = useProjectStore((s) => s.setSelectedMarkerId)
   const setDragState = useProjectStore((s) => s.setDragState)
   const updateClip = useProjectStore((s) => s.updateClip)
@@ -219,6 +225,10 @@ export function TimelinePanel() {
         moveClip(dragState.clipId, targetTrackId, Math.max(0, newStart), false)
       } else {
         updateClip(dragState.clipId, { startTime: Math.max(0, newStart) })
+      }
+      const timeDelta = newStart - dragState.originalStartTime
+      for (const companion of dragState.companionMoves ?? []) {
+        updateClip(companion.clipId, { startTime: Math.max(0, companion.originalStartTime + timeDelta) })
       }
     } else if (dragState.mode === 'slip') {
       const clip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === dragState.clipId)
@@ -425,7 +435,7 @@ export function TimelinePanel() {
   const handleTimelineClick = (e: React.MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     seek(Math.max(0, Math.min((e.clientX - rect.left) / pixelsPerSecond, duration)))
-    setSelectedClipId(null)
+    clearClipSelection()
     setSelectedMarkerId(null)
   }
 
@@ -455,6 +465,23 @@ export function TimelinePanel() {
       ? { prev: structuredClone(prev), selected: structuredClone(clip), next: structuredClone(next) }
       : undefined
 
+    const store = useProjectStore.getState()
+    if (!store.selectedClipIds.includes(dragClipId)) {
+      store.setSelectedClipId(dragClipId)
+    }
+
+    const companionMoves = dragMode === 'move' && store.selectedClipIds.length > 1
+      ? store.selectedClipIds
+        .filter((id) => id !== dragClipId)
+        .map((id) => {
+          const found = project.tracks.flatMap((t) => t.clips).find((c) => c.id === id)
+          return found
+            ? { clipId: id, originalStartTime: found.startTime, originalTrackId: found.trackId }
+            : null
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+      : undefined
+
     setSelectedClipId(dragClipId)
     setDragState({
       clipId: dragClipId,
@@ -466,7 +493,52 @@ export function TimelinePanel() {
       originalSourceStart: clip.sourceStart,
       originalTrackId: clip.trackId,
       slideSnapshot,
+      companionMoves,
     })
+  }
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const gesture = shiftGestureRef.current
+      if (!gesture || useProjectStore.getState().dragState) return
+      const dx = e.clientX - gesture.startX
+      const dy = e.clientY - gesture.startY
+      if (Math.hypot(dx, dy) < SHIFT_DRAG_THRESHOLD) return
+      const pending = gesture.clip
+      shiftGestureRef.current = null
+      startDrag(pending, 'move', {
+        clientX: gesture.startX,
+        clientY: gesture.startY,
+        shiftKey: true,
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        stopPropagation: () => {},
+        preventDefault: () => {},
+      } as React.MouseEvent)
+    }
+    const onUp = () => {
+      const gesture = shiftGestureRef.current
+      if (!gesture || useProjectStore.getState().dragState) return
+      shiftGestureRef.current = null
+      selectClipAtClick(gesture.clip.id, true)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [selectClipAtClick])
+
+  const beginClipMouseDown = (clip: Clip, mode: 'move' | 'trimStart' | 'trimEnd', e: React.MouseEvent) => {
+    if (mode === 'move' && e.shiftKey) {
+      e.stopPropagation()
+      e.preventDefault()
+      shiftGestureRef.current = { clip, startX: e.clientX, startY: e.clientY }
+      return
+    }
+    startDrag(clip, mode, e)
   }
 
   const startPlayheadDrag = (e: React.MouseEvent) => {
@@ -780,7 +852,7 @@ export function TimelinePanel() {
                     : clip.type === 'adjustment'
                       ? '調整レイヤー'
                       : (media?.name ?? clip.type)
-                  const isSelected = selectedClipId === clip.id
+                  const isSelected = selectedClipIds.includes(clip.id)
                   const hasSpeedKeyframes = clip.type === 'video' && ((clip.speedKeyframes?.length ?? 0) > 0 || isSelected)
                   const hasVolumeKeyframes = (clip.type === 'audio' || clip.type === 'video') && ((clip.audio.volumeKeyframes?.length ?? 0) > 0 || isSelected)
                   const hasTransformKeyframes = (clip.type === 'video' || clip.type === 'image' || clip.type === 'text') && ((clip.transformKeyframes?.length ?? 0) > 0 || isSelected)
@@ -791,8 +863,12 @@ export function TimelinePanel() {
                       key={clip.id}
                       className={`absolute top-1.5 bottom-1.5 cursor-grab rounded-md ${CLIP_STYLES[clip.type]} ${isSelected ? 'clip-selected z-10' : 'ring-1 ring-white/10'} ${track.locked ? 'opacity-50' : ''} ${hasVolumeKeyframes || hasSpeedKeyframes || hasTransformKeyframes ? 'overflow-visible' : 'overflow-hidden'}`}
                       style={{ left, width }}
-                      onMouseDown={(e) => startDrag(clip, 'move', e)}
-                      onClick={(e) => { e.stopPropagation(); setSelectedClipId(clip.id) }}
+                      onMouseDown={(e) => beginClipMouseDown(clip, 'move', e)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (e.shiftKey) return
+                        selectClipAtClick(clip.id, false)
+                      }}
                     >
                       {media?.thumbnail && clip.type !== 'audio' && <img src={media.thumbnail} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25" />}
                       <Waveform data={clip.type === 'audio' ? media?.waveform : undefined} />
@@ -848,8 +924,8 @@ export function TimelinePanel() {
                       {/* z-20: ラベル行(z-10)より前面に置き、クリップ上端でもトリムを掴めるようにする */}
                       {!track.locked && (
                         <>
-                          <div className="absolute top-0 bottom-0 left-0 z-20 w-2 cursor-ew-resize bg-white/15 hover:bg-white/30" onMouseDown={(e) => startDrag(clip, 'trimStart', e)} />
-                          <div className="absolute top-0 right-0 bottom-0 z-20 w-2 cursor-ew-resize bg-white/15 hover:bg-white/30" onMouseDown={(e) => startDrag(clip, 'trimEnd', e)} />
+                          <div className="absolute top-0 bottom-0 left-0 z-20 w-2 cursor-ew-resize bg-white/15 hover:bg-white/30" onMouseDown={(e) => beginClipMouseDown(clip, 'trimStart', e)} />
+                          <div className="absolute top-0 right-0 bottom-0 z-20 w-2 cursor-ew-resize bg-white/15 hover:bg-white/30" onMouseDown={(e) => beginClipMouseDown(clip, 'trimEnd', e)} />
                         </>
                       )}
                     </div>

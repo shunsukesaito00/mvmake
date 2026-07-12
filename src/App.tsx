@@ -29,12 +29,12 @@ function App() {
       }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (store.selectedClipId) store.removeClip(store.selectedClipId)
+        if (store.selectedClipIds.length > 0) store.removeSelectedClips()
         else if (store.selectedMarkerId) store.removeMarker(store.selectedMarkerId)
       }
 
       if (e.key === 'Escape') {
-        store.setSelectedClipId(null)
+        store.clearClipSelection()
         store.setSelectedMarkerId(null)
       }
 
@@ -49,6 +49,10 @@ function App() {
       if (e.key === 'd' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); store.duplicateSelectedClip() }
       if (e.key === 'c' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); store.copySelectedClip(); showToast('コピーしました', 'info') }
       if (e.key === 'v' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); store.pasteClip() }
+      if (e.key === 'a' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        store.selectAllClipsOnActiveTrack()
+      }
 
       if (e.key === 's' && !e.metaKey && !e.ctrlKey && store.selectedClipId) store.splitClipAt(store.selectedClipId, store.currentTime)
       if (e.key === 'i' || e.key === 'I') store.setInPoint(store.currentTime)
