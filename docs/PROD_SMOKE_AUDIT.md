@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.14）
+# 本番スモーク E2E 監査（v2.6.15）
 
-最終更新: 2026-07-12（v2.6.14 / 本番スモーク 627 シナリオ・ノイズ除去ローパス/横配置/クロップ無効化3件追加）
+最終更新: 2026-07-12（v2.6.15 / 本番スモーク 630 シナリオ・再生速度/Ken Burns無効化/ダッキング無効化3件追加）
+
+## v2.6.15 拡充（627→630）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **630**（+3） |
+| 追加シナリオ | 動画再生速度 / Ken Burns無効化 / ダッキング無効化 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.15）
+
+1. インスペクター: 動画クリップの再生速度を変更できる
+2. インスペクター: 画像クリップの Ken Burns を無効化できる
+3. インスペクター: オーディオクリップのダッキングを無効化できる
+
+選定根拠: 動画再生速度・Ken Burns無効化・ダッキング無効化が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.14 拡充（624→627）
 
@@ -667,11 +683,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 627 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 627`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2614_ADDITIONS`
+- `e2e/basic.spec.ts` — 630 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 630`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2615_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.14 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.15 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

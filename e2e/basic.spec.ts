@@ -17534,3 +17534,52 @@ test('インスペクター: 動画クリップのクロップを無効化でき
   await expect(cropCheckbox).not.toBeChecked()
   await expect(page.getByRole('slider', { name: '幅' })).toBeHidden()
 })
+
+test('インスペクター: 動画クリップの再生速度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-speed-change.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-speed-change.webm')
+
+  await page.getByRole('button', { name: '再生速度' }).click()
+  const speedSlider = page.getByRole('slider', { name: '基本速度' })
+  await speedSlider.fill('1.5')
+  await expect(speedSlider).toHaveValue('1.5')
+})
+
+test('インスペクター: 画像クリップの Ken Burns を無効化できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'ken-burns-off.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'ken-burns-off.png')
+
+  await page.getByRole('button', { name: 'Ken Burns', exact: true }).click()
+  const zoomPanCheckbox = page.getByRole('checkbox', { name: 'ズームパン効果' })
+  await zoomPanCheckbox.check()
+  await expect(zoomPanCheckbox).toBeChecked()
+
+  await zoomPanCheckbox.uncheck()
+  await expect(zoomPanCheckbox).not.toBeChecked()
+})
+
+test('インスペクター: オーディオクリップのダッキングを無効化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeWavWithPeak(0.8, 2)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-ducking-off.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-ducking-off.wav')
+
+  await page.getByRole('button', { name: 'ダッキング' }).click()
+  const duckingCheckbox = page.getByRole('checkbox', { name: '動画音声がある区間でBGMを下げる' })
+  await duckingCheckbox.check()
+  await expect(page.getByRole('slider', { name: 'ダッキング音量' })).toBeVisible()
+
+  await duckingCheckbox.uncheck()
+  await expect(duckingCheckbox).not.toBeChecked()
+  await expect(page.getByRole('slider', { name: 'ダッキング音量' })).toBeHidden()
+})
