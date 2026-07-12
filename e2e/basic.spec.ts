@@ -16582,3 +16582,40 @@ test('インスペクター: テキストの行間を変更できる', async ({ 
   await lineHeightSlider.fill('2.1')
   await expect(lineHeightSlider).toHaveValue('2.1')
 })
+
+test('インスペクター: 画像クリップの Ken Burns 終了 X/Y を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'ken-burns-end-xy.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'ken-burns-end-xy.png')
+
+  await page.getByRole('button', { name: 'Ken Burns', exact: true }).click()
+  const endXSlider = page.getByRole('slider', { name: '終了 X' })
+  const endYSlider = page.getByRole('slider', { name: '終了 Y' })
+  await endXSlider.fill('0.55')
+  await endYSlider.fill('0.45')
+  await expect(endXSlider).toHaveValue('0.55')
+  await expect(endYSlider).toHaveValue('0.45')
+})
+
+test('インスペクター: テキストの縦配置を top に設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByLabel('縦配置').selectOption('top')
+  await expect(page.getByLabel('縦配置')).toHaveValue('top')
+})
+
+test('インスペクター: 画像クリップの不透明度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'opacity-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'opacity-photo.png')
+
+  const opacitySlider = page.getByRole('slider', { name: '不透明度' })
+  await opacitySlider.fill('0.7')
+  await expect(opacitySlider).toHaveValue('0.7')
+})
