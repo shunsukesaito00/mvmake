@@ -18429,3 +18429,50 @@ test('タイムライン: レーンをダブルクリックで動画クリップ
   await lane.dispatchEvent('dblclick')
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
 })
+
+test('タイムライン: レーンをダブルクリックで画像クリップのトランスフォームキーフレームを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-dblclick.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-dblclick.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+
+  const lane = page.locator('footer').getByTestId('transform-property-lane')
+  await lane.scrollIntoViewIfNeeded()
+  await lane.dispatchEvent('dblclick')
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
+})
+
+test('クリップ分割: テキストクリップのトランスフォームキーフレームを両側に再配分する', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const timeSliders = page.getByRole('slider', { name: '位置 (秒)' })
+  await timeSliders.nth(1).fill('2')
+
+  await page.locator('main input[type="range"]').fill('2')
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  await expect(page.locator('footer').getByText('Opening')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toHaveCount(2)
+})
+
+test('タイムライン: レーンをダブルクリックでテキストクリップのトランスフォームキーフレームを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+
+  const lane = page.locator('footer').getByTestId('transform-property-lane')
+  await lane.scrollIntoViewIfNeeded()
+  await lane.dispatchEvent('dblclick')
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
+})

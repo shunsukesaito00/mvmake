@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.29）
+# 本番スモーク E2E 監査（v2.6.30）
 
-最終更新: 2026-07-13（v2.6.29 / 本番スモーク 672 シナリオ・動画/画像TF全属性表示/動画TFダブルクリック3件追加）
+最終更新: 2026-07-13（v2.6.30 / 本番スモーク 675 シナリオ・画像/テキストTFダブルクリック/テキストTF分割3件追加）
+
+## v2.6.30 拡充（672→675）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **675**（+3） |
+| 追加シナリオ | 画像TFダブルクリック / テキストTF分割 / テキストTFダブルクリック |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.30）
+
+1. タイムライン: レーンをダブルクリックで画像クリップのトランスフォームキーフレームを追加できる
+2. クリップ分割: テキストクリップのトランスフォームキーフレームを両側に再配分する
+3. タイムライン: レーンをダブルクリックでテキストクリップのトランスフォームキーフレームを追加できる
+
+選定根拠: 画像TFレーンダブルクリック・テキストTF分割再配分・テキストTFレーンダブルクリックが「クリップの」表記で未カバーだったため追加。※ 画像TF分割は v2.6.28 で既にカバー済みのため今回は追加せず。
 
 ## v2.6.29 拡充（669→672）
 
@@ -907,11 +923,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 672 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 672`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2629_ADDITIONS`
+- `e2e/basic.spec.ts` — 675 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 675`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2630_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.29 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.30 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
