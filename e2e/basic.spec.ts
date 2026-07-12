@@ -18204,3 +18204,74 @@ test('プレビュー: 画像クリップの不透明度ハンドルで transfor
 
   await expect(opacityHandle).not.toHaveAttribute('title', /不透明度 100%/)
 })
+
+test('タイムライン: 動画クリップのトランスフォームキーフレームをドラッグ編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-drag.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-drag.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).fill('0.2')
+
+  const handle = page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })
+  await expect(handle).toHaveAttribute('title', /0\.2s/)
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 60, box.y - 8, { steps: 8 })
+  await page.mouse.up()
+
+  await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
+})
+
+test('タイムライン: 画像クリップのトランスフォームキーフレームをドラッグ編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-drag.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-drag.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).fill('0.2')
+
+  const handle = page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })
+  await expect(handle).toHaveAttribute('title', /0\.2s/)
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 60, box.y - 8, { steps: 8 })
+  await page.mouse.up()
+
+  await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
+})
+
+test('クリップ分割: 動画クリップのトランスフォームキーフレームを両側に再配分する', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-split.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-split.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const timeSliders = page.getByRole('slider', { name: '位置 (秒)' })
+  await timeSliders.nth(1).fill('1')
+
+  await page.locator('main input[type="range"]').fill('0.5')
+  await page.getByRole('button', { name: '分割 (S)' }).click()
+
+  await expect(page.locator('footer').getByText('video-tf-split.webm')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toHaveCount(2)
+})
