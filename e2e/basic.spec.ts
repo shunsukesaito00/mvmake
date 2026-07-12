@@ -17173,3 +17173,35 @@ test('インスペクター: テキストクリップのアニメーション長
   await durationSlider.fill('2')
   await expect(durationSlider).toHaveValue('2')
 })
+
+test('インスペクター: テキストクリップに字幕帯を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('checkbox', { name: '字幕帯' }).check()
+  await expect(page.getByRole('slider', { name: '背景余白' })).toBeVisible()
+  await expect(page.getByRole('slider', { name: '角丸' })).toBeVisible()
+})
+
+test('インスペクター: テキストクリップの字幕帯背景色を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('checkbox', { name: '字幕帯' }).check()
+  const backgroundColorInput = page.getByLabel('字幕帯の背景色')
+  await backgroundColorInput.fill('#224466')
+  await expect(backgroundColorInput).toHaveValue('#224466')
+})
+
+test('インスペクター: テキストクリップの字幕帯角丸を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('checkbox', { name: '字幕帯' }).check()
+  const radiusSlider = page.getByRole('slider', { name: '角丸' })
+  await radiusSlider.fill('16')
+  await expect(radiusSlider).toHaveValue('16')
+})
