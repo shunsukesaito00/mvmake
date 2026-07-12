@@ -29,7 +29,7 @@
 | `src/hooks/` | `usePlayback`(再生ループ・`PlaybackProvider` 経由で単一マウント)、`useAutoSave` / `useProjectRestore`、`usePanelSize`(リサイズ可能レイアウト) |
 | `src/utils/` | `createId()`(uuid)、`formatTime` / `snapTime` / `getProjectDuration`、`docSyncAudit`、`chapterRangeExport`、`photoGuideSlideshow` |
 | `src/layout/AppLayout.tsx` | 全体レイアウト。メディア(左)・プレビュー(中央)・インスペクタ(右)・タイムライン(下)の 4 ペイン |
-| `src/panels/` | `MediaPanel` / `PreviewPanel` / `InspectorPanel` / `TimelinePanel` |
+| `src/panels/` | `MediaPanel` / `PreviewPanel` / `InspectorPanel` / `TimelinePanel` / `MixerPanel` |
 | `src/components/` | `Toolbar`、`ExportButton`、モーダル類、`ToastContainer`、共通 UI(`ui.tsx` / `icons.tsx`) |
 | `src/store/toastStore.ts` | トースト通知用ストア |
 | `e2e/` | Playwright E2E テスト(`npm run test:e2e`、本番スモークは `test:e2e:prod`) |

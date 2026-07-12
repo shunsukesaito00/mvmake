@@ -262,6 +262,8 @@ export function getAudioClipsFromProject(
   asset: Project['mediaAssets'][0]
   isVideo: boolean
   trackMuted: boolean
+  trackId: string
+  trackGain: number
 }> {
   const assetMap = new Map(project.mediaAssets.map((a) => [a.id, a]))
   const result: Array<{
@@ -269,22 +271,40 @@ export function getAudioClipsFromProject(
     asset: Project['mediaAssets'][0]
     isVideo: boolean
     trackMuted: boolean
+    trackId: string
+    trackGain: number
   }> = []
 
+  const anySolo = project.tracks.some((t) => t.solo)
+
   for (const track of project.tracks) {
-    if (track.muted) continue
+    const trackGain = getTrackPlaybackGain(track, project.tracks, anySolo)
+    if (trackGain <= 0) continue
     for (const clip of track.clips) {
       if (clip.type === 'audio') {
         const asset = assetMap.get(clip.mediaId)
-        if (asset) result.push({ clip, asset, isVideo: false, trackMuted: false })
+        if (asset) result.push({ clip, asset, isVideo: false, trackMuted: false, trackId: track.id, trackGain })
       } else if (clip.type === 'video' && track.type === 'video') {
         const asset = assetMap.get(clip.mediaId)
-        if (asset) result.push({ clip, asset, isVideo: true, trackMuted: false })
+        if (asset) result.push({ clip, asset, isVideo: true, trackMuted: false, trackId: track.id, trackGain })
       }
     }
   }
 
   return result
+}
+
+/** ミュート・ソロを考慮してトラックが再生対象か */
+export function isTrackAudible(track: Track, tracks: Track[], anySolo = tracks.some((t) => t.solo)): boolean {
+  if (track.muted) return false
+  if (anySolo) return track.solo === true
+  return true
+}
+
+/** プレビュー/書き出し用のトラックゲイン（0 = 無音） */
+export function getTrackPlaybackGain(track: Track, tracks: Track[], anySolo?: boolean): number {
+  if (!isTrackAudible(track, tracks, anySolo)) return 0
+  return track.volume ?? 1
 }
 
 export function trackTypeForClip(clip: Clip): Track['type'] {

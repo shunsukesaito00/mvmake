@@ -30,6 +30,7 @@ import {
   type VideoClip,
 } from '../types/project'
 import { clearMediaCache } from '../engine/compositor'
+import { audioEngine } from '../engine/audioEngine'
 import { createId } from '../utils/id'
 import { buildPhotoGuideClips, buildTemplateMarkers, buildTemplateTextClips } from '../utils/weddingTemplate'
 import { buildTextClipsFromSrtCues, parseSrt } from '../utils/srtParser'
@@ -233,6 +234,8 @@ interface ProjectState {
   ) => number
   clearBatchTransitions: (scope: BatchTransitionScope) => number
   toggleTrackMute: (trackId: string) => void
+  toggleTrackSolo: (trackId: string) => void
+  setTrackVolume: (trackId: string, volume: number, recordHistory?: boolean) => void
   toggleTrackLock: (trackId: string) => void
   setProjectSettings: (settings: { width?: number; height?: number; fps?: number }) => void
   applyProjectSettingsPreset: (preset: ProjectSettingsPreset) => void
@@ -1197,6 +1200,36 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       },
       future: [],
     }))
+    audioEngine.updateTrackGains(get().project)
+  },
+
+  toggleTrackSolo: (trackId) => {
+    get().pushHistory()
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((t) =>
+          t.id === trackId ? { ...t, solo: !t.solo } : t,
+        ),
+      },
+      future: [],
+    }))
+    audioEngine.updateTrackGains(get().project)
+  },
+
+  setTrackVolume: (trackId, volume, recordHistory = true) => {
+    const clamped = Math.max(0, Math.min(2, volume))
+    if (recordHistory) get().pushHistory()
+    set((state) => ({
+      project: {
+        ...state.project,
+        tracks: state.project.tracks.map((t) =>
+          t.id === trackId ? { ...t, volume: clamped } : t,
+        ),
+      },
+      ...(recordHistory ? { future: [] } : {}),
+    }))
+    audioEngine.updateTrackGains(get().project)
   },
 
   toggleTrackLock: (trackId) => {

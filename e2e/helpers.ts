@@ -719,6 +719,41 @@ export async function removeSelectedClips(page: import('@playwright/test').Page)
   })
 }
 
+export async function getTrackVolume(page: import('@playwright/test').Page, trackId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getTrackVolume(id)
+  }, trackId)
+}
+
+export async function setTrackVolume(page: import('@playwright/test').Page, trackId: string, volume: number) {
+  await page.evaluate(({ id, vol }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.setTrackVolume(id, vol)
+  }, { id: trackId, vol: volume })
+}
+
+export async function toggleTrackSolo(page: import('@playwright/test').Page, trackId: string) {
+  await page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.toggleTrackSolo(id)
+  }, trackId)
+}
+
+export async function getTrackSolo(page: import('@playwright/test').Page, trackId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getTrackSolo(id)
+  }, trackId)
+}
+
+export async function getAudioTrackIds(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getAudioTrackIds()
+  })
+}
+
 export async function countClipsWithTransition(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

@@ -1,5 +1,5 @@
 import type { AudioClip, MediaAsset, Project, VideoClip } from '../types/project'
-import { getAudioClipsFromProject, getDuckingIntervals } from '../utils/clipUtils'
+import { getAudioClipsFromProject, getDuckingIntervals, getTrackPlaybackGain } from '../utils/clipUtils'
 import { scheduleVolumeAutomation } from '../utils/volumeKeyframes'
 import { getSourceOffsetAtLocalTime, scheduleSpeedAutomation } from '../utils/speedKeyframes'
 import { connectEqChain } from '../utils/audioEq'
@@ -9,6 +9,8 @@ import { applyDucking, type DuckingSchedule } from '../utils/audioDucking'
 class AudioEngine {
   private context: AudioContext | null = null
   private gainNode: GainNode | null = null
+  private trackGains = new Map<string, GainNode>()
+  private trackAnalysers = new Map<string, AnalyserNode>()
   private sources = new Map<string, AudioBufferSourceNode>()
   private buffers = new Map<string, AudioBuffer>()
   private startTime = 0
@@ -22,6 +24,49 @@ class AudioEngine {
       this.gainNode.connect(this.context.destination)
     }
     if (this.context.state === 'suspended') await this.context.resume()
+  }
+
+  private getTrackBus(trackId: string): GainNode {
+    if (!this.trackGains.has(trackId)) {
+      const gain = this.context!.createGain()
+      const analyser = this.context!.createAnalyser()
+      analyser.fftSize = 256
+      gain.connect(analyser)
+      analyser.connect(this.gainNode!)
+      this.trackGains.set(trackId, gain)
+      this.trackAnalysers.set(trackId, analyser)
+    }
+    return this.trackGains.get(trackId)!
+  }
+
+  updateTrackGains(project: Project): void {
+    if (!this.context || !this.gainNode) return
+    for (const track of project.tracks) {
+      this.getTrackBus(track.id).gain.value = getTrackPlaybackGain(track, project.tracks)
+    }
+  }
+
+  getTrackVuLevel(trackId: string): number {
+    const analyser = this.trackAnalysers.get(trackId)
+    if (!analyser) return 0
+    const data = new Uint8Array(analyser.fftSize)
+    analyser.getByteTimeDomainData(data)
+    let sum = 0
+    for (const sample of data) {
+      const n = (sample - 128) / 128
+      sum += n * n
+    }
+    return Math.min(1, Math.sqrt(sum / data.length) * 2.5)
+  }
+
+  getTrackVuLevels(project: Project): Record<string, number> {
+    const levels: Record<string, number> = {}
+    for (const track of project.tracks) {
+      if (track.type === 'video' || track.type === 'audio') {
+        levels[track.id] = this.getTrackVuLevel(track.id)
+      }
+    }
+    return levels
   }
 
   async loadBuffer(asset: MediaAsset): Promise<AudioBuffer | null> {
@@ -43,6 +88,7 @@ class AudioEngine {
     fromTime: number,
     audio: AudioClip['audio'],
     speed: number,
+    trackId: string,
     ducking?: DuckingSchedule,
     isVideo = false,
   ): void {
@@ -53,6 +99,7 @@ class AudioEngine {
     source.buffer = buffer
 
     const clipGain = this.context!.createGain()
+    const destination = this.getTrackBus(trackId)
 
     const localOffset = Math.max(0, fromTime - clip.startTime)
     const offset = isVideo
@@ -84,9 +131,9 @@ class AudioEngine {
       const base = this.context!.currentTime
       applyDucking(duckGain.gain, ducking, clip.startTime, clipEnd, fromTime, (pt) => base + Math.max(0, pt - fromTime))
       clipGain.connect(duckGain)
-      duckGain.connect(this.gainNode!)
+      duckGain.connect(destination)
     } else {
-      clipGain.connect(this.gainNode!)
+      clipGain.connect(destination)
     }
 
     source.start(when, offset, bufferDuration)
@@ -99,22 +146,23 @@ class AudioEngine {
     this.playing = true
     this.pausedAt = fromTime
     this.startTime = this.context!.currentTime - fromTime
+    this.updateTrackGains(project)
 
     const duckingIntervals = getDuckingIntervals(project)
 
-    for (const { clip, asset, isVideo } of getAudioClipsFromProject(project)) {
+    for (const { clip, asset, isVideo, trackId } of getAudioClipsFromProject(project)) {
       const buffer = await this.loadBuffer(asset)
       if (!buffer) continue
 
       if (isVideo) {
         const v = clip as VideoClip
-        this.scheduleClip(v, buffer, fromTime, v.audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 }, v.speed ?? 1, undefined, true)
+        this.scheduleClip(v, buffer, fromTime, v.audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 }, v.speed ?? 1, trackId, undefined, true)
       } else {
         const a = clip as AudioClip
         const ducking = a.ducking?.enabled
           ? { intervals: duckingIntervals, amount: a.ducking.amount, fade: a.ducking.fade }
           : undefined
-        this.scheduleClip(a, buffer, fromTime, a.audio, a.speed ?? 1, ducking)
+        this.scheduleClip(a, buffer, fromTime, a.audio, a.speed ?? 1, trackId, ducking)
       }
     }
   }
@@ -140,6 +188,8 @@ class AudioEngine {
 
   dispose(): void {
     this.stop()
+    this.trackGains.clear()
+    this.trackAnalysers.clear()
     this.context?.close()
     this.context = null
     this.gainNode = null
@@ -152,8 +202,19 @@ export const audioEngine = new AudioEngine()
 export async function mixAudioOffline(project: Project, duration: number, sampleRate = 48000): Promise<AudioBuffer> {
   const offline = new OfflineAudioContext(2, Math.ceil(duration * sampleRate), sampleRate)
   const duckingIntervals = getDuckingIntervals(project)
+  const trackBuses = new Map<string, GainNode>()
 
-  for (const { clip, asset, isVideo } of getAudioClipsFromProject(project)) {
+  const getOfflineTrackBus = (trackId: string, trackGain: number) => {
+    if (!trackBuses.has(trackId)) {
+      const bus = offline.createGain()
+      bus.gain.value = trackGain
+      bus.connect(offline.destination)
+      trackBuses.set(trackId, bus)
+    }
+    return trackBuses.get(trackId)!
+  }
+
+  for (const { clip, asset, isVideo, trackId, trackGain } of getAudioClipsFromProject(project)) {
     try {
       const arrayBuffer = await asset.blob.arrayBuffer()
       const buffer = await offline.decodeAudioData(arrayBuffer.slice(0))
@@ -167,6 +228,7 @@ export async function mixAudioOffline(project: Project, duration: number, sample
 
       const gain = offline.createGain()
       const audio = isVideoClip ? videoClip!.audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 } : (clip as AudioClip).audio
+      const destination = getOfflineTrackBus(trackId, trackGain)
 
       const when = clip.startTime
       scheduleVolumeAutomation(gain.gain, when, 0, clip.duration, clip.duration, audio)
@@ -193,9 +255,9 @@ export async function mixAudioOffline(project: Project, duration: number, sample
           (pt) => pt,
         )
         gain.connect(duckGain)
-        duckGain.connect(offline.destination)
+        duckGain.connect(destination)
       } else {
-        gain.connect(offline.destination)
+        gain.connect(destination)
       }
 
       const bufferDuration = isVideoClip

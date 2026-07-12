@@ -377,6 +377,10 @@ export interface Track {
   clips: Clip[]
   muted?: boolean
   locked?: boolean
+  /** トラックフェーダー 0〜2（既定 1）。ミキサー・プレビュー・書き出しで適用 */
+  volume?: number
+  /** ソロ ON のトラックがある場合、そのトラックのみ再生 */
+  solo?: boolean
 }
 
 export interface TimelineMarker {
@@ -1727,6 +1731,8 @@ export function normalizeProject(project: Project): Project {
       ...t,
       muted: t.muted ?? false,
       locked: t.locked ?? false,
+      volume: t.volume ?? 1,
+      solo: t.solo ?? false,
       clips: t.clips.map(normalizeClip),
     })),
   }

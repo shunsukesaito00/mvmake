@@ -3,6 +3,7 @@ import { MediaPanel } from '../panels/MediaPanel'
 import { PreviewPanel } from '../panels/PreviewPanel'
 import { InspectorPanel } from '../panels/InspectorPanel'
 import { TimelinePanel } from '../panels/TimelinePanel'
+import { MixerPanel } from '../panels/MixerPanel'
 import { Toolbar } from '../components/Toolbar'
 import { HelpModal } from '../components/HelpModal'
 import { ProjectSettingsModal } from '../components/ProjectSettingsModal'
@@ -26,6 +27,7 @@ function ResizeHandle({ axis, onPointerDown }: { axis: 'x' | 'y'; onPointerDown:
 export function AppLayout() {
   const [showHelp, setShowHelp] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showMixer, setShowMixer] = useState(true)
   const { sizes, update } = usePanelSizes()
 
   // 「?」キーでショートカット一覧をトグル表示
@@ -41,7 +43,12 @@ export function AppLayout() {
   return (
     <>
       <div className="flex h-full flex-col bg-surface-0">
-        <Toolbar onOpenHelp={() => setShowHelp(true)} onOpenSettings={() => setShowSettings(true)} />
+        <Toolbar
+          onOpenHelp={() => setShowHelp(true)}
+          onOpenSettings={() => setShowSettings(true)}
+          showMixer={showMixer}
+          onToggleMixer={() => setShowMixer((v) => !v)}
+        />
 
         <div className="flex min-h-0 flex-1">
           {/* Left: Media Bin */}
@@ -68,6 +75,12 @@ export function AppLayout() {
             </div>
 
             <ResizeHandle axis="y" onPointerDown={(e) => startResize(e, 'y', sizes.timelineHeight, -1, (v) => update('timelineHeight', v))} />
+
+            {showMixer && (
+              <div className="shrink-0 border-t border-border panel-glass" style={{ height: 132 }}>
+                <MixerPanel />
+              </div>
+            )}
 
             {/* Timeline */}
             <footer className="shrink-0 border-t border-border panel-glass" style={{ height: sizes.timelineHeight }}>

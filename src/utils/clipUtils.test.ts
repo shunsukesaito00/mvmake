@@ -12,6 +12,8 @@ import {
   rippleShiftClips,
   rippleTrimClipsOnTrack,
   getDuckingIntervals,
+  isTrackAudible,
+  getTrackPlaybackGain,
 } from './clipUtils'
 import type { MediaAsset, Project, Track, VideoClip, ImageClip, Clip } from '../types/project'
 import { DEFAULT_COLOR } from '../types/project'
@@ -370,5 +372,27 @@ describe('getDuckingIntervals', () => {
 
     const silent = makeProject([{ ...baseVideoClip, audio: { volume: 0, fadeIn: 0, fadeOut: 0 } }])
     expect(getDuckingIntervals(silent)).toEqual([])
+  })
+})
+
+describe('isTrackAudible', () => {
+  const tracks: Track[] = [
+    { id: 'v1', name: '映像 1', type: 'video', clips: [], muted: false, locked: false, volume: 1, solo: false },
+    { id: 'bgm', name: 'BGM', type: 'audio', clips: [], muted: false, locked: false, volume: 1, solo: false },
+  ]
+
+  it('returns false for muted tracks', () => {
+    expect(isTrackAudible({ ...tracks[0], muted: true }, tracks)).toBe(false)
+  })
+
+  it('returns only solo tracks when any solo is active', () => {
+    const withSolo = tracks.map((t) => (t.id === 'bgm' ? { ...t, solo: true } : t))
+    expect(isTrackAudible(tracks[0], withSolo)).toBe(false)
+    expect(isTrackAudible(withSolo[1], withSolo)).toBe(true)
+  })
+
+  it('getTrackPlaybackGain applies volume when audible', () => {
+    expect(getTrackPlaybackGain({ ...tracks[1], volume: 0.5 }, tracks)).toBe(0.5)
+    expect(getTrackPlaybackGain({ ...tracks[1], muted: true }, tracks)).toBe(0)
   })
 })

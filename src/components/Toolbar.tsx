@@ -14,9 +14,11 @@ import { isWebCodecsSupported } from '../engine/exporter'
 interface ToolbarProps {
   onOpenHelp: () => void
   onOpenSettings: () => void
+  showMixer: boolean
+  onToggleMixer: () => void
 }
 
-export function Toolbar({ onOpenHelp, onOpenSettings }: ToolbarProps) {
+export function Toolbar({ onOpenHelp, onOpenSettings, showMixer, onToggleMixer }: ToolbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [showProjects, setShowProjects] = useState(false)
   const [editingName, setEditingName] = useState(false)
@@ -170,6 +172,9 @@ export function Toolbar({ onOpenHelp, onOpenSettings }: ToolbarProps) {
         {!webCodecsOk && (
           <span className="hidden text-[10px] text-amber-400 lg:inline">書き出し: Chrome/Edge/Safari</span>
         )}
+        <IconButton active={showMixer} onClick={onToggleMixer} tooltip="オーディオミキサー" size="sm" aria-label="ミキサー表示切替">
+          <Icons.Music size={14} />
+        </IconButton>
         <IconButton onClick={onOpenSettings} tooltip="プロジェクト設定" size="sm">
           <Icons.Settings size={14} />
         </IconButton>

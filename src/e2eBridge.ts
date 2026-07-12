@@ -228,6 +228,11 @@ declare global {
       getProjectFps: () => number
       getRippleDelete: () => boolean
       getLoopPlayback: () => boolean
+      getTrackVolume: (trackId: string) => number
+      setTrackVolume: (trackId: string, volume: number) => void
+      toggleTrackSolo: (trackId: string) => void
+      getTrackSolo: (trackId: string) => boolean
+      getAudioTrackIds: () => string[]
       selectClip: (clipId: string) => void
       getSelectedClipIds: () => string[]
       getSelectedClipCount: () => number
@@ -375,6 +380,14 @@ export function installE2eBridge(): void {
     getProjectFps: () => useProjectStore.getState().project.fps,
     getRippleDelete: () => useProjectStore.getState().rippleDelete,
     getLoopPlayback: () => useProjectStore.getState().loopPlayback,
+    getTrackVolume: (trackId) => {
+      const track = useProjectStore.getState().project.tracks.find((t) => t.id === trackId)
+      return track?.volume ?? 1
+    },
+    setTrackVolume: (trackId, volume) => useProjectStore.getState().setTrackVolume(trackId, volume),
+    toggleTrackSolo: (trackId) => useProjectStore.getState().toggleTrackSolo(trackId),
+    getTrackSolo: (trackId) => useProjectStore.getState().project.tracks.find((t) => t.id === trackId)?.solo === true,
+    getAudioTrackIds: () => useProjectStore.getState().project.tracks.filter((t) => t.type === 'audio').map((t) => t.id),
     selectClip: (clipId) => useProjectStore.getState().setSelectedClipId(clipId),
     getSelectedClipIds: () => useProjectStore.getState().selectedClipIds,
     getSelectedClipCount: () => useProjectStore.getState().selectedClipIds.length,
