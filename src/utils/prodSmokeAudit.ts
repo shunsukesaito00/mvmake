@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 729
+export const PROD_SMOKE_SCENARIO_COUNT = 732
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -1914,6 +1914,13 @@ export const PROD_SMOKE_V2648_ADDITIONS = [
   'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで2点のキーフレームをすべて削除するとグラフが非表示になる',
   'インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで2点のキーフレームをすべて削除するとグラフが非表示になる',
   'インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターでキーフレーム削除後に再追加するとグラフが再表示される',
+] as const
+
+/** v2.6.49 で basic.spec に追加したシナリオ（test 名の部分一致用） */
+export const PROD_SMOKE_V2649_ADDITIONS = [
+  'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターでキーフレーム削除後に再追加するとグラフが再表示される',
+  'インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターでキーフレーム削除後に再追加するとグラフが再表示される',
+  'インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除するとグラフが非表示になる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */
