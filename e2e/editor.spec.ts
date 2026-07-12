@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, setRippleInsert, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, getSelectedClipCount, getAudioTrackIds, getTrackVolume, setTrackVolume, toggleTrackSolo, getTrackSolo, getTimelineEditTool, setTimelineEditTool, getColorPreviewMode, getShowColorScope, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName, getTrackCount, getTrackSummaries, getTrackName, removeTrack, getPlaybackShuttleRate, getIsPlaying, shuttleForward, addClipFromMediaAt, getFirstMediaAssetId, listClipStartTimesOnTrack } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, setRippleInsert, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, loadRollingEditStress, rollingTrimAtEditPointById, getRollingEditClipDuration, getRollingEditClipStartTime, toggleTrackLock, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, getSelectedClipCount, getAudioTrackIds, getTrackVolume, setTrackVolume, toggleTrackSolo, getTrackSolo, getTimelineEditTool, setTimelineEditTool, getColorPreviewMode, getShowColorScope, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName, getTrackCount, getTrackSummaries, getTrackName, removeTrack, getPlaybackShuttleRate, getIsPlaying, shuttleForward, addClipFromMediaAt, getFirstMediaAssetId, listClipStartTimesOnTrack } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -3529,4 +3529,48 @@ test('リップルインサート: 挿入操作を undo できる', async ({ pag
   await page.evaluate(() => window.__FABLE_E2E__!.undo())
   expect((await listClipStartTimesOnTrack(page, trackId)).length).toBe(before)
   expect((await listClipStartTimesOnTrack(page, trackId)).sort((a, b) => a - b)).toEqual([0, 8])
+})
+
+test('Rolling edit: 編集点ハンドルをドラッグして隣接クリップを同時トリムできる', async ({ page }) => {
+  const stats = await loadRollingEditStress(page)
+  await setTimelineEditTool(page, 'selection')
+
+  const handle = page.getByTestId(`rolling-edit-handle-${stats.prevClipId}-${stats.nextClipId}`)
+  await expect(handle).toBeVisible()
+  const box = await handle.boundingBox()
+  expect(box).toBeTruthy()
+
+  const centerX = box!.x + box!.width / 2
+  const centerY = box!.y + box!.height / 2
+  await page.mouse.move(centerX, centerY)
+  await page.mouse.down()
+  await page.mouse.move(centerX + 40, centerY)
+  await page.mouse.up()
+
+  const prevDuration = await getRollingEditClipDuration(page, stats.prevClipId)
+  const nextStart = await getRollingEditClipStartTime(page, stats.nextClipId)
+  expect(prevDuration).toBeGreaterThan(stats.prevDurationBefore)
+  expect(nextStart).toBe(prevDuration)
+})
+
+test('Rolling edit: 編集点操作を undo できる', async ({ page }) => {
+  const stats = await loadRollingEditStress(page)
+  await setTimelineEditTool(page, 'selection')
+
+  expect(await rollingTrimAtEditPointById(page, stats.prevClipId, stats.nextClipId, stats.rollingDelta)).toBe(true)
+  expect(await getRollingEditClipDuration(page, stats.prevClipId)).toBe(stats.prevDurationBefore + stats.rollingDelta)
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  expect(await getRollingEditClipDuration(page, stats.prevClipId)).toBe(stats.prevDurationBefore)
+  expect(await getRollingEditClipStartTime(page, stats.nextClipId)).toBe(stats.nextStartBefore)
+})
+
+test('Rolling edit: ロックトラックでは編集点ハンドルが表示されない', async ({ page }) => {
+  const stats = await loadRollingEditStress(page)
+  await setTimelineEditTool(page, 'selection')
+  await expect(page.getByTestId(`rolling-edit-handle-${stats.prevClipId}-${stats.nextClipId}`)).toBeVisible()
+
+  await toggleTrackLock(page, stats.trackId)
+  await expect(page.getByTestId(`rolling-edit-handle-${stats.prevClipId}-${stats.nextClipId}`)).toHaveCount(0)
+  expect(await rollingTrimAtEditPointById(page, stats.prevClipId, stats.nextClipId, stats.rollingDelta)).toBe(false)
 })

@@ -6,7 +6,7 @@ import { resolveMarkerDragTime, clampMarkerTime } from '../utils/markerEdit'
 import { formatTimelineTextLabel } from '../utils/textWrap'
 import { snapLocalKeyframeTime, snapVolume } from '../utils/keyframeSnap'
 import { clampTrimEnd, clampTrimStart } from '../utils/clipUtils'
-import { canSlideClip, canSlipClip, computeSlipClip, findAdjacentClips, slideClipsFromSnapshot } from '../utils/slipSlide'
+import { canSlideClip, canSlipClip, computeSlipClip, computeRollingEdit, findAdjacentClips, listAdjacentClipPairs, slideClipsFromSnapshot } from '../utils/slipSlide'
 import {
   computeFitTimelinePixelsPerSecond,
   computeTimelineScrollLeftForTime,
@@ -274,6 +274,25 @@ export function TimelinePanel() {
         sourceStart: result.prev.sourceStart,
       })
       updateClip(result.selected.id, { startTime: result.selected.startTime })
+      updateClip(result.next.id, {
+        startTime: result.next.startTime,
+        duration: result.next.duration,
+        sourceDuration: result.next.sourceDuration,
+        sourceStart: result.next.sourceStart,
+      })
+    } else if (dragState.mode === 'rollingEdit' && dragState.rollingEditSnapshot && dragState.originalEditTime != null) {
+      const snapPoints = getSnapPoints(dragState.clipId)
+      const rawDelta = dt
+      const snappedEdit = snapTime(dragState.originalEditTime + rawDelta, snapPoints)
+      const delta = snappedEdit - dragState.originalEditTime
+      setSnapGuide(snappedEdit !== dragState.originalEditTime + rawDelta ? snappedEdit : null)
+      const result = computeRollingEdit(dragState.rollingEditSnapshot, delta, mediaAssets)
+      if (!result) return
+      updateClip(result.prev.id, {
+        duration: result.prev.duration,
+        sourceDuration: result.prev.sourceDuration,
+        sourceStart: result.prev.sourceStart,
+      })
       updateClip(result.next.id, {
         startTime: result.next.startTime,
         duration: result.next.duration,
@@ -565,6 +584,27 @@ export function TimelinePanel() {
       return
     }
     startDrag(clip, mode, e)
+  }
+
+  const startRollingEditDrag = (prev: Clip, next: Clip, e: React.MouseEvent) => {
+    const track = tracks.find((t) => t.id === prev.trackId)
+    if (!track || track.locked || timelineEditTool !== 'selection') return
+    e.stopPropagation()
+    e.preventDefault()
+    pushHistory()
+    const editTime = prev.startTime + prev.duration
+    setDragState({
+      clipId: prev.id,
+      mode: 'rollingEdit',
+      startX: e.clientX,
+      startY: e.clientY,
+      originalStartTime: prev.startTime,
+      originalDuration: prev.duration,
+      originalSourceStart: prev.sourceStart,
+      originalTrackId: prev.trackId,
+      rollingEditSnapshot: { prev: structuredClone(prev), next: structuredClone(next) },
+      originalEditTime: editTime,
+    })
   }
 
   const startPlayheadDrag = (e: React.MouseEvent) => {
@@ -1057,6 +1097,18 @@ export function TimelinePanel() {
                         </>
                       )}
                     </div>
+                  )
+                })}
+                {timelineEditTool === 'selection' && !track.locked && listAdjacentClipPairs(track.clips).map(({ prev, next }) => {
+                  const editLeft = (prev.startTime + prev.duration) * pixelsPerSecond
+                  return (
+                    <div
+                      key={`rolling-${prev.id}-${next.id}`}
+                      data-testid={`rolling-edit-handle-${prev.id}-${next.id}`}
+                      className="absolute top-1.5 bottom-1.5 z-[25] w-1.5 -translate-x-1/2 cursor-col-resize rounded-sm bg-accent/80 hover:bg-accent"
+                      style={{ left: editLeft }}
+                      onMouseDown={(e) => startRollingEditDrag(prev, next, e)}
+                    />
                   )
                 })}
               </div>

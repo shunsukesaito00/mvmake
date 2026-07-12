@@ -308,6 +308,30 @@ describe('slideSelectedClip with keyframes', () => {
   })
 })
 
+describe('rollingTrimAtEditPoint', () => {
+  it('trims adjacent clips at the edit point', () => {
+    setProject(makeProject([
+      videoClip('c1', 0, 4),
+      videoClip('c2', 4, 3),
+    ], [videoAsset('media-v1', 30)]))
+
+    expect(useProjectStore.getState().rollingTrimAtEditPoint('c1', 'c2', 0.5)).toBe(true)
+
+    const clips = getTrackClips(TRACK_V1)
+    expect(clips.find((c) => c.id === 'c1')!.duration).toBe(4.5)
+    expect(clips.find((c) => c.id === 'c2')!.startTime).toBe(4.5)
+    expect(clips.find((c) => c.id === 'c2')!.duration).toBe(2.5)
+  })
+
+  it('rejects locked tracks', () => {
+    setProject(makeProject([videoClip('c1', 0, 4), videoClip('c2', 4, 3)]))
+    useProjectStore.getState().toggleTrackLock(TRACK_V1)
+
+    expect(useProjectStore.getState().rollingTrimAtEditPoint('c1', 'c2', 0.5)).toBe(false)
+    expect(getTrackClips(TRACK_V1).find((c) => c.id === 'c1')!.duration).toBe(4)
+  })
+})
+
 describe('applyRippleTrimOnTrack with keyframes', () => {
   it('preserves transform keyframes when shifting subsequent clips', () => {
     const kfs = [{ id: 'kf1', time: 1, x: 0.2, y: 0.5, scale: 1, rotation: 0, opacity: 1 }]

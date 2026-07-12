@@ -68,8 +68,10 @@ import {
   canSlideClip,
   canSlipClip,
   computeSlipClip,
+  rollingEditOnTrack,
   slideClipOnTrack,
   type SlideSnapshot,
+  type RollingEditPair,
 } from '../utils/slipSlide'
 import { splitTransformKeyframes, type TransformTimelineProperty } from '../utils/transformKeyframesTimeline'
 import { splitVolumeKeyframes } from '../utils/volumeKeyframesTimeline'
@@ -117,7 +119,7 @@ function createDefaultProject(): Project {
 
 export interface TimelineDragState {
   clipId: string
-  mode: 'move' | 'trimStart' | 'trimEnd' | 'slip' | 'slide' | 'playhead' | 'volumeKeyframe' | 'speedKeyframe' | 'speedBezierHandle' | 'transformKeyframe' | 'transformBezierHandle' | 'marker'
+  mode: 'move' | 'trimStart' | 'trimEnd' | 'slip' | 'slide' | 'rollingEdit' | 'playhead' | 'volumeKeyframe' | 'speedKeyframe' | 'speedBezierHandle' | 'transformKeyframe' | 'transformBezierHandle' | 'marker'
   startX: number
   startY: number
   originalStartTime: number
@@ -138,6 +140,8 @@ export interface TimelineDragState {
   transformTimelineLaneHeight?: number
   markerId?: string
   slideSnapshot?: SlideSnapshot
+  rollingEditSnapshot?: RollingEditPair
+  originalEditTime?: number
   /** 複数選択時の一括移動用（主クリップ以外） */
   companionMoves?: Array<{ clipId: string; originalStartTime: number; originalTrackId: string }>
 }
@@ -245,6 +249,7 @@ interface ProjectState {
   moveClip: (clipId: string, trackId: string, startTime: number, recordHistory?: boolean) => void
   slipSelectedClip: (deltaSeconds: number) => boolean
   slideSelectedClip: (deltaSeconds: number) => boolean
+  rollingTrimAtEditPoint: (prevClipId: string, nextClipId: string, deltaSeconds: number, recordHistory?: boolean) => boolean
   applyRippleTrimOnTrack: (trackId: string, trimmedClipId: string, endBefore: number, delta: number) => void
   setClipTransition: (clipId: string, transition: Transition | undefined) => void
   applyBatchTransitions: (
@@ -1145,6 +1150,32 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       future: [],
     }))
     return true
+  },
+
+  rollingTrimAtEditPoint: (prevClipId, nextClipId, deltaSeconds, recordHistory = true) => {
+    const { project } = get()
+    for (const track of project.tracks) {
+      const hasPrev = track.clips.some((c) => c.id === prevClipId)
+      const hasNext = track.clips.some((c) => c.id === nextClipId)
+      if (!hasPrev || !hasNext) continue
+      if (track.locked) return false
+
+      const updated = rollingEditOnTrack(track.clips, prevClipId, nextClipId, deltaSeconds, project.mediaAssets)
+      if (!updated) return false
+
+      if (recordHistory) get().pushHistory()
+      set((state) => ({
+        project: {
+          ...state.project,
+          tracks: state.project.tracks.map((t) =>
+            t.id === track.id ? { ...t, clips: updated } : t,
+          ),
+        },
+        ...(recordHistory ? { future: [] } : {}),
+      }))
+      return true
+    }
+    return false
   },
 
   applyRippleTrimOnTrack: (trackId, trimmedClipId, endBefore, delta) => {

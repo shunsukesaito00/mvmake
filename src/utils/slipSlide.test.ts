@@ -4,8 +4,11 @@ import { DEFAULT_AUDIO, DEFAULT_COLOR } from '../types/project'
 import {
   canSlideClip,
   canSlipClip,
+  computeRollingEdit,
   computeSlipClip,
   findAdjacentClips,
+  listAdjacentClipPairs,
+  rollingEditOnTrack,
   slideClipOnTrack,
   slideClipsFromSnapshot,
 } from './slipSlide'
@@ -170,5 +173,68 @@ describe('slideClipsFromSnapshot', () => {
     }
     const result = slideClipsFromSnapshot(snapshot, 0.5, mediaAssets)
     expect(result?.selected.duration).toBe(2)
+  })
+})
+
+describe('listAdjacentClipPairs', () => {
+  it('lists touching clip pairs only', () => {
+    const clips: Clip[] = [
+      { ...baseVideoClip, id: 'c1', startTime: 0, duration: 4 },
+      { ...baseVideoClip, id: 'c2', startTime: 4, duration: 2 },
+      { ...baseVideoClip, id: 'c3', startTime: 8, duration: 1 },
+    ]
+    const pairs = listAdjacentClipPairs(clips)
+    expect(pairs).toHaveLength(1)
+    expect(pairs[0].prev.id).toBe('c1')
+    expect(pairs[0].next.id).toBe('c2')
+  })
+})
+
+describe('computeRollingEdit', () => {
+  const pair = {
+    prev: { ...baseVideoClip, id: 'c1', startTime: 0, duration: 4 },
+    next: { ...baseVideoClip, id: 'c2', startTime: 4, duration: 3, sourceStart: 0 },
+  }
+
+  it('extends prev and trims next when delta is positive', () => {
+    const result = computeRollingEdit(pair, 1, mediaAssets)
+    expect(result?.prev.duration).toBe(5)
+    expect(result?.next.duration).toBe(2)
+    expect(result?.next.startTime).toBe(5)
+    expect(result?.next.sourceStart).toBe(1)
+  })
+
+  it('shrinks prev and extends next when delta is negative', () => {
+    const result = computeRollingEdit(
+      { ...pair, next: { ...pair.next, sourceStart: 2 } },
+      -1,
+      mediaAssets,
+    )
+    expect(result?.prev.duration).toBe(3)
+    expect(result?.next.duration).toBe(4)
+    expect(result?.next.startTime).toBe(3)
+    expect(result?.next.sourceStart).toBe(1)
+  })
+})
+
+describe('rollingEditOnTrack', () => {
+  const clips: Clip[] = [
+    { ...baseVideoClip, id: 'c1', startTime: 0, duration: 4 },
+    { ...baseVideoClip, id: 'c2', startTime: 4, duration: 3, sourceStart: 0 },
+  ]
+
+  it('updates both clips on the track', () => {
+    const result = rollingEditOnTrack(clips, 'c1', 'c2', 0.5, mediaAssets)
+    expect(result).not.toBeNull()
+    expect(result!.find((c) => c.id === 'c1')!.duration).toBe(4.5)
+    expect(result!.find((c) => c.id === 'c2')!.startTime).toBe(4.5)
+  })
+
+  it('returns null for non-adjacent clips', () => {
+    const gapped: Clip[] = [
+      { ...baseVideoClip, id: 'c1', startTime: 0, duration: 4 },
+      { ...baseVideoClip, id: 'c2', startTime: 5, duration: 3 },
+    ]
+    expect(rollingEditOnTrack(gapped, 'c1', 'c2', 0.5, mediaAssets)).toBeNull()
   })
 })

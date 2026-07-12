@@ -366,6 +366,46 @@ export async function loadSlipSlideStress(page: import('@playwright/test').Page)
   })
 }
 
+export async function loadRollingEditStress(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadRollingEditStress()
+  })
+}
+
+export async function rollingTrimAtEditPointById(
+  page: import('@playwright/test').Page,
+  prevClipId: string,
+  nextClipId: string,
+  delta: number,
+) {
+  return page.evaluate(({ prevId, nextId, d }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.rollingTrimAtEditPointById(prevId, nextId, d)
+  }, { prevId: prevClipId, nextId: nextClipId, d: delta })
+}
+
+export async function getRollingEditClipDuration(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getRollingEditClipDuration(id)
+  }, clipId)
+}
+
+export async function getRollingEditClipStartTime(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getRollingEditClipStartTime(id)
+  }, clipId)
+}
+
+export async function toggleTrackLock(page: import('@playwright/test').Page, trackId: string) {
+  await page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.toggleTrackLock(id)
+  }, trackId)
+}
+
 export async function getClipSourceStart(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

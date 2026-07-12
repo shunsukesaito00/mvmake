@@ -183,3 +183,67 @@ export function slideClipOnTrack(
   if (!result) return null
   return applySlideSnapshotToClips(clips, result)
 }
+
+export interface RollingEditPair {
+  prev: Clip
+  next: Clip
+}
+
+export function listAdjacentClipPairs(clips: Clip[]): RollingEditPair[] {
+  const sorted = [...clips].sort((a, b) => a.startTime - b.startTime)
+  const pairs: RollingEditPair[] = []
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const prev = sorted[i]
+    const next = sorted[i + 1]
+    if (Math.abs(prev.startTime + prev.duration - next.startTime) <= ADJACENCY_TOLERANCE) {
+      pairs.push({ prev, next })
+    }
+  }
+  return pairs
+}
+
+export function computeRollingEdit(
+  snapshot: RollingEditPair,
+  delta: number,
+  mediaAssets: { id: string; duration: number }[],
+): RollingEditPair | null {
+  if (Math.abs(delta) < 0.0001) return snapshot
+
+  const { prev, next } = snapshot
+
+  if (delta > 0) {
+    const newPrev = extendClipEnd(prev, delta, mediaAssets)
+    if (!newPrev) return null
+    const newNext = adjustNextClipForSlideRight(next, delta, mediaAssets)
+    if (!newNext) return null
+    return { prev: newPrev, next: newNext }
+  }
+
+  const amount = -delta
+  const newPrev = shrinkClipEnd(prev, amount)
+  if (!newPrev) return null
+  const newNext = adjustNextClipForSlideLeft(next, amount, mediaAssets)
+  if (!newNext) return null
+  return { prev: newPrev, next: newNext }
+}
+
+export function rollingEditOnTrack(
+  clips: Clip[],
+  prevClipId: string,
+  nextClipId: string,
+  delta: number,
+  mediaAssets: { id: string; duration: number }[],
+): Clip[] | null {
+  const prev = clips.find((c) => c.id === prevClipId)
+  const next = clips.find((c) => c.id === nextClipId)
+  if (!prev || !next) return null
+  if (Math.abs(prev.startTime + prev.duration - next.startTime) > ADJACENCY_TOLERANCE) return null
+
+  const result = computeRollingEdit({ prev, next }, delta, mediaAssets)
+  if (!result) return null
+  return clips.map((c) => {
+    if (c.id === prevClipId) return result.prev
+    if (c.id === nextClipId) return result.next
+    return c
+  })
+}

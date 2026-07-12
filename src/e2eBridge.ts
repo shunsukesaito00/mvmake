@@ -107,6 +107,13 @@ import {
   type SlipSlideStressStats,
 } from './utils/slipSlideStressSetup'
 import {
+  getRollingEditClipDuration,
+  getRollingEditClipStartTime,
+  rollingTrimAtEditPointById,
+  seedRollingEditStress,
+  type RollingEditStressStats,
+} from './utils/rollingEditStressSetup'
+import {
   applyClipColor,
   applyClipRgbCurvePoint,
   getClipColor,
@@ -197,6 +204,11 @@ declare global {
       getClipVolumeKeyframeTimes: (clipId: string) => number[]
       slipClipById: (clipId: string, delta: number) => boolean
       slideClipById: (clipId: string, delta: number) => boolean
+      loadRollingEditStress: () => RollingEditStressStats
+      rollingTrimAtEditPointById: (prevClipId: string, nextClipId: string, delta: number) => boolean
+      getRollingEditClipDuration: (clipId: string) => number
+      getRollingEditClipStartTime: (clipId: string) => number
+      toggleTrackLock: (trackId: string) => void
       loadToneCurveStress: () => ToneCurveStressStats
       getClipColorMidtones: (clipId: string) => number
       getClipPixelGradeSample: (clipId: string, gray?: number) => { r: number; g: number; b: number }
@@ -356,6 +368,11 @@ export function installE2eBridge(): void {
     getClipVolumeKeyframeTimes: (clipId) => getClipVolumeKeyframeTimes(clipId),
     slipClipById: (clipId, delta) => slipClipById(clipId, delta),
     slideClipById: (clipId, delta) => slideClipById(clipId, delta),
+    loadRollingEditStress: () => seedRollingEditStress(),
+    rollingTrimAtEditPointById: (prevClipId, nextClipId, delta) => rollingTrimAtEditPointById(prevClipId, nextClipId, delta),
+    getRollingEditClipDuration: (clipId) => getRollingEditClipDuration(clipId),
+    getRollingEditClipStartTime: (clipId) => getRollingEditClipStartTime(clipId),
+    toggleTrackLock: (trackId) => useProjectStore.getState().toggleTrackLock(trackId),
     loadToneCurveStress: () => seedToneCurveStress(),
     getClipColorMidtones: (clipId) => getClipColor(clipId).midtones,
     getClipPixelGradeSample: (clipId, gray) => getClipPixelGradeSample(clipId, gray),
