@@ -17955,3 +17955,53 @@ test('インスペクター: 動画クリップの音量を正規化できる', 
   await expect(page.getByText('音量を正規化しました')).toBeVisible()
   await expect(volumeSlider).not.toHaveValue('1')
 })
+
+test('インスペクター: 動画クリップのイコライザー低域を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-eq-low.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-eq-low.webm')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  await page.getByLabel('イコライザーを有効化').check()
+  const lowSlider = page.getByRole('slider', { name: '低域' })
+  await lowSlider.fill('5')
+  await expect(lowSlider).toHaveValue('5')
+})
+
+test('インスペクター: 動画クリップのノイズ除去ハイパスを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-nr-hp.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-nr-hp.webm')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  const highpassSlider = page.getByRole('slider', { name: 'ハイパス' })
+  await highpassSlider.fill('150')
+  await expect(highpassSlider).toHaveValue('150')
+})
+
+test('インスペクター: 動画クリップのノイズ除去ローパスを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-nr-lp.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-nr-lp.webm')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  const lowpassCheckbox = page.getByLabel('高周波ヒス除去（ローパス）')
+  await lowpassCheckbox.check()
+  await expect(lowpassCheckbox).toBeChecked()
+  await lowpassCheckbox.uncheck()
+  await expect(lowpassCheckbox).not.toBeChecked()
+})
