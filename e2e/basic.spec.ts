@@ -17447,3 +17447,44 @@ test('インスペクター: テキストクリップのフェードアウトア
   await expect(animSelect).toHaveValue('fadeOut')
   await expect(page.getByRole('slider', { name: 'アニメーション長' })).toBeVisible()
 })
+
+test('インスペクター: テキストクリップのフェードインアニメーションを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="fadeIn"]') })
+  await animSelect.selectOption('fadeIn')
+  await expect(animSelect).toHaveValue('fadeIn')
+  await expect(page.getByRole('slider', { name: 'アニメーション長' })).toBeVisible()
+})
+
+test('インスペクター: オーディオクリップのノイズ除去ハイパスを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-nr-hp.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-nr-hp.wav')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  const highpassSlider = page.getByRole('slider', { name: 'ハイパス' })
+  await highpassSlider.fill('150')
+  await expect(highpassSlider).toHaveValue('150')
+})
+
+test('インスペクター: オーディオクリップのイコライザー低域を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-eq-low.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-eq-low.wav')
+
+  await page.getByRole('button', { name: 'イコライザー' }).click()
+  await page.getByLabel('イコライザーを有効化').check()
+  const lowSlider = page.getByRole('slider', { name: '低域' })
+  await lowSlider.fill('5')
+  await expect(lowSlider).toHaveValue('5')
+})

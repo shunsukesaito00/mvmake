@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.12）
+# 本番スモーク E2E 監査（v2.6.13）
 
-最終更新: 2026-07-12（v2.6.12 / 本番スモーク 621 シナリオ・スケールイン/スライドアップ/フェードアウト3件追加）
+最終更新: 2026-07-12（v2.6.13 / 本番スモーク 624 シナリオ・フェードイン/ノイズ除去ハイパス/EQ低域3件追加）
+
+## v2.6.13 拡充（621→624）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **624**（+3） |
+| 追加シナリオ | フェードインアニメ / ノイズ除去ハイパス / EQ低域変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.13）
+
+1. インスペクター: テキストクリップのフェードインアニメーションを設定できる
+2. インスペクター: オーディオクリップのノイズ除去ハイパスを変更できる
+3. インスペクター: オーディオクリップのイコライザー低域を変更できる
+
+選定根拠: フェードインアニメ・ノイズ除去ハイパス・EQ低域が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.12 拡充（618→621）
 
@@ -635,11 +651,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 621 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 621`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2612_ADDITIONS`
+- `e2e/basic.spec.ts` — 624 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 624`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2613_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.12 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.13 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
