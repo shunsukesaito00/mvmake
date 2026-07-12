@@ -17110,3 +17110,33 @@ test('インスペクター: テキストクリップの縦配置を変更でき
   await page.getByLabel('縦配置').selectOption('bottom')
   await expect(page.getByLabel('縦配置')).toHaveValue('bottom')
 })
+
+test('インスペクター: テキストクリップの文字色を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const colorInput = page.locator('label').filter({ hasText: '文字色' }).locator('input[type="color"]')
+  await colorInput.fill('#ff6600')
+  await expect(colorInput).toHaveValue('#ff6600')
+})
+
+test('インスペクター: テキストクリップの縁取りを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const strokeSlider = page.getByRole('slider', { name: '縁取り' })
+  await strokeSlider.fill('4')
+  await expect(strokeSlider).toHaveValue('4')
+})
+
+test('インスペクター: テキストクリップの縁色を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const strokeColorInput = page.locator('label').filter({ hasText: '縁色' }).locator('input[type="color"]')
+  await strokeColorInput.fill('#3366cc')
+  await expect(strokeColorInput).toHaveValue('#3366cc')
+})

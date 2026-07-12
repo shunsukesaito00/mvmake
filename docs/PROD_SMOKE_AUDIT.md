@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.03）
+# 本番スモーク E2E 監査（v2.6.04）
 
-最終更新: 2026-07-12（v2.6.03 / 本番スモーク 594 シナリオ・画像フェードアウト/テキスト行間/縦配置3件追加）
+最終更新: 2026-07-12（v2.6.04 / 本番スモーク 597 シナリオ・テキスト文字色/縁取り/縁色3件追加）
+
+## v2.6.04 拡充（594→597）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **597**（+3） |
+| 追加シナリオ | テキスト文字色変更 / 縁取り変更 / 縁色変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.04）
+
+1. インスペクター: テキストクリップの文字色を変更できる
+2. インスペクター: テキストクリップの縁取りを変更できる
+3. インスペクター: テキストクリップの縁色を変更できる
+
+選定根拠: テキスト文字色・縁取り・縁色が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.03 拡充（591→594）
 
@@ -491,11 +507,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 594 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 594`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2603_ADDITIONS`
+- `e2e/basic.spec.ts` — 597 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 597`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2604_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.03 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.04 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
