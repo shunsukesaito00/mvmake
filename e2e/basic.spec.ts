@@ -17414,3 +17414,36 @@ test('インスペクター: テキストクリップのタイプライターア
   await expect(animSelect).toHaveValue('typewriter')
   await expect(page.getByRole('slider', { name: 'アニメーション長' })).toBeVisible()
 })
+
+test('インスペクター: テキストクリップのスケールインアニメーションを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="scaleIn"]') })
+  await animSelect.selectOption('scaleIn')
+  await expect(animSelect).toHaveValue('scaleIn')
+  await expect(page.getByRole('slider', { name: 'アニメーション長' })).toBeVisible()
+})
+
+test('インスペクター: テキストクリップのスライドアップアニメーションを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="slideUp"]') })
+  await animSelect.selectOption('slideUp')
+  await expect(animSelect).toHaveValue('slideUp')
+  await expect(page.getByRole('slider', { name: 'アニメーション長' })).toBeVisible()
+})
+
+test('インスペクター: テキストクリップのフェードアウトアニメーションを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="fadeOut"]') })
+  await animSelect.selectOption('fadeOut')
+  await expect(animSelect).toHaveValue('fadeOut')
+  await expect(page.getByRole('slider', { name: 'アニメーション長' })).toBeVisible()
+})
