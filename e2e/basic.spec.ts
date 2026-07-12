@@ -16400,3 +16400,35 @@ test('インスペクター: 字幕帯の背景色を変更できる', async ({ 
   await backgroundColorInput.fill('#224466')
   await expect(backgroundColorInput).toHaveValue('#224466')
 })
+
+test('インスペクター: 字幕帯の角丸を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('checkbox', { name: '字幕帯' }).check()
+  const radiusSlider = page.getByRole('slider', { name: '角丸' })
+  await radiusSlider.fill('16')
+  await expect(radiusSlider).toHaveValue('16')
+})
+
+test('インスペクター: 字幕帯の背景余白を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('checkbox', { name: '字幕帯' }).check()
+  const paddingSlider = page.getByRole('slider', { name: '背景余白' })
+  await paddingSlider.fill('24')
+  await expect(paddingSlider).toHaveValue('24')
+})
+
+test('インスペクター: テキストクリップの不透明度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const opacitySlider = page.getByRole('slider', { name: '不透明度' })
+  await opacitySlider.fill('0.65')
+  await expect(opacitySlider).toHaveValue('0.65')
+})

@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.85）
+# 本番スモーク E2E 監査（v2.5.86）
 
-最終更新: 2026-07-12（v2.5.85 / 本番スモーク 540 シナリオ・紙吹雪/ゴールドシマー/字幕帯背景色3件追加・トランジション29種カバー完了）
+最終更新: 2026-07-12（v2.5.86 / 本番スモーク 543 シナリオ・字幕帯角丸/背景余白/テキスト不透明度3件追加）
+
+## v2.5.86 拡充（540→543）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **543**（+3） |
+| 追加シナリオ | 字幕帯角丸変更 / 字幕帯背景余白変更 / テキストクリップ不透明度変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.86）
+
+1. インスペクター: 字幕帯の角丸を変更できる
+2. インスペクター: 字幕帯の背景余白を変更できる
+3. インスペクター: テキストクリップの不透明度を変更できる
+
+選定根拠: 字幕帯 UI の角丸・背景余白は表示確認のみで値変更が未検証だった。字間設定は未実装のため、テキストクリップの位置・変形不透明度を追加。
 
 ## v2.5.85 拡充（537→540）
 
@@ -203,11 +219,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 540 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 540`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2585_ADDITIONS`
+- `e2e/basic.spec.ts` — 543 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 543`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2586_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.85 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.86 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
