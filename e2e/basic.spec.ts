@@ -16311,3 +16311,47 @@ test('インスペクター: テキストの文字色を変更できる', async 
   await colorInput.fill('#ff6600')
   await expect(colorInput).toHaveValue('#ff6600')
 })
+
+test('トランジション: レースリビールを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'lace-reveal-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'lace-reveal-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'lace-reveal-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'lace-reveal-b.png' }).click()
+
+  await clickTimelineClip(page, 'lace-reveal-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'レースリビール', exact: true }).click()
+  await expect(page.getByText('レースリビールを適用しました')).toBeVisible()
+})
+
+test('トランジション: リボンカットを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'ribbon-cut-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'ribbon-cut-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'ribbon-cut-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'ribbon-cut-b.png' }).click()
+
+  await clickTimelineClip(page, 'ribbon-cut-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'リボンカット', exact: true }).click()
+  await expect(page.getByText('リボンカットを適用しました')).toBeVisible()
+})
+
+test('インスペクター: テキストの縁色を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const strokeColorInput = page.locator('label').filter({ hasText: '縁色' }).locator('input[type="color"]')
+  await strokeColorInput.fill('#3366cc')
+  await expect(strokeColorInput).toHaveValue('#3366cc')
+})
