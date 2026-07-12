@@ -19977,3 +19977,93 @@ test('インスペクター: 画像クリップのトランスフォームキー
   await expect(graph.getByRole('img', { name: /トランスフォームキーフレーム.*カーブ/ })).toBeVisible()
   await expect(graph.locator('path')).toHaveCount(1)
 })
+
+test('インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除後に2点再追加するとカーブを表示できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.locator('main input[type="range"]').fill('1')
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.locator('main input[type="range"]').fill('3')
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const graph = page.getByTestId('transform-kf-graph-editor')
+  await expect(page.getByRole('button', { name: 'グラフ上のキーフレーム 3' })).toBeVisible()
+  await page.getByRole('button', { name: 'グラフ上のキーフレーム 3' }).click()
+  await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 3' }).getByRole('button', { name: '削除' }).click()
+  await page.getByRole('button', { name: 'グラフ上のキーフレーム 2' }).click()
+  await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 2' }).getByRole('button', { name: '削除' }).click()
+  await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 1' }).getByRole('button', { name: '削除' }).click()
+  await expect(graph).toBeHidden()
+
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.locator('main input[type="range"]').fill('2')
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(graph).toBeVisible()
+  await expect(page.getByRole('button', { name: 'グラフ上のキーフレーム 1' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'グラフ上のキーフレーム 2' })).toBeVisible()
+  await expect(graph.getByRole('img', { name: /トランスフォームキーフレーム.*カーブ/ })).toBeVisible()
+  await expect(graph.locator('path')).toHaveCount(1)
+})
+
+test('インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除後に2点再追加するとカーブを表示できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-graph-delete-3kf-readd-curve.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-graph-delete-3kf-readd-curve.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.locator('main input[type="range"]').fill('1')
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.locator('main input[type="range"]').fill('3')
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  const graph = page.getByTestId('transform-kf-graph-editor')
+  await expect(page.getByRole('button', { name: 'グラフ上のキーフレーム 3' })).toBeVisible()
+  await page.getByRole('button', { name: 'グラフ上のキーフレーム 3' }).click()
+  await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 3' }).getByRole('button', { name: '削除' }).click()
+  await page.getByRole('button', { name: 'グラフ上のキーフレーム 2' }).click()
+  await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 2' }).getByRole('button', { name: '削除' }).click()
+  await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 1' }).getByRole('button', { name: '削除' }).click()
+  await expect(graph).toBeHidden()
+
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.locator('main input[type="range"]').fill('2')
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+
+  await expect(graph).toBeVisible()
+  await expect(page.getByRole('button', { name: 'グラフ上のキーフレーム 1' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'グラフ上のキーフレーム 2' })).toBeVisible()
+  await expect(graph.getByRole('img', { name: /トランスフォームキーフレーム.*カーブ/ })).toBeVisible()
+  await expect(graph.locator('path')).toHaveCount(1)
+})
+
+test('インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで最終キーフレーム削除後に件数表示が非表示になる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-tf-graph-kf-count-last-delete.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-tf-graph-kf-count-last-delete.webm')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('1件', { exact: true })).toBeVisible()
+
+  const graph = page.getByTestId('transform-kf-graph-editor')
+  await expect(graph).toBeVisible()
+  await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 1' }).getByRole('button', { name: '削除' }).click()
+
+  await expect(page.getByText('1件', { exact: true })).toBeHidden()
+  await expect(page.getByText('再生ヘッド位置(クリップ内)に位置・スケール・回転・不透明度のキーフレームを追加できます')).toBeVisible()
+  await expect(graph).toBeHidden()
+})

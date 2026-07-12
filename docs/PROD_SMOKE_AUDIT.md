@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.54）
+# 本番スモーク E2E 監査（v2.6.55）
 
-最終更新: 2026-07-13（v2.6.54 / 本番スモーク 747 シナリオ・画像/テキストTFグラフ件数表示削除/画像TFグラフ3点削除後2点再追加カーブ3件追加）
+最終更新: 2026-07-13（v2.6.55 / 本番スモーク 750 シナリオ・テキスト/動画TFグラフ3点削除後2点再追加カーブ/動画TFグラフ最終削除後件数非表示3件追加）
+
+## v2.6.55 拡充（747→750）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **750**（+3） |
+| 追加シナリオ | テキスト/動画TFグラフ3点削除後2点再追加カーブ / 動画TFグラフ最終削除後件数非表示 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.55）
+
+1. インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除後に2点再追加するとカーブを表示できる
+2. インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームをすべて削除後に2点再追加するとカーブを表示できる
+3. インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで最終キーフレーム削除後に件数表示が非表示になる
+
+選定根拠: 画像のみだった3点全削除後の2点再追加カーブをテキスト/動画でも検証し、最終キーフレーム削除時の件数表示非表示を動画TFグラフで確認するため追加。
 
 ## v2.6.54 拡充（744→747）
 
@@ -1307,11 +1323,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 747 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 747`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2654_ADDITIONS`
+- `e2e/basic.spec.ts` — 750 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 750`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2655_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.54 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.55 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
