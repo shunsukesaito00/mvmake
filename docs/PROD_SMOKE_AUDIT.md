@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.37）
+# 本番スモーク E2E 監査（v2.6.38）
 
-最終更新: 2026-07-13（v2.6.37 / 本番スモーク 696 シナリオ・動画/テキストTFグラフ回転/動画TFグラフスケール切替3件追加）
+最終更新: 2026-07-13（v2.6.38 / 本番スモーク 699 シナリオ・画像/テキストTFグラフスケール/動画TFグラフ不透明度切替3件追加）
+
+## v2.6.38 拡充（696→699）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **699**（+3） |
+| 追加シナリオ | 画像/テキストTFグラフスケール切替 / 動画TFグラフ不透明度切替 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.38）
+
+1. インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターでスケールプロパティを切り替えできる
+2. インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターでスケールプロパティを切り替えできる
+3. インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで不透明度プロパティを切り替えできる
+
+選定根拠: 画像/テキストTFグラフスケールプロパティ切替・動画TFグラフ不透明度プロパティ切替が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.37 拡充（693→696）
 
@@ -1035,11 +1051,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 696 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 696`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2637_ADDITIONS`
+- `e2e/basic.spec.ts` — 699 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 699`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2638_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.37 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.38 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
