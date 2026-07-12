@@ -17488,3 +17488,49 @@ test('インスペクター: オーディオクリップのイコライザー低
   await lowSlider.fill('5')
   await expect(lowSlider).toHaveValue('5')
 })
+
+test('インスペクター: オーディオクリップのノイズ除去ローパスを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-nr-lp.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-nr-lp.wav')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  const lowpassCheckbox = page.getByLabel('高周波ヒス除去（ローパス）')
+  await lowpassCheckbox.check()
+  await expect(lowpassCheckbox).toBeChecked()
+  await lowpassCheckbox.uncheck()
+  await expect(lowpassCheckbox).not.toBeChecked()
+})
+
+test('インスペクター: テキストクリップの横配置を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const alignSelect = page.locator('select').filter({ has: page.locator('option[value="right"]') })
+  await alignSelect.selectOption('right')
+  await expect(alignSelect).toHaveValue('right')
+})
+
+test('インスペクター: 動画クリップのクロップを無効化できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-crop-off.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-crop-off.webm')
+
+  await page.getByRole('button', { name: 'クロップ', exact: true }).click()
+  const cropCheckbox = page.getByRole('checkbox', { name: 'クロップ有効' })
+  await cropCheckbox.check()
+  await expect(page.getByRole('slider', { name: '幅' })).toBeVisible()
+
+  await cropCheckbox.uncheck()
+  await expect(cropCheckbox).not.toBeChecked()
+  await expect(page.getByRole('slider', { name: '幅' })).toBeHidden()
+})
