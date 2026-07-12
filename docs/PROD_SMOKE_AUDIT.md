@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.78）
+# 本番スモーク E2E 監査（v2.5.79）
 
-最終更新: 2026-07-12（v2.5.78 / 本番スモーク 519 シナリオ・スライド上/アイリス/フェードイン3件追加）
+最終更新: 2026-07-12（v2.5.79 / 本番スモーク 522 シナリオ・縦配置center/左揃え/ブラーディゾルブ3件追加）
+
+## v2.5.79 拡充（519→522）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **522**（+3） |
+| 追加シナリオ | 縦配置 center / テキスト左揃え / ブラーディゾルブトランジション |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.79）
+
+1. インスペクター: テキストの縦配置を center に設定できる
+2. インスペクター: テキストを左揃えに設定できる
+3. トランジション: ブラーディゾルブを画像クリップに適用できる
+
+選定根拠: MVP バックログ未カバー領域（縦配置 center 明示、テキスト左右揃え、ブラーディゾルブトランジション）から選定。
 
 ## v2.5.78 拡充（516→519）
 
@@ -90,9 +106,9 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 519 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 519`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2578_ADDITIONS`
+- `e2e/basic.spec.ts` — 522 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 522`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2579_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.78 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.79 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

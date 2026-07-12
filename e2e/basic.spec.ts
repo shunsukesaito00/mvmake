@@ -16098,3 +16098,40 @@ test('テキスト: フェードインアニメーションを設定して長さ
   await duration.fill('2')
   await expect(duration).toHaveValue('2')
 })
+
+test('インスペクター: テキストの縦配置を center に設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByLabel('縦配置').selectOption('top')
+  await page.getByLabel('縦配置').selectOption('center')
+  await expect(page.getByLabel('縦配置')).toHaveValue('center')
+})
+
+test('インスペクター: テキストを左揃えに設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const alignSelect = page.locator('select').filter({ has: page.locator('option[value="left"]') })
+  await alignSelect.selectOption('left')
+  await expect(alignSelect).toHaveValue('left')
+})
+
+test('トランジション: ブラーディゾルブを画像クリップに適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'blur-dissolve-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'blur-dissolve-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'blur-dissolve-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'blur-dissolve-b.png' }).click()
+
+  await clickTimelineClip(page, 'blur-dissolve-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'ブラーディゾルブ', exact: true }).click()
+  await expect(page.getByText('ブラーディゾルブを適用しました')).toBeVisible()
+})
