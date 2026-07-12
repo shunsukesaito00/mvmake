@@ -203,6 +203,9 @@ import {
   PROD_SMOKE_V2571_ADDITIONS,
   PROD_SMOKE_V2572_ADDITIONS,
   PROD_SMOKE_V2573_ADDITIONS,
+  PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_LAYER_COUNT,
+  PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_ROUTES,
+  auditPhase4DoubleNamedReclickLayers,
 } from './prodSmokeAudit'
 
 const rootDir = resolve(import.meta.dirname, '../..')
@@ -1405,6 +1408,18 @@ describe('prodSmokeAudit', () => {
   it('v2.5.73 追加シナリオが basic.spec.ts に含まれる', () => {
     for (const label of PROD_SMOKE_V2573_ADDITIONS) {
       expect(basic).toContain(label)
+    }
+  })
+
+  it('v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである', () => {
+    const titles = [...basic.matchAll(/test\('([^']+)'/g)].map((match) => match[1])
+    const duplicateTitles = titles.filter((title, index) => titles.indexOf(title) !== index)
+    expect(duplicateTitles).toEqual([])
+
+    const layers = auditPhase4DoubleNamedReclickLayers(basic)
+    for (const route of PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_ROUTES) {
+      expect(layers[route.id].plain).toBe(PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_LAYER_COUNT)
+      expect(layers[route.id].named).toBe(PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_LAYER_COUNT)
     }
   })
 })

@@ -1395,3 +1395,88 @@ export const PROD_SMOKE_V2573_ADDITIONS = [
   '色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風2回再クリック挟み）',
   '色調補正: LUT 付きユーザールックを組み込みルック適用後にユーザールックを適用した後に再適用した後の LUT 強度変更と LUT 切替と LUT「なし」選択を undo で LUT 選択とルック選択まで復元できる（フィルム風2回再クリック挟み）',
 ] as const
+
+/** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */
+export const PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_LAYER_COUNT = 3
+
+/** suffix 整理フェーズ4 完了時の double-named-reclick 全6経路 */
+export const PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_ROUTES = [
+  {
+    id: 'utb-builtin',
+    routeMarker: 'user-then-builtin-bundled',
+    fileMarker: 'builtin-double-named-reclick',
+    titlePath: 'ユーザールック適用後に組み込みルック',
+    plainTitleSuffix: '（組み込みルック2回再クリック挟み）',
+    namedTitleSuffix: '（組み込みルック2回再クリック挟み・builtin-double-named-reclick）',
+  },
+  {
+    id: 'utb-wedding',
+    routeMarker: 'user-then-builtin-bundled',
+    fileMarker: 'wedding-double-named-reclick',
+    titlePath: 'ユーザールック適用後に組み込みルック',
+    plainTitleSuffix: '（ウエディング暖色2回再クリック挟み）',
+    namedTitleSuffix: '（ウエディング暖色2回再クリック挟み・wedding-double-named-reclick）',
+  },
+  {
+    id: 'utb-film',
+    routeMarker: 'user-then-builtin-bundled',
+    fileMarker: 'film-double-named-reclick',
+    titlePath: 'ユーザールック適用後に組み込みルック',
+    plainTitleSuffix: '（フィルム風2回再クリック挟み）',
+    namedTitleSuffix: '（フィルム風2回再クリック挟み・film-double-named-reclick）',
+  },
+  {
+    id: 'btu-builtin',
+    routeMarker: 'builtin-then-user-bundled',
+    fileMarker: 'builtin-double-named-reclick',
+    titlePath: '組み込みルック適用後にユーザールック',
+    plainTitleSuffix: '（組み込みルック2回再クリック挟み）',
+    namedTitleSuffix: '（組み込みルック2回再クリック挟み・builtin-double-named-reclick）',
+  },
+  {
+    id: 'btu-wedding',
+    routeMarker: 'builtin-then-user-bundled',
+    fileMarker: 'wedding-double-named-reclick',
+    titlePath: '組み込みルック適用後にユーザールック',
+    plainTitleSuffix: '（ウエディング暖色2回再クリック挟み）',
+    namedTitleSuffix: '（ウエディング暖色2回再クリック挟み・wedding-double-named-reclick）',
+  },
+  {
+    id: 'btu-film',
+    routeMarker: 'builtin-then-user-bundled',
+    fileMarker: 'film-double-named-reclick',
+    titlePath: '組み込みルック適用後にユーザールック',
+    plainTitleSuffix: '（フィルム風2回再クリック挟み）',
+    namedTitleSuffix: '（フィルム風2回再クリック挟み・film-double-named-reclick）',
+  },
+] as const
+
+export type Phase4DoubleNamedReclickAudit = {
+  plain: number
+  named: number
+}
+
+/** basic.spec 本文からフェーズ4 double-named-reclick 層の件数を集計する */
+export function auditPhase4DoubleNamedReclickLayers(basic: string): Record<string, Phase4DoubleNamedReclickAudit> {
+  const result = Object.fromEntries(
+    PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_ROUTES.map((route) => [route.id, { plain: 0, named: 0 }]),
+  ) as Record<string, Phase4DoubleNamedReclickAudit>
+
+  const testTitleRe = /test\('([^']+)'/g
+  let match: RegExpExecArray | null
+  while ((match = testTitleRe.exec(basic)) !== null) {
+    const title = match[1]
+    const snippet = basic.slice(match.index, match.index + 800)
+    for (const route of PROD_SMOKE_PHASE4_DOUBLE_NAMED_RECLICK_ROUTES) {
+      if (!title.includes(route.titlePath)) continue
+      if (!snippet.includes(route.routeMarker) || !snippet.includes(route.fileMarker)) continue
+      if (title.endsWith(route.namedTitleSuffix)) {
+        result[route.id].named++
+      } else if (title.endsWith(route.plainTitleSuffix)) {
+        result[route.id].plain++
+      }
+    }
+  }
+
+  return result
+}

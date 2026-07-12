@@ -1,22 +1,32 @@
-# 本番スモーク E2E 監査（v2.5.73）
+# 本番スモーク E2E 監査（v2.5.74）
 
-最終更新: 2026-07-12（v2.5.73 / 本番スモーク 507 シナリオ・構成整理）
+最終更新: 2026-07-12（v2.5.74 / 本番スモーク 507 シナリオ・suffix整理フェーズ4 完了監査）
 
-## v2.5.73 追加（3件）
+## v2.5.74 監査（構成整理・件数維持）
 
-| # | シナリオ | 根拠 |
-|---|---------|------|
-| 505 | 組み込み→ユーザールック後フィルム風2回再クリック挟みLUT付き再適用+強度+切替 undo→LUT/ルック復元 | 色調補正統合 |
-| 506 | 組み込み→ユーザールック後フィルム風2回再クリック挟みLUT付き再適用+強度+なし undo→LUT/ルック復元 | 色調補正統合 |
-| 507 | 組み込み→ユーザールック後フィルム風2回再クリック挟みLUT付き再適用+強度+切替+なし undo→LUT/ルック復元 | 色調補正統合 |
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **507**（維持） |
+| Playwright タイトル重複 | **0** |
+| double-named-reclick 層（全6経路） | 各 **suffix 3 + plain 3** |
+| 孤立テスト断片（`=> {` 残骸） | **0** |
 
-※ v2.5.45 で builtin→user フィルム風2回再クリック挟みは plain→suffix リネーム＋末尾 plain 3件追加済み（named-reclick 層）。v2.5.61 で short-reclick 層整理済み。v2.5.73（suffix 整理フェーズ4 完了）では double-reclick named 層の builtin→user フィルム風2回経路を整理：既存 plain 3件（行13444付近）を `・film-double-named-reclick` 接尾辞付き named-reclick ボディに差し替え、重複していた旧 suffix 3件（行9410付近）を削除、接尾辞なし plain 3件（`film-double-named-reclick` ファイル名）を末尾に再配置。件数は 507 維持。
+### フェーズ4 完了サマリー（v2.5.68〜v2.5.73）
 
-## フェーズ4 監査メモ（v2.5.73）
+| 版 | 経路 | 接尾辞 |
+|----|------|--------|
+| v2.5.68 | user→builtin 組み込みルック2回 | `builtin-double-named-reclick` |
+| v2.5.69 | user→builtin ウエディング暖色2回 | `wedding-double-named-reclick` |
+| v2.5.70 | user→builtin フィルム風2回 | `film-double-named-reclick` |
+| v2.5.71 | builtin→user 組み込みルック2回 | `builtin-double-named-reclick` |
+| v2.5.72 | builtin→user ウエディング暖色2回 | `wedding-double-named-reclick` |
+| v2.5.73 | builtin→user フィルム風2回 | `film-double-named-reclick` |
 
-v2.5.68〜v2.5.73 で double-reclick named 層の suffix 整理フェーズ4を完了。user→builtin（組み込みルック/ウエディング暖色/フィルム風）および builtin→user（組み込みルック/ウエディング暖色/フィルム風）の全6経路を整理済み。
+各版で「既存 plain → named ボディ差し替え + 旧 suffix 削除 + 末尾 plain 再配置」を実施。件数は常に **507 維持**。
 
 ## 自動検証
 
 - `e2e/basic.spec.ts` — 507 `test(`
 - `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 507`
+- `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
