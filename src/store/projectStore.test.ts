@@ -384,6 +384,44 @@ describe('copy / paste', () => {
     expect(clips[1].startTime).toBe(10)
     expect(clips[1].id).not.toBe('c1')
   })
+
+  it('ripple insert shifts subsequent clips when pasting in a gap', () => {
+    setProject(makeProject([videoClip('c1', 0, 5), videoClip('c2', 8, 5)]))
+    useProjectStore.setState({ selectedClipId: 'c1', currentTime: 5, rippleInsert: true })
+
+    useProjectStore.getState().copySelectedClip()
+    useProjectStore.getState().pasteClip()
+
+    const clips = getTrackClips(TRACK_V1).sort((a, b) => a.startTime - b.startTime)
+    expect(clips).toHaveLength(3)
+    expect(clips.find((c) => c.id === 'c2')?.startTime).toBe(13)
+  })
+})
+
+describe('ripple insert media', () => {
+  it('addClipFromMedia shifts subsequent clips when ripple insert is on', () => {
+    const asset = imageAsset('img-gap')
+    setProject(makeProject([videoClip('c1', 0, 5), videoClip('c2', 8, 5)], [asset]))
+    useProjectStore.setState({ rippleInsert: true })
+
+    const ok = useProjectStore.getState().addClipFromMedia(asset.id, TRACK_V1, 5)
+    expect(ok).toBe(true)
+    const clips = getTrackClips(TRACK_V1)
+    expect(clips.find((c) => c.mediaId === 'img-gap')?.startTime).toBe(5)
+    expect(clips.find((c) => c.id === 'c2')?.startTime).toBe(13)
+  })
+
+  it('addClipFromMedia keeps overlap resolution when ripple insert is off', () => {
+    const asset = imageAsset('img-overlap')
+    setProject(makeProject([videoClip('c1', 0, 5), videoClip('c2', 8, 5)], [asset]))
+    useProjectStore.setState({ rippleInsert: false })
+
+    useProjectStore.getState().addClipFromMedia(asset.id, TRACK_V1, 5)
+    const clips = getTrackClips(TRACK_V1)
+    expect(clips.find((c) => c.id === 'c2')?.startTime).toBe(8)
+    const inserted = clips.find((c) => c.mediaId === 'img-overlap')
+    expect(inserted?.startTime).toBeGreaterThan(8)
+  })
 })
 
 describe('applyBatchTransitions', () => {

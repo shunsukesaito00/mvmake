@@ -78,6 +78,7 @@ import { splitSpeedKeyframes } from '../utils/speedKeyframesTimeline'
 import { getSourceOffsetAtLocalTime } from '../utils/speedKeyframes'
 import { canRemoveTrack, createTrack, findTrackInsertIndex } from '../utils/trackManagement'
 import { type PlaybackShuttleRate, cycleForwardShuttleRate } from '../utils/playbackShuttle'
+import { prepareTrackClipsForInsert } from '../utils/rippleInsert'
 
 const MAX_HISTORY = 50
 
@@ -169,6 +170,7 @@ interface ProjectState {
   future: Project[]
   clipboard: Clip | null
   rippleDelete: boolean
+  rippleInsert: boolean
   inPoint: number | null
   outPoint: number | null
   showSafeAreas: boolean
@@ -199,6 +201,7 @@ interface ProjectState {
   setRestoreReady: (ready: boolean) => void
   setProjectName: (name: string) => void
   setRippleDelete: (v: boolean) => void
+  setRippleInsert: (v: boolean) => void
   setShowSafeAreas: (v: boolean) => void
   setLoopPlayback: (v: boolean) => void
   setShowPlayHint: (v: boolean) => void
@@ -348,6 +351,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   future: [],
   clipboard: null,
   rippleDelete: true,
+  rippleInsert: false,
   inPoint: null,
   outPoint: null,
   showSafeAreas: false,
@@ -411,6 +415,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setIsExporting: (exporting) => set({ isExporting: exporting }),
   setRestoreReady: (ready) => set({ restoreReady: ready }),
   setRippleDelete: (v) => set({ rippleDelete: v }),
+  setRippleInsert: (v) => set({ rippleInsert: v }),
   setShowSafeAreas: (v) => set({ showSafeAreas: v }),
   setLoopPlayback: (v) => set({ loopPlayback: v }),
   setShowPlayHint: (v) => set({ showPlayHint: v }),
@@ -568,16 +573,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!targetTrack) return false
 
     get().pushHistory()
-    let clipStart = startTime ?? getProjectDuration(project.tracks)
+    const clipStart = startTime ?? getProjectDuration(project.tracks)
     const clip = createClipFromMedia(asset, targetTrack.id, clipStart)
-    clipStart = resolveClipOverlap(clip, targetTrack.clips, clipStart)
-    clip.startTime = clipStart
+    const updatedClips = prepareTrackClipsForInsert(
+      targetTrack.clips,
+      clip,
+      clipStart,
+      get().rippleInsert,
+    )
 
     set((state) => ({
       project: {
         ...state.project,
         tracks: state.project.tracks.map((t) =>
-          t.id === targetTrack!.id ? { ...t, clips: [...t.clips, clip] } : t,
+          t.id === targetTrack!.id ? { ...t, clips: updatedClips } : t,
         ),
       },
       ...syncClipSelection([clip.id]),
@@ -980,7 +989,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   pasteClip: () => {
-    const { clipboard, project, currentTime } = get()
+    const { clipboard, project, currentTime, rippleInsert } = get()
     if (!clipboard) return
 
     const track = project.tracks.find((t) => t.id === clipboard.trackId && !t.locked)
@@ -992,12 +1001,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       id: createId(),
       startTime: currentTime,
     }
+    const updatedClips = prepareTrackClipsForInsert(track.clips, newClip, currentTime, rippleInsert)
 
     set((state) => ({
       project: {
         ...state.project,
         tracks: state.project.tracks.map((t) =>
-          t.id === track.id ? { ...t, clips: [...t.clips, newClip] } : t,
+          t.id === track.id ? { ...t, clips: updatedClips } : t,
         ),
       },
       ...syncClipSelection([newClip.id]),

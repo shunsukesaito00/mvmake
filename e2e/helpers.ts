@@ -670,6 +670,46 @@ export async function getProjectFps(page: import('@playwright/test').Page) {
   })
 }
 
+export async function getRippleInsert(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getRippleInsert()
+  })
+}
+
+export async function setRippleInsert(page: import('@playwright/test').Page, value: boolean) {
+  await page.evaluate((enabled) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.setRippleInsert(enabled)
+  }, value)
+}
+
+export async function addClipFromMediaAt(
+  page: import('@playwright/test').Page,
+  mediaId: string,
+  startTime: number,
+  trackId?: string,
+) {
+  return page.evaluate(({ id, time, track }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.addClipFromMediaAt(id, track, time)
+  }, { id: mediaId, time: startTime, track: trackId })
+}
+
+export async function getFirstMediaAssetId(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getFirstMediaAssetId()
+  })
+}
+
+export async function listClipStartTimesOnTrack(page: import('@playwright/test').Page, trackId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.listClipStartTimesOnTrack(id)
+  }, trackId)
+}
+
 export async function getRippleDelete(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

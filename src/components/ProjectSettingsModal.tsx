@@ -16,6 +16,8 @@ export function ProjectSettingsModal({ open, onClose }: ProjectSettingsModalProp
   const applyProjectSettingsPreset = useProjectStore((s) => s.applyProjectSettingsPreset)
   const rippleDelete = useProjectStore((s) => s.rippleDelete)
   const setRippleDelete = useProjectStore((s) => s.setRippleDelete)
+  const rippleInsert = useProjectStore((s) => s.rippleInsert)
+  const setRippleInsert = useProjectStore((s) => s.setRippleInsert)
   const loopPlayback = useProjectStore((s) => s.loopPlayback)
   const setLoopPlayback = useProjectStore((s) => s.setLoopPlayback)
 
@@ -64,6 +66,16 @@ export function ProjectSettingsModal({ open, onClose }: ProjectSettingsModalProp
           <label className="flex items-center gap-2.5 text-sm text-text-secondary">
             <input type="checkbox" checked={rippleDelete} onChange={(e) => setRippleDelete(e.target.checked)} className="accent-accent" />
             リップル編集（削除・トリム）
+          </label>
+          <label className="flex items-center gap-2.5 text-sm text-text-secondary">
+            <input
+              type="checkbox"
+              checked={rippleInsert}
+              onChange={(e) => setRippleInsert(e.target.checked)}
+              className="accent-accent"
+              data-testid="ripple-insert-toggle"
+            />
+            リップルインサート（メディア配置・ペースト）
           </label>
           <label className="flex items-center gap-2.5 text-sm text-text-secondary">
             <input type="checkbox" checked={loopPlayback} onChange={(e) => setLoopPlayback(e.target.checked)} className="accent-accent" />

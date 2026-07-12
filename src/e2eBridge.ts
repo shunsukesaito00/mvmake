@@ -228,6 +228,11 @@ declare global {
       getProjectHeight: () => number
       getProjectFps: () => number
       getRippleDelete: () => boolean
+      getRippleInsert: () => boolean
+      setRippleInsert: (value: boolean) => void
+      addClipFromMediaAt: (mediaId: string, trackId: string | undefined, startTime: number) => boolean
+      getFirstMediaAssetId: () => string | null
+      listClipStartTimesOnTrack: (trackId: string) => number[]
       getLoopPlayback: () => boolean
       getTrackVolume: (trackId: string) => number
       setTrackVolume: (trackId: string, volume: number) => void
@@ -398,6 +403,14 @@ export function installE2eBridge(): void {
     getProjectHeight: () => useProjectStore.getState().project.height,
     getProjectFps: () => useProjectStore.getState().project.fps,
     getRippleDelete: () => useProjectStore.getState().rippleDelete,
+    getRippleInsert: () => useProjectStore.getState().rippleInsert,
+    setRippleInsert: (value) => useProjectStore.getState().setRippleInsert(value),
+    addClipFromMediaAt: (mediaId, trackId, startTime) =>
+      useProjectStore.getState().addClipFromMedia(mediaId, trackId, startTime),
+    getFirstMediaAssetId: () => useProjectStore.getState().project.mediaAssets[0]?.id ?? null,
+    listClipStartTimesOnTrack: (trackId) =>
+      useProjectStore.getState().project.tracks
+        .find((t) => t.id === trackId)?.clips.map((c) => c.startTime) ?? [],
     getLoopPlayback: () => useProjectStore.getState().loopPlayback,
     getTrackVolume: (trackId) => {
       const track = useProjectStore.getState().project.tracks.find((t) => t.id === trackId)

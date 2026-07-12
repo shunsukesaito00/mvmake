@@ -11,6 +11,7 @@ export function TimelineEditTools() {
   const timelineEditTool = useProjectStore((s) => s.timelineEditTool)
   const setTimelineEditTool = useProjectStore((s) => s.setTimelineEditTool)
   const rippleDelete = useProjectStore((s) => s.rippleDelete)
+  const rippleInsert = useProjectStore((s) => s.rippleInsert)
 
   return (
     <div className="flex items-center gap-2 border-b border-border bg-surface-2 px-2 py-1.5">
@@ -38,14 +39,25 @@ export function TimelineEditTools() {
           )
         })}
       </div>
+      <div className="ml-auto flex items-center gap-1.5">
       <span
-        className={`ml-auto rounded px-1.5 py-0.5 text-[9px] font-medium ${
+        className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${
           rippleDelete ? 'bg-accent/15 text-accent' : 'bg-surface-3 text-text-muted'
         }`}
         title="プロジェクト設定のリップル削除/トリムに連動"
       >
         リップル {rippleDelete ? 'ON' : 'OFF'}
       </span>
+      <span
+        data-testid="ripple-insert-indicator"
+        className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${
+          rippleInsert ? 'bg-accent/15 text-accent' : 'bg-surface-3 text-text-muted'
+        }`}
+        title="プロジェクト設定のリップルインサートに連動"
+      >
+        挿入 {rippleInsert ? 'ON' : 'OFF'}
+      </span>
+      </div>
     </div>
   )
 }
