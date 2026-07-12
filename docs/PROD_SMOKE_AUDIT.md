@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.06）
+# 本番スモーク E2E 監査（v2.6.07）
 
-最終更新: 2026-07-12（v2.6.06 / 本番スモーク 603 シナリオ・テキスト字幕帯/背景色/角丸3件追加）
+最終更新: 2026-07-12（v2.6.07 / 本番スモーク 606 シナリオ・字幕帯余白/オフ/アニメ種別3件追加）
+
+## v2.6.07 拡充（603→606）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **606**（+3） |
+| 追加シナリオ | 字幕帯背景余白変更 / 字幕帯オフ / アニメーション種別変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.07）
+
+1. インスペクター: テキストクリップの字幕帯背景余白を変更できる
+2. インスペクター: テキストクリップの字幕帯をオフにできる
+3. インスペクター: テキストクリップのアニメーション種別を変更できる
+
+選定根拠: 字幕帯背景余白・オフ・アニメーション種別が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.06 拡充（600→603）
 
@@ -539,11 +555,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 603 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 603`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2606_ADDITIONS`
+- `e2e/basic.spec.ts` — 606 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 606`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2607_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.06 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.07 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

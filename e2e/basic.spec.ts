@@ -17205,3 +17205,38 @@ test('インスペクター: テキストクリップの字幕帯角丸を変更
   await radiusSlider.fill('16')
   await expect(radiusSlider).toHaveValue('16')
 })
+
+test('インスペクター: テキストクリップの字幕帯背景余白を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('checkbox', { name: '字幕帯' }).check()
+  const paddingSlider = page.getByRole('slider', { name: '背景余白' })
+  await paddingSlider.fill('24')
+  await expect(paddingSlider).toHaveValue('24')
+})
+
+test('インスペクター: テキストクリップの字幕帯をオフにできる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const subtitleCheckbox = page.getByRole('checkbox', { name: '字幕帯' })
+  await subtitleCheckbox.check()
+  await expect(page.getByRole('slider', { name: '背景余白' })).toBeVisible()
+
+  await subtitleCheckbox.uncheck()
+  await expect(page.getByRole('slider', { name: '背景余白' })).toBeHidden()
+  await expect(page.getByLabel('字幕帯の背景色')).toBeHidden()
+})
+
+test('インスペクター: テキストクリップのアニメーション種別を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="slideUp"]') })
+  await animSelect.selectOption('slideUp')
+  await expect(animSelect).toHaveValue('slideUp')
+})
