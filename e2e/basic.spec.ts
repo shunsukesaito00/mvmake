@@ -16432,3 +16432,40 @@ test('インスペクター: テキストクリップの不透明度を変更で
   await opacitySlider.fill('0.65')
   await expect(opacitySlider).toHaveValue('0.65')
 })
+
+test('インスペクター: 画像クリップの Ken Burns 開始スケールを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'ken-burns.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'ken-burns.png')
+
+  await page.getByRole('button', { name: 'Ken Burns', exact: true }).click()
+  const startScaleSlider = page.getByRole('slider', { name: '開始スケール' })
+  await startScaleSlider.fill('1.4')
+  await expect(startScaleSlider).toHaveValue('1.4')
+})
+
+test('インスペクター: テキストクリップのスケールを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const scaleSlider = page.getByRole('slider', { name: 'スケール' })
+  await scaleSlider.fill('1.25')
+  await expect(scaleSlider).toHaveValue('1.25')
+})
+
+test('インスペクター: 字幕帯をオフにできる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const subtitleCheckbox = page.getByRole('checkbox', { name: '字幕帯' })
+  await subtitleCheckbox.check()
+  await expect(page.getByRole('slider', { name: '背景余白' })).toBeVisible()
+
+  await subtitleCheckbox.uncheck()
+  await expect(page.getByRole('slider', { name: '背景余白' })).toBeHidden()
+  await expect(page.getByLabel('字幕帯の背景色')).toBeHidden()
+})

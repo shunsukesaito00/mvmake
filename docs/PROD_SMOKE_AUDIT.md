@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.5.86）
+# 本番スモーク E2E 監査（v2.5.87）
 
-最終更新: 2026-07-12（v2.5.86 / 本番スモーク 543 シナリオ・字幕帯角丸/背景余白/テキスト不透明度3件追加）
+最終更新: 2026-07-12（v2.5.87 / 本番スモーク 546 シナリオ・Ken Burns/テキストスケール/字幕帯オフ3件追加）
+
+## v2.5.87 拡充（543→546）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **546**（+3） |
+| 追加シナリオ | Ken Burns 開始スケール変更 / テキストクリップスケール変更 / 字幕帯オフ |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.5.87）
+
+1. インスペクター: 画像クリップの Ken Burns 開始スケールを変更できる
+2. インスペクター: テキストクリップのスケールを変更できる
+3. インスペクター: 字幕帯をオフにできる
+
+選定根拠: 画像 Ken Burns・テキスト位置・変形スケール・字幕帯解除が未カバーだったため追加。
 
 ## v2.5.86 拡充（540→543）
 
@@ -219,11 +235,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 543 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 543`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2586_ADDITIONS`
+- `e2e/basic.spec.ts` — 546 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 546`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2587_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.5.86 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.5.87 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
