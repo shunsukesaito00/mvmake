@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.01）
+# 本番スモーク E2E 監査（v2.6.02）
 
-最終更新: 2026-07-12（v2.6.01 / 本番スモーク 588 シナリオ・画像明るさ/彩度/色相3件追加）
+最終更新: 2026-07-12（v2.6.02 / 本番スモーク 591 シナリオ・画像色温度/コントラスト/フェードイン3件追加）
+
+## v2.6.02 拡充（588→591）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **591**（+3） |
+| 追加シナリオ | 画像色温度変更 / コントラスト変更 / フェードイン設定 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.02）
+
+1. インスペクター: 画像クリップの色温度を変更できる
+2. インスペクター: 画像クリップのコントラストを変更できる
+3. インスペクター: 画像クリップのフェードインを設定できる
+
+選定根拠: 画像色温度・コントラスト・フェードイン単独が「の」表記で未カバーだったため追加。
 
 ## v2.6.01 拡充（585→588）
 
@@ -459,11 +475,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 588 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 588`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2601_ADDITIONS`
+- `e2e/basic.spec.ts` — 591 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 591`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2602_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.01 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.02 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

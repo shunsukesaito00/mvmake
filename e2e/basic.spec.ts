@@ -17041,3 +17041,40 @@ test('インスペクター: 画像クリップの色相を変更できる', asy
   await hueSlider.fill('0.2')
   await expect(hueSlider).toHaveValue('0.2')
 })
+
+test('インスペクター: 画像クリップの色温度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'temperature-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'temperature-photo.png')
+
+  const temperatureSlider = page.getByRole('slider', { name: '色温度' })
+  await temperatureSlider.fill('0.3')
+  await expect(temperatureSlider).toHaveValue('0.3')
+})
+
+test('インスペクター: 画像クリップのコントラストを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'contrast-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'contrast-photo.png')
+
+  const contrastSlider = page.getByRole('slider', { name: 'コントラスト' })
+  await contrastSlider.fill('0.2')
+  await expect(contrastSlider).toHaveValue('0.2')
+})
+
+test('インスペクター: 画像クリップのフェードインを設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'fade-in-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'fade-in-photo.png')
+
+  await page.getByRole('button', { name: 'フェード' }).click()
+  const fadeInSlider = page.getByRole('slider', { name: 'フェードイン' })
+  await fadeInSlider.fill('0.6')
+  await expect(fadeInSlider).toHaveValue('0.6')
+})
