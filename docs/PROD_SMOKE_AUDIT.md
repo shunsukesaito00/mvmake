@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.30）
+# 本番スモーク E2E 監査（v2.6.31）
 
-最終更新: 2026-07-13（v2.6.30 / 本番スモーク 675 シナリオ・画像/テキストTFダブルクリック/テキストTF分割3件追加）
+最終更新: 2026-07-13（v2.6.31 / 本番スモーク 678 シナリオ・テキストTFドラッグ/ベジェ/全属性表示3件追加）
+
+## v2.6.31 拡充（675→678）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **678**（+3） |
+| 追加シナリオ | テキストTFドラッグ / ベジェハンドル / 全属性表示 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.31）
+
+1. タイムライン: テキストクリップのトランスフォームキーフレームをドラッグ編集できる
+2. タイムライン: テキストクリップのトランスフォームキーフレームのベジェハンドルをドラッグ編集できる
+3. タイムライン: テキストクリップのトランスフォームキーフレームの全属性を同時表示できる
+
+選定根拠: テキストTFドラッグ・ベジェハンドル・全属性同時表示が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.30 拡充（672→675）
 
@@ -923,11 +939,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 675 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 675`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2630_ADDITIONS`
+- `e2e/basic.spec.ts` — 678 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 678`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2631_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.30 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.31 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

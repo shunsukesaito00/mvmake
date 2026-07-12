@@ -18476,3 +18476,74 @@ test('タイムライン: レーンをダブルクリックでテキストクリ
   await lane.dispatchEvent('dblclick')
   await expect(page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })).toBeVisible()
 })
+
+test('タイムライン: テキストクリップのトランスフォームキーフレームをドラッグ編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).fill('0.2')
+
+  const handle = page.getByRole('button', { name: 'トランスフォームキーフレーム 1' })
+  await expect(handle).toHaveAttribute('title', /0\.2s/)
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 60, box.y - 8, { steps: 8 })
+  await page.mouse.up()
+
+  await expect(handle).toHaveAttribute('title', /0\.[3-9]s|1\.0s/)
+})
+
+test('タイムライン: テキストクリップのトランスフォームキーフレームのベジェハンドルをドラッグ編集できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('2')
+  await page.getByLabel('補間イージング').selectOption('bezier')
+
+  const handle = page.getByTestId('transform-bezier-handle-out-1')
+  await expect(handle).toBeVisible()
+
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 30, box.y - 20, { steps: 10 })
+  await page.mouse.up()
+
+  const newBox = (await handle.boundingBox())!
+  expect(newBox.y).not.toBeCloseTo(box.y, 0)
+})
+
+test('タイムライン: テキストクリップのトランスフォームキーフレームの全属性を同時表示できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await page.getByRole('slider', { name: '位置 (秒)' }).nth(1).fill('2')
+  await page.getByRole('slider', { name: '不透明度' }).nth(1).fill('0.3')
+  await page.getByRole('slider', { name: 'スケール' }).nth(1).fill('1.5')
+
+  await page.getByTestId('transform-kf-show-all').click()
+  await expect(page.getByTestId('transform-kf-show-all')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('transform-kf-legend')).toBeVisible()
+  await expect(page.getByTestId('transform-kf-curve-opacity')).toBeVisible()
+  await expect(page.getByTestId('transform-kf-curve-scale')).toBeVisible()
+
+  await page.getByTestId('transform-kf-property-x').click()
+  await expect(page.getByTestId('transform-kf-curve-x')).toHaveAttribute('stroke-width', '2')
+
+  await page.getByTestId('transform-kf-show-all').click()
+  await expect(page.getByTestId('transform-kf-curve-opacity')).toBeHidden()
+  await expect(page.getByTestId('transform-kf-curve-scale')).toBeHidden()
+})
