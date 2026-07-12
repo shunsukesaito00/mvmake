@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.04）
+# 本番スモーク E2E 監査（v2.6.05）
 
-最終更新: 2026-07-12（v2.6.04 / 本番スモーク 597 シナリオ・テキスト文字色/縁取り/縁色3件追加）
+最終更新: 2026-07-12（v2.6.05 / 本番スモーク 600 シナリオ・テキスト影ぼかし/フォントサイズ/アニメーション長3件追加）
+
+## v2.6.05 拡充（597→600）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **600**（+3） |
+| 追加シナリオ | テキスト影ぼかし変更 / フォントサイズ変更 / アニメーション長変更 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.05）
+
+1. インスペクター: テキストクリップの影のぼかしを変更できる
+2. インスペクター: テキストクリップのフォントサイズを変更できる
+3. インスペクター: テキストクリップのアニメーション長を変更できる
+
+選定根拠: テキスト影ぼかし・フォントサイズ・アニメーション長が「クリップの」表記で未カバーだったため追加。
 
 ## v2.6.04 拡充（594→597）
 
@@ -507,11 +523,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 597 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 597`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2604_ADDITIONS`
+- `e2e/basic.spec.ts` — 600 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 600`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2605_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.04 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.05 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

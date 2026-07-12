@@ -17140,3 +17140,36 @@ test('インスペクター: テキストクリップの縁色を変更できる
   await strokeColorInput.fill('#3366cc')
   await expect(strokeColorInput).toHaveValue('#3366cc')
 })
+
+test('インスペクター: テキストクリップの影のぼかしを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const shadowBlurSlider = page.getByRole('slider', { name: '影のぼかし' })
+  await shadowBlurSlider.fill('12')
+  await expect(shadowBlurSlider).toHaveValue('12')
+})
+
+test('インスペクター: テキストクリップのフォントサイズを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const fontSizeSlider = page.getByRole('slider', { name: 'フォントサイズ' })
+  await fontSizeSlider.fill('80')
+  await expect(fontSizeSlider).toHaveValue('80')
+})
+
+test('インスペクター: テキストクリップのアニメーション長を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await addOpeningText(page)
+  await clickTimelineClip(page, 'Opening')
+
+  const animSelect = page.locator('select').filter({ has: page.locator('option[value="fadeIn"]') })
+  await expect(animSelect).toHaveValue('fadeIn')
+
+  const durationSlider = page.getByRole('slider', { name: 'アニメーション長' })
+  await durationSlider.fill('2')
+  await expect(durationSlider).toHaveValue('2')
+})
