@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.23）
+# 本番スモーク E2E 監査（v2.6.24）
 
-最終更新: 2026-07-13（v2.6.23 / 本番スモーク 654 シナリオ・動画EQ中域/高域/無効化3件追加）
+最終更新: 2026-07-13（v2.6.24 / 本番スモーク 657 シナリオ・動画/オーディオNRゲート強度/画像TFキーフレーム3件追加）
+
+## v2.6.24 拡充（654→657）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **657**（+3） |
+| 追加シナリオ | 動画NRゲート強度 / オーディオNRゲート強度 / 画像TFキーフレーム |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.24）
+
+1. インスペクター: 動画クリップのノイズ除去ゲート強度を変更できる
+2. インスペクター: オーディオクリップのノイズ除去ゲート強度を変更できる
+3. インスペクター: 画像クリップのトランスフォームキーフレームを追加できる
+
+選定根拠: ノイズ除去ゲート強度が動画・オーディオで未カバーだったため追加。画像不透明度は既存のため、未カバーだった画像トランスフォームキーフレームを追加。
 
 ## v2.6.23 拡充（651→654）
 
@@ -811,11 +827,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 654 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 654`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2623_ADDITIONS`
+- `e2e/basic.spec.ts` — 657 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 657`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2624_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.23 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.24 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`

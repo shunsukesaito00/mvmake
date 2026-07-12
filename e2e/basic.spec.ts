@@ -18056,3 +18056,46 @@ test('インスペクター: 動画クリップのイコライザーを無効化
   await expect(eqCheckbox).not.toBeChecked()
   await expect(page.getByRole('slider', { name: '低域' })).toBeHidden()
 })
+
+test('インスペクター: 動画クリップのノイズ除去ゲート強度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-nr-gate.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-nr-gate.webm')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  const gateSlider = page.getByRole('slider', { name: 'ゲート強度' })
+  await gateSlider.fill('0.5')
+  await expect(gateSlider).toHaveValue('0.5')
+})
+
+test('インスペクター: オーディオクリップのノイズ除去ゲート強度を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const wav = makeSilentWav(1)
+  await page.setInputFiles('input[accept*="audio"]', { name: 'audio-nr-gate.wav', mimeType: 'audio/wav', buffer: wav })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'audio-nr-gate.wav')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  const gateSlider = page.getByRole('slider', { name: 'ゲート強度' })
+  await gateSlider.fill('0.5')
+  await expect(gateSlider).toHaveValue('0.5')
+})
+
+test('インスペクター: 画像クリップのトランスフォームキーフレームを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'image-tf-kf.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'image-tf-kf.png')
+
+  await page.getByRole('button', { name: 'トランスフォームキーフレーム', exact: true }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+})
