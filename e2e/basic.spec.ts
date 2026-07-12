@@ -17809,3 +17809,55 @@ test('インスペクター: オーディオクリップの音量キーフレー
   await page.getByRole('button', { name: 'キーフレームを追加' }).click()
   await expect(page.getByText('キーフレーム 1')).toBeVisible()
 })
+
+test('インスペクター: 画像クリップのトランジション長を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'image-tr-dur-a.png', mimeType: 'image/png', buffer: TINY_PNG },
+    { name: 'image-tr-dur-b.png', mimeType: 'image/png', buffer: TINY_PNG },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'image-tr-dur-a.png' }).click()
+  await page.locator('button[title="クリックで再生位置に追加"]').filter({ hasText: 'image-tr-dur-b.png' }).click()
+
+  await clickTimelineClip(page, 'image-tr-dur-b.png')
+  await page.getByTitle('効果').click()
+  await page.getByRole('button', { name: 'クロスフェード', exact: true }).click()
+  await expect(page.getByText('クロスフェードを適用しました')).toBeVisible()
+
+  await page.getByRole('button', { name: 'トランジション', exact: true }).click()
+  const durationSlider = page.getByRole('slider', { name: '長さ', exact: true })
+  await durationSlider.fill('1.2')
+  await expect(durationSlider).toHaveValue('1.2')
+})
+
+test('インスペクター: 動画クリップの速度キーフレームを追加できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-speed-kf.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-speed-kf.webm')
+
+  await page.getByRole('button', { name: '再生速度' }).click()
+  await page.getByRole('button', { name: 'キーフレームを追加' }).click()
+  await expect(page.getByText('キーフレーム 1')).toBeVisible()
+})
+
+test('インスペクター: 動画クリップのノイズ除去を設定できる', async ({ page }) => {
+  await goOnboarded(page)
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'video-nr.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'video-nr.webm')
+
+  await page.getByRole('button', { name: 'ノイズ除去' }).click()
+  await page.getByLabel('ノイズ除去を有効化').check()
+  await page.getByRole('slider', { name: 'ハイパス' }).fill('120')
+  await expect(page.getByLabel('ノイズ除去を有効化')).toBeChecked()
+  await expect(page.getByRole('slider', { name: 'ハイパス' })).toHaveValue('120')
+})
