@@ -16619,3 +16619,42 @@ test('インスペクター: 画像クリップの不透明度を変更できる
   await opacitySlider.fill('0.7')
   await expect(opacitySlider).toHaveValue('0.7')
 })
+
+test('インスペクター: 画像クリップの X/Y 位置を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'transform-xy-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'transform-xy-photo.png')
+
+  const xSlider = page.getByRole('slider', { name: 'X' })
+  const ySlider = page.getByRole('slider', { name: 'Y' })
+  await xSlider.fill('0.3')
+  await ySlider.fill('0.7')
+  await expect(xSlider).toHaveValue('0.3')
+  await expect(ySlider).toHaveValue('0.7')
+})
+
+test('インスペクター: 画像クリップのスケールを変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'transform-scale-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'transform-scale-photo.png')
+
+  const scaleSlider = page.getByRole('slider', { name: 'スケール' })
+  await scaleSlider.fill('1.3')
+  await expect(scaleSlider).toHaveValue('1.3')
+})
+
+test('インスペクター: 画像クリップの回転を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="image"]', { name: 'transform-rotate-photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await clickTimelineClip(page, 'transform-rotate-photo.png')
+
+  const rotationSlider = page.getByRole('slider', { name: '回転' })
+  await rotationSlider.fill('-12')
+  await expect(rotationSlider).toHaveValue('-12')
+})
