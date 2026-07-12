@@ -1,6 +1,22 @@
-# 本番スモーク E2E 監査（v2.6.52）
+# 本番スモーク E2E 監査（v2.6.53）
 
-最終更新: 2026-07-13（v2.6.52 / 本番スモーク 741 シナリオ・画像/テキストTFグラフ3点全削除後再追加/動画TFグラフ件数表示3件追加）
+最終更新: 2026-07-13（v2.6.53 / 本番スモーク 744 シナリオ・画像/テキストTFグラフ件数表示追加/動画TFグラフ件数表示削除3件追加）
+
+## v2.6.53 拡充（741→744）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **744**（+3） |
+| 追加シナリオ | 画像/テキストTFグラフ件数表示追加 / 動画TFグラフ件数表示削除 |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v2.6.53）
+
+1. インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターでキーフレーム追加時に件数表示が更新される
+2. インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターでキーフレーム追加時に件数表示が更新される
+3. インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターでキーフレーム削除時に件数表示が更新される
+
+選定根拠: 動画のみだったキーフレーム追加時の件数表示を画像/テキストでも検証し、削除時の件数減少を動画TFグラフで確認するため追加。
 
 ## v2.6.52 拡充（738→741）
 
@@ -1275,11 +1291,11 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 741 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 741`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2652_ADDITIONS`
+- `e2e/basic.spec.ts` — 744 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 744`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2653_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
-- `src/utils/prodSmokeAudit.test.ts` — `v2.6.52 追加シナリオが basic.spec.ts に含まれる`
+- `src/utils/prodSmokeAudit.test.ts` — `v2.6.53 追加シナリオが basic.spec.ts に含まれる`
 - `src/utils/prodSmokeAudit.test.ts` — `トランジション29種が basic.spec.ts でカバーされている`
 - `src/utils/prodSmokeAudit.test.ts` — `v2.5.74 suffix 整理フェーズ4 double-named-reclick 層が整理済みである`
