@@ -1,8 +1,31 @@
-# 本番スモーク E2E 監査（v3.0.3）
+# 本番スモーク E2E 監査（v3.0.4）
 
-最終更新: 2026-07-13（v3.0.3 / Phase F F1 第4弾 — Rolling edit・キーフレームナビ 6 件を basic へ選別移植）
+最終更新: 2026-07-13（v3.0.4 / **Phase F F1 完了** — A/Vリンク・色調ペースト・速度オーディオ連動 9 件を basic へ選別移植）
 
-> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 796 件**を実行。Phase E 操作性のうち **editor 専用 226 件**はローカル/CI 全量。v3.0.0〜v3.0.3 で E1〜E3・E6〜E10（計 19 件）を本番スモークへ移植済み。残りの Phase E 回帰は Phase F F1 継続で選別移植予定。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 805 件**を実行。Phase E E1〜E13 の婚礼クリティカル **28 件は v3.0.0〜v3.0.4 で basic へ移植完了**（Phase F F1 完了）。editor 226 件はストレス回帰・ローカル/CI 全量。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+
+## v3.0.4 拡充（796→805）— Phase F F1 完了
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **805**（+9） |
+| 追加シナリオ | Phase F F1 第5弾: 動画音声リンク 3 件 / 色調ペースト 3 件 / 速度オーディオ連動 3 件 |
+| Playwright タイトル重複 | **0** |
+| **F1 累計** | v2.6.64 以降 777→**805**（+28 = Phase E 婚礼クリティカル全移植） |
+
+### 追加シナリオ（v3.0.4）
+
+1. 動画音声リンク: 切り離しでダッキング区間と可聴動画音声が減る
+2. 動画音声リンク: リンク復帰でダッキング区間と可聴動画音声が戻る
+3. 動画音声リンク: ナレーション配置準備で切り離しとクリップ先頭へシークする
+4. 色調ペースト: コピーして選択クリップへ一括ペーストできる
+5. 色調ペースト: 先頭クリップの色調を他の選択へ適用できる
+6. 色調ペースト: クリップボードが空のときペーストは 0 件
+7. 速度オーディオ連動: 連動時はスロー区間で素材消費が抑えられる
+8. 速度オーディオ連動: 連動解除で線形 1x 素材マッピングに戻る
+9. 速度オーディオ連動: プレビュー/書き出しスケジュールが一致する
+
+選定根拠: Phase E E11〜E13 の最終バッチ。婚礼本編で A/V 切り離し・色調一括・スロー音声整合は実運用頻度が高く、本番デプロイ後の回帰を担保。
 
 ## v3.0.3 拡充（790→796）
 
@@ -1540,8 +1563,8 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 796 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 796`
+- `e2e/basic.spec.ts` — 805 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 805`
 - `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2664_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）

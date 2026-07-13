@@ -343,6 +343,7 @@ declare global {
       clearTextStylePresets: () => void
       getTextStylePresetCount: () => number
       getPlaybackTime: () => number
+      setPlaybackTime: (time: number) => void
       getPlaybackShuttleRate: () => number
       getIsPlaying: () => boolean
       shuttleForward: () => void
@@ -613,6 +614,7 @@ export function installE2eBridge(): void {
     clearTextStylePresets: () => clearTextStylePresetStress(),
     getTextStylePresetCount: () => loadTextStylePresets().length,
     getPlaybackTime: () => useProjectStore.getState().currentTime,
+    setPlaybackTime: (time) => useProjectStore.getState().setCurrentTime(time),
     getPlaybackShuttleRate: () => useProjectStore.getState().playbackShuttleRate,
     getIsPlaying: () => useProjectStore.getState().isPlaying,
     shuttleForward: () => useProjectStore.getState().shuttleForward(),

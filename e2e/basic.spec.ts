@@ -128,6 +128,24 @@ import {
   loadKeyframeNavStress,
   jumpToAdjacentKeyframe,
   getSelectedNavKeyframe,
+  loadVideoAudioLinkStress,
+  isClipAudioLinked,
+  getAudibleVideoAudioClipCount,
+  getDuckingIntervalCount,
+  detachVideoAudioById,
+  linkVideoAudioById,
+  prepareNarrationForVideoClipById,
+  loadColorPasteStress,
+  copyClipColorById,
+  hasColorClipboard,
+  pasteColorToSelectedClips,
+  applyPrimaryClipColorToSelection,
+  clipMatchesColorPasteSourceClip,
+  loadSpeedAudioLinkStress,
+  isClipSpeedAudioLinked,
+  setSpeedAudioLinkedById,
+  getVideoAudioSpeedScheduleForClip,
+  previewExportScheduleParity,
 } from './helpers'
 
 async function goOnboarded(page: Page) {
@@ -21096,4 +21114,117 @@ test('キーフレームナビ: キーフレームがないクリップではジ
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
   await clickTimelineClip(page, 'Opening')
   expect(await jumpToAdjacentKeyframe(page, 'next')).toBe(false)
+})
+
+test('動画音声リンク: 切り離しでダッキング区間と可聴動画音声が減る', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVideoAudioLinkStress(page)
+  expect(await isClipAudioLinked(page, stats.videoClipId)).toBe(true)
+  expect(await getAudibleVideoAudioClipCount(page)).toBe(1)
+  expect(await getDuckingIntervalCount(page)).toBe(stats.duckingIntervalCountBefore)
+  expect(stats.duckingIntervalCountBefore).toBeGreaterThan(0)
+
+  expect(await detachVideoAudioById(page, stats.videoClipId)).toBe(true)
+  expect(await isClipAudioLinked(page, stats.videoClipId)).toBe(false)
+  expect(await getAudibleVideoAudioClipCount(page)).toBe(0)
+  expect(await getDuckingIntervalCount(page)).toBe(0)
+})
+
+test('動画音声リンク: リンク復帰でダッキング区間と可聴動画音声が戻る', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVideoAudioLinkStress(page)
+  expect(await detachVideoAudioById(page, stats.videoClipId)).toBe(true)
+  expect(await getDuckingIntervalCount(page)).toBe(0)
+
+  expect(await linkVideoAudioById(page, stats.videoClipId)).toBe(true)
+  expect(await isClipAudioLinked(page, stats.videoClipId)).toBe(true)
+  expect(await getAudibleVideoAudioClipCount(page)).toBe(1)
+  expect(await getDuckingIntervalCount(page)).toBe(stats.duckingIntervalCountBefore)
+})
+
+test('動画音声リンク: ナレーション配置準備で切り離しとクリップ先頭へシークする', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadVideoAudioLinkStress(page)
+  await page.evaluate(() => window.__FABLE_E2E__!.setPlaybackTime(10))
+
+  const result = await prepareNarrationForVideoClipById(page, stats.videoClipId)
+  expect(result).toMatchObject({
+    clipId: stats.videoClipId,
+    audioTrackId: stats.audioTrackId,
+    startTime: stats.narrationStartTime,
+    duration: 5,
+  })
+  expect(await isClipAudioLinked(page, stats.videoClipId)).toBe(false)
+  expect(await getAudibleVideoAudioClipCount(page)).toBe(0)
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__!.getPlaybackTime())).toBeCloseTo(stats.narrationStartTime, 2)
+})
+
+test('色調ペースト: コピーして選択クリップへ一括ペーストできる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadColorPasteStress(page)
+  expect(await copyClipColorById(page, stats.sourceClipId)).toBe(true)
+  expect(await hasColorClipboard(page)).toBe(true)
+
+  await page.evaluate((ids) => {
+    const e2e = window.__FABLE_E2E__!
+    e2e.selectClip(ids[0])
+    for (let i = 1; i < ids.length; i++) e2e.toggleClipInSelection(ids[i])
+  }, stats.targetClipIds)
+
+  expect(await pasteColorToSelectedClips(page)).toBe(2)
+  for (const clipId of stats.targetClipIds) {
+    expect(await clipMatchesColorPasteSourceClip(page, clipId, stats.sourceClipId)).toBe(true)
+  }
+})
+
+test('色調ペースト: 先頭クリップの色調を他の選択へ適用できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadColorPasteStress(page)
+
+  for (const clipId of stats.targetClipIds) {
+    await page.evaluate((id) => window.__FABLE_E2E__!.toggleClipInSelection(id), clipId)
+  }
+
+  expect(await applyPrimaryClipColorToSelection(page)).toBe(2)
+  for (const clipId of stats.targetClipIds) {
+    expect(await clipMatchesColorPasteSourceClip(page, clipId, stats.sourceClipId)).toBe(true)
+  }
+})
+
+test('色調ペースト: クリップボードが空のときペーストは 0 件', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadColorPasteStress(page)
+  await page.evaluate((id) => window.__FABLE_E2E__!.toggleClipInSelection(id), stats.targetClipIds[0])
+  expect(await hasColorClipboard(page)).toBe(false)
+  expect(await pasteColorToSelectedClips(page)).toBe(0)
+})
+
+test('速度オーディオ連動: 連動時はスロー区間で素材消費が抑えられる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadSpeedAudioLinkStress(page)
+  expect(await isClipSpeedAudioLinked(page, stats.videoClipId)).toBe(true)
+  const schedule = await getVideoAudioSpeedScheduleForClip(page, stats.videoClipId, 0, stats.timelineDuration)
+  expect(schedule?.linked).toBe(true)
+  expect(schedule?.bufferDuration).toBe(stats.linkedBufferDuration)
+  expect(schedule?.bufferDuration).toBeLessThan(stats.unlinkedBufferDuration)
+})
+
+test('速度オーディオ連動: 連動解除で線形 1x 素材マッピングに戻る', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadSpeedAudioLinkStress(page)
+  expect(await setSpeedAudioLinkedById(page, stats.videoClipId, false)).toBe(true)
+  expect(await isClipSpeedAudioLinked(page, stats.videoClipId)).toBe(false)
+
+  const schedule = await getVideoAudioSpeedScheduleForClip(page, stats.videoClipId, 0, stats.timelineDuration)
+  expect(schedule).toMatchObject({
+    linked: false,
+    bufferDuration: stats.unlinkedBufferDuration,
+    timelineDuration: stats.timelineDuration,
+  })
+})
+
+test('速度オーディオ連動: プレビュー/書き出しスケジュールが一致する', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadSpeedAudioLinkStress(page)
+  expect(await previewExportScheduleParity(page, stats.videoClipId, 0, stats.timelineDuration)).toBe(true)
 })

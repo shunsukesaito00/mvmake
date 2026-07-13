@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 796
+export const PROD_SMOKE_SCENARIO_COUNT = 805
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -2061,6 +2061,19 @@ export const PROD_SMOKE_V303_ADDITIONS = [
   'キーフレームナビ: 統合ジャンプで再生位置と選択が更新される',
   "キーフレームナビ: ; / \\' ショートカットで前後ジャンプできる",
   'キーフレームナビ: キーフレームがないクリップではジャンプしない',
+] as const
+
+/** v3.0.4 で basic.spec に追加したシナリオ（Phase F F1 第5弾・完了: A/Vリンク・色調ペースト・速度オーディオ連動） */
+export const PROD_SMOKE_V304_ADDITIONS = [
+  '動画音声リンク: 切り離しでダッキング区間と可聴動画音声が減る',
+  '動画音声リンク: リンク復帰でダッキング区間と可聴動画音声が戻る',
+  '動画音声リンク: ナレーション配置準備で切り離しとクリップ先頭へシークする',
+  '色調ペースト: コピーして選択クリップへ一括ペーストできる',
+  '色調ペースト: 先頭クリップの色調を他の選択へ適用できる',
+  '色調ペースト: クリップボードが空のときペーストは 0 件',
+  '速度オーディオ連動: 連動時はスロー区間で素材消費が抑えられる',
+  '速度オーディオ連動: 連動解除で線形 1x 素材マッピングに戻る',
+  '速度オーディオ連動: プレビュー/書き出しスケジュールが一致する',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */
