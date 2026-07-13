@@ -1,6 +1,6 @@
 # プレビュー / 書き出し 描画経路監査
 
-最終更新: 2026-07-11（v1.76.0 / Phase B Q8 テキスト・フォント追記）
+最終更新: 2026-07-13（v3.11.0 / ネイティブ動画デコード）
 
 ## 結論
 
@@ -8,7 +8,7 @@
 
 | 経路 | エントリ | 描画エンジン | 動画同期 |
 |------|----------|--------------|----------|
-| プレビュー | `PreviewPanel.drawAtTime` | `compositor.renderFrame` | 停止時 `seekVideosToTime` / 再生時 `syncVideosForPlayback` |
+| プレビュー | `PreviewPanel.drawAtTime` | `compositor.renderFrame` | 停止時 `seekVideosToTime` / 再生時 `syncVideosForPlayback`（前面クリップは `video.play` + rVFC） |
 | 書き出し | `exporter.exportProject` | `compositor.renderFrame` | 毎フレーム `seekVideosToTime` |
 
 自動検証: `src/utils/renderPathAudit.test.ts`（トランジション 29 種の switch 網羅・共有 import 確認）
@@ -64,7 +64,7 @@
 |------|------------|----------|
 | セーフエリア | `showSafeAreas` で描画可 | 非表示 |
 | フォントプリロード | 選択時のみ（未ロードはフォールバック表示可） | `ensureProjectFontsLoaded`（失敗時中止） |
-| 再生中の動画シーク | `playing: true` で `renderFrame` 内シーク省略 | 毎フレーム `seekVideosToTime` |
+| 再生中の動画シーク | 前面クリップは `video.play` + rVFC（v3.11.0）。背面・逆シャトルは手動シーク | 毎フレーム `seekVideosToTime` |
 | ミニプレビュー | CSS / 縮小 Canvas | 対象外 |
 
 ## 関連ファイル

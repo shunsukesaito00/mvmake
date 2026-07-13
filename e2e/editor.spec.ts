@@ -2005,6 +2005,22 @@ test('プレビュー: 動画クリップを配置して再生・停止できる
   expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
 })
 
+test('プレビュー: 動画再生でネイティブデコードが有効になる（Phase G G19）', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'native-decode.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('native-decode.webm')).toBeVisible()
+
+  await page.keyboard.press('Space')
+  await expect(page.locator('[data-native-video-playback="true"]')).toBeVisible({ timeout: 5000 })
+
+  await page.keyboard.press('k')
+  await expect(page.locator('[data-native-video-playback="false"]')).toBeVisible()
+})
+
 test('婚礼ゴールデンパス: テンプレ→写真→動画→テロップ→ルック→トランジション→章書き出し→再生停止', async ({ page }) => {
   test.setTimeout(180_000)
 

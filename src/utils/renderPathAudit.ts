@@ -6,7 +6,7 @@ export const FRAME_RENDER_PATHS = {
   preview: {
     entry: 'PreviewPanel.drawAtTime',
     engine: 'compositor.renderFrame',
-    videoSync: 'seekVideosToTime（停止時）/ syncVideosForPlayback（再生時）',
+    videoSync: 'seekVideosToTime（停止時）/ syncVideosForPlayback（再生時・前面クリップは video.play + rVFC）',
     options: 'showSafeAreas, playing',
   },
   export: {

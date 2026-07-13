@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
-import { renderFrame, seekVideosToTime } from '../engine/compositor'
+import { renderFrame, seekVideosToTime, getActiveNativePlaybackClipId } from '../engine/compositor'
 import { usePlaybackControls } from '../contexts/PlaybackContext'
 import { PanelHeader, IconButton, Timecode } from '../components/ui'
 import { Icons } from '../components/icons'
@@ -65,8 +65,8 @@ export function PreviewPanel() {
       const afterCtx = afterCanvas.getContext('2d')
       if (!beforeCtx || !afterCtx) return
 
-      await renderFrame(beforeCtx, project, time, { showSafeAreas, playing, bypassColorGrade: true })
-      await renderFrame(afterCtx, project, time, { showSafeAreas, playing, bypassColorGrade: false })
+      await renderFrame(beforeCtx, project, time, { showSafeAreas, playing, bypassColorGrade: true, nativePlaybackClipId: playing ? getActiveNativePlaybackClipId() : null })
+      await renderFrame(afterCtx, project, time, { showSafeAreas, playing, bypassColorGrade: false, nativePlaybackClipId: playing ? getActiveNativePlaybackClipId() : null })
 
       const mid = Math.floor(project.width / 2)
       ctx.clearRect(0, 0, project.width, project.height)
@@ -81,7 +81,11 @@ export function PreviewPanel() {
       ctx.stroke()
       ctx.restore()
     } else {
-      await renderFrame(ctx, project, time, { showSafeAreas, playing })
+      await renderFrame(ctx, project, time, {
+        showSafeAreas,
+        playing,
+        nativePlaybackClipId: playing ? getActiveNativePlaybackClipId() : null,
+      })
     }
 
     if (showColorScope) {
@@ -167,7 +171,7 @@ export function PreviewPanel() {
   const stepFrame = (dir: -1 | 1) => seek(Math.max(0, Math.min(duration, currentTime + dir / fps)))
 
   return (
-    <div ref={containerRef} className="flex h-full flex-col bg-surface-0" data-preview-container>
+    <div ref={containerRef} className="flex h-full flex-col bg-surface-0" data-preview-container data-native-video-playback={isPlaying && getActiveNativePlaybackClipId() ? 'true' : 'false'}>
       <PanelHeader title="プレビュー" icon={<Icons.Film size={14} />}>
         <IconButton
           active={colorPreviewMode === 'beforeAfter'}

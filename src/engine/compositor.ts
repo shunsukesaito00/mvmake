@@ -27,6 +27,13 @@ import { getAdjustmentLutForVisualTrack, resolveClipLut } from '../utils/lutReso
 import type { ResolvedLut } from '../utils/lutResolve'
 import { easeSmoothstep } from '../utils/transitions'
 import { seekVideoElement, VIDEO_SEEK_TOLERANCE_SEC } from '../utils/videoSeek'
+import {
+  createVideoElementAccessor,
+  shouldUseNativeVideoPlayback,
+  stopNativeVideoPlayback,
+  syncNativeVideoPlayback,
+} from '../utils/nativeVideoPlayback'
+import type { PlaybackShuttleRate } from '../utils/playbackShuttle'
 
 type VisualTransformClip = VideoClip | ImageClip | TextClip
 
@@ -655,7 +662,7 @@ export async function renderFrame(
   ctx: CanvasRenderingContext2D,
   project: Project,
   time: number,
-  options?: { showSafeAreas?: boolean; playing?: boolean; bypassColorGrade?: boolean },
+  options?: { showSafeAreas?: boolean; playing?: boolean; bypassColorGrade?: boolean; nativePlaybackClipId?: string | null },
 ): Promise<void> {
   const { width, height } = project
   const bypassColorGrade = options?.bypassColorGrade === true
@@ -921,6 +928,7 @@ export function preloadMedia(project: Project): void {
 }
 
 export function clearMediaCache(): void {
+  stopNativeVideoPlayback(() => null)
   for (const el of videoElements.values()) el.src = ''
   videoElements.clear()
   imageElements.clear()
@@ -953,6 +961,8 @@ export async function seekVideosToTime(project: Project, time: number): Promise<
 }
 
 export function pauseAllVideos(project: Project): void {
+  const assetMap = getAssetMap(project)
+  stopNativeVideoPlayback(createVideoElementAccessor(assetMap, getVideoElement))
   for (const asset of project.mediaAssets) {
     if (asset.type !== 'video') continue
     const video = getVideoElement(asset)
@@ -960,9 +970,45 @@ export function pauseAllVideos(project: Project): void {
   }
 }
 
-export function syncVideosForPlayback(project: Project, time: number, playing: boolean): void {
+/** 合成順で最前面の再生中ビデオクリップ（ネイティブデコード対象） */
+export function findForegroundVideoClipAtTime(project: Project, time: number): VideoClip | null {
+  const visualTracks = project.tracks.filter((track) => track.type === 'video' || track.type === 'text')
+  let foreground: VideoClip | null = null
+
+  for (const track of visualTracks) {
+    const layers = getTrackLayersAtTime(track, time)
+    for (const layer of layers) {
+      if (layer.clip.type === 'video' && layer.opacity > 0.001) {
+        foreground = layer.clip
+      }
+    }
+  }
+
+  return foreground
+}
+
+export function syncVideosForPlayback(
+  project: Project,
+  time: number,
+  playing: boolean,
+  shuttleRate: PlaybackShuttleRate = 1,
+): void {
   const assetMap = getAssetMap(project)
+  const getVideo = createVideoElementAccessor(assetMap, getVideoElement)
   const frameSlop = 1 / Math.max(project.fps, 1)
+  const foreground = playing ? findForegroundVideoClipAtTime(project, time) : null
+  const useNative = shouldUseNativeVideoPlayback(playing, shuttleRate) && foreground !== null
+
+  if (!useNative) {
+    stopNativeVideoPlayback(getVideo)
+  } else {
+    syncNativeVideoPlayback({
+      foregroundClip: foreground,
+      time,
+      shuttleRate,
+      getVideoElement: getVideo,
+    })
+  }
 
   for (const track of project.tracks) {
     if (track.muted) continue
@@ -973,13 +1019,19 @@ export function syncVideosForPlayback(project: Project, time: number, playing: b
       const video = getVideoElement(asset)
       const inRange = time >= clip.startTime && time < clip.startTime + clip.duration
 
+      if (useNative && clip.id === foreground!.id) {
+        continue
+      }
+
       if (inRange && playing) {
         const sourceTime = getVideoSourceTime(clip, time - clip.startTime)
         if (Math.abs(video.currentTime - sourceTime) > frameSlop) video.currentTime = sourceTime
         if (!video.paused) video.pause()
-      } else {
-        if (!video.paused) video.pause()
+      } else if (!video.paused) {
+        video.pause()
       }
     }
   }
 }
+
+export { getActiveNativePlaybackClipId, isNativeVideoPlaybackActive } from '../utils/nativeVideoPlayback'

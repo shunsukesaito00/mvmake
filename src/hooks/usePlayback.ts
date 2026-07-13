@@ -4,6 +4,7 @@ import { audioEngine } from '../engine/audioEngine'
 import { preloadMedia, syncVideosForPlayback, pauseAllVideos } from '../engine/compositor'
 import { computeShuttleTimelineTime, isReverseShuttleRate, type PlaybackShuttleRate } from '../utils/playbackShuttle'
 import { shouldSyncPlaybackUi } from '../utils/playbackUiSync'
+import { setNativeVideoFrameCallback } from '../utils/nativeVideoPlayback'
 
 export type PlaybackControls = {
   togglePlay: () => void
@@ -88,7 +89,7 @@ export function usePlayback(): PlaybackControls {
     } else {
       audioEngine.play(projectRef.current, from, rate)
     }
-    syncVideosForPlayback(projectRef.current, from, true)
+    syncVideosForPlayback(projectRef.current, from, true, rate)
   }, [resetAnchor])
 
   const stopPlayback = useCallback((time: number) => {
@@ -96,7 +97,7 @@ export function usePlayback(): PlaybackControls {
     rafRef.current = 0
     audioEngine.pause(time)
     pauseAllVideos(projectRef.current)
-    syncVideosForPlayback(projectRef.current, time, false)
+    syncVideosForPlayback(projectRef.current, time, false, 1)
     resetAnchor(time, 1)
     playbackTimeRef.current = time
     setCurrentTime(time)
@@ -137,7 +138,7 @@ export function usePlayback(): PlaybackControls {
     }
 
     syncCurrentTimeToStore(time)
-    syncVideosForPlayback(projectRef.current, time, true)
+    syncVideosForPlayback(projectRef.current, time, true, shuttleRateRef.current)
     notifyFrame()
     if (!playingRef.current) return
     rafRef.current = requestAnimationFrame(tick)
@@ -182,13 +183,18 @@ export function usePlayback(): PlaybackControls {
       startShuttlePlayback(clamped, shuttleRateRef.current)
     } else {
       audioEngine.pause(clamped)
-      syncVideosForPlayback(projectRef.current, clamped, false)
+      syncVideosForPlayback(projectRef.current, clamped, false, 1)
       resetAnchor(clamped, 1)
     }
     notifyFrame()
   }, [getPlaybackRange, setCurrentTime, notifyFrame, resetAnchor, startShuttlePlayback])
 
   useEffect(() => () => audioEngine.dispose(), [])
+
+  useEffect(() => {
+    setNativeVideoFrameCallback(notifyFrame)
+    return () => setNativeVideoFrameCallback(null)
+  }, [notifyFrame])
 
   return { togglePlay, seek, subscribeFrame, getPlaybackTime }
 }
