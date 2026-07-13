@@ -130,6 +130,15 @@ import {
   type VideoAudioLinkStressStats,
 } from './utils/videoAudioLinkStressSetup'
 import {
+  applyPrimaryClipColorToSelection,
+  clipMatchesColorPasteSourceClip,
+  copyClipColorById,
+  hasColorClipboard,
+  pasteColorToSelectedClips,
+  seedColorPasteStress,
+  type ColorPasteStressStats,
+} from './utils/colorPasteStressSetup'
+import {
   applyClipColor,
   applyClipRgbCurvePoint,
   getClipColor,
@@ -240,6 +249,12 @@ declare global {
         startTime: number
         duration: number
       } | null
+      loadColorPasteStress: () => ColorPasteStressStats
+      copyClipColorById: (clipId: string) => boolean
+      hasColorClipboard: () => boolean
+      pasteColorToSelectedClips: () => number
+      applyPrimaryClipColorToSelection: () => number
+      clipMatchesColorPasteSourceClip: (clipId: string, sourceClipId: string) => boolean
       loadToneCurveStress: () => ToneCurveStressStats
       getClipColorMidtones: (clipId: string) => number
       getClipPixelGradeSample: (clipId: string, gray?: number) => { r: number; g: number; b: number }
@@ -414,6 +429,12 @@ export function installE2eBridge(): void {
     getDuckingIntervalCount: () => getDuckingIntervalCount(),
     getAudibleVideoAudioClipCount: () => getAudibleVideoAudioClipCount(),
     prepareNarrationForVideoClipById: (clipId) => prepareNarrationForVideoClipById(clipId),
+    loadColorPasteStress: () => seedColorPasteStress(),
+    copyClipColorById: (clipId) => copyClipColorById(clipId),
+    hasColorClipboard: () => hasColorClipboard(),
+    pasteColorToSelectedClips: () => pasteColorToSelectedClips(),
+    applyPrimaryClipColorToSelection: () => applyPrimaryClipColorToSelection(),
+    clipMatchesColorPasteSourceClip: (clipId, sourceClipId) => clipMatchesColorPasteSourceClip(clipId, sourceClipId),
     loadToneCurveStress: () => seedToneCurveStress(),
     getClipColorMidtones: (clipId) => getClipColor(clipId).midtones,
     getClipPixelGradeSample: (clipId, gray) => getClipPixelGradeSample(clipId, gray),

@@ -476,6 +476,52 @@ export async function prepareNarrationForVideoClipById(page: import('@playwright
   }, clipId)
 }
 
+export async function loadColorPasteStress(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadColorPasteStress()
+  })
+}
+
+export async function copyClipColorById(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.copyClipColorById(id)
+  }, clipId)
+}
+
+export async function hasColorClipboard(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.hasColorClipboard()
+  })
+}
+
+export async function pasteColorToSelectedClips(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.pasteColorToSelectedClips()
+  })
+}
+
+export async function applyPrimaryClipColorToSelection(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.applyPrimaryClipColorToSelection()
+  })
+}
+
+export async function clipMatchesColorPasteSourceClip(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  sourceClipId: string,
+) {
+  return page.evaluate(({ targetId, sourceId }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.clipMatchesColorPasteSourceClip(targetId, sourceId)
+  }, { targetId: clipId, sourceId: sourceClipId })
+}
+
 export async function getClipSourceStart(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

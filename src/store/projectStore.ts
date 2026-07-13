@@ -88,6 +88,12 @@ import {
   type SelectedNavKeyframe,
 } from '../utils/keyframeNavigation'
 import { findPreferredNarrationTrack } from '../utils/videoAudioLink'
+import {
+  buildColorPasteUpdates,
+  clipSupportsColorPaste,
+  extractClipColorSettings,
+  type ClipColorSettings,
+} from '../utils/colorPaste'
 
 const MAX_HISTORY = 50
 
@@ -181,6 +187,7 @@ interface ProjectState {
   past: Project[]
   future: Project[]
   clipboard: Clip | null
+  colorClipboard: ClipColorSettings | null
   rippleDelete: boolean
   rippleInsert: boolean
   inPoint: number | null
@@ -254,6 +261,9 @@ interface ProjectState {
   duplicateClipInPlace: (clipId: string) => string | null
   copySelectedClip: () => void
   pasteClip: () => void
+  copyClipColor: (clipId?: string) => boolean
+  pasteColorToSelectedClips: () => number
+  applyPrimaryClipColorToSelection: () => number
   splitClipAt: (clipId: string, time: number) => void
   moveClip: (clipId: string, trackId: string, startTime: number, recordHistory?: boolean) => void
   slipSelectedClip: (deltaSeconds: number) => boolean
@@ -374,6 +384,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   past: [],
   future: [],
   clipboard: null,
+  colorClipboard: null,
   rippleDelete: true,
   rippleInsert: false,
   inPoint: null,
@@ -1046,6 +1057,57 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }))
   },
 
+  copyClipColor: (clipId) => {
+    const id = clipId ?? get().selectedClipId
+    if (!id) return false
+    const found = findClip(get().project, id)
+    if (!found || !clipSupportsColorPaste(found.clip)) return false
+    set({ colorClipboard: extractClipColorSettings(found.clip) })
+    return true
+  },
+
+  pasteColorToSelectedClips: () => {
+    const { colorClipboard, selectedClipIds, project } = get()
+    if (!colorClipboard || selectedClipIds.length === 0) return 0
+
+    const targets = selectedClipIds.filter((id) => {
+      const found = findClip(project, id)
+      return found && clipSupportsColorPaste(found.clip)
+    })
+    if (targets.length === 0) return 0
+
+    get().pushHistory()
+    const updates = buildColorPasteUpdates(colorClipboard)
+    for (const id of targets) {
+      get().updateClip(id, updates, false)
+    }
+    set({ future: [] })
+    return targets.length
+  },
+
+  applyPrimaryClipColorToSelection: () => {
+    const { selectedClipId, selectedClipIds, project } = get()
+    if (!selectedClipId || selectedClipIds.length < 2) return 0
+
+    const source = findClip(project, selectedClipId)
+    if (!source || !clipSupportsColorPaste(source.clip)) return 0
+
+    const targets = selectedClipIds.filter((id) => {
+      if (id === selectedClipId) return false
+      const found = findClip(project, id)
+      return found && clipSupportsColorPaste(found.clip)
+    })
+    if (targets.length === 0) return 0
+
+    get().pushHistory()
+    const updates = buildColorPasteUpdates(extractClipColorSettings(source.clip))
+    for (const id of targets) {
+      get().updateClip(id, updates, false)
+    }
+    set({ future: [] })
+    return targets.length
+  },
+
   splitClipAt: (clipId, time) => {
     const { project } = get()
     const found = findClip(project, clipId)
@@ -1565,6 +1627,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       ...clearClipSelectionState(),
       selectedMarkerId: null,
       clipboard: null,
+      colorClipboard: null,
       inPoint: null,
       outPoint: null,
       past: [],
@@ -1709,6 +1772,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       ...clearClipSelectionState(),
       selectedMarkerId: null,
       clipboard: null,
+      colorClipboard: null,
       inPoint: null,
       outPoint: null,
       past: [],
@@ -1730,6 +1794,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       playbackShuttleRate: 1,
       ...clearClipSelectionState(),
       selectedMarkerId: null,
+      clipboard: null,
+      colorClipboard: null,
       past: [],
       future: [],
       showPlayHint: false,

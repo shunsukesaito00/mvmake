@@ -10,7 +10,7 @@ import {
 } from '../utils/batchTransitionStressSetup'
 import { seedBatchTransitionRemovalStress } from '../utils/batchTransitionRemovalStressSetup'
 import type { AudioClip, ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
-import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
+import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE, normalizeColorAdjustments } from '../types/project'
 
 const TRACK_V1 = 'track-v1'
 const TRACK_V2 = 'track-v2'
@@ -397,6 +397,49 @@ describe('video audio link', () => {
     expect(result).toMatchObject({ clipId: 'c1', audioTrackId: TRACK_BGM, startTime: 3, duration: 5 })
     expect(useProjectStore.getState().currentTime).toBe(3)
     expect((getTrackClips(TRACK_V1)[0] as VideoClip).audioLinked).toBe(false)
+  })
+})
+
+describe('color paste', () => {
+  const sourceColor = normalizeColorAdjustments({
+    ...DEFAULT_COLOR,
+    midtones: 0.35,
+    temperature: 0.2,
+  })
+
+  it('copyClipColor stores settings in colorClipboard', () => {
+    setProject(makeProject([
+      imageClip('c1', 0, 4, { color: sourceColor, lutId: 'lut-1', lutIntensity: 0.7 }),
+      imageClip('c2', 4, 4),
+    ]))
+    useProjectStore.getState().setSelectedClipId('c1')
+    expect(useProjectStore.getState().copyClipColor()).toBe(true)
+    expect(useProjectStore.getState().colorClipboard?.color.midtones).toBeCloseTo(0.35)
+    expect(useProjectStore.getState().colorClipboard?.lutId).toBe('lut-1')
+  })
+
+  it('pasteColorToSelectedClips applies clipboard to selected clips', () => {
+    setProject(makeProject([
+      imageClip('c1', 0, 4, { color: sourceColor, lutId: 'lut-1' }),
+      imageClip('c2', 4, 4),
+      imageClip('c3', 8, 4),
+    ]))
+    useProjectStore.getState().copyClipColor('c1')
+    useProjectStore.setState({ selectedClipIds: ['c2', 'c3'], selectedClipId: 'c2' })
+    expect(useProjectStore.getState().pasteColorToSelectedClips()).toBe(2)
+    const clips = getTrackClips(TRACK_V1)
+    expect((clips[1] as ImageClip).color.midtones).toBeCloseTo(0.35)
+    expect((clips[2] as ImageClip).lutId).toBe('lut-1')
+  })
+
+  it('applyPrimaryClipColorToSelection copies primary to other selected clips', () => {
+    setProject(makeProject([
+      imageClip('c1', 0, 4, { color: sourceColor }),
+      imageClip('c2', 4, 4),
+    ]))
+    useProjectStore.setState({ selectedClipIds: ['c1', 'c2'], selectedClipId: 'c1' })
+    expect(useProjectStore.getState().applyPrimaryClipColorToSelection()).toBe(1)
+    expect((getTrackClips(TRACK_V1)[1] as ImageClip).color.midtones).toBeCloseTo(0.35)
   })
 })
 

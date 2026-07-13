@@ -16,6 +16,7 @@ import { BeatMarkerSection } from '../components/BeatMarkerSection'
 import { TextStylePresetsSection } from '../components/TextStylePresetsSection'
 import { ClipMediaReplaceSection } from '../components/ClipMediaReplaceSection'
 import { VideoAudioLinkSection } from '../components/VideoAudioLinkSection'
+import { ColorPasteSection, ColorPasteMultiSection } from '../components/ColorPasteSection'
 import { AudioNormalizeSection } from '../components/AudioNormalizeSection'
 import { AudioEqSection } from '../components/AudioEqSection'
 import { AudioNoiseReductionSection } from '../components/AudioNoiseReductionSection'
@@ -143,6 +144,7 @@ function MultiClipInspectorSummary({ count }: { count: number }) {
             選択解除
           </Btn>
         </div>
+        <ColorPasteMultiSection />
       </div>
     </div>
   )
@@ -277,6 +279,7 @@ export function InspectorPanel() {
             <p className="text-[10px] leading-relaxed text-text-muted">
               このレイヤーより下のトラック（映像・テキスト）に色調を一括適用します。章マーカー区間に合わせて長さを調整してください。
             </p>
+            <ColorPasteSection clipId={selectedClip.id} />
             <ColorAdjustmentsSection
               color={(selectedClip as AdjustmentClip).color ?? DEFAULT_COLOR}
               onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
@@ -333,6 +336,7 @@ export function InspectorPanel() {
               />
             </CollapsibleSection>
             <CollapsibleSection title="色調補正">
+              <ColorPasteSection clipId={selectedClip.id} />
               <ColorAdjustmentsSection
                 color={(selectedClip as VideoClip).color ?? DEFAULT_COLOR}
                 onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
@@ -374,6 +378,7 @@ export function InspectorPanel() {
         {selectedClip.type === 'image' && (
           <>
             <CollapsibleSection title="色調補正">
+              <ColorPasteSection clipId={selectedClip.id} />
               <ColorAdjustmentsSection
                 color={(selectedClip as ImageClip).color ?? DEFAULT_COLOR}
                 onChange={(next, recordHistory) => updateClip(selectedClip.id, { color: next }, recordHistory)}
