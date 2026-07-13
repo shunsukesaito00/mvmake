@@ -132,6 +132,8 @@ export function TimelinePanel() {
   const moveClip = useProjectStore((s) => s.moveClip)
   const getSnapPoints = useProjectStore((s) => s.getSnapPoints)
   const timelineEditTool = useProjectStore((s) => s.timelineEditTool)
+  const selectedNavKeyframe = useProjectStore((s) => s.selectedNavKeyframe)
+  const setSelectedNavKeyframe = useProjectStore((s) => s.setSelectedNavKeyframe)
   const toggleTrackMute = useProjectStore((s) => s.toggleTrackMute)
   const toggleTrackLock = useProjectStore((s) => s.toggleTrackLock)
   const addTrack = useProjectStore((s) => s.addTrack)
@@ -638,6 +640,7 @@ export function TimelinePanel() {
     e.preventDefault()
     pushHistory()
     setSelectedClipId(clip.id)
+    setSelectedNavKeyframe({ clipId: clip.id, type: 'speed', keyframeId })
     setDragState({
       clipId: clip.id,
       mode: 'speedKeyframe',
@@ -707,6 +710,7 @@ export function TimelinePanel() {
     e.preventDefault()
     pushHistory()
     setSelectedClipId(clip.id)
+    setSelectedNavKeyframe({ clipId: clip.id, type: 'volume', keyframeId })
     setDragState({
       clipId: clip.id,
       mode: 'volumeKeyframe',
@@ -755,6 +759,7 @@ export function TimelinePanel() {
     e.preventDefault()
     pushHistory()
     setSelectedClipId(clip.id)
+    setSelectedNavKeyframe({ clipId: clip.id, type: 'transform', keyframeId })
     setDragState({
       clipId: clip.id,
       mode: 'transformKeyframe',
@@ -1026,6 +1031,7 @@ export function TimelinePanel() {
                   const hasTransformKeyframes = (clip.type === 'video' || clip.type === 'image' || clip.type === 'text') && ((clip.transformKeyframes?.length ?? 0) > 0 || isSelected)
                   const volumeLaneBottom = hasSpeedKeyframes ? SPEED_TIMELINE_LANE_HEIGHT : 0
                   const transformLaneBottom = (hasVolumeKeyframes ? VOLUME_TIMELINE_LANE_HEIGHT : 0) + volumeLaneBottom
+                  const navForClip = selectedNavKeyframe?.clipId === clip.id ? selectedNavKeyframe : null
                   return (
                     <div
                       key={clip.id}
@@ -1047,6 +1053,8 @@ export function TimelinePanel() {
                           widthPx={width}
                           isSelected={isSelected}
                           bottomOffset={volumeLaneBottom}
+                          highlightKeyframeId={navForClip?.type === 'volume' ? navForClip.keyframeId : null}
+                          onSelectKeyframe={(id) => setSelectedNavKeyframe({ clipId: clip.id, type: 'volume', keyframeId: id })}
                           onStartKeyframeDrag={(kf, e) => startVolumeKeyframeDrag(clip, kf.id, kf.time, kf.volume, e)}
                           onAddKeyframe={(time, volume) => addVolumeKeyframeOnTimeline(clip, time, volume)}
                         />
@@ -1056,6 +1064,8 @@ export function TimelinePanel() {
                           clip={clip}
                           widthPx={width}
                           isSelected={isSelected}
+                          highlightKeyframeId={navForClip?.type === 'speed' ? navForClip.keyframeId : null}
+                          onSelectKeyframe={(id) => setSelectedNavKeyframe({ clipId: clip.id, type: 'speed', keyframeId: id })}
                           onStartKeyframeDrag={(kf, e) => startSpeedKeyframeDrag(clip, kf.id, kf.time, kf.speed, e)}
                           onStartBezierHandleDrag={(kf, handleType, e) => startSpeedBezierHandleDrag(clip, kf.id, handleType, e)}
                           onAddKeyframe={(time, speed) => addSpeedKeyframeOnTimeline(clip, time, speed)}
@@ -1069,6 +1079,8 @@ export function TimelinePanel() {
                           widthPx={width}
                           isSelected={isSelected}
                           bottomOffset={transformLaneBottom}
+                          highlightKeyframeId={navForClip?.type === 'transform' ? navForClip.keyframeId : null}
+                          onSelectKeyframe={(id) => setSelectedNavKeyframe({ clipId: clip.id, type: 'transform', keyframeId: id })}
                           onStartKeyframeDrag={(kf, property, value, laneHeight, e) => startTransformKeyframeDrag(
                             clip,
                             kf.id,

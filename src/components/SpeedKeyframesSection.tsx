@@ -13,7 +13,21 @@ interface Props {
 export function SpeedKeyframesSection({ clip, onClipChange }: Props) {
   const currentTime = useProjectStore((s) => s.currentTime)
   const pushHistory = useProjectStore((s) => s.pushHistory)
+  const navSelection = useProjectStore((s) => s.selectedNavKeyframe)
+  const setNavSelection = useProjectStore((s) => s.setSelectedNavKeyframe)
   const keyframes = clip.speedKeyframes ?? []
+
+  const selectedKeyframeId =
+    navSelection?.clipId === clip.id
+    && navSelection.type === 'speed'
+    && keyframes.some((kf) => kf.id === navSelection.keyframeId)
+      ? navSelection.keyframeId
+      : keyframes[0]?.id ?? null
+
+  const setSelectedKeyframeId = (id: string | null) => {
+    if (id) setNavSelection({ clipId: clip.id, type: 'speed', keyframeId: id })
+    else if (navSelection?.clipId === clip.id && navSelection.type === 'speed') setNavSelection(null)
+  }
 
   const updateKeyframes = (next: SpeedKeyframe[]) => {
     onClipChange({ speedKeyframes: next.length ? sortSpeedKeyframes(next) : undefined })
@@ -23,7 +37,9 @@ export function SpeedKeyframesSection({ clip, onClipChange }: Props) {
     pushHistory()
     const localT = Math.max(0, Math.min(clip.duration, currentTime - clip.startTime))
     const speed = getSpeedAtLocalTime(clip, localT)
-    updateKeyframes([...keyframes, { id: createId(), time: localT, speed }])
+    const next = { id: createId(), time: localT, speed }
+    setSelectedKeyframeId(next.id)
+    updateKeyframes([...keyframes, next])
   }
 
   const updateKeyframe = (id: string, patch: Partial<SpeedKeyframe>) => {
@@ -58,13 +74,24 @@ export function SpeedKeyframesSection({ clip, onClipChange }: Props) {
           再生ヘッド位置(クリップ内)に速度キーフレームを追加できます。2点以上でスロー/早送りのランプを作れます。
         </p>
       ) : (
-        keyframes.map((kf, index) => (
-          <div key={kf.id} className="space-y-1.5 rounded-lg bg-surface-3 p-2 ring-1 ring-border">
+        keyframes.map((kf, index) => {
+          const selected = kf.id === selectedKeyframeId
+          return (
+          <div
+            key={kf.id}
+            className={`space-y-1.5 rounded-lg p-2 ring-1 transition-colors ${
+              selected ? 'bg-surface-3 ring-sky-400/40' : 'bg-surface-3 ring-border'
+            }`}
+            onClick={() => setSelectedKeyframeId(kf.id)}
+          >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-medium text-text-secondary">キーフレーム {index + 1}</span>
               <button
                 type="button"
-                onClick={() => removeKeyframe(kf.id)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  removeKeyframe(kf.id)
+                }}
                 className="text-[10px] text-danger hover:underline"
               >
                 削除
@@ -107,7 +134,8 @@ export function SpeedKeyframesSection({ clip, onClipChange }: Props) {
               </label>
             )}
           </div>
-        ))
+          )
+        })
       )}
     </div>
   )

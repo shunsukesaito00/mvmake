@@ -132,6 +132,18 @@ function App() {
             showToast('スライド編集には前後の隣接クリップが必要です', 'info')
           }
         }
+        if (e.key === ';' || e.code === 'Semicolon') {
+          e.preventDefault()
+          if (!store.jumpToAdjacentKeyframe('prev')) {
+            showToast('前のキーフレームがありません', 'info')
+          }
+        }
+        if (e.key === "'" || e.code === 'Quote') {
+          e.preventDefault()
+          if (!store.jumpToAdjacentKeyframe('next')) {
+            showToast('次のキーフレームがありません', 'info')
+          }
+        }
       }
     }
     window.addEventListener('keydown', onKeyDown)

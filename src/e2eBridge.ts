@@ -114,6 +114,12 @@ import {
   type RollingEditStressStats,
 } from './utils/rollingEditStressSetup'
 import {
+  getSelectedNavKeyframe,
+  jumpToAdjacentKeyframe,
+  seedKeyframeNavStress,
+  type KeyframeNavStressStats,
+} from './utils/keyframeNavStressSetup'
+import {
   applyClipColor,
   applyClipRgbCurvePoint,
   getClipColor,
@@ -209,6 +215,9 @@ declare global {
       getRollingEditClipDuration: (clipId: string) => number
       getRollingEditClipStartTime: (clipId: string) => number
       toggleTrackLock: (trackId: string) => void
+      loadKeyframeNavStress: () => KeyframeNavStressStats
+      jumpToAdjacentKeyframe: (direction: 'prev' | 'next') => boolean
+      getSelectedNavKeyframe: () => import('./utils/keyframeNavigation').SelectedNavKeyframe | null
       loadToneCurveStress: () => ToneCurveStressStats
       getClipColorMidtones: (clipId: string) => number
       getClipPixelGradeSample: (clipId: string, gray?: number) => { r: number; g: number; b: number }
@@ -373,6 +382,9 @@ export function installE2eBridge(): void {
     getRollingEditClipDuration: (clipId) => getRollingEditClipDuration(clipId),
     getRollingEditClipStartTime: (clipId) => getRollingEditClipStartTime(clipId),
     toggleTrackLock: (trackId) => useProjectStore.getState().toggleTrackLock(trackId),
+    loadKeyframeNavStress: () => seedKeyframeNavStress(),
+    jumpToAdjacentKeyframe: (direction) => jumpToAdjacentKeyframe(direction),
+    getSelectedNavKeyframe: () => getSelectedNavKeyframe(),
     loadToneCurveStress: () => seedToneCurveStress(),
     getClipColorMidtones: (clipId) => getClipColor(clipId).midtones,
     getClipPixelGradeSample: (clipId, gray) => getClipPixelGradeSample(clipId, gray),

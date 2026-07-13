@@ -12,6 +12,8 @@ interface Props {
   clip: VideoClip
   widthPx: number
   isSelected: boolean
+  highlightKeyframeId?: string | null
+  onSelectKeyframe?: (keyframeId: string) => void
   onStartKeyframeDrag: (keyframe: SpeedKeyframe, e: React.MouseEvent) => void
   onStartBezierHandleDrag: (keyframe: SpeedKeyframe, handleType: 'in' | 'out', e: React.MouseEvent) => void
   onAddKeyframe: (time: number, speed: number) => void
@@ -21,6 +23,8 @@ export function SpeedKeyframesTimeline({
   clip,
   widthPx,
   isSelected,
+  highlightKeyframeId,
+  onSelectKeyframe,
   onStartKeyframeDrag,
   onStartBezierHandleDrag,
   onAddKeyframe,
@@ -130,10 +134,17 @@ export function SpeedKeyframesTimeline({
               type="button"
               aria-label={`速度キーフレーム ${index + 1}`}
               title={`${kf.time.toFixed(1)}s · ${kf.speed}x`}
-              className="pointer-events-auto absolute z-[24] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-white/80 bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)] active:cursor-grabbing"
+              className={`pointer-events-auto absolute z-[24] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border shadow-[0_0_6px_rgba(56,189,248,0.8)] active:cursor-grabbing ${
+                kf.id === highlightKeyframeId
+                  ? 'border-white bg-white ring-2 ring-sky-300'
+                  : 'border-white/80 bg-sky-400'
+              }`}
               style={{ left: x, top: y }}
               onMouseDown={(e) => onStartKeyframeDrag(kf, e)}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelectKeyframe?.(kf.id)
+              }}
             />
           </div>
         )

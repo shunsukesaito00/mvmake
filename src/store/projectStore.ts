@@ -81,6 +81,12 @@ import { getSourceOffsetAtLocalTime } from '../utils/speedKeyframes'
 import { canRemoveTrack, createTrack, findTrackInsertIndex } from '../utils/trackManagement'
 import { type PlaybackShuttleRate, cycleForwardShuttleRate } from '../utils/playbackShuttle'
 import { prepareTrackClipsForInsert } from '../utils/rippleInsert'
+import {
+  clipLocalTimeAt,
+  findAdjacentKeyframeNavEntry,
+  listClipKeyframeNavEntries,
+  type SelectedNavKeyframe,
+} from '../utils/keyframeNavigation'
 
 const MAX_HISTORY = 50
 
@@ -156,6 +162,7 @@ function clearClipSelectionState() {
 
 export type TimelineEditTool = 'selection' | 'slip' | 'slide'
 export type ColorPreviewMode = 'normal' | 'beforeAfter'
+export type { SelectedNavKeyframe } from '../utils/keyframeNavigation'
 
 interface ProjectState {
   project: Project
@@ -186,6 +193,7 @@ interface ProjectState {
   colorPreviewMode: ColorPreviewMode
   showColorScope: boolean
   playbackShuttleRate: PlaybackShuttleRate
+  selectedNavKeyframe: SelectedNavKeyframe | null
 
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
@@ -250,6 +258,8 @@ interface ProjectState {
   slipSelectedClip: (deltaSeconds: number) => boolean
   slideSelectedClip: (deltaSeconds: number) => boolean
   rollingTrimAtEditPoint: (prevClipId: string, nextClipId: string, deltaSeconds: number, recordHistory?: boolean) => boolean
+  setSelectedNavKeyframe: (selection: SelectedNavKeyframe | null) => void
+  jumpToAdjacentKeyframe: (direction: 'prev' | 'next') => boolean
   applyRippleTrimOnTrack: (trackId: string, trimmedClipId: string, endBefore: number, delta: number) => void
   setClipTransition: (clipId: string, transition: Transition | undefined) => void
   applyBatchTransitions: (
@@ -368,6 +378,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   colorPreviewMode: 'normal',
   showColorScope: false,
   playbackShuttleRate: 1,
+  selectedNavKeyframe: null,
 
   setCurrentTime: (time) => set({ currentTime: Math.max(0, time) }),
   setIsPlaying: (playing) => set((state) => ({
@@ -387,7 +398,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({ playbackShuttleRate: cycleForwardShuttleRate(state.playbackShuttleRate) })
   },
   shuttleStop: () => set({ isPlaying: false, playbackShuttleRate: 1 }),
-  setSelectedClipId: (id) => set({ ...syncClipSelection(id ? [id] : []), selectedMarkerId: null }),
+  setSelectedClipId: (id) => set((state) => ({
+    ...syncClipSelection(id ? [id] : []),
+    selectedMarkerId: null,
+    selectedNavKeyframe: id && state.selectedNavKeyframe?.clipId === id
+      ? state.selectedNavKeyframe
+      : null,
+  })),
   setSelectedClipIds: (ids) => set({ ...syncClipSelection(ids), selectedMarkerId: null }),
   selectClipAtClick: (clipId, additive) => {
     const { selectedClipIds } = get()
@@ -408,8 +425,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!found) return
     set({ ...syncClipSelection(found.track.clips.map((c) => c.id)), selectedMarkerId: null })
   },
-  clearClipSelection: () => set({ ...clearClipSelectionState(), selectedMarkerId: null }),
-  setSelectedMarkerId: (id) => set({ selectedMarkerId: id, ...clearClipSelectionState() }),
+  clearClipSelection: () => set({ ...clearClipSelectionState(), selectedMarkerId: null, selectedNavKeyframe: null }),
+  setSelectedMarkerId: (id) => set({ selectedMarkerId: id, ...clearClipSelectionState(), selectedNavKeyframe: null }),
   setPixelsPerSecond: (pps) => {
     const clamped = clampTimelinePixelsPerSecond(pps)
     saveTimelinePixelsPerSecond(clamped)
@@ -1176,6 +1193,36 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       return true
     }
     return false
+  },
+
+  setSelectedNavKeyframe: (selection) => set({ selectedNavKeyframe: selection }),
+
+  jumpToAdjacentKeyframe: (direction) => {
+    const { selectedClipId, project, currentTime, selectedNavKeyframe } = get()
+    if (!selectedClipId) return false
+
+    const found = findClip(project, selectedClipId)
+    if (!found) return false
+
+    const entries = listClipKeyframeNavEntries(found.clip)
+    if (!entries.length) return false
+
+    const localTime = clipLocalTimeAt(found.clip.startTime, currentTime, found.clip.duration)
+    const currentId = selectedNavKeyframe?.clipId === selectedClipId
+      ? selectedNavKeyframe.keyframeId
+      : null
+    const target = findAdjacentKeyframeNavEntry(entries, localTime, direction, currentId)
+    if (!target) return false
+
+    set({
+      currentTime: found.clip.startTime + target.time,
+      selectedNavKeyframe: {
+        clipId: selectedClipId,
+        type: target.type,
+        keyframeId: target.id,
+      },
+    })
+    return true
   },
 
   applyRippleTrimOnTrack: (trackId, trimmedClipId, endBefore, delta) => {

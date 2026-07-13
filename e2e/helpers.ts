@@ -406,6 +406,27 @@ export async function toggleTrackLock(page: import('@playwright/test').Page, tra
   }, trackId)
 }
 
+export async function loadKeyframeNavStress(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadKeyframeNavStress()
+  })
+}
+
+export async function jumpToAdjacentKeyframe(page: import('@playwright/test').Page, direction: 'prev' | 'next') {
+  return page.evaluate((dir) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.jumpToAdjacentKeyframe(dir)
+  }, direction)
+}
+
+export async function getSelectedNavKeyframe(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getSelectedNavKeyframe()
+  })
+}
+
 export async function getClipSourceStart(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

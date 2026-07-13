@@ -28,6 +28,8 @@ interface Props {
   widthPx: number
   isSelected: boolean
   bottomOffset?: number
+  highlightKeyframeId?: string | null
+  onSelectKeyframe?: (keyframeId: string) => void
   onStartKeyframeDrag: (
     keyframe: TransformKeyframe,
     property: TransformTimelineProperty,
@@ -51,6 +53,8 @@ export function TransformKeyframesTimeline({
   widthPx,
   isSelected,
   bottomOffset = 0,
+  highlightKeyframeId,
+  onSelectKeyframe,
   onStartKeyframeDrag,
   onStartBezierHandleDrag,
   onAddKeyframe,
@@ -268,7 +272,11 @@ export function TransformKeyframesTimeline({
               type="button"
               aria-label={`トランスフォームキーフレーム ${index + 1}`}
               title={formatTransformKeyframeTitle(kf, transform, selectedProperty)}
-              className="pointer-events-auto absolute z-[22] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-grab border border-white/80 bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)] active:cursor-grabbing"
+              className={`pointer-events-auto absolute z-[22] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-grab border shadow-[0_0_6px_rgba(56,189,248,0.8)] active:cursor-grabbing ${
+                kf.id === highlightKeyframeId
+                  ? 'border-white bg-white ring-2 ring-sky-300'
+                  : 'border-white/80 bg-sky-400'
+              }`}
               style={{ left: x, top: y + laneTop }}
               onMouseDown={(e) => onStartKeyframeDrag(
                 kf,
@@ -277,7 +285,10 @@ export function TransformKeyframesTimeline({
                 laneHeight,
                 e,
               )}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelectKeyframe?.(kf.id)
+              }}
             />
           </div>
         )

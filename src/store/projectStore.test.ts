@@ -332,6 +332,44 @@ describe('rollingTrimAtEditPoint', () => {
   })
 })
 
+describe('jumpToAdjacentKeyframe', () => {
+  it('jumps across transform, volume, and speed keyframes on the selected clip', () => {
+    setProject(makeProject([
+      videoClip('c1', 2, 10, {
+        transformKeyframes: [{ id: 'tf1', time: 1, x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1 }],
+        audio: {
+          ...DEFAULT_AUDIO,
+          volumeKeyframes: [{ id: 'vol1', time: 2, volume: 0.8 }],
+        },
+        speedKeyframes: [{ id: 'sp1', time: 3, speed: 1.5 }],
+      }),
+    ]))
+    useProjectStore.setState({ selectedClipId: 'c1', currentTime: 2 })
+
+    expect(useProjectStore.getState().jumpToAdjacentKeyframe('next')).toBe(true)
+    expect(useProjectStore.getState().currentTime).toBe(3)
+    expect(useProjectStore.getState().selectedNavKeyframe).toEqual({
+      clipId: 'c1',
+      type: 'transform',
+      keyframeId: 'tf1',
+    })
+
+    expect(useProjectStore.getState().jumpToAdjacentKeyframe('next')).toBe(true)
+    expect(useProjectStore.getState().currentTime).toBe(4)
+    expect(useProjectStore.getState().selectedNavKeyframe?.type).toBe('volume')
+
+    expect(useProjectStore.getState().jumpToAdjacentKeyframe('prev')).toBe(true)
+    expect(useProjectStore.getState().currentTime).toBe(3)
+    expect(useProjectStore.getState().selectedNavKeyframe?.type).toBe('transform')
+  })
+
+  it('returns false when the selected clip has no keyframes', () => {
+    setProject(makeProject([videoClip('c1', 0, 4)]))
+    useProjectStore.setState({ selectedClipId: 'c1' })
+    expect(useProjectStore.getState().jumpToAdjacentKeyframe('next')).toBe(false)
+  })
+})
+
 describe('applyRippleTrimOnTrack with keyframes', () => {
   it('preserves transform keyframes when shifting subsequent clips', () => {
     const kfs = [{ id: 'kf1', time: 1, x: 0.2, y: 0.5, scale: 1, rotation: 0, opacity: 1 }]

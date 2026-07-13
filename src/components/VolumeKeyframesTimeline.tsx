@@ -17,6 +17,8 @@ interface Props {
   widthPx: number
   isSelected: boolean
   bottomOffset?: number
+  highlightKeyframeId?: string | null
+  onSelectKeyframe?: (keyframeId: string) => void
   onStartKeyframeDrag: (keyframe: VolumeKeyframe, e: React.MouseEvent) => void
   onAddKeyframe: (time: number, volume: number) => void
 }
@@ -27,6 +29,8 @@ export function VolumeKeyframesTimeline({
   widthPx,
   isSelected,
   bottomOffset = 0,
+  highlightKeyframeId,
+  onSelectKeyframe,
   onStartKeyframeDrag,
   onAddKeyframe,
 }: Props) {
@@ -105,10 +109,17 @@ export function VolumeKeyframesTimeline({
             type="button"
             aria-label={`音量キーフレーム ${index + 1}`}
             title={`${kf.time.toFixed(1)}s · ${Math.round(kf.volume * 100)}%`}
-            className="pointer-events-auto absolute z-[21] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-white/80 bg-accent shadow-[0_0_6px_rgba(201,169,110,0.8)] active:cursor-grabbing"
+            className={`pointer-events-auto absolute z-[21] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border shadow-[0_0_6px_rgba(201,169,110,0.8)] active:cursor-grabbing ${
+              kf.id === highlightKeyframeId
+                ? 'border-white bg-white ring-2 ring-accent'
+                : 'border-white/80 bg-accent'
+            }`}
             style={{ left: x, top: y }}
             onMouseDown={(e) => onStartKeyframeDrag(kf, e)}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              onSelectKeyframe?.(kf.id)
+            }}
           />
         )
       })}

@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import type { AudioClip, AudioSettings, VideoClip, VolumeKeyframe } from '../types/project'
 import { getVolumeAtLocalTime, sortVolumeKeyframes } from '../utils/volumeKeyframes'
@@ -17,18 +16,21 @@ interface Props {
 export function VolumeKeyframesSection({ clip, audio, onAudioChange }: Props) {
   const currentTime = useProjectStore((s) => s.currentTime)
   const pushHistory = useProjectStore((s) => s.pushHistory)
+  const navSelection = useProjectStore((s) => s.selectedNavKeyframe)
+  const setNavSelection = useProjectStore((s) => s.setSelectedNavKeyframe)
   const keyframes = audio.volumeKeyframes ?? []
-  const [selectedKeyframeId, setSelectedKeyframeId] = useState<string | null>(keyframes[0]?.id ?? null)
 
-  useEffect(() => {
-    if (!keyframes.length) {
-      setSelectedKeyframeId(null)
-      return
-    }
-    if (!selectedKeyframeId || !keyframes.some((kf) => kf.id === selectedKeyframeId)) {
-      setSelectedKeyframeId(keyframes[0].id)
-    }
-  }, [keyframes, selectedKeyframeId])
+  const selectedKeyframeId =
+    navSelection?.clipId === clip.id
+    && navSelection.type === 'volume'
+    && keyframes.some((kf) => kf.id === navSelection.keyframeId)
+      ? navSelection.keyframeId
+      : keyframes[0]?.id ?? null
+
+  const setSelectedKeyframeId = (id: string | null) => {
+    if (id) setNavSelection({ clipId: clip.id, type: 'volume', keyframeId: id })
+    else if (navSelection?.clipId === clip.id && navSelection.type === 'volume') setNavSelection(null)
+  }
 
   const updateKeyframes = (next: VolumeKeyframe[]) => {
     onAudioChange({ volumeKeyframes: next.length ? sortVolumeKeyframes(next) : undefined })

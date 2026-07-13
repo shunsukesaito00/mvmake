@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import {
   TRANSFORM_KEYFRAME_EASING_OPTIONS,
@@ -32,19 +32,22 @@ interface Props {
 export function TransformKeyframesSection({ clip, transform, transformKeyframes, onTransformChange }: Props) {
   const currentTime = useProjectStore((s) => s.currentTime)
   const pushHistory = useProjectStore((s) => s.pushHistory)
+  const navSelection = useProjectStore((s) => s.selectedNavKeyframe)
+  const setNavSelection = useProjectStore((s) => s.setSelectedNavKeyframe)
   const keyframes = transformKeyframes ?? []
   const [selectedProperty, setSelectedProperty] = useState<TransformTimelineProperty>('scale')
-  const [selectedKeyframeId, setSelectedKeyframeId] = useState<string | null>(keyframes[0]?.id ?? null)
 
-  useEffect(() => {
-    if (!keyframes.length) {
-      setSelectedKeyframeId(null)
-      return
-    }
-    if (!selectedKeyframeId || !keyframes.some((kf) => kf.id === selectedKeyframeId)) {
-      setSelectedKeyframeId(keyframes[0].id)
-    }
-  }, [keyframes, selectedKeyframeId])
+  const selectedKeyframeId =
+    navSelection?.clipId === clip.id
+    && navSelection.type === 'transform'
+    && keyframes.some((kf) => kf.id === navSelection.keyframeId)
+      ? navSelection.keyframeId
+      : keyframes[0]?.id ?? null
+
+  const setSelectedKeyframeId = (id: string | null) => {
+    if (id) setNavSelection({ clipId: clip.id, type: 'transform', keyframeId: id })
+    else if (navSelection?.clipId === clip.id && navSelection.type === 'transform') setNavSelection(null)
+  }
 
   const updateKeyframes = (next: TransformKeyframe[]) => {
     onTransformChange({ transformKeyframes: next.length ? sortTransformKeyframes(next) : undefined })
