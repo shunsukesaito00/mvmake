@@ -34,12 +34,17 @@ import {
   sanitizeFileBase,
 } from '../utils/chapterBatchExport'
 import {
+  buildPartialChapterZipFilename,
+  canDownloadPartialChapterZip,
   createChapterExportQueue,
   finalizeChapterQueueOnAbort,
   formatBatchExportProgressDetail,
   formatChapterQueueCancelDetail,
   formatChapterQueueFailureDetail,
+  getChapterQueueDoneCount,
   getFailedChapterIndices,
+  getPartialChapterZipButtonLabel,
+  getPartialChapterZipHint,
   getResumableChapterCount,
   hasFailedChapters,
   hasPartialChapterProgress,
@@ -126,6 +131,8 @@ export function ExportButton() {
   const exportTooltip = !hasClips ? 'クリップを追加してから書き出してください' : undefined
   const failedChapterCount = chapterQueue ? getFailedChapterIndices(chapterQueue).length : 0
   const resumableChapterCount = chapterQueue ? getResumableChapterCount(chapterQueue) : 0
+  const doneChapterCount = chapterQueue ? getChapterQueueDoneCount(chapterQueue) : 0
+  const canSavePartialZip = chapterQueue ? canDownloadPartialChapterZip(chapterQueue) : false
 
   useEffect(() => {
     if (!showExportHint) return
@@ -311,6 +318,24 @@ export function ExportButton() {
       return
     }
     void handleExport(job.resolution, job.quality)
+  }
+
+  const handleDownloadPartialChapterZip = async () => {
+    if (!chapterQueue || !canDownloadPartialChapterZip(chapterQueue)) return
+    try {
+      const zipBlob = await zipCompletedChapterQueue(chapterQueue)
+      const done = getChapterQueueDoneCount(chapterQueue)
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = buildPartialChapterZipFilename(project.name || 'movie', done)
+      a.click()
+      URL.revokeObjectURL(url)
+      showToast(`${done} 章の ZIP を保存しました`, 'success')
+    } catch (err) {
+      console.error(err)
+      showToast('完了章の ZIP 保存に失敗しました', 'error')
+    }
   }
 
   const runBatchChapterExport = async (onlyIndices?: number[]) => {
@@ -522,6 +547,21 @@ export function ExportButton() {
             {chapterQueue && hasPartialChapterProgress(chapterQueue) && (
               <ExportChapterQueuePanel queue={chapterQueue} />
             )}
+            {canSavePartialZip && (
+              <div className="space-y-2" data-testid="export-partial-zip-section">
+                <p className="text-[10px] leading-relaxed text-text-muted">
+                  {getPartialChapterZipHint(doneChapterCount)}
+                </p>
+                <Btn
+                  variant="default"
+                  className="w-full"
+                  data-testid="export-partial-zip-button"
+                  onClick={() => void handleDownloadPartialChapterZip()}
+                >
+                  {getPartialChapterZipButtonLabel(doneChapterCount)}
+                </Btn>
+              </div>
+            )}
             {isRetryableExportJob(retryableJob) && (
               <div className="space-y-2" data-testid="export-retry-section">
                 <p className="text-[10px] leading-relaxed text-text-muted">
@@ -549,6 +589,21 @@ export function ExportButton() {
             </div>
             {chapterQueue && (hasFailedChapters(chapterQueue) || hasPartialChapterProgress(chapterQueue)) && (
               <ExportChapterQueuePanel queue={chapterQueue} />
+            )}
+            {canSavePartialZip && (
+              <div className="space-y-2" data-testid="export-partial-zip-section">
+                <p className="text-[10px] leading-relaxed text-text-muted">
+                  {getPartialChapterZipHint(doneChapterCount)}
+                </p>
+                <Btn
+                  variant="default"
+                  className="w-full"
+                  data-testid="export-partial-zip-button"
+                  onClick={() => void handleDownloadPartialChapterZip()}
+                >
+                  {getPartialChapterZipButtonLabel(doneChapterCount)}
+                </Btn>
+              </div>
             )}
             {isRetryableExportJob(retryableJob) && (
               <div className="space-y-2" data-testid="export-retry-section">

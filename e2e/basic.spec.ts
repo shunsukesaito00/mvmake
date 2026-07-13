@@ -2885,6 +2885,29 @@ test('書き出し: 章 ZIP 一括をキャンセルできる', async ({ page })
   await expect(page.getByRole('button', { name: '全章を ZIP で書き出し' })).toBeVisible()
 })
 
+test('書き出し: 章 ZIP キャンセル後に完了章を部分 ZIP 保存できる（Phase H G27）', async ({ page }) => {
+  test.setTimeout(180_000)
+
+  await goOnboarded(page)
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await loadChapterExportE2eProject(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '軽量' }).click()
+  await page.getByRole('button', { name: '全章を ZIP で書き出し' }).click()
+  await expect(page.locator('[data-status="done"]').first()).toBeVisible({ timeout: 90_000 })
+  await page.getByRole('button', { name: 'キャンセル' }).click()
+  await expect(page.getByRole('status', { name: '書き出し結果' })).toBeVisible()
+  await expect(page.getByTestId('export-partial-zip-button')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download', { timeout: 30_000 })
+  await page.getByTestId('export-partial-zip-button').click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toMatch(/_chapters_partial_\d+\.zip$/)
+  await expect(page.getByText(/章の ZIP を保存しました/)).toBeVisible({ timeout: 15_000 })
+})
+
 test('書き出し: 短尺プロジェクトで章 ZIP をダウンロード（対応環境）', async ({ page }) => {
   test.setTimeout(300_000)
 

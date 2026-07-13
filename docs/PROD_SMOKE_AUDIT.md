@@ -1,8 +1,15 @@
 # 本番スモーク E2E 監査（v3.0.4）
 
-最終更新: 2026-07-13（v3.0.4 / **Phase F F1 完了** — A/Vリンク・色調ペースト・速度オーディオ連動 9 件を basic へ選別移植）
+最終更新: 2026-07-14（v3.19.0 / Phase H G27 で basic を 805→806）
 
-> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 805 件**を実行。Phase E E1〜E13 の婚礼クリティカル **28 件は v3.0.0〜v3.0.4 で basic へ移植完了**（Phase F F1 完了）。editor 226 件はストレス回帰・ローカル/CI 全量。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 806 件**を実行。Phase E E1〜E13 の婚礼クリティカル **28 件は v3.0.0〜v3.0.4 で basic へ移植完了**（Phase F F1 完了）。v3.19.0 で章 ZIP 部分保存 1 件を追加。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+
+## v3.19.0 拡充（805→806）— Phase H G27
+
+| 検証項目 | 結果 |
+|----------|------|
+| `e2e/basic.spec.ts` 件数 | **806**（+1） |
+| 追加シナリオ | 章 ZIP キャンセル後の完了章部分 ZIP 保存 |
 
 ## v3.0.4 拡充（796→805）— Phase F F1 完了
 
@@ -1563,8 +1570,8 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 805 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 805`
+- `e2e/basic.spec.ts` — 806 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 806`
 - `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2664_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）

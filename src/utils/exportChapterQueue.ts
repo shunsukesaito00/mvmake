@@ -1,5 +1,5 @@
 import type { ChapterExportEntry } from './chapterBatchExport'
-import { zipMp4Blobs } from './chapterBatchExport'
+import { sanitizeFileBase, zipMp4Blobs } from './chapterBatchExport'
 
 export type ChapterQueueItemStatus = 'pending' | 'running' | 'done' | 'failed'
 
@@ -135,9 +135,26 @@ export function formatChapterQueueCancelDetail(queue: ChapterExportQueue): strin
   const pending = getPendingChapterIndices(queue).length
   if (done > 0) {
     const pendingPart = pending > 0 ? `残り ${pending} 章は未書き出しです。` : ''
-    return `${done} 章が完了済みです。${pendingPart}設定を変更して再試行できます。`
+    return `${done} 章が完了済みです。${pendingPart}完了分を ZIP で保存するか、続きから再試行できます。`
   }
   return '処理は中断されました。設定を変更して再試行できます。'
+}
+
+/** 全章完了前に、完了済み章が 1 つ以上あるとき部分 ZIP を保存できる */
+export function canDownloadPartialChapterZip(queue: ChapterExportQueue): boolean {
+  return getChapterQueueDoneCount(queue) > 0 && !isChapterQueueComplete(queue)
+}
+
+export function getPartialChapterZipButtonLabel(doneCount: number): string {
+  return `完了した ${doneCount} 章を ZIP で保存`
+}
+
+export function getPartialChapterZipHint(doneCount: number): string {
+  return `書き出し済みの ${doneCount} 章だけを今すぐ ZIP ダウンロードできます。未完了の章は含まれません。`
+}
+
+export function buildPartialChapterZipFilename(projectName: string, doneCount: number): string {
+  return `${sanitizeFileBase(projectName || 'movie')}_chapters_partial_${doneCount}.zip`
 }
 
 export async function runChapterExportQueue(

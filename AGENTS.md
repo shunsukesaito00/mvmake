@@ -32,7 +32,7 @@
 | `src/panels/` | `MediaPanel` / `PreviewPanel` / `InspectorPanel` / `TimelinePanel` / `MixerPanel` |
 | `src/components/` | `Toolbar`、`ExportButton`、`TimelineEditTools`、`VolumeKeyframeGraphEditor`、`ColorWaveformScope`、モーダル類、`ToastContainer`、共通 UI(`ui.tsx` / `icons.tsx`) |
 | `src/store/toastStore.ts` | トースト通知用ストア |
-| `e2e/` | Playwright E2E テスト（`npm run test:e2e` 全量 1031 件 = `basic` 805 + `editor` 226。本番スモーク `test:e2e:prod` は **basic 805 のみ**） |
+| `e2e/` | Playwright E2E テスト（`npm run test:e2e` 全量 1061 件 = `basic` 806 + `editor` 255。本番スモーク `test:e2e:prod` は **basic 806 のみ**） |
 | `scripts/` | README スクリーンショット生成(`npm run screenshot`)、maskable アイコン生成 |
 | `.github/workflows/` | `ci.yml`(lint・test・build・E2E)、`deploy.yml`(Pages デプロイ + 本番スモーク) |
 
@@ -73,7 +73,7 @@
 | `docs/SLIP_SLIDE_AUDIT.md` | スリップ/スライド編集（v2.0.2） |
 | `docs/TONE_CURVE_AUDIT.md` | トーンカーブ / RGB カーブ（PCHIP・ピクセルグレード）（v2.0.3） |
 | `docs/TEMPLATE_AUDIT.md` | テンプレート統合（組み込み4種・ユーザー保存・JSON）（v2.1.0） |
-| `docs/PROD_SMOKE_AUDIT.md` | 本番スモーク E2E（`test:e2e:prod`・805 シナリオ）（v3.0.4 / **Phase F F1 完了**） |
+| `docs/PROD_SMOKE_AUDIT.md` | 本番スモーク E2E（`test:e2e:prod`・806 シナリオ）（v3.19.0 / Phase H G27・Phase F F1 含） |
 | `docs/FEATURE_COMPARISON.md` | 機能比較・**ロードマップ正本**（Phase A〜E **完了** / Phase F v3.0+）・Premiere/CapCut 操作性ギャップ分析 |
 
 **Phase E（v2.7.0〜v2.9.4）**: E1 マルチ選択〜E13 速度オーディオ連動まで **13 項目完了**。回帰 E2E は主に `e2e/editor.spec.ts`。次フェーズは [FEATURE_COMPARISON.md の Phase F](docs/FEATURE_COMPARISON.md#phase-f--v30-以降)。

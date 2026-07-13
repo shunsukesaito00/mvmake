@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ChapterExportEntry } from './chapterBatchExport'
 import {
+  buildPartialChapterZipFilename,
+  canDownloadPartialChapterZip,
   createChapterExportQueue,
   finalizeChapterQueueOnAbort,
   formatBatchExportProgressDetail,
@@ -9,6 +11,8 @@ import {
   formatChapterQueueItemStatus,
   getChapterQueueSummary,
   getFailedChapterIndices,
+  getPartialChapterZipButtonLabel,
+  getPartialChapterZipHint,
   getResumableChapterCount,
   hasPartialChapterProgress,
   isChapterQueueComplete,
@@ -170,5 +174,21 @@ describe('exportChapterQueue', () => {
     expect(getResumableChapterCount(queue)).toBe(2)
     expect(formatChapterQueueCancelDetail(queue)).toContain('1 章が完了済み')
     expect(formatChapterQueueCancelDetail(queue)).toContain('残り 2 章')
+    expect(formatChapterQueueCancelDetail(queue)).toContain('ZIP で保存')
+  })
+
+  it('canDownloadPartialChapterZip / ラベル / ファイル名', () => {
+    const queue = createChapterExportQueue(entries)
+    expect(canDownloadPartialChapterZip(queue)).toBe(false)
+    queue.items[0]!.status = 'done'
+    queue.items[0]!.blob = new Blob([new Uint8Array([1])])
+    expect(canDownloadPartialChapterZip(queue)).toBe(true)
+    expect(getPartialChapterZipButtonLabel(1)).toBe('完了した 1 章を ZIP で保存')
+    expect(getPartialChapterZipHint(1)).toContain('1 章だけ')
+    expect(buildPartialChapterZipFilename('婚礼本編', 1)).toBe('婚礼本編_chapters_partial_1.zip')
+
+    queue.items[1]!.status = 'done'
+    queue.items[2]!.status = 'done'
+    expect(canDownloadPartialChapterZip(queue)).toBe(false)
   })
 })
