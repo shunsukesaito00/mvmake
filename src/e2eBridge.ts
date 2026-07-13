@@ -354,6 +354,8 @@ declare global {
       setColorPreviewMode: (mode: 'normal' | 'beforeAfter') => void
       getShowColorScope: () => boolean
       setShowColorScope: (show: boolean) => void
+      getColorScopeMode: () => string
+      setColorScopeMode: (mode: 'waveform' | 'vector') => void
     }
   }
 }
@@ -625,6 +627,8 @@ export function installE2eBridge(): void {
     setColorPreviewMode: (mode) => useProjectStore.getState().setColorPreviewMode(mode),
     getShowColorScope: () => useProjectStore.getState().showColorScope,
     setShowColorScope: (show) => useProjectStore.getState().setShowColorScope(show),
+    getColorScopeMode: () => useProjectStore.getState().colorScopeMode,
+    setColorScopeMode: (mode) => useProjectStore.getState().setColorScopeMode(mode),
   }
 }
 

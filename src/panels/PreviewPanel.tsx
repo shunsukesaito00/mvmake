@@ -6,6 +6,7 @@ import { PanelHeader, IconButton, Timecode } from '../components/ui'
 import { Icons } from '../components/icons'
 import { PreviewOverlay } from '../components/PreviewOverlay'
 import { ColorWaveformScope } from '../components/ColorWaveformScope'
+import { ColorVectorScope } from '../components/ColorVectorScope'
 import { downsampleImageData } from '../utils/colorScope'
 
 export function PreviewPanel() {
@@ -24,6 +25,7 @@ export function PreviewPanel() {
   const showSafeAreas = useProjectStore((s) => s.showSafeAreas)
   const colorPreviewMode = useProjectStore((s) => s.colorPreviewMode)
   const showColorScope = useProjectStore((s) => s.showColorScope)
+  const colorScopeMode = useProjectStore((s) => s.colorScopeMode)
   const setColorPreviewMode = useProjectStore((s) => s.setColorPreviewMode)
   const setShowColorScope = useProjectStore((s) => s.setShowColorScope)
   const showPlayHint = useProjectStore((s) => s.showPlayHint)
@@ -156,7 +158,7 @@ export function PreviewPanel() {
         <IconButton
           active={showColorScope}
           onClick={() => setShowColorScope(!showColorScope)}
-          tooltip="輝度波形スコープ"
+          tooltip={colorScopeMode === 'vector' ? 'ベクトルスコープ' : '輝度波形スコープ'}
           size="sm"
           data-testid="color-scope-toggle"
         >
@@ -196,8 +198,12 @@ export function PreviewPanel() {
           </div>
         )}
         {showColorScope && (
-          <div className="absolute right-3 bottom-3 left-3 max-w-xs">
-            <ColorWaveformScope imageData={scopeImageData} />
+          <div className={`absolute right-3 bottom-3 ${colorScopeMode === 'vector' ? 'w-[136px]' : 'left-3 max-w-xs'}`}>
+            {colorScopeMode === 'vector' ? (
+              <ColorVectorScope imageData={scopeImageData} />
+            ) : (
+              <ColorWaveformScope imageData={scopeImageData} />
+            )}
           </div>
         )}
       </div>

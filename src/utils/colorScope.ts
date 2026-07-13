@@ -41,6 +41,55 @@ export function buildLuminanceWaveformPath(
   return parts.join(' ')
 }
 
+export interface VectorScopePoint {
+  u: number
+  v: number
+}
+
+/** BT.601 色差（U/V）を -0.5〜0.5 付近に正規化 */
+export function rgbToChromaUv(r: number, g: number, b: number): VectorScopePoint {
+  const rn = r / 255
+  const gn = g / 255
+  const bn = b / 255
+  const y = 0.299 * rn + 0.587 * gn + 0.114 * bn
+  return {
+    u: (bn - y) / 1.772,
+    v: (rn - y) / 1.402,
+  }
+}
+
+export function sampleVectorScopePoints(
+  imageData: ImageData,
+  maxPoints = 1500,
+): VectorScopePoint[] {
+  const { width, height, data } = imageData
+  if (width <= 0 || height <= 0) return []
+
+  const total = width * height
+  const stride = Math.max(1, Math.ceil(total / maxPoints))
+  const points: VectorScopePoint[] = []
+
+  for (let i = 0; i < total; i += stride) {
+    const pi = i * 4
+    points.push(rgbToChromaUv(data[pi], data[pi + 1], data[pi + 2]))
+  }
+
+  return points
+}
+
+export function mapVectorScopeToCanvas(
+  u: number,
+  v: number,
+  size: number,
+): { x: number; y: number } {
+  const scale = size * 0.9
+  const center = size / 2
+  return {
+    x: center + u * scale,
+    y: center - v * scale,
+  }
+}
+
 export function downsampleImageData(source: ImageData, maxWidth = 128): ImageData {
   if (source.width <= maxWidth) return source
   const scale = maxWidth / source.width

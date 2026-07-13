@@ -169,6 +169,7 @@ function clearClipSelectionState() {
 
 export type TimelineEditTool = 'selection' | 'slip' | 'slide'
 export type ColorPreviewMode = 'normal' | 'beforeAfter'
+export type ColorScopeMode = 'waveform' | 'vector'
 export type { SelectedNavKeyframe } from '../utils/keyframeNavigation'
 
 interface ProjectState {
@@ -200,6 +201,7 @@ interface ProjectState {
   timelineEditTool: TimelineEditTool
   colorPreviewMode: ColorPreviewMode
   showColorScope: boolean
+  colorScopeMode: ColorScopeMode
   playbackShuttleRate: PlaybackShuttleRate
   selectedNavKeyframe: SelectedNavKeyframe | null
 
@@ -230,6 +232,7 @@ interface ProjectState {
   setTimelineEditTool: (tool: TimelineEditTool) => void
   setColorPreviewMode: (mode: ColorPreviewMode) => void
   setShowColorScope: (show: boolean) => void
+  setColorScopeMode: (mode: ColorScopeMode) => void
   setInPoint: (time: number | null) => void
   setOutPoint: (time: number | null) => void
   clearInOut: () => void
@@ -397,6 +400,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   timelineEditTool: 'selection',
   colorPreviewMode: 'normal',
   showColorScope: false,
+  colorScopeMode: 'waveform',
   playbackShuttleRate: 1,
   selectedNavKeyframe: null,
 
@@ -466,6 +470,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setTimelineEditTool: (tool) => set({ timelineEditTool: tool }),
   setColorPreviewMode: (mode) => set({ colorPreviewMode: mode }),
   setShowColorScope: (show) => set({ showColorScope: show }),
+  setColorScopeMode: (mode) => set({ colorScopeMode: mode }),
   setInPoint: (time) => set({ inPoint: time }),
   setOutPoint: (time) => set({ outPoint: time }),
   clearInOut: () => set({ inPoint: null, outPoint: null }),

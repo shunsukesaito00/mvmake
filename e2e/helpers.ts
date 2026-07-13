@@ -1005,6 +1005,20 @@ export async function setShowColorScope(page: import('@playwright/test').Page, s
   }, show)
 }
 
+export async function getColorScopeMode(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getColorScopeMode()
+  })
+}
+
+export async function setColorScopeMode(page: import('@playwright/test').Page, mode: 'waveform' | 'vector') {
+  await page.evaluate((value) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.setColorScopeMode(value)
+  }, mode)
+}
+
 export async function getTrackVolume(page: import('@playwright/test').Page, trackId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

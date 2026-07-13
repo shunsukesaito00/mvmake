@@ -44,8 +44,26 @@ export function ColorAdjustmentsSection({
   const importLutFile = useProjectStore((s) => s.importLutFile)
   const colorPreviewMode = useProjectStore((s) => s.colorPreviewMode)
   const showColorScope = useProjectStore((s) => s.showColorScope)
+  const colorScopeMode = useProjectStore((s) => s.colorScopeMode)
   const setColorPreviewMode = useProjectStore((s) => s.setColorPreviewMode)
   const setShowColorScope = useProjectStore((s) => s.setShowColorScope)
+  const setColorScopeMode = useProjectStore((s) => s.setColorScopeMode)
+
+  const toggleWaveformScope = () => {
+    if (showColorScope && colorScopeMode === 'waveform') setShowColorScope(false)
+    else {
+      setColorScopeMode('waveform')
+      setShowColorScope(true)
+    }
+  }
+
+  const toggleVectorScope = () => {
+    if (showColorScope && colorScopeMode === 'vector') setShowColorScope(false)
+    else {
+      setColorScopeMode('vector')
+      setShowColorScope(true)
+    }
+  }
   const fileInputRef = useRef<HTMLInputElement>(null)
   const lutIntensityDragRef = useRef<number | null>(null)
   const toneDragRef = useRef<{ field: 'shadows' | 'midtones' | 'highlights' | 'brightness' | 'contrast' | 'saturation' | 'hue' | 'temperature' | 'tint'; from: number } | null>(null)
@@ -157,15 +175,28 @@ export function ColorAdjustmentsSection({
           <button
             type="button"
             data-testid="inspector-color-scope"
-            aria-pressed={showColorScope}
+            aria-pressed={showColorScope && colorScopeMode === 'waveform'}
             className={`rounded-md px-2 py-1 text-[10px] font-medium ring-1 transition-colors ${
-              showColorScope
+              showColorScope && colorScopeMode === 'waveform'
                 ? 'bg-accent-muted text-accent ring-accent/40'
                 : 'bg-surface-3 text-text-secondary ring-border hover:text-text-primary'
             }`}
-            onClick={() => setShowColorScope(!showColorScope)}
+            onClick={toggleWaveformScope}
           >
-            輝度スコープ
+            輝度波形
+          </button>
+          <button
+            type="button"
+            data-testid="inspector-color-vector-scope"
+            aria-pressed={showColorScope && colorScopeMode === 'vector'}
+            className={`rounded-md px-2 py-1 text-[10px] font-medium ring-1 transition-colors ${
+              showColorScope && colorScopeMode === 'vector'
+                ? 'bg-accent-muted text-accent ring-accent/40'
+                : 'bg-surface-3 text-text-secondary ring-border hover:text-text-primary'
+            }`}
+            onClick={toggleVectorScope}
+          >
+            ベクトル
           </button>
         </div>
       </div>
