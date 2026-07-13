@@ -2,6 +2,7 @@ import { Muxer, ArrayBufferTarget } from 'mp4-muxer'
 import type { Project } from '../types/project'
 import { renderFrame, seekVideosToTime } from './compositor'
 import { mixAudioOffline } from './audioEngine'
+import type { ExportAudioDecodeSkip } from '../utils/exportAudioDecode'
 import { ensureProjectFontsLoaded } from '../utils/googleFonts'
 import { assertExportEncoderSupport, buildAudioEncoderConfig, buildVideoEncoderConfig } from '../utils/exportPreflight'
 
@@ -62,12 +63,17 @@ function safeCloseEncoder(encoder: VideoEncoder | AudioEncoder | null): void {
   }
 }
 
+export interface ExportProjectResult {
+  blob: Blob
+  skippedAudio: ExportAudioDecodeSkip[]
+}
+
 export async function exportProject(
   project: Project,
   duration: number,
   onProgress: (progress: number) => void,
   options: ExportOptions = {},
-): Promise<Blob> {
+): Promise<ExportProjectResult> {
   const { signal, startTime = 0, quality = 'standard' } = options
   const { width, height, fps } = project
 
@@ -119,7 +125,7 @@ export async function exportProject(
     onProgress(0.05)
     checkAborted()
 
-    const audioBuffer = await mixAudioOffline(project, duration, 48000, { startTime })
+    const { buffer: audioBuffer, skippedAudio } = await mixAudioOffline(project, duration, 48000, { startTime })
     checkAborted()
 
     const audioData = audioBufferToF32Planar(audioBuffer)
@@ -201,7 +207,7 @@ export async function exportProject(
     muxer.finalize()
 
     onProgress(1)
-    return new Blob([target.buffer], { type: 'video/mp4' })
+    return { blob: new Blob([target.buffer], { type: 'video/mp4' }), skippedAudio }
   } finally {
     safeCloseEncoder(videoEncoder)
     safeCloseEncoder(audioEncoder)

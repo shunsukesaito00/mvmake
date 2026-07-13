@@ -67,6 +67,10 @@ import {
   type ExportMemoryWarningStressStats,
 } from './utils/exportMemoryStressSetup'
 import {
+  seedExportAudioDecodeStress,
+  type ExportAudioDecodeStressStats,
+} from './utils/exportAudioDecodeStressSetup'
+import {
   applyExportPresetByName,
   clearExportPresetStress,
   getExportPresetStressCount,
@@ -218,6 +222,7 @@ declare global {
       applyVertical916Preset: () => Vertical916PresetStressStats
       loadExportResolutionAlignmentStress: () => ExportResolutionAlignmentStressStats
       loadExportMemoryWarningStress: () => ExportMemoryWarningStressStats
+      loadExportAudioDecodeStress: () => Promise<ExportAudioDecodeStressStats>
       getExportResolutionAlignmentStressStats: () => ExportResolutionAlignmentStressStats
       applyResolutionPresetById: (presetId: string) => ExportResolutionAlignmentStressStats
       loadExportPresetStress: () => ExportPresetStressStats
@@ -412,6 +417,7 @@ export function installE2eBridge(): void {
     applyVertical916Preset: () => applyVertical916Preset(),
     loadExportResolutionAlignmentStress: () => seedExportResolutionAlignmentStress(),
     loadExportMemoryWarningStress: () => seedExportMemoryWarningStress(),
+    loadExportAudioDecodeStress: () => seedExportAudioDecodeStress(),
     getExportResolutionAlignmentStressStats: () => getExportResolutionAlignmentStressStats(),
     applyResolutionPresetById: (presetId) => applyResolutionPresetById(presetId),
     loadExportPresetStress: () => seedExportPresetStress(),

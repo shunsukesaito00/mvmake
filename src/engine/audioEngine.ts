@@ -10,6 +10,7 @@ import {
 import { connectEqChain } from '../utils/audioEq'
 import { connectNoiseReductionChain } from '../utils/audioNoiseReduction'
 import { applyDucking, type DuckingSchedule } from '../utils/audioDucking'
+import type { ExportAudioDecodeSkip } from '../utils/exportAudioDecode'
 
 class AudioEngine {
   private context: AudioContext | null = null
@@ -226,17 +227,24 @@ class AudioEngine {
 
 export const audioEngine = new AudioEngine()
 
+export type MixAudioOfflineResult = {
+  buffer: AudioBuffer
+  skippedAudio: ExportAudioDecodeSkip[]
+}
+
 export async function mixAudioOffline(
   project: Project,
   duration: number,
   sampleRate = 48000,
   options: { startTime?: number } = {},
-): Promise<AudioBuffer> {
+): Promise<MixAudioOfflineResult> {
   const rangeStart = options.startTime ?? 0
   const rangeEnd = rangeStart + duration
   const offline = new OfflineAudioContext(2, Math.ceil(duration * sampleRate), sampleRate)
   const duckingIntervals = getDuckingIntervals(project)
   const trackBuses = new Map<string, GainNode>()
+  const skippedAudio: ExportAudioDecodeSkip[] = []
+  const skippedAssetIds = new Set<string>()
 
   const getOfflineTrackBus = (trackId: string, trackGain: number) => {
     if (!trackBuses.has(trackId)) {
@@ -319,9 +327,13 @@ export async function mixAudioOffline(
 
       source.start(when, offset, playDuration)
     } catch {
-      // skip
+      if (!skippedAssetIds.has(asset.id)) {
+        skippedAssetIds.add(asset.id)
+        skippedAudio.push({ assetId: asset.id, assetName: asset.name })
+      }
     }
   }
 
-  return offline.startRendering()
+  const buffer = await offline.startRendering()
+  return { buffer, skippedAudio }
 }

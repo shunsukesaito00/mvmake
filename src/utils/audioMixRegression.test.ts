@@ -146,7 +146,9 @@ describe('mixAudioOffline', () => {
       }
 
       async decodeAudioData(arrayBuffer: ArrayBuffer) {
-        const peak = peakFromWavBytes(new Uint8Array(arrayBuffer))
+        const bytes = new Uint8Array(arrayBuffer)
+        if (bytes.byteLength < 16) throw new DOMException('Unable to decode audio data', 'EncodingError')
+        const peak = peakFromWavBytes(bytes)
         const duration = this.length / this.sampleRate
         return {
           sampleRate: this.sampleRate,
@@ -254,7 +256,7 @@ describe('mixAudioOffline', () => {
       ducking: { ...DEFAULT_DUCKING },
     }
     const project = makeProject([{ audio }], [asset])
-    const buffer = await mixAudioOffline(project, 2, 48000)
+    const { buffer } = await mixAudioOffline(project, 2, 48000)
     const sample = buffer.getChannelData(0)[1000] ?? 0
     expect(sample).toBeGreaterThan(0.35)
     expect(sample).toBeLessThan(0.45)
@@ -293,7 +295,7 @@ describe('mixAudioOffline', () => {
       ducking: { enabled: true, amount: 0.2, fade: 0.1 },
     }
     const project = makeProject([{ video, audio }], [bgmAsset, videoAssetMedia])
-    const buffer = await mixAudioOffline(project, 4, 48000)
+    const { buffer } = await mixAudioOffline(project, 4, 48000)
 
     const beforeDuck = Math.abs(buffer.getChannelData(0)[24000] ?? 0)
     const duringDuck = Math.abs(buffer.getChannelData(0)[120000] ?? 0)
@@ -316,10 +318,52 @@ describe('mixAudioOffline', () => {
       ducking: { ...DEFAULT_DUCKING },
     }
     const project = makeProject([{ audio }], [asset])
-    const full = await mixAudioOffline(project, 8, 48000)
-    const partial = await mixAudioOffline(project, 3, 48000, { startTime: 5 })
+    const { buffer: full } = await mixAudioOffline(project, 8, 48000)
+    const { buffer: partial } = await mixAudioOffline(project, 3, 48000, { startTime: 5 })
     expect(partial.length).toBe(Math.ceil(3 * 48000))
     expect(full.length).toBe(Math.ceil(8 * 48000))
     expect(partial.length).toBeLessThan(full.length)
+  })
+
+  it('decode 失敗クリップを skippedAudio に記録する', async () => {
+    const goodAsset = wavAsset('good', 0.5, 1)
+    const badBlob = new Blob([new Uint8Array([0, 1, 2])], { type: 'audio/wav' })
+    const badAsset = {
+      id: 'bad',
+      name: 'broken.wav',
+      type: 'audio' as const,
+      blob: badBlob,
+      url: 'blob:bad',
+      duration: 1,
+    }
+    const goodClip: AudioClip = {
+      id: 'good-clip',
+      type: 'audio',
+      trackId: 't2',
+      mediaId: 'good',
+      startTime: 0,
+      duration: 1,
+      sourceStart: 0,
+      sourceDuration: 1,
+      audio: { ...DEFAULT_AUDIO, volume: 0.5 },
+      speed: 1,
+      ducking: { ...DEFAULT_DUCKING },
+    }
+    const badClip: AudioClip = {
+      id: 'bad-clip',
+      type: 'audio',
+      trackId: 't2',
+      mediaId: 'bad',
+      startTime: 1,
+      duration: 1,
+      sourceStart: 0,
+      sourceDuration: 1,
+      audio: { ...DEFAULT_AUDIO, volume: 0.5 },
+      speed: 1,
+      ducking: { ...DEFAULT_DUCKING },
+    }
+    const project = makeProject([{ audio: goodClip }, { audio: badClip }], [goodAsset, badAsset])
+    const { skippedAudio } = await mixAudioOffline(project, 2, 48000)
+    expect(skippedAudio).toEqual([{ assetId: 'bad', assetName: 'broken.wav' }])
   })
 })

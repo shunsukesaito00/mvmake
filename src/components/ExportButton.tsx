@@ -36,6 +36,7 @@ import {
 import { resolveRangeExportParams } from '../utils/chapterRangeExport'
 import { estimateExportMemoryPressure } from '../utils/exportMemory'
 import { getSnsExportDefaults } from '../utils/snsShareFlow'
+import { formatExportAudioDecodeSkipMessage, mergeExportAudioDecodeSkips, type ExportAudioDecodeSkip } from '../utils/exportAudioDecode'
 
 type ExportPanelView = 'form' | 'progress' | 'cancelled' | 'error'
 
@@ -295,7 +296,7 @@ export function ExportButton() {
     let exportError: unknown = null
     try {
       await assertExportEncoderSupport({ width, height, fps: currentProject.fps, quality: exportQuality })
-      const blob = await exportProject(exportProject_, exportParams.duration, setExportProgress, {
+      const { blob, skippedAudio } = await exportProject(exportProject_, exportParams.duration, setExportProgress, {
         signal: controller.signal,
         startTime: exportParams.startTime,
         quality: exportQuality,
@@ -308,6 +309,8 @@ export function ExportButton() {
       URL.revokeObjectURL(url)
       setShowDialog(false)
       showToast('書き出しが完了しました', 'success')
+      const skipMessage = formatExportAudioDecodeSkipMessage(skippedAudio)
+      if (skipMessage) showToast(skipMessage, 'info')
       if (snsExportActiveRef.current) {
         snsExportActiveRef.current = false
         setShowSnsShareGuide(true)
@@ -341,16 +344,19 @@ export function ExportButton() {
     const exportProject_ = { ...project, width, height }
 
     let exportError: unknown = null
+    const chapterSkippedAudio: ExportAudioDecodeSkip[] = []
     try {
       await assertExportEncoderSupport({ width, height, fps: project.fps, quality })
       const zipBlob = await exportAllChaptersToZip(
         async (entry, onChapterProgress) => {
           setBatchExportLabel(`章「${entry.label}」を書き出し中…`)
-          return exportProject(exportProject_, entry.duration, onChapterProgress, {
+          const { blob, skippedAudio } = await exportProject(exportProject_, entry.duration, onChapterProgress, {
             signal: controller.signal,
             startTime: entry.start,
             quality,
           })
+          chapterSkippedAudio.push(...skippedAudio)
+          return blob
         },
         entries,
         setExportProgress,
@@ -364,6 +370,8 @@ export function ExportButton() {
       URL.revokeObjectURL(url)
       setShowDialog(false)
       showToast(`${entries.length} 章を ZIP で書き出しました`, 'success')
+      const skipMessage = formatExportAudioDecodeSkipMessage(mergeExportAudioDecodeSkips(chapterSkippedAudio))
+      if (skipMessage) showToast(skipMessage, 'info')
     } catch (err) {
       exportError = err
       console.error(err)
