@@ -299,4 +299,27 @@ describe('mixAudioOffline', () => {
     const duringDuck = Math.abs(buffer.getChannelData(0)[120000] ?? 0)
     expect(beforeDuck).toBeGreaterThan(duringDuck * 2)
   })
+
+  it('startTime 指定時は必要区間のみミックスする', async () => {
+    const asset = wavAsset('bgm', 0.5, 8)
+    const audio: AudioClip = {
+      id: 'a1',
+      type: 'audio',
+      trackId: 't2',
+      mediaId: 'bgm',
+      startTime: 0,
+      duration: 8,
+      sourceStart: 0,
+      sourceDuration: 8,
+      audio: { ...DEFAULT_AUDIO, volume: 0.5 },
+      speed: 1,
+      ducking: { ...DEFAULT_DUCKING },
+    }
+    const project = makeProject([{ audio }], [asset])
+    const full = await mixAudioOffline(project, 8, 48000)
+    const partial = await mixAudioOffline(project, 3, 48000, { startTime: 5 })
+    expect(partial.length).toBe(Math.ceil(3 * 48000))
+    expect(full.length).toBe(Math.ceil(8 * 48000))
+    expect(partial.length).toBeLessThan(full.length)
+  })
 })

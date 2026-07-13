@@ -9,7 +9,7 @@ export const AUDIO_MIX_RENDER_PATHS = {
   export: {
     entry: 'exporter.exportProject → mixAudioOffline',
     chain: 'noiseReduction → EQ → scheduleVolumeAutomation → applyDucking',
-    slice: 'audioSampleOffset = floor(startTime * sampleRate)',
+    slice: 'mixAudioOffline(duration, { startTime }) で必要区間のみミックス',
   },
 } as const
 

@@ -217,7 +217,14 @@ class AudioEngine {
 
 export const audioEngine = new AudioEngine()
 
-export async function mixAudioOffline(project: Project, duration: number, sampleRate = 48000): Promise<AudioBuffer> {
+export async function mixAudioOffline(
+  project: Project,
+  duration: number,
+  sampleRate = 48000,
+  options: { startTime?: number } = {},
+): Promise<AudioBuffer> {
+  const rangeStart = options.startTime ?? 0
+  const rangeEnd = rangeStart + duration
   const offline = new OfflineAudioContext(2, Math.ceil(duration * sampleRate), sampleRate)
   const duckingIntervals = getDuckingIntervals(project)
   const trackBuses = new Map<string, GainNode>()
@@ -233,6 +240,9 @@ export async function mixAudioOffline(project: Project, duration: number, sample
   }
 
   for (const { clip, asset, isVideo, trackId, trackGain } of getAudioClipsFromProject(project)) {
+    const clipEnd = clip.startTime + clip.duration
+    if (rangeEnd <= clip.startTime || rangeStart >= clipEnd) continue
+
     try {
       const arrayBuffer = await asset.blob.arrayBuffer()
       const buffer = await offline.decodeAudioData(arrayBuffer.slice(0))
@@ -240,20 +250,25 @@ export async function mixAudioOffline(project: Project, duration: number, sample
 
       const isVideoClip = isVideo
       const videoClip = isVideoClip ? (clip as VideoClip) : null
+      const overlapStart = Math.max(clip.startTime, rangeStart)
+      const overlapEnd = Math.min(clipEnd, rangeEnd)
+      const when = overlapStart - rangeStart
+      const localOffset = overlapStart - clip.startTime
+      const segmentDuration = overlapEnd - overlapStart
+
       const speed = isVideoClip ? videoClip!.speed ?? 1 : (clip as AudioClip).speed ?? 1
       const schedule = videoClip
-        ? resolveVideoAudioSpeedSchedule(videoClip, 0, clip.duration)
+        ? resolveVideoAudioSpeedSchedule(videoClip, localOffset, localOffset + segmentDuration)
         : null
 
       const gain = offline.createGain()
       const audio = isVideoClip ? videoClip!.audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 } : (clip as AudioClip).audio
       const destination = getOfflineTrackBus(trackId, trackGain)
 
-      const when = clip.startTime
-      scheduleVolumeAutomation(gain.gain, when, 0, clip.duration, clip.duration, audio)
+      scheduleVolumeAutomation(gain.gain, when, localOffset, segmentDuration, clip.duration, audio)
 
-      let offset = schedule?.sourceStart ?? clip.sourceStart
-      let playDuration = schedule?.bufferDuration ?? clip.duration * speed
+      let offset = schedule?.sourceStart ?? clip.sourceStart + localOffset * speed
+      let playDuration = schedule?.bufferDuration ?? segmentDuration * speed
 
       if (isVideoClip && videoClip && schedule) {
         const prepared = prepareVideoAudioPlayback(buffer, videoClip, schedule)
@@ -261,7 +276,7 @@ export async function mixAudioOffline(project: Project, duration: number, sample
         offset = prepared.offset
         playDuration = prepared.duration
         if (prepared.mode === 'rate' && shouldScheduleVideoSpeedAutomation(videoClip)) {
-          scheduleSpeedAutomation(source.playbackRate, when, 0, clip.duration, videoClip)
+          scheduleSpeedAutomation(source.playbackRate, when, localOffset, segmentDuration, videoClip)
         } else {
           source.playbackRate.value = prepared.playbackRate
         }
@@ -283,9 +298,9 @@ export async function mixAudioOffline(project: Project, duration: number, sample
           duckGain.gain,
           { intervals: duckingIntervals, amount: audioClip.ducking.amount, fade: audioClip.ducking.fade },
           clip.startTime,
-          clip.startTime + clip.duration,
-          0,
-          (pt) => pt,
+          clipEnd,
+          rangeStart,
+          (pt) => pt - rangeStart,
         )
         gain.connect(duckGain)
         duckGain.connect(destination)
@@ -293,10 +308,7 @@ export async function mixAudioOffline(project: Project, duration: number, sample
         gain.connect(destination)
       }
 
-      const bufferDuration = playDuration
-      const sourceStart = offset
-
-      source.start(when, sourceStart, bufferDuration)
+      source.start(when, offset, playDuration)
     } catch {
       // skip
     }

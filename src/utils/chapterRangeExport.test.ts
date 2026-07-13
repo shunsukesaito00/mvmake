@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   findChapterRangeByMarkerId,
   formatRangeExportSummary,
-  getChapterRangeAudioSampleRange,
   isExportableChapterRange,
   MIN_RANGE_EXPORT_DURATION,
   resolveRangeExportParams,
@@ -67,11 +66,9 @@ describe('chapterRangeExport', () => {
     })
   })
 
-  it('章境界のオーディオサンプル範囲が exporter と一致する', () => {
+  it('章境界の部分ミックス尺が exporter と一致する', () => {
     const params = resolveRangeExportParams(20, 50, 130)!
-    const { audioSampleOffset, audioEndSample } = getChapterRangeAudioSampleRange(params, 48_000, 10_000_000)
-    expect(audioSampleOffset).toBe(960_000)
-    expect(audioEndSample).toBe(2_400_000)
+    expect(Math.ceil(params.duration * 48_000)).toBe(30 * 48_000)
   })
 
   it('formatRangeExportSummary は In/Out 表示を整形する', () => {

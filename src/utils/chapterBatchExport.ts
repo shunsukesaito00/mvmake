@@ -1,4 +1,4 @@
-import { zip, type Zippable } from 'fflate'
+import { Zip, ZipPassThrough } from 'fflate'
 import type { MarkerChapterRange } from './markerExport'
 
 export class ChapterBatchExportError extends Error {
@@ -31,19 +31,41 @@ export interface ChapterExportEntry {
   duration: number
 }
 
-function zipAsync(data: Zippable): Promise<Uint8Array> {
-  return new Promise((resolve, reject) => {
-    zip(data, (err, result) => (err ? reject(err) : resolve(result)))
-  })
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException && err.name === 'AbortError'
 }
 
-async function zipZippable(zippable: Zippable, entryCount: number): Promise<Blob> {
-  try {
-    const zipped = await zipAsync(zippable)
-    return new Blob([zipped as BlobPart], { type: 'application/zip' })
-  } catch (err) {
-    throw new ChapterZipBuildError(entryCount, err)
+function rejectZipError(reject: (reason: unknown) => void, entryCount: number, err: unknown): void {
+  if (err instanceof ChapterBatchExportError || isAbortError(err)) {
+    reject(err)
+    return
   }
+  reject(new ChapterZipBuildError(entryCount, err))
+}
+
+async function zipStreaming(files: { name: string; data: Uint8Array }[], entryCount: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const parts: Uint8Array[] = []
+    const zip = new Zip((err, chunk, final) => {
+      if (err) {
+        reject(new ChapterZipBuildError(entryCount, err))
+        return
+      }
+      if (chunk) parts.push(chunk)
+      if (final) resolve(new Blob(parts as BlobPart[], { type: 'application/zip' }))
+    })
+
+    try {
+      for (const file of files) {
+        const entry = new ZipPassThrough(file.name)
+        zip.add(entry)
+        entry.push(file.data, true)
+      }
+      zip.end()
+    } catch (err) {
+      rejectZipError(reject, entryCount, err)
+    }
+  })
 }
 
 /** ZIP 内ファイル名に使えない文字を除去 */
@@ -73,14 +95,14 @@ export function buildChapterExportEntries(
 }
 
 export async function zipMp4Blobs(files: { name: string; blob: Blob }[]): Promise<Blob> {
-  const zippable: Zippable = {}
+  const zipped: { name: string; data: Uint8Array }[] = []
   for (const file of files) {
-    zippable[file.name] = new Uint8Array(await file.blob.arrayBuffer())
+    zipped.push({ name: file.name, data: new Uint8Array(await file.blob.arrayBuffer()) })
   }
-  return zipZippable(zippable, files.length)
+  return zipStreaming(zipped, files.length)
 }
 
-/** 各章を順次エクスポートし ZIP 化。章ごとに ZIP へ追加するため中間 Blob 配列を保持しない */
+/** 各章を順次エクスポートし ZIP 化。ZipPassThrough で章 MP4 を逐次投入し同時保持を抑える */
 export async function exportAllChaptersToZip(
   exportChapter: (entry: ChapterExportEntry, onChapterProgress: (progress: number) => void) => Promise<Blob>,
   entries: ChapterExportEntry[],
@@ -91,23 +113,43 @@ export async function exportAllChaptersToZip(
     throw new Error('書き出し可能な章がありません')
   }
 
-  const zippable: Zippable = {}
-  for (let i = 0; i < entries.length; i++) {
-    if (signal?.aborted) throw new DOMException('Export cancelled', 'AbortError')
-    const entry = entries[i]
-    let blob: Blob
-    try {
-      blob = await exportChapter(entry, (chapterProgress) => {
-        onOverallProgress((i + chapterProgress) / entries.length)
-      })
-    } catch (err) {
-      if (signal?.aborted || (err instanceof DOMException && err.name === 'AbortError')) throw err
-      throw new ChapterBatchExportError(entry.label, i, entries.length, err)
-    }
-    zippable[entry.filename] = new Uint8Array(await blob.arrayBuffer())
-  }
-  onOverallProgress(1)
-  return zipZippable(zippable, entries.length)
+  return new Promise((resolve, reject) => {
+    const parts: Uint8Array[] = []
+    const zip = new Zip((err, chunk, final) => {
+      if (err) {
+        reject(new ChapterZipBuildError(entries.length, err))
+        return
+      }
+      if (chunk) parts.push(chunk)
+      if (final) resolve(new Blob(parts as BlobPart[], { type: 'application/zip' }))
+    })
+
+    ;(async () => {
+      try {
+        for (let i = 0; i < entries.length; i++) {
+          if (signal?.aborted) throw new DOMException('Export cancelled', 'AbortError')
+          const entry = entries[i]!
+          let blob: Blob
+          try {
+            blob = await exportChapter(entry, (chapterProgress) => {
+              onOverallProgress((i + chapterProgress) / entries.length)
+            })
+          } catch (err) {
+            if (signal?.aborted || isAbortError(err)) throw err
+            throw new ChapterBatchExportError(entry.label, i, entries.length, err)
+          }
+          const data = new Uint8Array(await blob.arrayBuffer())
+          const file = new ZipPassThrough(entry.filename)
+          zip.add(file)
+          file.push(data, true)
+        }
+        onOverallProgress(1)
+        zip.end()
+      } catch (err) {
+        rejectZipError(reject, entries.length, err)
+      }
+    })()
+  })
 }
 
 /** 各章を順次エクスポートし、全体進捗を 0〜1 で報告 */
@@ -120,14 +162,14 @@ export async function exportAllChapters(
   const results: { name: string; blob: Blob }[] = []
   for (let i = 0; i < entries.length; i++) {
     if (signal?.aborted) throw new DOMException('Export cancelled', 'AbortError')
-    const entry = entries[i]
+    const entry = entries[i]!
     let blob: Blob
     try {
       blob = await exportChapter(entry, (chapterProgress) => {
         onOverallProgress((i + chapterProgress) / entries.length)
       })
     } catch (err) {
-      if (signal?.aborted || (err instanceof DOMException && err.name === 'AbortError')) throw err
+      if (signal?.aborted || isAbortError(err)) throw err
       throw new ChapterBatchExportError(entry.label, i, entries.length, err)
     }
     results.push({ name: entry.filename, blob })

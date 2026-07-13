@@ -1,6 +1,6 @@
 # 章マーカー一括 ZIP 書き出し監査（v1.80.0）
 
-最終更新: 2026-07-11（v1.80.0 / MVP 本番品質化）
+最終更新: 2026-07-13（v3.10.0 / ZipPassThrough ストリーミング）
 
 ## 目的
 
@@ -21,7 +21,7 @@ ExportButton.handleBatchChapterExport
 
 | 方式 | 内容 |
 |------|------|
-| **採用** | `exportAllChaptersToZip` が章ごとに `zippable[filename]` へ逐次追加。中間 `Blob[]` を保持しない |
+| **採用** | `exportAllChaptersToZip` が章ごとに `ZipPassThrough` へ逐次追加（**v3.10.0**）。中間 `Zippable` オブジェクトを保持しない |
 | **v1.80.0** | ユニットテストで同時保持 Blob 数 ≤ 1 を回帰監視 |
 
 ## エラーハンドリング（v1.80.0）

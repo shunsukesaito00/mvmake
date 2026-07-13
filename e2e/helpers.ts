@@ -218,6 +218,14 @@ export async function loadExportResolutionAlignmentStress(page: import('@playwri
   return stats
 }
 
+export async function loadExportMemoryWarningStress(page: import('@playwright/test').Page) {
+  const stats = await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadExportMemoryWarningStress()
+  })
+  return stats
+}
+
 export async function getExportResolutionAlignmentStressStats(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

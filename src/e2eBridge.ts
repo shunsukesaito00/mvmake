@@ -63,6 +63,10 @@ import {
   type ExportResolutionAlignmentStressStats,
 } from './utils/exportResolutionAlignmentStressSetup'
 import {
+  seedExportMemoryWarningStress,
+  type ExportMemoryWarningStressStats,
+} from './utils/exportMemoryStressSetup'
+import {
   applyExportPresetByName,
   clearExportPresetStress,
   getExportPresetStressCount,
@@ -213,6 +217,7 @@ declare global {
       getVertical916PresetStressStats: () => Vertical916PresetStressStats
       applyVertical916Preset: () => Vertical916PresetStressStats
       loadExportResolutionAlignmentStress: () => ExportResolutionAlignmentStressStats
+      loadExportMemoryWarningStress: () => ExportMemoryWarningStressStats
       getExportResolutionAlignmentStressStats: () => ExportResolutionAlignmentStressStats
       applyResolutionPresetById: (presetId: string) => ExportResolutionAlignmentStressStats
       loadExportPresetStress: () => ExportPresetStressStats
@@ -405,6 +410,7 @@ export function installE2eBridge(): void {
     getVertical916PresetStressStats: () => getVertical916PresetStressStats(),
     applyVertical916Preset: () => applyVertical916Preset(),
     loadExportResolutionAlignmentStress: () => seedExportResolutionAlignmentStress(),
+    loadExportMemoryWarningStress: () => seedExportMemoryWarningStress(),
     getExportResolutionAlignmentStressStats: () => getExportResolutionAlignmentStressStats(),
     applyResolutionPresetById: (presetId) => applyResolutionPresetById(presetId),
     loadExportPresetStress: () => seedExportPresetStress(),

@@ -31,7 +31,7 @@ BufferSource
 |------|------------|----------|
 | コンテキスト | `AudioContext`（リアルタイム） | `OfflineAudioContext` |
 | スケジュール開始 | `fromTime` から部分再生 | `t=0` からフルレンダー |
-| 章 In/Out | — | `mixAudioOffline(0, start+duration)` 後に `floor(startTime * sampleRate)` でスライス |
+| 章 In/Out | — | `mixAudioOffline(duration, { startTime })` で必要区間のみミックス（v3.10.0） |
 | ダッキング基準 | `playbackStart = fromTime` | `playbackStart = 0` |
 
 章書き出しは映像と同様、オフラインで先頭からミックスした後に exporter がスライスする（`getExportAudioSampleRange`）。

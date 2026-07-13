@@ -119,7 +119,7 @@ export async function exportProject(
     onProgress(0.05)
     checkAborted()
 
-    const audioBuffer = await mixAudioOffline(project, startTime + duration, 48000)
+    const audioBuffer = await mixAudioOffline(project, duration, 48000, { startTime })
     checkAborted()
 
     const audioData = audioBufferToF32Planar(audioBuffer)
@@ -136,8 +136,8 @@ export async function exportProject(
     }
 
     const samplesPerFrame = Math.floor(48000 / fps)
-    let audioSampleOffset = Math.floor(startTime * 48000)
-    const audioEndSample = Math.floor((startTime + duration) * 48000)
+    let audioSampleOffset = 0
+    const audioEndSample = Math.min(Math.floor(duration * 48000), audioBuffer.length)
 
     for (let frame = 0; frame < totalFrames; frame++) {
       checkAborted()

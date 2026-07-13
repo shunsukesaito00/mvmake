@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { exportProject, isWebCodecsSupported, QUALITY_PRESETS, type ExportQuality } from '../engine/exporter'
 import { assertExportEncoderSupport } from '../utils/exportPreflight'
@@ -34,6 +34,7 @@ import {
   sanitizeFileBase,
 } from '../utils/chapterBatchExport'
 import { resolveRangeExportParams } from '../utils/chapterRangeExport'
+import { estimateExportMemoryPressure } from '../utils/exportMemory'
 import { getSnsExportDefaults } from '../utils/snsShareFlow'
 
 type ExportPanelView = 'form' | 'progress' | 'cancelled' | 'error'
@@ -81,6 +82,20 @@ export function ExportButton() {
 
   const nativeExportLabel = getNativeExportButtonLabel(project.width, project.height)
   const nativeDimensions = getExportResolutionLabel('project', project.width, project.height)
+
+  const exportMemoryPressure = useMemo(() => {
+    const duration = getProjectDuration()
+    const params = resolveRangeExportParams(inPoint, outPoint, duration)
+    const exportDuration = params?.duration ?? duration
+    const { width, height } = resolveExportSize(project.width, project.height, resolution)
+    return estimateExportMemoryPressure({
+      width,
+      height,
+      durationSec: exportDuration,
+      quality,
+      chapterCount: markerChapters.length,
+    })
+  }, [project.width, project.height, resolution, quality, inPoint, outPoint, getProjectDuration, markerChapters.length])
 
   const hasClips = project.tracks.some((t) => t.clips.length > 0)
   const exportDisabled = isExporting || !hasClips
@@ -450,6 +465,18 @@ export function ExportButton() {
             <p className="text-[10px] text-text-muted">
               プロジェクト解像度: {project.width}×{project.height}
             </p>
+            {exportMemoryPressure.message && (
+              <p
+                data-testid="export-memory-warning"
+                className={`rounded-lg px-3 py-2 text-[10px] leading-relaxed ring-1 ${
+                  exportMemoryPressure.level === 'high'
+                    ? 'bg-amber-500/10 text-amber-200 ring-amber-500/30'
+                    : 'bg-surface-3 text-text-muted ring-border'
+                }`}
+              >
+                {exportMemoryPressure.message}
+              </p>
+            )}
 
             <div>
               <p className="mb-2 text-[11px] font-semibold tracking-wider text-accent uppercase">品質</p>
