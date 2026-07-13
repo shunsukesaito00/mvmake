@@ -1,8 +1,27 @@
-# 本番スモーク E2E 監査（v3.0.2）
+# 本番スモーク E2E 監査（v3.0.3）
 
-最終更新: 2026-07-13（v3.0.2 / Phase F F1 第3弾 — トラック管理 4 件を basic へ選別移植）
+最終更新: 2026-07-13（v3.0.3 / Phase F F1 第4弾 — Rolling edit・キーフレームナビ 6 件を basic へ選別移植）
 
-> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 790 件**を実行。Phase E 操作性のうち **editor 専用 226 件**はローカル/CI 全量。v3.0.0〜v3.0.2 で E1〜E3・E6・E7・E8（計 13 件）を本番スモークへ移植済み。残りの Phase E 回帰は Phase F F1 継続で選別移植予定。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 796 件**を実行。Phase E 操作性のうち **editor 専用 226 件**はローカル/CI 全量。v3.0.0〜v3.0.3 で E1〜E3・E6〜E10（計 19 件）を本番スモークへ移植済み。残りの Phase E 回帰は Phase F F1 継続で選別移植予定。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+
+## v3.0.3 拡充（790→796）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **796**（+6） |
+| 追加シナリオ | Phase F F1 第4弾: Rolling edit 3 件 / キーフレームナビ 3 件（`editor.spec.ts` から選別移植） |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v3.0.3）
+
+1. Rolling edit: 編集点ハンドルをドラッグして隣接クリップを同時トリムできる
+2. Rolling edit: 編集点操作を undo できる
+3. Rolling edit: ロックトラックでは編集点ハンドルが表示されない
+4. キーフレームナビ: 統合ジャンプで再生位置と選択が更新される
+5. キーフレームナビ: ; / ' ショートカットで前後ジャンプできる
+6. キーフレームナビ: キーフレームがないクリップではジャンプしない
+
+選定根拠: Phase E E9（Rolling edit）と E10（キーフレームナビ）は婚礼本編の長尺タイムライン編集で日常的に使う操作。本番デプロイ後も編集点トリムと KF ジャンプの回帰を担保するため `basic.spec.ts` へ移植。
 
 ## v3.0.2 拡充（786→790）
 
@@ -1521,8 +1540,8 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 790 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 790`
+- `e2e/basic.spec.ts` — 796 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 796`
 - `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2664_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）

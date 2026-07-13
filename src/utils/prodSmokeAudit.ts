@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 790
+export const PROD_SMOKE_SCENARIO_COUNT = 796
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -2051,6 +2051,16 @@ export const PROD_SMOKE_V302_ADDITIONS = [
   'トラック管理: クリップがあるトラックは削除できない',
   'トラック管理: トラック名を変更できる',
   'トラック管理: レーン高さをリサイズできる',
+] as const
+
+/** v3.0.3 で basic.spec に追加したシナリオ（Phase F F1 第4弾: Rolling edit・キーフレームナビ） */
+export const PROD_SMOKE_V303_ADDITIONS = [
+  'Rolling edit: 編集点ハンドルをドラッグして隣接クリップを同時トリムできる',
+  'Rolling edit: 編集点操作を undo できる',
+  'Rolling edit: ロックトラックでは編集点ハンドルが表示されない',
+  'キーフレームナビ: 統合ジャンプで再生位置と選択が更新される',
+  "キーフレームナビ: ; / \\' ショートカットで前後ジャンプできる",
+  'キーフレームナビ: キーフレームがないクリップではジャンプしない',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */

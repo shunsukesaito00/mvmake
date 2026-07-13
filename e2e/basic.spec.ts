@@ -120,6 +120,14 @@ import {
   getTrackName,
   addClipFromMediaAt,
   listClipStartTimesOnTrack,
+  loadRollingEditStress,
+  rollingTrimAtEditPointById,
+  getRollingEditClipDuration,
+  getRollingEditClipStartTime,
+  toggleTrackLock,
+  loadKeyframeNavStress,
+  jumpToAdjacentKeyframe,
+  getSelectedNavKeyframe,
 } from './helpers'
 
 async function goOnboarded(page: Page) {
@@ -21009,4 +21017,83 @@ test('トラック管理: レーン高さをリサイズできる', async ({ pag
   await page.mouse.up()
   const after = await row.evaluate((el) => el.getBoundingClientRect().height)
   expect(after).toBeGreaterThan(before + 10)
+})
+
+test('Rolling edit: 編集点ハンドルをドラッグして隣接クリップを同時トリムできる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadRollingEditStress(page)
+  await setTimelineEditTool(page, 'selection')
+
+  const handle = page.getByTestId(`rolling-edit-handle-${stats.prevClipId}-${stats.nextClipId}`)
+  await expect(handle).toBeVisible()
+  const box = await handle.boundingBox()
+  expect(box).toBeTruthy()
+
+  const centerX = box!.x + box!.width / 2
+  const centerY = box!.y + box!.height / 2
+  await page.mouse.move(centerX, centerY)
+  await page.mouse.down()
+  await page.mouse.move(centerX + 40, centerY)
+  await page.mouse.up()
+
+  const prevDuration = await getRollingEditClipDuration(page, stats.prevClipId)
+  const nextStart = await getRollingEditClipStartTime(page, stats.nextClipId)
+  expect(prevDuration).toBeGreaterThan(stats.prevDurationBefore)
+  expect(nextStart).toBe(prevDuration)
+})
+
+test('Rolling edit: 編集点操作を undo できる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadRollingEditStress(page)
+  await setTimelineEditTool(page, 'selection')
+
+  expect(await rollingTrimAtEditPointById(page, stats.prevClipId, stats.nextClipId, stats.rollingDelta)).toBe(true)
+  expect(await getRollingEditClipDuration(page, stats.prevClipId)).toBe(stats.prevDurationBefore + stats.rollingDelta)
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  expect(await getRollingEditClipDuration(page, stats.prevClipId)).toBe(stats.prevDurationBefore)
+  expect(await getRollingEditClipStartTime(page, stats.nextClipId)).toBe(stats.nextStartBefore)
+})
+
+test('Rolling edit: ロックトラックでは編集点ハンドルが表示されない', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadRollingEditStress(page)
+  await setTimelineEditTool(page, 'selection')
+  await expect(page.getByTestId(`rolling-edit-handle-${stats.prevClipId}-${stats.nextClipId}`)).toBeVisible()
+
+  await toggleTrackLock(page, stats.trackId)
+  await expect(page.getByTestId(`rolling-edit-handle-${stats.prevClipId}-${stats.nextClipId}`)).toHaveCount(0)
+  expect(await rollingTrimAtEditPointById(page, stats.prevClipId, stats.nextClipId, stats.rollingDelta)).toBe(false)
+})
+
+test('キーフレームナビ: 統合ジャンプで再生位置と選択が更新される', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadKeyframeNavStress(page)
+  expect(await jumpToAdjacentKeyframe(page, 'next')).toBe(true)
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__!.getPlaybackTime())).toBeCloseTo(stats.firstNavTime, 2)
+  expect(await getSelectedNavKeyframe(page)).toMatchObject({ clipId: stats.clipId, type: stats.firstNavType })
+
+  expect(await jumpToAdjacentKeyframe(page, 'next')).toBe(true)
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__!.getPlaybackTime())).toBeCloseTo(stats.secondNavTime, 2)
+  expect(await getSelectedNavKeyframe(page)).toMatchObject({ clipId: stats.clipId, type: stats.secondNavType })
+})
+
+test('キーフレームナビ: ; / \' ショートカットで前後ジャンプできる', async ({ page }) => {
+  await goOnboarded(page)
+  const stats = await loadKeyframeNavStress(page)
+  await page.keyboard.press("'")
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__!.getPlaybackTime())).toBeCloseTo(stats.firstNavTime, 2)
+  await page.keyboard.press("'")
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__!.getPlaybackTime())).toBeCloseTo(stats.secondNavTime, 2)
+  await page.keyboard.press(';')
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__!.getPlaybackTime())).toBeCloseTo(stats.firstNavTime, 2)
+})
+
+test('キーフレームナビ: キーフレームがないクリップではジャンプしない', async ({ page }) => {
+  await goOnboarded(page)
+  await page.locator('nav button[title="テキスト"]').click()
+  await page.getByRole('button', { name: /Opening/ }).first().click()
+  await expect(page.locator('footer').getByText('Opening')).toBeVisible()
+  await clickTimelineClip(page, 'Opening')
+  expect(await jumpToAdjacentKeyframe(page, 'next')).toBe(false)
 })
