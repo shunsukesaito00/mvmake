@@ -233,6 +233,13 @@ export async function setExportFailOnce(page: import('@playwright/test').Page) {
   })
 }
 
+export async function setExportFailOnChapter(page: import('@playwright/test').Page, label: string) {
+  await page.evaluate((chapterLabel) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.setExportFailOnChapter(chapterLabel)
+  }, label)
+}
+
 export async function loadExportAudioDecodeStress(page: import('@playwright/test').Page) {
   return page.evaluate(async () => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

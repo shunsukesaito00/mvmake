@@ -29,10 +29,21 @@ import {
 import { formatMarkerChapterRange, getMarkerChapterRanges } from '../utils/markerExport'
 import {
   buildChapterExportEntries,
-  exportAllChaptersToZip,
   formatBatchExportSummary,
   sanitizeFileBase,
 } from '../utils/chapterBatchExport'
+import {
+  createChapterExportQueue,
+  formatChapterQueueFailureDetail,
+  getChapterQueueSummary,
+  getFailedChapterIndices,
+  hasFailedChapters,
+  isChapterQueueComplete,
+  runChapterExportQueue,
+  zipCompletedChapterQueue,
+  type ChapterExportQueue,
+} from '../utils/exportChapterQueue'
+import { maybeThrowE2eExportFailure } from '../utils/e2eExportFailure'
 import { resolveRangeExportParams } from '../utils/chapterRangeExport'
 import { estimateExportMemoryPressure } from '../utils/exportMemory'
 import { getSnsExportDefaults } from '../utils/snsShareFlow'
@@ -57,6 +68,7 @@ export function ExportButton() {
   const [presetName, setPresetName] = useState('')
   const [presets, setPresets] = useState<ExportPreset[]>([])
   const [batchExportLabel, setBatchExportLabel] = useState('')
+  const [chapterQueue, setChapterQueue] = useState<ChapterExportQueue | null>(null)
   const [retryableJob, setRetryableJob] = useState<ExportJobSnapshot | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const exportStartedAtRef = useRef<number | null>(null)
@@ -108,6 +120,7 @@ export function ExportButton() {
   const hasClips = project.tracks.some((t) => t.clips.length > 0)
   const exportDisabled = isExporting || !hasClips
   const exportTooltip = !hasClips ? 'クリップを追加してから書き出してください' : undefined
+  const failedChapterCount = chapterQueue ? getFailedChapterIndices(chapterQueue).length : 0
 
   useEffect(() => {
     if (!showExportHint) return
@@ -145,6 +158,7 @@ export function ExportButton() {
     setBatchExportLabel('')
     setEtaLabel('残り時間を計算中…')
     setRetryableJob(null)
+    setChapterQueue(null)
     exportStartedAtRef.current = null
   }
 
@@ -281,8 +295,12 @@ export function ExportButton() {
   const handleRetryLastExport = () => {
     const job = retryableJob
     if (!isRetryableExportJob(job)) return
+    if (job.mode === 'batch' && chapterQueue && hasFailedChapters(chapterQueue)) {
+      void runBatchChapterExport(getFailedChapterIndices(chapterQueue))
+      return
+    }
     if (job.mode === 'batch') {
-      void handleBatchChapterExport()
+      void runBatchChapterExport()
       return
     }
     if (job.mode === 'sns') {
@@ -290,6 +308,85 @@ export function ExportButton() {
       return
     }
     void handleExport(job.resolution, job.quality)
+  }
+
+  const runBatchChapterExport = async (onlyIndices?: number[]) => {
+    if (!isWebCodecsSupported()) {
+      showToast('書き出しには Chrome / Edge / Safari が必要です', 'error')
+      return
+    }
+
+    const entries = buildChapterExportEntries(project.name || 'movie', markerChapters)
+    if (entries.length === 0) {
+      showToast('書き出し可能な章がありません', 'error')
+      return
+    }
+
+    beginExport()
+    rememberExportJob({ mode: 'batch', resolution, quality })
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    const { width, height } = resolveExportSize(project.width, project.height, resolution)
+    const exportProject_ = { ...project, width, height }
+
+    let queue = onlyIndices && chapterQueue
+      ? chapterQueue
+      : createChapterExportQueue(entries)
+    setChapterQueue(queue)
+
+    let exportError: unknown = null
+    const chapterSkippedAudio: ExportAudioDecodeSkip[] = []
+    try {
+      await assertExportEncoderSupport({ width, height, fps: project.fps, quality })
+      queue = await runChapterExportQueue(
+        queue,
+        async (entry, _index, onChapterProgress) => {
+          setBatchExportLabel(getChapterQueueSummary(queue))
+          maybeThrowE2eExportFailure(entry.label)
+          const { blob, skippedAudio } = await exportProject(exportProject_, entry.duration, onChapterProgress, {
+            signal: controller.signal,
+            startTime: entry.start,
+            quality,
+          })
+          chapterSkippedAudio.push(...skippedAudio)
+          return blob
+        },
+        {
+          onOverallProgress: setExportProgress,
+          onQueueChange: setChapterQueue,
+          signal: controller.signal,
+          onlyIndices,
+        },
+      )
+      setChapterQueue(queue)
+
+      if (!isChapterQueueComplete(queue)) {
+        throw new Error(formatChapterQueueFailureDetail(queue))
+      }
+
+      const zipBlob = await zipCompletedChapterQueue(queue)
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${sanitizeFileBase(project.name || 'movie')}_chapters.zip`
+      a.click()
+      URL.revokeObjectURL(url)
+      setShowDialog(false)
+      showToast(`${entries.length} 章を ZIP で書き出しました`, 'success')
+      const skipMessage = formatExportAudioDecodeSkipMessage(mergeExportAudioDecodeSkips(chapterSkippedAudio))
+      if (skipMessage) showToast(skipMessage, 'info')
+    } catch (err) {
+      exportError = err
+      console.error(err)
+    } finally {
+      finishExport(exportError, 'batch')
+    }
+  }
+
+  const handleBatchChapterExport = async () => {
+    await runBatchChapterExport()
   }
 
   const handleExport = async (
@@ -354,64 +451,6 @@ export function ExportButton() {
     }
   }
 
-  const handleBatchChapterExport = async () => {
-    if (!isWebCodecsSupported()) {
-      showToast('書き出しには Chrome / Edge / Safari が必要です', 'error')
-      return
-    }
-
-    const entries = buildChapterExportEntries(project.name || 'movie', markerChapters)
-    if (entries.length === 0) {
-      showToast('書き出し可能な章がありません', 'error')
-      return
-    }
-
-    beginExport()
-    rememberExportJob({ mode: 'batch', resolution, quality })
-
-    const controller = new AbortController()
-    abortRef.current = controller
-
-    const { width, height } = resolveExportSize(project.width, project.height, resolution)
-    const exportProject_ = { ...project, width, height }
-
-    let exportError: unknown = null
-    const chapterSkippedAudio: ExportAudioDecodeSkip[] = []
-    try {
-      await assertExportEncoderSupport({ width, height, fps: project.fps, quality })
-      const zipBlob = await exportAllChaptersToZip(
-        async (entry, onChapterProgress) => {
-          setBatchExportLabel(`章「${entry.label}」を書き出し中…`)
-          const { blob, skippedAudio } = await exportProject(exportProject_, entry.duration, onChapterProgress, {
-            signal: controller.signal,
-            startTime: entry.start,
-            quality,
-          })
-          chapterSkippedAudio.push(...skippedAudio)
-          return blob
-        },
-        entries,
-        setExportProgress,
-        controller.signal,
-      )
-      const url = URL.createObjectURL(zipBlob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${sanitizeFileBase(project.name || 'movie')}_chapters.zip`
-      a.click()
-      URL.revokeObjectURL(url)
-      setShowDialog(false)
-      showToast(`${entries.length} 章を ZIP で書き出しました`, 'success')
-      const skipMessage = formatExportAudioDecodeSkipMessage(mergeExportAudioDecodeSkips(chapterSkippedAudio))
-      if (skipMessage) showToast(skipMessage, 'info')
-    } catch (err) {
-      exportError = err
-      console.error(err)
-    } finally {
-      finishExport(exportError, 'batch')
-    }
-  }
-
   return (
     <>
       <span title={exportTooltip} className="relative inline-flex">
@@ -458,6 +497,25 @@ export function ExportButton() {
             {batchExportLabel && (
               <p className="text-center text-xs text-text-muted">{batchExportLabel}</p>
             )}
+            {chapterQueue && (
+              <div data-testid="export-chapter-queue" className="rounded-lg bg-surface-3 px-3 py-2 ring-1 ring-border">
+                <p className="text-center text-[10px] font-medium text-text-primary">
+                  {getChapterQueueSummary(chapterQueue)}
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {chapterQueue.items.map((item) => (
+                    <li
+                      key={item.entry.filename}
+                      data-status={item.status}
+                      className="flex items-center justify-between text-[10px] text-text-muted"
+                    >
+                      <span>{item.entry.label}</span>
+                      <span>{item.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <Btn variant="danger" className="w-full" onClick={() => abortRef.current?.abort()}>
               キャンセル
             </Btn>
@@ -471,7 +529,7 @@ export function ExportButton() {
             {isRetryableExportJob(retryableJob) && (
               <div className="space-y-2" data-testid="export-retry-section">
                 <p className="text-[10px] leading-relaxed text-text-muted">
-                  {getExportRetryHint(retryableJob.mode)}
+                  {getExportRetryHint(retryableJob.mode, failedChapterCount)}
                 </p>
                 <Btn
                   variant="accent"
@@ -479,7 +537,7 @@ export function ExportButton() {
                   data-testid="export-retry-button"
                   onClick={handleRetryLastExport}
                 >
-                  {getExportRetryButtonLabel(retryableJob.mode)}
+                  {getExportRetryButtonLabel(retryableJob.mode, failedChapterCount)}
                 </Btn>
               </div>
             )}
@@ -493,10 +551,27 @@ export function ExportButton() {
               <p className="text-sm font-medium text-red-300">{exportErrorTitle}</p>
               <p className="mt-2 text-xs leading-relaxed text-red-200/90">{exportErrorDetail}</p>
             </div>
+            {chapterQueue && hasFailedChapters(chapterQueue) && (
+              <div data-testid="export-chapter-queue" className="rounded-lg bg-surface-3 px-3 py-2 ring-1 ring-border">
+                <p className="text-[10px] font-medium text-text-primary">{getChapterQueueSummary(chapterQueue)}</p>
+                <ul className="mt-2 space-y-1">
+                  {chapterQueue.items.map((item) => (
+                    <li
+                      key={item.entry.filename}
+                      data-status={item.status}
+                      className="flex items-center justify-between text-[10px] text-text-muted"
+                    >
+                      <span>{item.entry.label}</span>
+                      <span>{item.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {isRetryableExportJob(retryableJob) && (
               <div className="space-y-2" data-testid="export-retry-section">
                 <p className="text-[10px] leading-relaxed text-text-muted">
-                  {getExportRetryHint(retryableJob.mode)}
+                  {getExportRetryHint(retryableJob.mode, failedChapterCount)}
                 </p>
                 <Btn
                   variant="accent"
@@ -504,7 +579,7 @@ export function ExportButton() {
                   data-testid="export-retry-button"
                   onClick={handleRetryLastExport}
                 >
-                  {getExportRetryButtonLabel(retryableJob.mode)}
+                  {getExportRetryButtonLabel(retryableJob.mode, failedChapterCount)}
                 </Btn>
               </div>
             )}

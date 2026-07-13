@@ -18,12 +18,13 @@ describe('exportRetry', () => {
   it('getExportRetryButtonLabel はモード別ラベルを返す', () => {
     expect(getExportRetryButtonLabel('single')).toBe('同じ設定で再試行')
     expect(getExportRetryButtonLabel('batch')).toContain('章 ZIP')
+    expect(getExportRetryButtonLabel('batch', 2)).toBe('失敗した 2 章のみ再試行')
     expect(getExportRetryButtonLabel('sns')).toContain('SNS')
   })
 
   it('getExportRetryHint はモード別の説明を返す', () => {
     expect(getExportRetryHint('single')).toContain('In/Out')
-    expect(getExportRetryHint('batch')).toContain('ZIP')
+    expect(getExportRetryHint('batch', 1)).toContain('失敗した章')
     expect(getExportRetryHint('sns')).toContain('9:16')
   })
 })
