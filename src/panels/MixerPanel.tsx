@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { usePlaybackControls } from '../contexts/PlaybackContext'
 import { audioEngine } from '../engine/audioEngine'
+import { shouldUpdatePlaybackVu } from '../utils/playbackPreviewQuality'
 import { IconButton } from '../components/ui'
 import { Icons } from '../components/icons'
 
@@ -89,15 +90,20 @@ function MixerStrip({
 
 export function MixerPanel() {
   const tracks = useProjectStore((s) => s.project.tracks)
+  const isPlaying = useProjectStore((s) => s.isPlaying)
   const { subscribeFrame } = usePlaybackControls()
   const [vuLevels, setVuLevels] = useState<Record<string, number>>({})
+  const lastVuUpdateMsRef = useRef(0)
   const mixerTracks = tracks.filter((t) => t.type === 'video' || t.type === 'audio')
 
   useEffect(() => {
     return subscribeFrame(() => {
+      const now = performance.now()
+      if (isPlaying && !shouldUpdatePlaybackVu(lastVuUpdateMsRef.current, now)) return
+      lastVuUpdateMsRef.current = now
       setVuLevels(audioEngine.getTrackVuLevels(useProjectStore.getState().project))
     })
-  }, [subscribeFrame])
+  }, [subscribeFrame, isPlaying])
 
   if (mixerTracks.length === 0) return null
 

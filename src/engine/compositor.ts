@@ -456,6 +456,7 @@ function drawMediaClip(
   transitionType?: string,
   transitionProgress?: number,
   skipVideoSeek = false,
+  cssColorFallback = false,
 ) {
   const localTime = time - clip.startTime
   const localProgress = clip.duration > 0 ? localTime / clip.duration : 0
@@ -540,7 +541,7 @@ function drawMediaClip(
 
     if (!source || drawW <= 0 || drawH <= 0) return
 
-    const needsPixelGrade = needsCompositorPixelGrade(effectiveColor, parsedLut && resolvedLut ? { parsed: parsedLut, intensity: resolvedLut.intensity } : null)
+    const needsPixelGrade = !cssColorFallback && needsCompositorPixelGrade(effectiveColor, parsedLut && resolvedLut ? { parsed: parsedLut, intensity: resolvedLut.intensity } : null)
     if (needsPixelGrade) {
       const temp = getTempCanvas(drawW, drawH)
       const tctx = temp.getContext('2d', { willReadFrequently: true })
@@ -662,10 +663,11 @@ export async function renderFrame(
   ctx: CanvasRenderingContext2D,
   project: Project,
   time: number,
-  options?: { showSafeAreas?: boolean; playing?: boolean; bypassColorGrade?: boolean; nativePlaybackClipId?: string | null },
+  options?: { showSafeAreas?: boolean; playing?: boolean; bypassColorGrade?: boolean; nativePlaybackClipId?: string | null; cssColorFallback?: boolean },
 ): Promise<void> {
   const { width, height } = project
   const bypassColorGrade = options?.bypassColorGrade === true
+  const cssColorFallback = options?.cssColorFallback === true
   ctx.fillStyle = '#000'
   ctx.fillRect(0, 0, width, height)
 
@@ -686,7 +688,7 @@ export async function renderFrame(
             ? DEFAULT_COLOR
             : mergeClipColorWithAdjustment(clip.color, adjustmentColor)
           const resolvedLut = bypassColorGrade ? null : resolveClipLut(clip, adjustmentLut)
-          drawMediaClip(ctx, clip, asset, time, width, height, opacity, effectiveColor, resolvedLut, transitionType, transitionProgress, options?.playing)
+          drawMediaClip(ctx, clip, asset, time, width, height, opacity, effectiveColor, resolvedLut, transitionType, transitionProgress, options?.playing, cssColorFallback)
         }
       } else if (clip.type === 'text') {
         drawTextClip(ctx, clip, width, height, opacity, time, adjustmentColor)

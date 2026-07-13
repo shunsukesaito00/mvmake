@@ -2021,6 +2021,21 @@ test('プレビュー: 動画再生でネイティブデコードが有効にな
   await expect(page.locator('[data-native-video-playback="false"]')).toBeVisible()
 })
 
+test('プレビュー: 再生中は簡易プレビューモードになる（Phase G G20）', async ({ page }) => {
+  await openImageColorInspector(page, 'g20-photo.png')
+  await page.getByTestId('color-before-after-toggle').click()
+  await expect(page.getByText('Before', { exact: true })).toBeVisible()
+
+  await page.keyboard.press('Space')
+  await expect(page.locator('[data-playback-preview-mode="lightweight"]')).toBeVisible({ timeout: 5000 })
+  await expect(page.getByTestId('playback-preview-quality-notice')).toBeVisible()
+  await expect(page.getByText('Before', { exact: true })).toBeHidden()
+
+  await page.keyboard.press('k')
+  await expect(page.locator('[data-playback-preview-mode="full"]')).toBeVisible()
+  await expect(page.getByText('Before', { exact: true })).toBeVisible()
+})
+
 test('婚礼ゴールデンパス: テンプレ→写真→動画→テロップ→ルック→トランジション→章書き出し→再生停止', async ({ page }) => {
   test.setTimeout(180_000)
 

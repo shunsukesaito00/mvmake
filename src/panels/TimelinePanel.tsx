@@ -31,6 +31,7 @@ import { SpeedKeyframesTimeline } from '../components/SpeedKeyframesTimeline'
 import { TransformKeyframesTimeline } from '../components/TransformKeyframesTimeline'
 import type { AudioClip, ImageClip, TextClip, VideoClip } from '../types/project'
 import { usePlaybackControls } from '../contexts/PlaybackContext'
+import { shouldScrollTimelineDuringPlayback } from '../utils/playbackPreviewQuality'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, IconButton } from '../components/ui'
 import { Icons } from '../components/icons'
@@ -142,10 +143,11 @@ export function TimelinePanel() {
   const removeMarker = useProjectStore((s) => s.removeMarker)
   const showToast = useToastStore((s) => s.showToast)
 
-  const { seek } = usePlaybackControls()
+  const { seek, subscribeFrame, getPlaybackTime } = usePlaybackControls()
   const duration = getProjectDuration()
   const timelineWidth = Math.max(duration * pixelsPerSecond + 200, 800)
   const mediaMap = new Map(mediaAssets.map((a) => [a.id, a]))
+  const lastPlaybackScrollMsRef = useRef(0)
 
   const fitToContent = () => {
     const container = containerRef.current
@@ -184,15 +186,23 @@ export function TimelinePanel() {
     const container = containerRef.current
     if (!container) return
 
-    if (isPlaying) {
-      scrollTimelineToTime(currentTime)
-      return
-    }
+    if (isPlaying) return
 
     if (!isTimelineTimeVisible(currentTime, pixelsPerSecond, container.clientWidth, container.scrollLeft, HEADER_WIDTH)) {
       scrollTimelineToTime(currentTime)
     }
   }, [currentTime, isPlaying, pixelsPerSecond, dragState, scrollTimelineToTime])
+
+  useEffect(() => {
+    if (!isPlaying) return
+    return subscribeFrame(() => {
+      if (dragState) return
+      const now = performance.now()
+      if (!shouldScrollTimelineDuringPlayback(lastPlaybackScrollMsRef.current, now)) return
+      lastPlaybackScrollMsRef.current = now
+      scrollTimelineToTime(getPlaybackTime())
+    })
+  }, [isPlaying, dragState, subscribeFrame, getPlaybackTime, scrollTimelineToTime])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

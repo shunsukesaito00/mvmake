@@ -8,6 +8,13 @@ import { PreviewOverlay } from '../components/PreviewOverlay'
 import { ColorWaveformScope } from '../components/ColorWaveformScope'
 import { ColorVectorScope } from '../components/ColorVectorScope'
 import { formatShuttleRateLabel, shouldShowShuttleRate } from '../utils/playbackShuttle'
+import { downsampleImageData } from '../utils/colorScope'
+import {
+  getPlaybackPreviewMode,
+  shouldCaptureColorScope,
+  shouldRenderBeforeAfterPreview,
+  useCssColorFallbackWhilePlaying,
+} from '../utils/playbackPreviewQuality'
 
 export function PreviewPanel() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -44,6 +51,7 @@ export function PreviewPanel() {
 
   const pendingDrawRef = useRef<{ time: number; playing: boolean } | null>(null)
   const drawInFlightRef = useRef(false)
+  const lastScopeCaptureMsRef = useRef(0)
 
   const renderAtTime = useCallback(async (time: number, playing: boolean) => {
     const canvas = canvasRef.current
@@ -52,7 +60,11 @@ export function PreviewPanel() {
     if (!ctx) return
     if (!playing) await seekVideosToTime(project, time)
 
-    if (colorPreviewMode === 'beforeAfter') {
+    const cssColorFallback = useCssColorFallbackWhilePlaying(playing)
+    const nativePlaybackClipId = playing ? getActiveNativePlaybackClipId() : null
+    const renderOptions = { showSafeAreas, playing, nativePlaybackClipId, cssColorFallback }
+
+    if (shouldRenderBeforeAfterPreview(playing, colorPreviewMode)) {
       if (!beforeCanvasRef.current) beforeCanvasRef.current = document.createElement('canvas')
       if (!afterCanvasRef.current) afterCanvasRef.current = document.createElement('canvas')
       const beforeCanvas = beforeCanvasRef.current
@@ -65,8 +77,8 @@ export function PreviewPanel() {
       const afterCtx = afterCanvas.getContext('2d')
       if (!beforeCtx || !afterCtx) return
 
-      await renderFrame(beforeCtx, project, time, { showSafeAreas, playing, bypassColorGrade: true, nativePlaybackClipId: playing ? getActiveNativePlaybackClipId() : null })
-      await renderFrame(afterCtx, project, time, { showSafeAreas, playing, bypassColorGrade: false, nativePlaybackClipId: playing ? getActiveNativePlaybackClipId() : null })
+      await renderFrame(beforeCtx, project, time, { ...renderOptions, bypassColorGrade: true })
+      await renderFrame(afterCtx, project, time, { ...renderOptions, bypassColorGrade: false })
 
       const mid = Math.floor(project.width / 2)
       ctx.clearRect(0, 0, project.width, project.height)
@@ -81,14 +93,12 @@ export function PreviewPanel() {
       ctx.stroke()
       ctx.restore()
     } else {
-      await renderFrame(ctx, project, time, {
-        showSafeAreas,
-        playing,
-        nativePlaybackClipId: playing ? getActiveNativePlaybackClipId() : null,
-      })
+      await renderFrame(ctx, project, time, renderOptions)
     }
 
-    if (showColorScope) {
+    const now = performance.now()
+    if (shouldCaptureColorScope(playing, showColorScope, lastScopeCaptureMsRef.current, now)) {
+      lastScopeCaptureMsRef.current = now
       const sample = downsampleImageData(ctx.getImageData(0, 0, project.width, project.height))
       setScopeImageData(sample)
     }
@@ -169,9 +179,18 @@ export function PreviewPanel() {
   }
 
   const stepFrame = (dir: -1 | 1) => seek(Math.max(0, Math.min(duration, currentTime + dir / fps)))
+  const playbackPreviewMode = getPlaybackPreviewMode(isPlaying)
+  const showBeforeAfterLabels = colorPreviewMode === 'beforeAfter' && !isPlaying
+  const showPlaybackQualityNotice = isPlaying && (colorPreviewMode === 'beforeAfter' || showColorScope)
 
   return (
-    <div ref={containerRef} className="flex h-full flex-col bg-surface-0" data-preview-container data-native-video-playback={isPlaying && getActiveNativePlaybackClipId() ? 'true' : 'false'}>
+    <div
+      ref={containerRef}
+      className="flex h-full flex-col bg-surface-0"
+      data-preview-container
+      data-native-video-playback={isPlaying && getActiveNativePlaybackClipId() ? 'true' : 'false'}
+      data-playback-preview-mode={playbackPreviewMode}
+    >
       <PanelHeader title="プレビュー" icon={<Icons.Film size={14} />}>
         <IconButton
           active={colorPreviewMode === 'beforeAfter'}
@@ -219,10 +238,18 @@ export function PreviewPanel() {
             <span>OUT {outPoint?.toFixed(1) ?? '—'}</span>
           </div>
         )}
-        {colorPreviewMode === 'beforeAfter' && (
+        {showBeforeAfterLabels && (
           <div className="pointer-events-none absolute top-3 right-3 flex gap-2 text-[9px] font-semibold text-white/90">
             <span className="rounded bg-black/50 px-1.5 py-0.5">Before</span>
             <span className="rounded bg-black/50 px-1.5 py-0.5">After</span>
+          </div>
+        )}
+        {showPlaybackQualityNotice && (
+          <div
+            data-testid="playback-preview-quality-notice"
+            className="pointer-events-none absolute top-3 right-3 rounded bg-black/60 px-2 py-1 text-[9px] text-text-muted backdrop-blur-sm"
+          >
+            再生中は簡易プレビュー
           </div>
         )}
         {showColorScope && (
