@@ -96,3 +96,13 @@ export function applySelectiveHslToImageData(imageData: ImageData, selective: Se
 export function applyPixelSelectiveHslAdjustments(imageData: ImageData, selective: SelectiveHsl = DEFAULT_SELECTIVE_HSL): void {
   applySelectiveHslToImageData(imageData, selective)
 }
+
+export function isAnySelectiveHslActive(bands: SelectiveHsl[]): boolean {
+  return bands.some(isSelectiveHslActive)
+}
+
+export function applySelectiveHslBandsToImageData(imageData: ImageData, bands: SelectiveHsl[]): void {
+  for (const band of bands) {
+    applySelectiveHslToImageData(imageData, band)
+  }
+}

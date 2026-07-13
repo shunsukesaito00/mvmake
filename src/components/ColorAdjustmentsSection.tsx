@@ -1,6 +1,13 @@
 import { useMemo, useRef, useState } from 'react'
 import type { ColorAdjustments, LutAsset, SelectiveHsl } from '../types/project'
-import { DEFAULT_COLOR, DEFAULT_LUT_INTENSITY, DEFAULT_SELECTIVE_HSL } from '../types/project'
+import {
+  DEFAULT_COLOR,
+  DEFAULT_LUT_INTENSITY,
+  DEFAULT_SELECTIVE_HSL,
+  SELECTIVE_HSL_MAX_BANDS,
+  createDefaultSelectiveHslBand,
+  normalizeSelectiveHslBands,
+} from '../types/project'
 import type { UserColorLookPreset } from '../types/colorLookPreset'
 import { COLOR_LOOK_PRESETS, matchColorLookPreset } from '../utils/colorLooks'
 import type { ColorLookPreviewFade } from '../utils/colorLookPreview'
@@ -70,6 +77,7 @@ export function ColorAdjustmentsSection({
   const [userPresets, setUserPresets] = useState<UserColorLookPreset[]>([])
   const [lookCatalogFilter, setLookCatalogFilter] = useState<CatalogFilterValue>('all')
   const [lookFavorites, setLookFavorites] = useState(() => loadPresetFavorites().colorLook)
+  const [activeSelectiveBand, setActiveSelectiveBand] = useState(0)
   const lookFilterOptions = useMemo(() => buildCatalogFilterOptions(COLOR_LOOK_CATALOG_CATEGORIES), [])
   const filteredLookPresets = useMemo(
     () => filterCatalogItems(COLOR_LOOK_PRESETS, lookCatalogFilter, (p) => p.id, (p) => p.category, lookFavorites),
@@ -137,12 +145,36 @@ export function ColorAdjustmentsSection({
     onChange({ ...(color ?? DEFAULT_COLOR), rgbCurves }, recordHistory)
   }
 
-  const updateSelectiveHsl = (patch: Partial<SelectiveHsl>, recordHistory = false) => {
-    const current = color?.selectiveHsl ?? DEFAULT_SELECTIVE_HSL
-    onChange({ ...(color ?? DEFAULT_COLOR), selectiveHsl: { ...current, ...patch } }, recordHistory)
+  const selectiveBands = color?.selectiveHslBands ?? normalizeSelectiveHslBands(color)
+  const selective = selectiveBands[activeSelectiveBand] ?? selectiveBands[0] ?? DEFAULT_SELECTIVE_HSL
+
+  const updateSelectiveBands = (bands: SelectiveHsl[], recordHistory = false) => {
+    onChange({ ...(color ?? DEFAULT_COLOR), selectiveHslBands: bands }, recordHistory)
   }
 
-  const selective = color?.selectiveHsl ?? DEFAULT_SELECTIVE_HSL
+  const updateSelectiveHsl = (patch: Partial<SelectiveHsl>, recordHistory = false) => {
+    const next = selectiveBands.map((band, index) =>
+      index === activeSelectiveBand ? { ...band, ...patch } : band,
+    )
+    updateSelectiveBands(next, recordHistory)
+  }
+
+  const addSelectiveBand = () => {
+    if (selectiveBands.length >= SELECTIVE_HSL_MAX_BANDS) return
+    const next = [...selectiveBands, createDefaultSelectiveHslBand(selectiveBands.length)]
+    updateSelectiveBands(next, true)
+    setActiveSelectiveBand(next.length - 1)
+  }
+
+  const removeSelectiveBand = (index: number) => {
+    if (selectiveBands.length <= 1) return
+    const next = selectiveBands.filter((_, i) => i !== index)
+    updateSelectiveBands(next, true)
+    setActiveSelectiveBand(Math.min(activeSelectiveBand, next.length - 1))
+  }
+
+  const bandLabel = (index: number) => `色域 ${index + 1}`
+  const bandAriaSuffix = (index: number) => (index === 0 ? '' : `（色域${index + 1}）`)
 
   const handleImportLut = async (file: File | undefined) => {
     if (!file) return
@@ -368,15 +400,60 @@ export function ColorAdjustmentsSection({
       <div className="space-y-2 rounded-lg bg-surface-3/40 p-2.5 ring-1 ring-border" data-testid="selective-hsl-section">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] font-semibold tracking-wider text-accent uppercase">セレクティブ HSL</p>
-          <label className="flex items-center gap-1.5 text-[10px] text-text-secondary">
-            <input
-              type="checkbox"
-              aria-label="セレクティブ HSL を有効化"
-              checked={selective.enabled}
-              onChange={(e) => updateSelectiveHsl({ enabled: e.target.checked }, true)}
-            />
-            有効
-          </label>
+          {selectiveBands.length < SELECTIVE_HSL_MAX_BANDS && (
+            <button
+              type="button"
+              data-testid="selective-hsl-add-band"
+              onClick={addSelectiveBand}
+              className="rounded-md px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent-muted"
+            >
+              + 色域を追加
+            </button>
+          )}
+        </div>
+        {selectiveBands.length > 1 && (
+          <div className="flex flex-wrap gap-1">
+            {selectiveBands.map((band, index) => (
+              <button
+                key={index}
+                type="button"
+                data-testid={`selective-hsl-band-tab-${index + 1}`}
+                onClick={() => setActiveSelectiveBand(index)}
+                className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
+                  activeSelectiveBand === index
+                    ? 'bg-accent-muted text-accent ring-1 ring-accent/30'
+                    : 'bg-surface-3 text-text-muted hover:text-text-secondary'
+                }`}
+              >
+                {bandLabel(index)}
+                {band.enabled ? '' : ' · OFF'}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] text-text-muted">{bandLabel(activeSelectiveBand)}</p>
+          <div className="flex items-center gap-2">
+            {selectiveBands.length > 1 && activeSelectiveBand > 0 && (
+              <button
+                type="button"
+                aria-label={`${bandLabel(activeSelectiveBand)}を削除`}
+                onClick={() => removeSelectiveBand(activeSelectiveBand)}
+                className="text-[10px] text-text-muted hover:text-danger"
+              >
+                削除
+              </button>
+            )}
+            <label className="flex items-center gap-1.5 text-[10px] text-text-secondary">
+              <input
+                type="checkbox"
+                aria-label={`セレクティブ HSL を有効化${bandAriaSuffix(activeSelectiveBand)}`}
+                checked={selective.enabled}
+                onChange={(e) => updateSelectiveHsl({ enabled: e.target.checked }, true)}
+              />
+              有効
+            </label>
+          </div>
         </div>
         <div className="space-y-1.5">
           <div className="flex justify-between gap-2">
@@ -385,7 +462,7 @@ export function ColorAdjustmentsSection({
           </div>
           <input
             type="range"
-            aria-label="対象色相"
+            aria-label={`対象色相${bandAriaSuffix(activeSelectiveBand)}`}
             min={0}
             max={360}
             step={1}
@@ -403,7 +480,7 @@ export function ColorAdjustmentsSection({
           </div>
           <input
             type="range"
-            aria-label="色域幅"
+            aria-label={`色域幅${bandAriaSuffix(activeSelectiveBand)}`}
             min={5}
             max={90}
             step={1}
@@ -421,7 +498,7 @@ export function ColorAdjustmentsSection({
           </div>
           <input
             type="range"
-            aria-label="セレクティブ色相シフト"
+            aria-label={`セレクティブ色相シフト${bandAriaSuffix(activeSelectiveBand)}`}
             min={-1}
             max={1}
             step={0.05}
@@ -439,7 +516,7 @@ export function ColorAdjustmentsSection({
           </div>
           <input
             type="range"
-            aria-label="セレクティブ彩度"
+            aria-label={`セレクティブ彩度${bandAriaSuffix(activeSelectiveBand)}`}
             min={-1}
             max={1}
             step={0.05}
@@ -457,7 +534,7 @@ export function ColorAdjustmentsSection({
           </div>
           <input
             type="range"
-            aria-label="セレクティブ明度"
+            aria-label={`セレクティブ明度${bandAriaSuffix(activeSelectiveBand)}`}
             min={-1}
             max={1}
             step={0.05}

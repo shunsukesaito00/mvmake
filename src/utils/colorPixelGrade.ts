@@ -2,7 +2,7 @@ import type { ColorAdjustments } from '../types/project'
 import type { ParsedCubeLut } from './cubeLut'
 import { applyLutToImageData } from './cubeLut'
 import { applyPixelHslAdjustments, isPixelHslActive } from './colorHsl'
-import { applyPixelSelectiveHslAdjustments, isSelectiveHslActive } from './colorSelectiveHsl'
+import { applySelectiveHslBandsToImageData, isAnySelectiveHslActive } from './colorSelectiveHsl'
 import { applyPixelRgbCurveAdjustments, isPixelRgbCurvesActive } from './colorRgbCurve'
 import { applyPixelToneCurveAdjustments, isPixelToneCurveActive } from './colorToneCurve'
 
@@ -11,7 +11,7 @@ export function isPixelColorGradeActive(color: ColorAdjustments): boolean {
     isPixelToneCurveActive(color)
     || isPixelRgbCurvesActive(color)
     || isPixelHslActive(color)
-    || isSelectiveHslActive(color.selectiveHsl)
+    || isAnySelectiveHslActive(color.selectiveHslBands)
   )
 }
 
@@ -26,8 +26,8 @@ export function applyPixelColorGradeAdjustments(imageData: ImageData, color: Col
   if (isPixelHslActive(color)) {
     applyPixelHslAdjustments(imageData, color)
   }
-  if (isSelectiveHslActive(color.selectiveHsl)) {
-    applyPixelSelectiveHslAdjustments(imageData, color.selectiveHsl)
+  if (isAnySelectiveHslActive(color.selectiveHslBands)) {
+    applySelectiveHslBandsToImageData(imageData, color.selectiveHslBands)
   }
 }
 

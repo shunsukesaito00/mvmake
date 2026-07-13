@@ -97,8 +97,8 @@ export interface ColorAdjustments {
   highlights: number
   /** RGB 各チャンネルのトーンカーブ（可変制御点・単調スプライン補間） */
   rgbCurves: RgbCurves
-  /** 色相範囲を指定したセレクティブ HSL 補正（1色） */
-  selectiveHsl: SelectiveHsl
+  /** 色相範囲を指定したセレクティブ HSL 補正（最大3色域） */
+  selectiveHslBands: SelectiveHsl[]
 }
 
 /** 1色セレクティブ HSL（色相マスクで局所補正） */
@@ -485,6 +485,8 @@ export const DEFAULT_RGB_CURVES: RgbCurves = {
   b: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
 }
 
+export const SELECTIVE_HSL_MAX_BANDS = 3
+
 export const DEFAULT_SELECTIVE_HSL: SelectiveHsl = {
   enabled: false,
   targetHue: 30,
@@ -509,7 +511,7 @@ export const DEFAULT_COLOR: ColorAdjustments = {
     g: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
     b: DEFAULT_RGB_CURVE_CHANNEL.map((p) => ({ ...p })),
   },
-  selectiveHsl: { ...DEFAULT_SELECTIVE_HSL },
+  selectiveHslBands: [{ ...DEFAULT_SELECTIVE_HSL }],
 }
 
 function clampRgb01(value: number): number {
@@ -561,7 +563,7 @@ export function normalizeRgbCurves(curves?: Partial<RgbCurves>): RgbCurves {
   }
 }
 
-export function normalizeColorAdjustments(color?: Partial<ColorAdjustments>): ColorAdjustments {
+export function normalizeColorAdjustments(color?: Partial<ColorAdjustments> & { selectiveHsl?: Partial<SelectiveHsl> }): ColorAdjustments {
   return {
     brightness: color?.brightness ?? DEFAULT_COLOR.brightness,
     contrast: color?.contrast ?? DEFAULT_COLOR.contrast,
@@ -573,7 +575,7 @@ export function normalizeColorAdjustments(color?: Partial<ColorAdjustments>): Co
     midtones: color?.midtones ?? DEFAULT_COLOR.midtones,
     highlights: color?.highlights ?? DEFAULT_COLOR.highlights,
     rgbCurves: normalizeRgbCurves(color?.rgbCurves),
-    selectiveHsl: normalizeSelectiveHsl(color?.selectiveHsl),
+    selectiveHslBands: normalizeSelectiveHslBands(color),
   }
 }
 
@@ -591,6 +593,27 @@ export function normalizeSelectiveHsl(sel?: Partial<SelectiveHsl>): SelectiveHsl
     saturation: clampSigned(sel?.saturation ?? 0),
     luminance: clampSigned(sel?.luminance ?? 0),
   }
+}
+
+const DEFAULT_SELECTIVE_HSL_BAND_HUES = [30, 120, 200]
+
+export function createDefaultSelectiveHslBand(index: number): SelectiveHsl {
+  return normalizeSelectiveHsl({
+    ...DEFAULT_SELECTIVE_HSL,
+    targetHue: DEFAULT_SELECTIVE_HSL_BAND_HUES[index] ?? 30,
+  })
+}
+
+/** v3.7 以前の selectiveHsl 単一フィールドも読み込み時に移行 */
+export function normalizeSelectiveHslBands(
+  source?: { selectiveHslBands?: Partial<SelectiveHsl>[]; selectiveHsl?: Partial<SelectiveHsl> },
+): SelectiveHsl[] {
+  if (source?.selectiveHslBands && source.selectiveHslBands.length > 0) {
+    return source.selectiveHslBands
+      .slice(0, SELECTIVE_HSL_MAX_BANDS)
+      .map((band) => normalizeSelectiveHsl(band))
+  }
+  return [normalizeSelectiveHsl(source?.selectiveHsl)]
 }
 
 export const DEFAULT_CROP: CropSettings = {

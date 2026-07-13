@@ -3471,6 +3471,25 @@ test('色調: セレクティブ HSL を有効化して調整できる', async (
   await expect(page.getByTestId('selective-hsl-section')).toBeVisible()
 })
 
+test('色調: 多色セレクティブ HSL で2色域を追加できる', async ({ page }) => {
+  await openImageColorInspector(page, 'multi-sel-hsl.png')
+  await page.getByTestId('selective-hsl-add-band').click()
+  await expect(page.getByTestId('selective-hsl-band-tab-2')).toBeVisible()
+  await page.getByTestId('selective-hsl-band-tab-2').click()
+  await page.getByLabel('セレクティブ HSL を有効化（色域2）').check()
+  const saturation = page.getByRole('slider', { name: 'セレクティブ彩度（色域2）' })
+  await saturation.fill('0.35')
+  await expect(saturation).toHaveValue('0.35')
+})
+
+test('色調: セレクティブ HSL は最大3色域まで追加できる', async ({ page }) => {
+  await openImageColorInspector(page, 'max-sel-hsl.png')
+  await page.getByTestId('selective-hsl-add-band').click()
+  await page.getByTestId('selective-hsl-add-band').click()
+  await expect(page.getByTestId('selective-hsl-band-tab-3')).toBeVisible()
+  await expect(page.getByTestId('selective-hsl-add-band')).toHaveCount(0)
+})
+
 test('トラック管理: 映像トラックを追加して空トラックを削除できる', async ({ page }) => {
   const beforeSummaries = await getTrackSummaries(page)
   const before = beforeSummaries.length

@@ -40,10 +40,15 @@ function selectiveHslEqual(a: SelectiveHsl, b: SelectiveHsl): boolean {
   )
 }
 
+function selectiveHslBandsEqual(a: SelectiveHsl[], b: SelectiveHsl[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((band, index) => selectiveHslEqual(band, b[index]))
+}
+
 export function clipColorSettingsEqual(a: ClipColorSettings, b: ClipColorSettings): boolean {
   return (
     colorAdjustmentsEqual(a.color, b.color) &&
-    selectiveHslEqual(a.color.selectiveHsl, b.color.selectiveHsl) &&
+    selectiveHslBandsEqual(a.color.selectiveHslBands, b.color.selectiveHslBands) &&
     a.lutId === b.lutId &&
     Math.abs((a.lutIntensity ?? DEFAULT_LUT_INTENSITY) - (b.lutIntensity ?? DEFAULT_LUT_INTENSITY)) < 0.001
   )

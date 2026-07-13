@@ -1,24 +1,21 @@
 import type { AdjustmentClip, Clip, ColorAdjustments, Project, SelectiveHsl } from '../types/project'
-import { DEFAULT_COLOR, DEFAULT_SELECTIVE_HSL } from '../types/project'
+import { DEFAULT_COLOR, SELECTIVE_HSL_MAX_BANDS, normalizeSelectiveHsl } from '../types/project'
 import { isRgbCurvesActive, mergeRgbCurves } from './colorRgbCurve'
 
 export function isAdjustmentClip(clip: Clip): clip is AdjustmentClip {
   return clip.type === 'adjustment'
 }
 
-import { isSelectiveHslActive } from './colorSelectiveHsl'
+import { isAnySelectiveHslActive, isSelectiveHslActive } from './colorSelectiveHsl'
 
-function mergeSelectiveHsl(base: SelectiveHsl, overlay: SelectiveHsl): SelectiveHsl {
-  if (!overlay.enabled) return base
-  if (!base.enabled) return { ...overlay }
-  return {
-    enabled: true,
-    targetHue: overlay.targetHue,
-    hueRange: Math.max(base.hueRange, overlay.hueRange),
-    hueShift: Math.max(-1, Math.min(1, base.hueShift + overlay.hueShift)),
-    saturation: Math.max(-1, Math.min(1, base.saturation + overlay.saturation)),
-    luminance: Math.max(-1, Math.min(1, base.luminance + overlay.luminance)),
-  }
+function mergeSelectiveHslBands(base: SelectiveHsl[], overlay: SelectiveHsl[]): SelectiveHsl[] {
+  const combined = [
+    ...base,
+    ...overlay.filter((band) => isSelectiveHslActive(band)),
+  ]
+  return combined
+    .slice(0, SELECTIVE_HSL_MAX_BANDS)
+    .map((band) => normalizeSelectiveHsl(band))
 }
 
 export function mergeColorAdjustments(base: ColorAdjustments, overlay: ColorAdjustments): ColorAdjustments {
@@ -33,7 +30,7 @@ export function mergeColorAdjustments(base: ColorAdjustments, overlay: ColorAdju
     midtones: base.midtones + (overlay.midtones ?? 0),
     highlights: base.highlights + (overlay.highlights ?? 0),
     rgbCurves: mergeRgbCurves(base.rgbCurves, overlay.rgbCurves ?? base.rgbCurves),
-    selectiveHsl: mergeSelectiveHsl(base.selectiveHsl ?? DEFAULT_SELECTIVE_HSL, overlay.selectiveHsl ?? DEFAULT_SELECTIVE_HSL),
+    selectiveHslBands: mergeSelectiveHslBands(base.selectiveHslBands, overlay.selectiveHslBands),
   }
 }
 
@@ -49,7 +46,7 @@ export function isNeutralColorAdjustments(color: ColorAdjustments): boolean {
     && (color.midtones ?? 0) === 0
     && (color.highlights ?? 0) === 0
     && !isRgbCurvesActive(color.rgbCurves)
-    && !isSelectiveHslActive(color.selectiveHsl ?? DEFAULT_SELECTIVE_HSL)
+    && !isAnySelectiveHslActive(color.selectiveHslBands)
   )
 }
 
