@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useProjectStore, type SlideshowOptions } from '../store/projectStore'
 import { loadMediaFiles, enrichMediaAsset, type LoadMediaProgress } from '../engine/mediaLoader'
-import { TEXT_PRESETS, TEXT_PRESET_CATEGORY_LABELS, PROJECT_TEMPLATES, type TransitionType, type TextPreset } from '../types/project'
+import { TEXT_PRESETS, TEXT_PRESET_CATEGORY_LABELS, PROJECT_TEMPLATES, type TransitionType, type TextPreset, type MediaAsset } from '../types/project'
 import { TRANSITION_DEFINITIONS } from '../utils/transitions'
 import { useToastStore } from '../store/toastStore'
 import { PanelHeader, Btn, EmptyState, Modal, Slider } from '../components/ui'
@@ -31,6 +31,11 @@ import { formatBytes } from '../utils/formatBytes'
 import { useStorageEstimate } from '../hooks/useStorageEstimate'
 import { UserProjectTemplatesSection } from '../components/UserProjectTemplatesSection'
 import { TemplateWorkflowCallout } from '../components/TemplateWorkflowCallout'
+import {
+  ENRICHMENT_CONCURRENCY,
+  enqueueEnrichmentTasks,
+  isBulkMediaImport,
+} from '../utils/bulkMediaImport'
 
 interface ImportProgress {
   current: number
@@ -208,6 +213,7 @@ export function MediaPanel() {
   const [isDragging, setIsDragging] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null)
+  const [bulkImportActive, setBulkImportActive] = useState(false)
   const [enrichingIds, setEnrichingIds] = useState<Set<string>>(() => new Set())
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showSlideshow, setShowSlideshow] = useState(false)
@@ -246,7 +252,7 @@ export function MediaPanel() {
     () => filterAndSortMediaAssets(mediaAssets, searchQuery, typeFilter, sortOrder),
     [mediaAssets, searchQuery, typeFilter, sortOrder],
   )
-  const addMediaAsset = useProjectStore((s) => s.addMediaAsset)
+  const addMediaAssets = useProjectStore((s) => s.addMediaAssets)
   const updateMediaAsset = useProjectStore((s) => s.updateMediaAsset)
   const removeMediaAsset = useProjectStore((s) => s.removeMediaAsset)
   const addClipFromMedia = useProjectStore((s) => s.addClipFromMedia)
@@ -318,6 +324,8 @@ export function MediaPanel() {
 
       setIsLoading(true)
       setImportProgress(null)
+      const bulk = isBulkMediaImport(fileArray.length)
+      setBulkImportActive(bulk)
       try {
         const assets = await loadMediaFiles(fileArray, undefined, (progress: LoadMediaProgress) => {
           setImportProgress({
@@ -330,33 +338,41 @@ export function MediaPanel() {
           showToast('対応していないファイル形式です', 'error')
           return
         }
-        for (const asset of assets) addMediaAsset(asset)
-        showToast(`${assets.length}件のメディアを追加しました`, 'success')
+        addMediaAssets(assets)
+        showToast(
+          bulk
+            ? `${assets.length}件のメディアを高速インポートしました（サムネイルは背景で生成）`
+            : `${assets.length}件のメディアを追加しました`,
+          'success',
+        )
 
-        for (const asset of assets) {
-          setEnrichingIds((prev) => new Set(prev).add(asset.id))
-          void enrichMediaAsset(asset)
-            .then((updates) => {
-              if (Object.keys(updates).length > 0) {
-                updateMediaAsset(asset.id, updates)
-              }
+        void enqueueEnrichmentTasks(
+          assets,
+          ENRICHMENT_CONCURRENCY,
+          (asset) => enrichMediaAsset(asset),
+          (asset) => setEnrichingIds((prev) => new Set(prev).add(asset.id)),
+          (asset, updates) => {
+            if (updates && typeof updates === 'object' && Object.keys(updates as object).length > 0) {
+              updateMediaAsset(asset.id, updates as Partial<MediaAsset>)
+            }
+          },
+          (asset) => {
+            setEnrichingIds((prev) => {
+              const next = new Set(prev)
+              next.delete(asset.id)
+              return next
             })
-            .finally(() => {
-              setEnrichingIds((prev) => {
-                const next = new Set(prev)
-                next.delete(asset.id)
-                return next
-              })
-            })
-        }
+          },
+        )
       } catch {
         showToast('メディアの読み込みに失敗しました', 'error')
       } finally {
         setIsLoading(false)
         setImportProgress(null)
+        setBulkImportActive(false)
       }
     },
-    [addMediaAsset, updateMediaAsset, showToast],
+    [addMediaAssets, updateMediaAsset, showToast],
   )
 
   const onDrop = useCallback(
@@ -414,6 +430,11 @@ export function MediaPanel() {
               <p className="text-center text-xs text-text-secondary">
                 {isLoading && importProgress ? (
                   <>
+                    {bulkImportActive && (
+                      <span data-testid="bulk-import-hint" className="mb-1 block text-[10px] text-accent">
+                        高速インポート（メタデータ並列・サムネイルは後から）
+                      </span>
+                    )}
                     読み込み中 ({importProgress.current}/{importProgress.total})
                     <br />
                     <span className="text-[10px] text-text-muted">{importProgress.fileName}</span>

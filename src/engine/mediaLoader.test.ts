@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { enrichMediaAsset, loadMediaFiles, yieldToMainThread } from '../engine/mediaLoader'
 import type { MediaAsset } from '../types/project'
 
@@ -47,5 +47,27 @@ describe('mediaLoader', () => {
     })
     expect(progress.length).toBeGreaterThanOrEqual(2)
     expect(progress[0]).toContain('photo.png')
+  })
+
+  it('loadMediaFiles は大量ファイルで並列メタデータ経路を使う', async () => {
+    class MockImage {
+      width = 100
+      height = 100
+      onload: (() => void) | null = null
+      onerror: (() => void) | null = null
+      set src(_value: string) {
+        queueMicrotask(() => this.onload?.())
+      }
+    }
+    vi.stubGlobal('Image', MockImage)
+
+    const files = Array.from({ length: 10 }, (_, i) =>
+      new File([new Uint8Array(8)], `bulk-${i}.png`, { type: 'image/png' }),
+    )
+    const assets = await loadMediaFiles(files)
+    expect(assets).toHaveLength(10)
+    expect(assets.every((asset) => asset.thumbnail === undefined)).toBe(true)
+
+    vi.unstubAllGlobals()
   })
 })

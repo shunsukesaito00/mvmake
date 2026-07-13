@@ -6,6 +6,7 @@ const THUMBNAIL_TIMEOUT_MS = 8_000
 const MAX_WAVEFORM_DECODE_BYTES = 5 * 1024 * 1024
 
 import { sanitizeMediaDuration } from '../utils/time'
+import { BULK_IMPORT_FILE_THRESHOLD, mapWithConcurrency, MEDIA_METADATA_CONCURRENCY } from '../utils/bulkMediaImport'
 export interface LoadMediaProgress {
   fileIndex: number
   fileTotal: number
@@ -277,26 +278,57 @@ export async function loadMediaFiles(
   onProgress?: (progress: LoadMediaProgress) => void,
 ): Promise<MediaAsset[]> {
   const fileArray = Array.from(files)
-  const results: MediaAsset[] = []
-  for (let i = 0; i < fileArray.length; i++) {
-    const file = fileArray[i]!
-    onProgress?.({
-      fileIndex: i + 1,
-      fileTotal: fileArray.length,
-      fileName: file.name,
-      phase: 'loading',
-    })
-    const asset = await loadMediaFile(file, options)
-    if (asset) results.push(asset)
-    onProgress?.({
-      fileIndex: i + 1,
-      fileTotal: fileArray.length,
-      fileName: file.name,
-      phase: 'done',
-    })
-    await yieldToMainThread()
+  const fastPath = options.deferThumbnail !== false && options.deferWaveform !== false
+  const useParallel = fastPath && fileArray.length >= BULK_IMPORT_FILE_THRESHOLD
+
+  if (!useParallel) {
+    const results: MediaAsset[] = []
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i]!
+      onProgress?.({
+        fileIndex: i + 1,
+        fileTotal: fileArray.length,
+        fileName: file.name,
+        phase: 'loading',
+      })
+      const asset = await loadMediaFile(file, options)
+      if (asset) results.push(asset)
+      onProgress?.({
+        fileIndex: i + 1,
+        fileTotal: fileArray.length,
+        fileName: file.name,
+        phase: 'done',
+      })
+      await yieldToMainThread()
+    }
+    return results
   }
-  return results
+
+  let completed = 0
+  const loaded = await mapWithConcurrency(
+    fileArray,
+    MEDIA_METADATA_CONCURRENCY,
+    async (file, index) => {
+      onProgress?.({
+        fileIndex: index + 1,
+        fileTotal: fileArray.length,
+        fileName: file.name,
+        phase: 'loading',
+      })
+      const asset = await loadMediaFile(file, options)
+      completed += 1
+      onProgress?.({
+        fileIndex: completed,
+        fileTotal: fileArray.length,
+        fileName: file.name,
+        phase: 'done',
+      })
+      await yieldToMainThread()
+      return asset
+    },
+  )
+
+  return loaded.filter((asset): asset is MediaAsset => asset !== null)
 }
 
 /** 録音 Blob をメディアアセットに変換 */

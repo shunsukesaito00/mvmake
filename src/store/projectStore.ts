@@ -259,6 +259,7 @@ interface ProjectState {
   canRedo: () => boolean
 
   addMediaAsset: (asset: MediaAsset) => void
+  addMediaAssets: (assets: MediaAsset[]) => void
   importLutFile: (file: File) => Promise<boolean>
   removeLutAsset: (id: string) => void
   updateMediaAsset: (id: string, updates: Partial<MediaAsset>) => void
@@ -578,6 +579,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set((state) => ({
       project: { ...state.project, mediaAssets: [...state.project.mediaAssets, asset] },
     })),
+
+  addMediaAssets: (assets) => {
+    if (assets.length === 0) return
+    set((state) => ({
+      project: { ...state.project, mediaAssets: [...state.project.mediaAssets, ...assets] },
+    }))
+  },
 
   importLutFile: async (file) => {
     const text = await file.text()

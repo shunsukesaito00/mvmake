@@ -2574,6 +2574,28 @@ test('メディア: 複数ファイル取り込みで進捗表示が使われる
   await expect(page.getByText('import-c.png')).toBeVisible()
 })
 
+test('メディア: 大量インポートで高速インポート経路を使う', async ({ page }) => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  const files = Array.from({ length: 10 }, (_, i) => ({
+    name: `bulk-${i}.png`,
+    mimeType: 'image/png',
+    buffer: png,
+  }))
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', files)
+  await expect(page.getByText('10件のメディアを高速インポートしました（サムネイルは背景で生成）')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('bulk-0.png')).toBeVisible()
+  await expect(page.getByText('bulk-9.png')).toBeVisible()
+
+  await page.keyboard.press('?')
+  await expect(page.getByRole('dialog', { name: 'ヘルプ' })).toBeVisible()
+  await page.keyboard.press('Escape')
+})
+
 test('自動保存: 編集後にインジケータが表示される', async ({ page }) => {
   await page.getByTitle('テキスト').click()
   await page.getByRole('button', { name: /Opening/ }).first().click()
