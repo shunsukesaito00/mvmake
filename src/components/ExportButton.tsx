@@ -37,6 +37,12 @@ import { resolveRangeExportParams } from '../utils/chapterRangeExport'
 import { estimateExportMemoryPressure } from '../utils/exportMemory'
 import { getSnsExportDefaults } from '../utils/snsShareFlow'
 import { formatExportAudioDecodeSkipMessage, mergeExportAudioDecodeSkips, type ExportAudioDecodeSkip } from '../utils/exportAudioDecode'
+import {
+  getExportRetryButtonLabel,
+  getExportRetryHint,
+  isRetryableExportJob,
+  type ExportJobSnapshot,
+} from '../utils/exportRetry'
 
 type ExportPanelView = 'form' | 'progress' | 'cancelled' | 'error'
 
@@ -51,6 +57,7 @@ export function ExportButton() {
   const [presetName, setPresetName] = useState('')
   const [presets, setPresets] = useState<ExportPreset[]>([])
   const [batchExportLabel, setBatchExportLabel] = useState('')
+  const [retryableJob, setRetryableJob] = useState<ExportJobSnapshot | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const exportStartedAtRef = useRef<number | null>(null)
   const presetImportRef = useRef<HTMLInputElement>(null)
@@ -137,7 +144,12 @@ export function ExportButton() {
     setExportErrorTitle('書き出しに失敗しました')
     setBatchExportLabel('')
     setEtaLabel('残り時間を計算中…')
+    setRetryableJob(null)
     exportStartedAtRef.current = null
+  }
+
+  const rememberExportJob = (job: ExportJobSnapshot) => {
+    setRetryableJob(job)
   }
 
   const beginExport = () => {
@@ -263,10 +275,28 @@ export function ExportButton() {
     setQuality(snsDefaults.quality)
     setResolution(snsDefaults.resolution)
     snsExportActiveRef.current = true
-    void handleExport('project', snsDefaults.quality)
+    void handleExport('project', snsDefaults.quality, 'sns')
   }
 
-  const handleExport = async (exportResolution: ExportResolution, qualityOverride?: ExportQuality) => {
+  const handleRetryLastExport = () => {
+    const job = retryableJob
+    if (!isRetryableExportJob(job)) return
+    if (job.mode === 'batch') {
+      void handleBatchChapterExport()
+      return
+    }
+    if (job.mode === 'sns') {
+      handleSnsOneClickExport()
+      return
+    }
+    void handleExport(job.resolution, job.quality)
+  }
+
+  const handleExport = async (
+    exportResolution: ExportResolution,
+    qualityOverride?: ExportQuality,
+    jobMode: ExportJobSnapshot['mode'] = 'single',
+  ) => {
     if (!isWebCodecsSupported()) {
       showToast('書き出しには Chrome / Edge / Safari が必要です', 'error')
       return
@@ -285,6 +315,7 @@ export function ExportButton() {
     }
 
     const exportQuality = qualityOverride ?? quality
+    rememberExportJob({ mode: jobMode, resolution: exportResolution, quality: exportQuality })
     beginExport()
 
     const controller = new AbortController()
@@ -336,6 +367,7 @@ export function ExportButton() {
     }
 
     beginExport()
+    rememberExportJob({ mode: 'batch', resolution, quality })
 
     const controller = new AbortController()
     abortRef.current = controller
@@ -436,7 +468,22 @@ export function ExportButton() {
               <p className="text-sm font-medium text-text-primary">書き出しをキャンセルしました</p>
               <p className="mt-2 text-xs leading-relaxed text-text-muted">{exportErrorDetail}</p>
             </div>
-            <Btn variant="accent" className="w-full" onClick={resetExportPanel}>
+            {isRetryableExportJob(retryableJob) && (
+              <div className="space-y-2" data-testid="export-retry-section">
+                <p className="text-[10px] leading-relaxed text-text-muted">
+                  {getExportRetryHint(retryableJob.mode)}
+                </p>
+                <Btn
+                  variant="accent"
+                  className="w-full"
+                  data-testid="export-retry-button"
+                  onClick={handleRetryLastExport}
+                >
+                  {getExportRetryButtonLabel(retryableJob.mode)}
+                </Btn>
+              </div>
+            )}
+            <Btn variant="default" className="w-full" onClick={resetExportPanel}>
               設定に戻る
             </Btn>
           </div>
@@ -446,7 +493,22 @@ export function ExportButton() {
               <p className="text-sm font-medium text-red-300">{exportErrorTitle}</p>
               <p className="mt-2 text-xs leading-relaxed text-red-200/90">{exportErrorDetail}</p>
             </div>
-            <Btn variant="accent" className="w-full" onClick={resetExportPanel}>
+            {isRetryableExportJob(retryableJob) && (
+              <div className="space-y-2" data-testid="export-retry-section">
+                <p className="text-[10px] leading-relaxed text-text-muted">
+                  {getExportRetryHint(retryableJob.mode)}
+                </p>
+                <Btn
+                  variant="accent"
+                  className="w-full"
+                  data-testid="export-retry-button"
+                  onClick={handleRetryLastExport}
+                >
+                  {getExportRetryButtonLabel(retryableJob.mode)}
+                </Btn>
+              </div>
+            )}
+            <Btn variant="default" className="w-full" onClick={resetExportPanel}>
               設定に戻る
             </Btn>
           </div>

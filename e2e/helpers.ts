@@ -226,6 +226,13 @@ export async function loadExportMemoryWarningStress(page: import('@playwright/te
   return stats
 }
 
+export async function setExportFailOnce(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.setExportFailOnce()
+  })
+}
+
 export async function loadExportAudioDecodeStress(page: import('@playwright/test').Page) {
   return page.evaluate(async () => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

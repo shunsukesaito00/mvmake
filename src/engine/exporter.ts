@@ -5,6 +5,7 @@ import { mixAudioOffline } from './audioEngine'
 import type { ExportAudioDecodeSkip } from '../utils/exportAudioDecode'
 import { ensureProjectFontsLoaded } from '../utils/googleFonts'
 import { assertExportEncoderSupport, buildAudioEncoderConfig, buildVideoEncoderConfig } from '../utils/exportPreflight'
+import { maybeThrowE2eExportFailure } from '../utils/e2eExportFailure'
 
 export function isWebCodecsSupported(): boolean {
   return (
@@ -87,6 +88,7 @@ export async function exportProject(
 
   await ensureProjectFontsLoaded(project)
   checkAborted()
+  maybeThrowE2eExportFailure()
 
   const canvas = document.createElement('canvas')
   canvas.width = width

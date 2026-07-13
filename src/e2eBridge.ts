@@ -1,4 +1,5 @@
 import { getPlaybackMasterClockMode } from './utils/playbackMasterClock'
+import { armE2eExportFailOnce } from './utils/e2eExportFailure'
 import { seedPhotoGuideSlideshowStress, type PhotoGuideSlideshowStressStats } from './utils/photoGuideStressSetup'
 import { seedMarkerEditStress, type MarkerEditStressStats } from './utils/markerStressSetup'
 import {
@@ -364,6 +365,7 @@ declare global {
       setPlaybackTime: (time: number) => void
       getPlaybackShuttleRate: () => number
       getPlaybackMasterClockMode: () => 'audio' | 'wall' | 'idle'
+      setExportFailOnce: () => void
       getIsPlaying: () => boolean
       shuttleForward: () => void
       shuttleReverse: () => void
@@ -648,6 +650,7 @@ export function installE2eBridge(): void {
     setPlaybackTime: (time) => useProjectStore.getState().setCurrentTime(time),
     getPlaybackShuttleRate: () => useProjectStore.getState().playbackShuttleRate,
     getPlaybackMasterClockMode: () => getPlaybackMasterClockMode(),
+    setExportFailOnce: () => armE2eExportFailOnce(),
     getIsPlaying: () => useProjectStore.getState().isPlaying,
     shuttleForward: () => useProjectStore.getState().shuttleForward(),
     shuttleReverse: () => useProjectStore.getState().shuttleReverse(),
