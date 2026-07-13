@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 777
+export const PROD_SMOKE_SCENARIO_COUNT = 781
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -2026,6 +2026,14 @@ export const PROD_SMOKE_V2664_ADDITIONS = [
   'インスペクター: テキストクリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームから2点削除後に再追加すると件数表示が3件になる',
   'インスペクター: 動画クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームから2点削除後に再追加すると件数表示が3件になる',
   'インスペクター: 画像クリップのトランスフォームキーフレームのグラフエディターで3点のキーフレームから2点削除後に件数表示が1件になる',
+] as const
+
+/** v3.0.0 で basic.spec に追加したシナリオ（Phase F F1: Phase E 婚礼クリティカル操作の選別移植） */
+export const PROD_SMOKE_V300_ADDITIONS = [
+  'マルチ選択: Shift+クリックで追加選択し一括削除できる',
+  'マルチ選択: Cmd+A でトラック内の全クリップを選択できる',
+  'ミキサー: トラックフェーダーとソロを操作できる',
+  '編集ツール: タイムラインツールバーとショートカットで切替できる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */

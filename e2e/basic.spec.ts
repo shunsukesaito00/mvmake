@@ -101,6 +101,14 @@ import {
   getMediaAssetName,
   getMediaReplaceCandidateCount,
   getClipKenBurnsEnabled,
+  getSelectedClipCount,
+  getAudioTrackIds,
+  getTrackVolume,
+  setTrackVolume,
+  toggleTrackSolo,
+  getTrackSolo,
+  getTimelineEditTool,
+  setTimelineEditTool,
 } from './helpers'
 
 async function goOnboarded(page: Page) {
@@ -20725,4 +20733,119 @@ test('インスペクター: 画像クリップのトランスフォームキー
   await page.locator('[class*="ring-sky-400"]').filter({ hasText: 'キーフレーム 2' }).getByRole('button', { name: '削除' }).click()
   await expect(page.getByText('1件', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'グラフ上のキーフレーム 1' })).toBeVisible()
+})
+
+test('マルチ選択: Shift+クリックで追加選択し一括削除できる', async ({ page }) => {
+  await goOnboarded(page)
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'msel-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'msel-b.png', mimeType: 'image/png', buffer: png },
+    { name: 'msel-c.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('3件のメディアを追加しました')).toBeVisible()
+
+  const cardA = page.locator('div.group.relative').filter({ hasText: 'msel-a.png' })
+  const cardB = page.locator('div.group.relative').filter({ hasText: 'msel-b.png' })
+  const cardC = page.locator('div.group.relative').filter({ hasText: 'msel-c.png' })
+  for (const card of [cardA, cardB, cardC]) {
+    await card.hover()
+    await card.getByTitle('スライドショー用に選択').click()
+  }
+  await page.getByRole('button', { name: 'スライドショー作成' }).click()
+  await page.getByRole('dialog').locator('select').selectOption('none')
+  await page.getByRole('button', { name: 'タイムラインに追加' }).click()
+  await expect(page.getByText('3枚の写真をタイムラインに配置しました')).toBeVisible()
+
+  const beforeCount = await getProjectClipCount(page)
+  await timelineClip(page, 'msel-a.png').click()
+  await timelineClip(page, 'msel-b.png').click({ modifiers: ['Shift'] })
+  await expect(page.getByText('2件選択中')).toBeVisible()
+  expect(await getSelectedClipCount(page)).toBe(2)
+
+  await page.keyboard.press('Delete')
+  expect(await getProjectClipCount(page)).toBe(beforeCount - 2)
+  expect(await getSelectedClipCount(page)).toBe(0)
+})
+
+test('マルチ選択: Cmd+A でトラック内の全クリップを選択できる', async ({ page }) => {
+  await goOnboarded(page)
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="image"]', [
+    { name: 'selall-a.png', mimeType: 'image/png', buffer: png },
+    { name: 'selall-b.png', mimeType: 'image/png', buffer: png },
+  ])
+  await expect(page.getByText('2件のメディアを追加しました')).toBeVisible()
+
+  const cardA = page.locator('div.group.relative').filter({ hasText: 'selall-a.png' })
+  const cardB = page.locator('div.group.relative').filter({ hasText: 'selall-b.png' })
+  await cardA.hover()
+  await cardA.getByTitle('スライドショー用に選択').click()
+  await cardB.hover()
+  await cardB.getByTitle('スライドショー用に選択').click()
+  await page.getByRole('button', { name: 'スライドショー作成' }).click()
+  await page.getByRole('dialog').locator('select').selectOption('none')
+  await page.getByRole('button', { name: 'タイムラインに追加' }).click()
+
+  await timelineClip(page, 'selall-a.png').click()
+  await page.keyboard.press('Meta+a')
+  expect(await getSelectedClipCount(page)).toBe(2)
+  await expect(page.getByText('2件選択中')).toBeVisible()
+})
+
+test('ミキサー: トラックフェーダーとソロを操作できる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="audio"]', {
+    name: 'mixer-bgm.wav',
+    mimeType: 'audio/wav',
+    buffer: makeSilentWav(1),
+  })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+
+  await expect(page.getByRole('region', { name: 'オーディオミキサー' })).toBeVisible()
+  const audioTrackIds = await getAudioTrackIds(page)
+  expect(audioTrackIds.length).toBeGreaterThan(0)
+  const bgmTrackId = audioTrackIds[0]
+
+  await setTrackVolume(page, bgmTrackId, 0.6)
+  expect(await getTrackVolume(page, bgmTrackId)).toBeCloseTo(0.6, 2)
+
+  await toggleTrackSolo(page, bgmTrackId)
+  expect(await getTrackSolo(page, bgmTrackId)).toBe(true)
+
+  await page.getByLabel('BGM フェーダー').fill('0.8')
+  await expect(page.getByLabel('BGM フェーダー')).toHaveValue('0.8')
+})
+
+test('編集ツール: タイムラインツールバーとショートカットで切替できる', async ({ page }) => {
+  await goOnboarded(page)
+  expect(await getTimelineEditTool(page)).toBe('selection')
+  await expect(page.getByTestId('timeline-tool-selection')).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByTestId('timeline-tool-slip').click()
+  expect(await getTimelineEditTool(page)).toBe('slip')
+  await expect(page.getByTestId('timeline-tool-slip')).toHaveAttribute('aria-pressed', 'true')
+
+  await page.keyboard.press('u')
+  expect(await getTimelineEditTool(page)).toBe('slide')
+  await expect(page.getByTestId('timeline-tool-slide')).toHaveAttribute('aria-pressed', 'true')
+
+  await page.keyboard.press('v')
+  expect(await getTimelineEditTool(page)).toBe('selection')
+  await expect(page.getByTestId('timeline-tool-selection')).toHaveAttribute('aria-pressed', 'true')
+
+  await setTimelineEditTool(page, 'slip')
+  await page.keyboard.press('y')
+  expect(await getTimelineEditTool(page)).toBe('slip')
 })

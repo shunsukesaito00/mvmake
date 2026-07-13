@@ -1,8 +1,25 @@
-# 本番スモーク E2E 監査（v2.6.64）
+# 本番スモーク E2E 監査（v3.0.0）
 
-最終更新: 2026-07-13（v2.9.4 / Phase E 完了レビュー — editor 226 件は本番スモーク外である旨を明記）
+最終更新: 2026-07-13（v3.0.0 / Phase F F1 — Phase E 婚礼クリティカル操作 4 件を basic へ選別移植）
 
-> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 777 件のみ**実行。Phase E（v2.7.0〜v2.9.4）の操作性スモーク **226 件中の相当分は `e2e/editor.spec.ts`** にあり、デプロイ後スモークには含まれない。Phase F F1 で婚礼クリティカルな操作を basic へ選別移植予定。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 781 件**を実行。Phase E（v2.7.0〜v2.9.4）の操作性スモークのうち **editor 専用 226 件**はローカル/CI 全量。v3.0.0 で E1〜E3（マルチ選択・ミキサー・編集ツール）の 4 件を本番スモークへ移植済み。残りの Phase E 回帰は Phase F F1 継続で選別移植予定。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+
+## v3.0.0 拡充（777→781）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **781**（+4） |
+| 追加シナリオ | Phase F F1: マルチ選択 2 件 / ミキサー 1 件 / 編集ツール 1 件（`editor.spec.ts` から選別移植） |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v3.0.0）
+
+1. マルチ選択: Shift+クリックで追加選択し一括削除できる
+2. マルチ選択: Cmd+A でトラック内の全クリップを選択できる
+3. ミキサー: トラックフェーダーとソロを操作できる
+4. 編集ツール: タイムラインツールバーとショートカットで切替できる
+
+選定根拠: Phase E E1〜E3 は婚礼本編で日常的に使う Premiere クラス操作（G1〜G3）。本番デプロイ後もマルチ選択・ミキサー・ツール切替の回帰を担保するため `basic.spec.ts` へ移植（`editor.spec.ts` 側はストレス回帰用に維持）。
 
 ## v2.6.64 拡充（774→777）
 
@@ -1469,8 +1486,8 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 777 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 777`
+- `e2e/basic.spec.ts` — 781 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 781`
 - `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2664_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）
