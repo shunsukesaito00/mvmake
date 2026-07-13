@@ -81,6 +81,7 @@ import {
   makeWavWithPeak,
   timelineClip,
   checkEncodersSupported,
+  setExportFailOnChapter,
   loadChapterExportStressProject,
   loadChapterExportE2eProject,
   loadMarkerEditStress,
@@ -2906,6 +2907,29 @@ test('書き出し: 章 ZIP キャンセル後に完了章を部分 ZIP 保存�
   const download = await downloadPromise
   expect(download.suggestedFilename()).toMatch(/_chapters_partial_\d+\.zip$/)
   await expect(page.getByText(/章の ZIP を保存しました/)).toBeVisible({ timeout: 15_000 })
+})
+
+test('書き出し: 章 ZIP 失敗後にスキップして残り章を続行できる（Phase H G28）', async ({ page }) => {
+  test.setTimeout(300_000)
+
+  await goOnboarded(page)
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await loadChapterExportE2eProject(page)
+  await setExportFailOnChapter(page, '新郎プロフィール')
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '軽量' }).click()
+  await page.getByRole('button', { name: '全章を ZIP で書き出し' }).click()
+  await expect(page.getByRole('alert', { name: '書き出しエラー' })).toBeVisible({ timeout: 120_000 })
+  await expect(page.getByTestId('export-skip-continue-button')).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download', { timeout: 240_000 })
+  await page.getByTestId('export-skip-continue-button').click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toMatch(/_chapters_\d+ok_\d+fail\.zip$/)
+  await expect(page.getByTestId('export-partial-success')).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText(/章を ZIP 保存/)).toBeVisible()
 })
 
 test('書き出し: 短尺プロジェクトで章 ZIP をダウンロード（対応環境）', async ({ page }) => {

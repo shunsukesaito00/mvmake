@@ -35,20 +35,27 @@ import {
 } from '../utils/chapterBatchExport'
 import {
   buildPartialChapterZipFilename,
+  buildPartialSuccessChapterZipFilename,
   canDownloadPartialChapterZip,
+  canSkipFailedAndContinue,
   createChapterExportQueue,
   finalizeChapterQueueOnAbort,
   formatBatchExportProgressDetail,
   formatChapterQueueCancelDetail,
   formatChapterQueueFailureDetail,
+  formatChapterQueueSkipContinueSummary,
   getChapterQueueDoneCount,
   getFailedChapterIndices,
   getPartialChapterZipButtonLabel,
   getPartialChapterZipHint,
+  getPendingChapterIndices,
   getResumableChapterCount,
+  getSkipFailedContinueButtonLabel,
+  getSkipFailedContinueHint,
   hasFailedChapters,
   hasPartialChapterProgress,
   isChapterQueueComplete,
+  isChapterQueuePartiallySuccessful,
   runChapterExportQueue,
   zipCompletedChapterQueue,
   type ChapterExportQueue,
@@ -65,7 +72,7 @@ import {
   type ExportJobSnapshot,
 } from '../utils/exportRetry'
 
-type ExportPanelView = 'form' | 'progress' | 'cancelled' | 'error'
+type ExportPanelView = 'form' | 'progress' | 'cancelled' | 'error' | 'partial'
 
 export function ExportButton() {
   const [showDialog, setShowDialog] = useState(false)
@@ -132,7 +139,9 @@ export function ExportButton() {
   const failedChapterCount = chapterQueue ? getFailedChapterIndices(chapterQueue).length : 0
   const resumableChapterCount = chapterQueue ? getResumableChapterCount(chapterQueue) : 0
   const doneChapterCount = chapterQueue ? getChapterQueueDoneCount(chapterQueue) : 0
+  const pendingChapterCount = chapterQueue ? getPendingChapterIndices(chapterQueue).length : 0
   const canSavePartialZip = chapterQueue ? canDownloadPartialChapterZip(chapterQueue) : false
+  const canSkipFailedContinue = chapterQueue ? canSkipFailedAndContinue(chapterQueue) : false
 
   useEffect(() => {
     if (!showExportHint) return
@@ -320,6 +329,22 @@ export function ExportButton() {
     void handleExport(job.resolution, job.quality)
   }
 
+  const handleSkipFailedAndContinue = () => {
+    if (!chapterQueue || !canSkipFailedAndContinue(chapterQueue)) return
+    void runBatchChapterExport(getPendingChapterIndices(chapterQueue), { continueOnError: true })
+  }
+
+  const finishBatchPartialSuccess = (summary: string) => {
+    setIsExporting(false)
+    setExportProgress(0)
+    abortRef.current = null
+    exportStartedAtRef.current = null
+    setPanelView('partial')
+    setExportErrorTitle('一部の章を ZIP 保存しました')
+    setExportErrorDetail(summary)
+    showToast(summary, 'info')
+  }
+
   const handleDownloadPartialChapterZip = async () => {
     if (!chapterQueue || !canDownloadPartialChapterZip(chapterQueue)) return
     try {
@@ -338,7 +363,10 @@ export function ExportButton() {
     }
   }
 
-  const runBatchChapterExport = async (onlyIndices?: number[]) => {
+  const runBatchChapterExport = async (
+    onlyIndices?: number[],
+    options?: { continueOnError?: boolean },
+  ) => {
     if (!isWebCodecsSupported()) {
       showToast('書き出しには Chrome / Edge / Safari が必要です', 'error')
       return
@@ -350,6 +378,7 @@ export function ExportButton() {
       return
     }
 
+    const continueOnError = options?.continueOnError === true
     beginExport()
     rememberExportJob({ mode: 'batch', resolution, quality })
 
@@ -365,6 +394,7 @@ export function ExportButton() {
     setChapterQueue(queue)
 
     let exportError: unknown = null
+    let handledPartialSuccess = false
     const chapterSkippedAudio: ExportAudioDecodeSkip[] = []
     try {
       await assertExportEncoderSupport({ width, height, fps: project.fps, quality })
@@ -385,25 +415,40 @@ export function ExportButton() {
           onQueueChange: setChapterQueue,
           signal: controller.signal,
           onlyIndices,
+          continueOnError,
         },
       )
       setChapterQueue(queue)
 
-      if (!isChapterQueueComplete(queue)) {
+      if (isChapterQueueComplete(queue)) {
+        const zipBlob = await zipCompletedChapterQueue(queue)
+        const url = URL.createObjectURL(zipBlob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${sanitizeFileBase(project.name || 'movie')}_chapters.zip`
+        a.click()
+        URL.revokeObjectURL(url)
+        setShowDialog(false)
+        showToast(`${entries.length} 章を ZIP で書き出しました`, 'success')
+        const skipMessage = formatExportAudioDecodeSkipMessage(mergeExportAudioDecodeSkips(chapterSkippedAudio))
+        if (skipMessage) showToast(skipMessage, 'info')
+      } else if (continueOnError && isChapterQueuePartiallySuccessful(queue)) {
+        const zipBlob = await zipCompletedChapterQueue(queue)
+        const done = getChapterQueueDoneCount(queue)
+        const failed = getFailedChapterIndices(queue).length
+        const url = URL.createObjectURL(zipBlob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = buildPartialSuccessChapterZipFilename(project.name || 'movie', done, failed)
+        a.click()
+        URL.revokeObjectURL(url)
+        finishBatchPartialSuccess(formatChapterQueueSkipContinueSummary(queue))
+        const skipMessage = formatExportAudioDecodeSkipMessage(mergeExportAudioDecodeSkips(chapterSkippedAudio))
+        if (skipMessage) showToast(skipMessage, 'info')
+        handledPartialSuccess = true
+      } else {
         throw new Error(formatChapterQueueFailureDetail(queue))
       }
-
-      const zipBlob = await zipCompletedChapterQueue(queue)
-      const url = URL.createObjectURL(zipBlob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${sanitizeFileBase(project.name || 'movie')}_chapters.zip`
-      a.click()
-      URL.revokeObjectURL(url)
-      setShowDialog(false)
-      showToast(`${entries.length} 章を ZIP で書き出しました`, 'success')
-      const skipMessage = formatExportAudioDecodeSkipMessage(mergeExportAudioDecodeSkips(chapterSkippedAudio))
-      if (skipMessage) showToast(skipMessage, 'info')
     } catch (err) {
       exportError = err
       console.error(err)
@@ -412,7 +457,9 @@ export function ExportButton() {
         queue = finalizeChapterQueueOnAbort(queue)
         setChapterQueue(queue)
       }
-      finishExport(exportError, 'batch')
+      if (!handledPartialSuccess) {
+        finishExport(exportError, 'batch')
+      }
     }
   }
 
@@ -590,6 +637,21 @@ export function ExportButton() {
             {chapterQueue && (hasFailedChapters(chapterQueue) || hasPartialChapterProgress(chapterQueue)) && (
               <ExportChapterQueuePanel queue={chapterQueue} />
             )}
+            {canSkipFailedContinue && (
+              <div className="space-y-2" data-testid="export-skip-continue-section">
+                <p className="text-[10px] leading-relaxed text-text-muted">
+                  {getSkipFailedContinueHint(pendingChapterCount)}
+                </p>
+                <Btn
+                  variant="accent"
+                  className="w-full"
+                  data-testid="export-skip-continue-button"
+                  onClick={handleSkipFailedAndContinue}
+                >
+                  {getSkipFailedContinueButtonLabel(pendingChapterCount)}
+                </Btn>
+              </div>
+            )}
             {canSavePartialZip && (
               <div className="space-y-2" data-testid="export-partial-zip-section">
                 <p className="text-[10px] leading-relaxed text-text-muted">
@@ -611,12 +673,38 @@ export function ExportButton() {
                   {getExportRetryHint(retryableJob.mode, failedChapterCount, resumableChapterCount)}
                 </p>
                 <Btn
-                  variant="accent"
+                  variant={canSkipFailedContinue ? 'default' : 'accent'}
                   className="w-full"
                   data-testid="export-retry-button"
                   onClick={handleRetryLastExport}
                 >
                   {getExportRetryButtonLabel(retryableJob.mode, failedChapterCount, resumableChapterCount)}
+                </Btn>
+              </div>
+            )}
+            <Btn variant="default" className="w-full" onClick={resetExportPanel}>
+              設定に戻る
+            </Btn>
+          </div>
+        ) : panelView === 'partial' ? (
+          <div className="space-y-4" role="status" aria-label="書き出し結果" data-testid="export-partial-success">
+            <div className="rounded-xl bg-amber-500/10 p-4 ring-1 ring-amber-500/20">
+              <p className="text-sm font-medium text-amber-200">{exportErrorTitle}</p>
+              <p className="mt-2 text-xs leading-relaxed text-amber-100/90">{exportErrorDetail}</p>
+            </div>
+            {chapterQueue && <ExportChapterQueuePanel queue={chapterQueue} />}
+            {isRetryableExportJob(retryableJob) && failedChapterCount > 0 && (
+              <div className="space-y-2" data-testid="export-retry-section">
+                <p className="text-[10px] leading-relaxed text-text-muted">
+                  {getExportRetryHint(retryableJob.mode, failedChapterCount, 0)}
+                </p>
+                <Btn
+                  variant="accent"
+                  className="w-full"
+                  data-testid="export-retry-button"
+                  onClick={handleRetryLastExport}
+                >
+                  {getExportRetryButtonLabel(retryableJob.mode, failedChapterCount, 0)}
                 </Btn>
               </div>
             )}

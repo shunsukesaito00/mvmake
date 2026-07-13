@@ -2,20 +2,26 @@ import { describe, expect, it } from 'vitest'
 import type { ChapterExportEntry } from './chapterBatchExport'
 import {
   buildPartialChapterZipFilename,
+  buildPartialSuccessChapterZipFilename,
   canDownloadPartialChapterZip,
+  canSkipFailedAndContinue,
   createChapterExportQueue,
   finalizeChapterQueueOnAbort,
   formatBatchExportProgressDetail,
   formatChapterQueueCancelDetail,
   formatChapterQueueFailureDetail,
   formatChapterQueueItemStatus,
+  formatChapterQueueSkipContinueSummary,
   getChapterQueueSummary,
   getFailedChapterIndices,
   getPartialChapterZipButtonLabel,
   getPartialChapterZipHint,
+  getPendingChapterIndices,
   getResumableChapterCount,
+  getSkipFailedContinueButtonLabel,
   hasPartialChapterProgress,
   isChapterQueueComplete,
+  isChapterQueuePartiallySuccessful,
   runChapterExportQueue,
   zipCompletedChapterQueue,
 } from './exportChapterQueue'
@@ -190,5 +196,37 @@ describe('exportChapterQueue', () => {
     queue.items[1]!.status = 'done'
     queue.items[2]!.status = 'done'
     expect(canDownloadPartialChapterZip(queue)).toBe(false)
+  })
+
+  it('continueOnError は失敗後も残り章を続行する', async () => {
+    const queue = createChapterExportQueue(entries)
+    await runChapterExportQueue(
+      queue,
+      async (entry) => {
+        if (entry.label === '新郎プロフィール') throw new Error('encode failed')
+        return new Blob([new Uint8Array([1])])
+      },
+      { onOverallProgress: () => {}, continueOnError: true },
+    )
+    expect(queue.items[0]?.status).toBe('done')
+    expect(queue.items[1]?.status).toBe('failed')
+    expect(queue.items[2]?.status).toBe('done')
+    expect(isChapterQueuePartiallySuccessful(queue)).toBe(true)
+    expect(formatChapterQueueSkipContinueSummary(queue)).toContain('2 章を ZIP 保存')
+    expect(formatChapterQueueSkipContinueSummary(queue)).toContain('新郎プロフィール')
+    expect(buildPartialSuccessChapterZipFilename('婚礼', 2, 1)).toBe('婚礼_chapters_2ok_1fail.zip')
+  })
+
+  it('canSkipFailedAndContinue / ラベル', () => {
+    const queue = createChapterExportQueue(entries)
+    expect(canSkipFailedAndContinue(queue)).toBe(false)
+    queue.items[0]!.status = 'done'
+    queue.items[1]!.status = 'failed'
+    expect(canSkipFailedAndContinue(queue)).toBe(true)
+    expect(getPendingChapterIndices(queue)).toEqual([2])
+    expect(getSkipFailedContinueButtonLabel(1)).toContain('残り 1 章')
+    queue.items[2]!.status = 'done'
+    expect(canSkipFailedAndContinue(queue)).toBe(false)
+    expect(isChapterQueuePartiallySuccessful(queue)).toBe(true)
   })
 })

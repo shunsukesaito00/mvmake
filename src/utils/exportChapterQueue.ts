@@ -157,6 +157,41 @@ export function buildPartialChapterZipFilename(projectName: string, doneCount: n
   return `${sanitizeFileBase(projectName || 'movie')}_chapters_partial_${doneCount}.zip`
 }
 
+export function canSkipFailedAndContinue(queue: ChapterExportQueue): boolean {
+  return hasFailedChapters(queue) && getPendingChapterIndices(queue).length > 0
+}
+
+export function getSkipFailedContinueButtonLabel(pendingCount: number): string {
+  return pendingCount > 0 ? `失敗をスキップして続行（残り ${pendingCount} 章）` : '失敗をスキップして続行'
+}
+
+export function getSkipFailedContinueHint(pendingCount: number): string {
+  return `失敗した章はそのまま残し、未完了の ${pendingCount} 章だけを書き出します。終わったら成功章だけの ZIP を保存します。`
+}
+
+/** 未処理がなく、完了と失敗が混在している（部分成功） */
+export function isChapterQueuePartiallySuccessful(queue: ChapterExportQueue): boolean {
+  if (queue.items.length === 0) return false
+  if (getPendingChapterIndices(queue).length > 0) return false
+  if (queue.items.some((item) => item.status === 'running')) return false
+  return getChapterQueueDoneCount(queue) > 0 && hasFailedChapters(queue)
+}
+
+export function formatChapterQueueSkipContinueSummary(queue: ChapterExportQueue): string {
+  const done = getChapterQueueDoneCount(queue)
+  const failed = getFailedChapterIndices(queue).length
+  const failedLabels = queue.items
+    .filter((item) => item.status === 'failed')
+    .map((item) => `「${item.entry.label}」`)
+    .join('、')
+  if (failed === 0) return `${done} 章を ZIP で書き出しました`
+  return `${done} 章を ZIP 保存（${failed} 章失敗: ${failedLabels}）`
+}
+
+export function buildPartialSuccessChapterZipFilename(projectName: string, doneCount: number, failedCount: number): string {
+  return `${sanitizeFileBase(projectName || 'movie')}_chapters_${doneCount}ok_${failedCount}fail.zip`
+}
+
 export async function runChapterExportQueue(
   queue: ChapterExportQueue,
   exportChapter: (
@@ -169,10 +204,13 @@ export async function runChapterExportQueue(
     onQueueChange?: (queue: ChapterExportQueue) => void
     signal?: AbortSignal
     onlyIndices?: number[]
+    /** true のとき失敗しても残り章を続行する */
+    continueOnError?: boolean
   },
 ): Promise<ChapterExportQueue> {
   const total = queue.items.length
   const indices = options.onlyIndices ?? queue.items.map((_, index) => index)
+  const continueOnError = options.continueOnError === true
 
   for (const index of indices) {
     if (options.signal?.aborted) throw new DOMException('Export cancelled', 'AbortError')
@@ -201,7 +239,8 @@ export async function runChapterExportQueue(
       item.progress = undefined
       item.errorMessage = err instanceof Error ? err.message : '不明なエラー'
       options.onQueueChange?.(queue)
-      break
+      if (!continueOnError) break
+      continue
     }
 
     options.onQueueChange?.(queue)
