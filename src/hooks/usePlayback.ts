@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { audioEngine } from '../engine/audioEngine'
 import { preloadMedia, syncVideosForPlayback, pauseAllVideos } from '../engine/compositor'
-import { computeShuttleTimelineTime, type PlaybackShuttleRate } from '../utils/playbackShuttle'
+import { computeShuttleTimelineTime, isReverseShuttleRate, type PlaybackShuttleRate } from '../utils/playbackShuttle'
 
 export type PlaybackControls = {
   togglePlay: () => void
@@ -61,6 +61,16 @@ export function usePlayback(): PlaybackControls {
     return computeShuttleTimelineTime(anchor.timelineTime, anchor.wallMs, anchor.rate)
   }, [])
 
+  const startShuttlePlayback = useCallback((from: number, rate: PlaybackShuttleRate) => {
+    resetAnchor(from, rate)
+    if (isReverseShuttleRate(rate)) {
+      audioEngine.pause(from)
+    } else {
+      audioEngine.play(projectRef.current, from, rate)
+    }
+    syncVideosForPlayback(projectRef.current, from, true)
+  }, [resetAnchor])
+
   const stopPlayback = useCallback((time: number) => {
     cancelAnimationFrame(rafRef.current)
     rafRef.current = 0
@@ -77,16 +87,27 @@ export function usePlayback(): PlaybackControls {
     const time = getAnchoredTime()
 
     if (time >= end) {
-      if (loopRef.current && (useProjectStore.getState().inPoint !== null || useProjectStore.getState().outPoint !== null)) {
+      if (
+        loopRef.current
+        && shuttleRateRef.current > 0
+        && (useProjectStore.getState().inPoint !== null || useProjectStore.getState().outPoint !== null)
+      ) {
         if (!playingRef.current) return
         setCurrentTime(start)
-        resetAnchor(start, shuttleRateRef.current)
-        audioEngine.play(projectRef.current, start, shuttleRateRef.current)
-        syncVideosForPlayback(projectRef.current, start, true)
+        startShuttlePlayback(start, shuttleRateRef.current)
         notifyFrame()
         rafRef.current = requestAnimationFrame(tick)
         return
       }
+      setIsPlaying(false)
+      setPlaybackShuttleRate(1)
+      setCurrentTime(start)
+      stopPlayback(start)
+      notifyFrame()
+      return
+    }
+
+    if (time <= start) {
       setIsPlaying(false)
       setPlaybackShuttleRate(1)
       setCurrentTime(start)
@@ -100,16 +121,14 @@ export function usePlayback(): PlaybackControls {
     notifyFrame()
     if (!playingRef.current) return
     rafRef.current = requestAnimationFrame(tick)
-  }, [getPlaybackRange, getAnchoredTime, setCurrentTime, setIsPlaying, setPlaybackShuttleRate, notifyFrame, stopPlayback, resetAnchor])
+  }, [getPlaybackRange, getAnchoredTime, setCurrentTime, setIsPlaying, setPlaybackShuttleRate, notifyFrame, stopPlayback, startShuttlePlayback])
 
   useEffect(() => {
     const now = useProjectStore.getState().currentTime
     if (isPlaying) {
       const { start } = getPlaybackRange()
       const from = now < start ? start : now
-      resetAnchor(from, playbackShuttleRate)
-      audioEngine.play(projectRef.current, from, playbackShuttleRate)
-      syncVideosForPlayback(projectRef.current, from, true)
+      startShuttlePlayback(from, playbackShuttleRate)
       rafRef.current = requestAnimationFrame(tick)
     } else {
       stopPlayback(now)
@@ -119,7 +138,7 @@ export function usePlayback(): PlaybackControls {
       cancelAnimationFrame(rafRef.current)
       rafRef.current = 0
     }
-  }, [isPlaying, playbackShuttleRate, tick, getPlaybackRange, stopPlayback, notifyFrame, resetAnchor])
+  }, [isPlaying, playbackShuttleRate, tick, getPlaybackRange, stopPlayback, notifyFrame, startShuttlePlayback])
 
   const togglePlay = useCallback(() => {
     const { start, end } = getPlaybackRange()
@@ -137,16 +156,14 @@ export function usePlayback(): PlaybackControls {
     const clamped = Math.max(0, Math.min(time, end))
     setCurrentTime(clamped)
     if (playingRef.current) {
-      resetAnchor(clamped, shuttleRateRef.current)
-      audioEngine.play(projectRef.current, clamped, shuttleRateRef.current)
-      syncVideosForPlayback(projectRef.current, clamped, true)
+      startShuttlePlayback(clamped, shuttleRateRef.current)
     } else {
       audioEngine.pause(clamped)
       syncVideosForPlayback(projectRef.current, clamped, false)
       resetAnchor(clamped, 1)
     }
     notifyFrame()
-  }, [getPlaybackRange, setCurrentTime, notifyFrame, resetAnchor])
+  }, [getPlaybackRange, setCurrentTime, notifyFrame, resetAnchor, startShuttlePlayback])
 
   useEffect(() => () => audioEngine.dispose(), [])
 

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, setRippleInsert, getMagneticTimeline, setMagneticTimeline, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, loadRollingEditStress, rollingTrimAtEditPointById, getRollingEditClipDuration, getRollingEditClipStartTime, toggleTrackLock, loadKeyframeNavStress, jumpToAdjacentKeyframe, getSelectedNavKeyframe, loadVideoAudioLinkStress, isClipAudioLinked, detachVideoAudioById, linkVideoAudioById, getDuckingIntervalCount, getAudibleVideoAudioClipCount, prepareNarrationForVideoClipById, loadColorPasteStress, copyClipColorById, hasColorClipboard, pasteColorToSelectedClips, applyPrimaryClipColorToSelection, clipMatchesColorPasteSourceClip, loadSpeedAudioLinkStress, isClipSpeedAudioLinked, setSpeedAudioLinkedById, getVideoAudioSpeedScheduleForClip, previewExportScheduleParity, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, getSelectedClipCount, getAudioTrackIds, getTrackVolume, setTrackVolume, toggleTrackSolo, getTrackSolo, getTimelineEditTool, setTimelineEditTool, getColorPreviewMode, getShowColorScope, getColorScopeMode, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName, getTrackCount, getTrackSummaries, getTrackName, removeTrack, getPlaybackShuttleRate, getIsPlaying, shuttleForward, addClipFromMediaAt, getFirstMediaAssetId, listClipStartTimesOnTrack } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, setRippleInsert, getMagneticTimeline, setMagneticTimeline, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, loadRollingEditStress, rollingTrimAtEditPointById, getRollingEditClipDuration, getRollingEditClipStartTime, toggleTrackLock, loadKeyframeNavStress, jumpToAdjacentKeyframe, getSelectedNavKeyframe, loadVideoAudioLinkStress, isClipAudioLinked, detachVideoAudioById, linkVideoAudioById, getDuckingIntervalCount, getAudibleVideoAudioClipCount, prepareNarrationForVideoClipById, loadColorPasteStress, copyClipColorById, hasColorClipboard, pasteColorToSelectedClips, applyPrimaryClipColorToSelection, clipMatchesColorPasteSourceClip, loadSpeedAudioLinkStress, isClipSpeedAudioLinked, setSpeedAudioLinkedById, getVideoAudioSpeedScheduleForClip, previewExportScheduleParity, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, getSelectedClipCount, getAudioTrackIds, getTrackVolume, setTrackVolume, toggleTrackSolo, getTrackSolo, getTimelineEditTool, setTimelineEditTool, getColorPreviewMode, getShowColorScope, getColorScopeMode, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName, getTrackCount, getTrackSummaries, getTrackName, removeTrack, getPlaybackShuttleRate, getIsPlaying, shuttleForward, shuttleReverse, shuttleStop, addClipFromMediaAt, getFirstMediaAssetId, listClipStartTimesOnTrack } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -3495,6 +3495,44 @@ test('JKLシャトル: K で停止するとレートが 1x に戻る', async ({ 
   const atStop = parseFloat(await transport.inputValue())
   await page.waitForTimeout(400)
   expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
+})
+
+test('JKL逆シャトル: J連打で -2x/-4x に切り替わる', async ({ page }) => {
+  await page.setInputFiles('input[accept*="audio"]', {
+    name: 'reverse-shuttle.wav',
+    mimeType: 'audio/wav',
+    buffer: makeSilentWav(30),
+  })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await page.evaluate(() => window.__FABLE_E2E__!.setPlaybackTime(5))
+
+  await page.keyboard.press('j')
+  expect(await getIsPlaying(page)).toBe(true)
+  expect(await getPlaybackShuttleRate(page)).toBe(-1)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveText('◀ 1x')
+
+  await page.keyboard.press('j')
+  expect(await getPlaybackShuttleRate(page)).toBe(-2)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveText('◀ 2x')
+
+  await page.keyboard.press('j')
+  expect(await getPlaybackShuttleRate(page)).toBe(-4)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveText('◀ 4x')
+})
+
+test('JKL逆シャトル: 逆再生中は先頭で停止する', async ({ page }) => {
+  await page.setInputFiles('input[accept*="audio"]', {
+    name: 'reverse-stop.wav',
+    mimeType: 'audio/wav',
+    buffer: makeSilentWav(30),
+  })
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await page.evaluate(() => window.__FABLE_E2E__!.setPlaybackTime(0.5))
+
+  await shuttleReverse(page)
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__!.getPlaybackTime())).toBeLessThan(0.2)
+  await expect.poll(async () => getIsPlaying(page)).toBe(false)
+  expect(await getPlaybackShuttleRate(page)).toBe(1)
 })
 
 async function seedRippleInsertGapClips(page: import('@playwright/test').Page) {

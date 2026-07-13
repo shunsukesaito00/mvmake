@@ -84,7 +84,7 @@
 - テキスト背景・字幕帯（半透明背景・余白・角丸）
 - 章マーカー区間の部分書き出し（In/Out 連動）
 
-**現在のバージョン**: v3.2.0
+**現在のバージョン**: v3.3.0
 
 詳細な機能比較・ロードマップ（Phase A〜E 完了 / **Phase F v3.0+**）は [docs/FEATURE_COMPARISON.md](docs/FEATURE_COMPARISON.md) を参照。
 
@@ -118,7 +118,7 @@ npm run dev
 ```bash
 npm test          # ユニットテスト (Vitest)
 npm run test:e2e  # E2Eテスト (Playwright、初回は npx playwright install chromium が必要)。全量 1031 件 = basic 805 + editor 226
-npm run test:e2e:prod # 公開環境(GitHub Pages)に対するスモークE2E（basic 805 のみ。editor 228 はローカル/CI 全量）
+npm run test:e2e:prod # 公開環境(GitHub Pages)に対するスモークE2E（basic 805 のみ。editor 230 はローカル/CI 全量）
 npm run screenshot # README用スクリーンショット生成
 ```
 

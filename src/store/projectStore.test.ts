@@ -1469,4 +1469,26 @@ describe('playback shuttle', () => {
     expect(useProjectStore.getState().isPlaying).toBe(false)
     expect(useProjectStore.getState().playbackShuttleRate).toBe(1)
   })
+
+  it('shuttleReverse starts at -1x then cycles to -2x and -4x', () => {
+    useProjectStore.getState().shuttleReverse()
+    expect(useProjectStore.getState().isPlaying).toBe(true)
+    expect(useProjectStore.getState().playbackShuttleRate).toBe(-1)
+
+    useProjectStore.getState().shuttleReverse()
+    expect(useProjectStore.getState().playbackShuttleRate).toBe(-2)
+
+    useProjectStore.getState().shuttleReverse()
+    expect(useProjectStore.getState().playbackShuttleRate).toBe(-4)
+  })
+
+  it('shuttleForward switches from reverse to forward 1x', () => {
+    useProjectStore.getState().shuttleReverse()
+    useProjectStore.getState().shuttleReverse()
+    expect(useProjectStore.getState().playbackShuttleRate).toBe(-2)
+
+    useProjectStore.getState().shuttleForward()
+    expect(useProjectStore.getState().isPlaying).toBe(true)
+    expect(useProjectStore.getState().playbackShuttleRate).toBe(1)
+  })
 })

@@ -7,7 +7,7 @@ import { Icons } from '../components/icons'
 import { PreviewOverlay } from '../components/PreviewOverlay'
 import { ColorWaveformScope } from '../components/ColorWaveformScope'
 import { ColorVectorScope } from '../components/ColorVectorScope'
-import { downsampleImageData } from '../utils/colorScope'
+import { formatShuttleRateLabel, shouldShowShuttleRate } from '../utils/playbackShuttle'
 
 export function PreviewPanel() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -248,12 +248,12 @@ export function PreviewPanel() {
         <div className="mx-2 h-5 w-px bg-border" />
 
         <Timecode current={currentTime} total={duration} fps={fps} />
-        {isPlaying && playbackShuttleRate > 1 && (
+        {isPlaying && shouldShowShuttleRate(playbackShuttleRate) && (
           <span
             data-testid="playback-shuttle-rate"
             className="rounded bg-accent/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-accent"
           >
-            {playbackShuttleRate}x
+            {formatShuttleRateLabel(playbackShuttleRate)}
           </span>
         )}
 

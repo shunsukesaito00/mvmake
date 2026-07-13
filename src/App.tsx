@@ -105,9 +105,17 @@ function App() {
       }
       if (e.key === 'j' || e.key === 'J') {
         e.preventDefault()
-        store.setIsPlaying(false)
-        const step = e.shiftKey ? 1 / store.project.fps : 1
-        store.setCurrentTime(Math.max(0, store.currentTime - step))
+        if (e.shiftKey) {
+          store.setIsPlaying(false)
+          store.setCurrentTime(Math.max(0, store.currentTime - 1 / store.project.fps))
+          return
+        }
+        if (e.repeat) {
+          const now = Date.now()
+          if (now - lastShuttleKeyRef.current < 400) return
+          lastShuttleKeyRef.current = now
+        }
+        store.shuttleReverse()
       }
 
       if (store.selectedClipId) {

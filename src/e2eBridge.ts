@@ -349,6 +349,7 @@ declare global {
       getPlaybackShuttleRate: () => number
       getIsPlaying: () => boolean
       shuttleForward: () => void
+      shuttleReverse: () => void
       shuttleStop: () => void
       getTimelineEditTool: () => string
       setTimelineEditTool: (tool: 'selection' | 'slip' | 'slide') => void
@@ -624,6 +625,7 @@ export function installE2eBridge(): void {
     getPlaybackShuttleRate: () => useProjectStore.getState().playbackShuttleRate,
     getIsPlaying: () => useProjectStore.getState().isPlaying,
     shuttleForward: () => useProjectStore.getState().shuttleForward(),
+    shuttleReverse: () => useProjectStore.getState().shuttleReverse(),
     shuttleStop: () => useProjectStore.getState().shuttleStop(),
     getTimelineEditTool: () => useProjectStore.getState().timelineEditTool,
     setTimelineEditTool: (tool) => useProjectStore.getState().setTimelineEditTool(tool),

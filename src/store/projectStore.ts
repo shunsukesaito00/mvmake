@@ -79,7 +79,7 @@ import { ensureProjectFontsLoaded } from '../utils/googleFonts'
 import { splitSpeedKeyframes } from '../utils/speedKeyframesTimeline'
 import { getSourceOffsetAtLocalTime } from '../utils/speedKeyframes'
 import { canRemoveTrack, createTrack, findTrackInsertIndex } from '../utils/trackManagement'
-import { type PlaybackShuttleRate, cycleForwardShuttleRate } from '../utils/playbackShuttle'
+import { type PlaybackShuttleRate, cycleForwardShuttleRate, cycleReverseShuttleRate } from '../utils/playbackShuttle'
 import { isRippleInsertActive, prepareTrackClipsForInsert } from '../utils/rippleInsert'
 import {
   clipLocalTimeAt,
@@ -214,6 +214,7 @@ interface ProjectState {
   setIsPlaying: (playing: boolean) => void
   setPlaybackShuttleRate: (rate: PlaybackShuttleRate) => void
   shuttleForward: () => void
+  shuttleReverse: () => void
   shuttleStop: () => void
   setSelectedClipId: (id: string | null) => void
   setSelectedClipIds: (ids: string[]) => void
@@ -426,7 +427,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ playbackShuttleRate: 1, isPlaying: true })
       return
     }
+    if (state.playbackShuttleRate < 0) {
+      set({ playbackShuttleRate: 1 })
+      return
+    }
     set({ playbackShuttleRate: cycleForwardShuttleRate(state.playbackShuttleRate) })
+  },
+  shuttleReverse: () => {
+    const state = get()
+    const { start } = state.getPlaybackRange()
+    if (state.currentTime <= start) set({ currentTime: start })
+
+    if (!state.isPlaying) {
+      set({ playbackShuttleRate: -1, isPlaying: true })
+      return
+    }
+    if (state.playbackShuttleRate > 0) {
+      set({ playbackShuttleRate: -1 })
+      return
+    }
+    set({ playbackShuttleRate: cycleReverseShuttleRate(state.playbackShuttleRate) })
   },
   shuttleStop: () => set({ isPlaying: false, playbackShuttleRate: 1 }),
   setSelectedClipId: (id) => set((state) => ({

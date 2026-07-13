@@ -1152,6 +1152,13 @@ export async function shuttleForward(page: import('@playwright/test').Page) {
   })
 }
 
+export async function shuttleReverse(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.shuttleReverse()
+  })
+}
+
 export async function shuttleStop(page: import('@playwright/test').Page) {
   await page.evaluate(() => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
