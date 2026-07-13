@@ -1963,6 +1963,8 @@ test('書き出し: 章 ZIP 失敗後に失敗章のみ再試行できる（Phas
   await expect(page.getByTestId('export-chapter-queue')).toBeVisible()
   await expect(page.locator('[data-status="done"]').first()).toBeVisible()
   await expect(page.locator('[data-status="failed"]')).toBeVisible()
+  await expect(page.getByTestId('export-chapter-queue-status').filter({ hasText: '完了' }).first()).toBeVisible()
+  await expect(page.getByTestId('export-chapter-queue-status').filter({ hasText: '失敗' })).toBeVisible()
   await expect(page.getByTestId('export-retry-button')).toContainText('失敗した 1 章のみ再試行')
 
   const downloadPromise = page.waitForEvent('download', { timeout: 240_000 })
@@ -1970,6 +1972,23 @@ test('書き出し: 章 ZIP 失敗後に失敗章のみ再試行できる（Phas
   const download = await downloadPromise
   expect(download.suggestedFilename()).toMatch(/_chapters\.zip$/)
   await expect(page.getByText(/6 章を ZIP で書き出しました/)).toBeVisible({ timeout: 30_000 })
+})
+
+test('書き出し: 章 ZIP の進捗に章名と日本語ステータスが表示される（Phase H G25）', async ({ page }) => {
+  test.setTimeout(120_000)
+
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await loadChapterExportE2eProject(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '軽量' }).click()
+  await page.getByRole('button', { name: '全章を ZIP で書き出し' }).click()
+  await expect(page.getByTestId('export-chapter-queue')).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByTestId('export-progress-label')).toContainText(/章 \d+\/\d+「.+」/)
+  await expect(page.getByTestId('export-chapter-queue-status').first()).toBeVisible()
+  await page.getByRole('button', { name: 'キャンセル' }).click()
+  await expect(page.getByRole('status', { name: '書き出し結果' })).toBeVisible()
 })
 
 test('ショートカット: Space で再生・停止、Cmd/Ctrl+Z で取り消し', async ({ page }) => {

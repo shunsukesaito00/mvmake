@@ -8,6 +8,8 @@ export type ChapterExportQueueItem = {
   status: ChapterQueueItemStatus
   blob?: Blob
   errorMessage?: string
+  /** 書き出し中のみ 0〜1 */
+  progress?: number
 }
 
 export type ChapterExportQueue = {
@@ -27,6 +29,7 @@ export function cloneChapterExportQueue(queue: ChapterExportQueue): ChapterExpor
       status: item.status,
       blob: item.blob,
       errorMessage: item.errorMessage,
+      progress: item.progress,
     })),
   }
 }
@@ -45,6 +48,37 @@ export function hasFailedChapters(queue: ChapterExportQueue): boolean {
 
 export function isChapterQueueComplete(queue: ChapterExportQueue): boolean {
   return queue.items.length > 0 && queue.items.every((item) => item.status === 'done')
+}
+
+export function formatChapterQueueItemStatus(status: ChapterQueueItemStatus): string {
+  switch (status) {
+    case 'pending':
+      return '待機中'
+    case 'running':
+      return '書き出し中'
+    case 'done':
+      return '完了'
+    case 'failed':
+      return '失敗'
+  }
+}
+
+export function formatBatchExportProgressDetail(
+  queue: ChapterExportQueue,
+  overallProgress: number,
+  etaLabel: string,
+): string {
+  const total = queue.items.length
+  const done = getChapterQueueDoneCount(queue)
+  const running = queue.items.find((item) => item.status === 'running')
+  const percent = Math.round(overallProgress * 100)
+  if (running) {
+    const chapterNum = done + 1
+    const chapterPercent =
+      running.progress != null ? ` ${Math.round(running.progress * 100)}%` : ''
+    return `章 ${chapterNum}/${total}「${running.entry.label}」${chapterPercent} · 全体 ${percent}% · ${etaLabel}`
+  }
+  return `${percent}% 完了 · ${etaLabel}`
 }
 
 export function getChapterQueueSummary(queue: ChapterExportQueue): string {
@@ -91,19 +125,24 @@ export async function runChapterExportQueue(
     if (!item || item.status === 'done') continue
 
     item.status = 'running'
+    item.progress = 0
     item.errorMessage = undefined
     options.onQueueChange?.(queue)
 
     try {
       const blob = await exportChapter(item.entry, index, (chapterProgress) => {
+        item.progress = chapterProgress
+        options.onQueueChange?.(queue)
         const completed = getChapterQueueDoneCount(queue)
         options.onOverallProgress((completed + chapterProgress) / total)
       })
       item.blob = blob
       item.status = 'done'
+      item.progress = undefined
     } catch (err) {
       if (options.signal?.aborted || (err instanceof DOMException && err.name === 'AbortError')) throw err
       item.status = 'failed'
+      item.progress = undefined
       item.errorMessage = err instanceof Error ? err.message : '不明なエラー'
       options.onQueueChange?.(queue)
       break

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { ChapterExportEntry } from './chapterBatchExport'
 import {
   createChapterExportQueue,
+  formatBatchExportProgressDetail,
   formatChapterQueueFailureDetail,
+  formatChapterQueueItemStatus,
   getChapterQueueSummary,
   getFailedChapterIndices,
   isChapterQueueComplete,
@@ -93,5 +95,44 @@ describe('exportChapterQueue', () => {
     queue.items[0]!.status = 'done'
     queue.items[1]!.status = 'failed'
     expect(getChapterQueueSummary(queue)).toBe('1/3 章完了（1 章失敗）')
+  })
+
+  it('formatChapterQueueItemStatus は日本語ラベルを返す', () => {
+    expect(formatChapterQueueItemStatus('pending')).toBe('待機中')
+    expect(formatChapterQueueItemStatus('running')).toBe('書き出し中')
+    expect(formatChapterQueueItemStatus('done')).toBe('完了')
+    expect(formatChapterQueueItemStatus('failed')).toBe('失敗')
+  })
+
+  it('formatBatchExportProgressDetail は章と全体進捗を表示する', () => {
+    const queue = createChapterExportQueue(entries)
+    queue.items[0]!.status = 'done'
+    queue.items[1]!.status = 'running'
+    queue.items[1]!.progress = 0.5
+    expect(formatBatchExportProgressDetail(queue, 0.42, '残り約 30秒')).toBe(
+      '章 2/3「新郎プロフィール」 50% · 全体 42% · 残り約 30秒',
+    )
+    queue.items[1]!.status = 'pending'
+    queue.items[1]!.progress = undefined
+    expect(formatBatchExportProgressDetail(queue, 0.33, '残り約 1分')).toBe('33% 完了 · 残り約 1分')
+  })
+
+  it('runChapterExportQueue は書き出し中の章 progress を更新する', async () => {
+    const queue = createChapterExportQueue(entries.slice(0, 1))
+    const progressSnapshots: number[] = []
+    await runChapterExportQueue(
+      queue,
+      async (_entry, _index, onChapterProgress) => {
+        onChapterProgress(0.25)
+        progressSnapshots.push(queue.items[0]?.progress ?? -1)
+        onChapterProgress(0.75)
+        progressSnapshots.push(queue.items[0]?.progress ?? -1)
+        return new Blob([new Uint8Array([1])])
+      },
+      { onOverallProgress: () => {} },
+    )
+    expect(progressSnapshots).toEqual([0.25, 0.75])
+    expect(queue.items[0]?.progress).toBeUndefined()
+    expect(queue.items[0]?.status).toBe('done')
   })
 })

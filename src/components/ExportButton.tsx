@@ -3,6 +3,7 @@ import { useProjectStore } from '../store/projectStore'
 import { exportProject, isWebCodecsSupported, QUALITY_PRESETS, type ExportQuality } from '../engine/exporter'
 import { assertExportEncoderSupport } from '../utils/exportPreflight'
 import { useToastStore } from '../store/toastStore'
+import { ExportChapterQueuePanel } from './ExportChapterQueuePanel'
 import { Modal, Btn, ProgressBar } from './ui'
 import { Icons } from './icons'
 import type { ExportPreset, ExportResolution } from '../types/exportPreset'
@@ -34,8 +35,8 @@ import {
 } from '../utils/chapterBatchExport'
 import {
   createChapterExportQueue,
+  formatBatchExportProgressDetail,
   formatChapterQueueFailureDetail,
-  getChapterQueueSummary,
   getFailedChapterIndices,
   hasFailedChapters,
   isChapterQueueComplete,
@@ -67,7 +68,6 @@ export function ExportButton() {
   const [resolution, setResolution] = useState<ExportResolution>('project')
   const [presetName, setPresetName] = useState('')
   const [presets, setPresets] = useState<ExportPreset[]>([])
-  const [batchExportLabel, setBatchExportLabel] = useState('')
   const [chapterQueue, setChapterQueue] = useState<ChapterExportQueue | null>(null)
   const [retryableJob, setRetryableJob] = useState<ExportJobSnapshot | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -155,7 +155,6 @@ export function ExportButton() {
     setPanelView('form')
     setExportErrorDetail(null)
     setExportErrorTitle('書き出しに失敗しました')
-    setBatchExportLabel('')
     setEtaLabel('残り時間を計算中…')
     setRetryableJob(null)
     setChapterQueue(null)
@@ -182,7 +181,6 @@ export function ExportButton() {
   const finishExport = (err: unknown | null, context: 'single' | 'batch' = 'single') => {
     setIsExporting(false)
     setExportProgress(0)
-    setBatchExportLabel('')
     abortRef.current = null
     exportStartedAtRef.current = null
 
@@ -343,7 +341,6 @@ export function ExportButton() {
       queue = await runChapterExportQueue(
         queue,
         async (entry, _index, onChapterProgress) => {
-          setBatchExportLabel(getChapterQueueSummary(queue))
           maybeThrowE2eExportFailure(entry.label)
           const { blob, skippedAudio } = await exportProject(exportProject_, entry.duration, onChapterProgress, {
             signal: controller.signal,
@@ -451,6 +448,10 @@ export function ExportButton() {
     }
   }
 
+  const progressLabel = chapterQueue
+    ? formatBatchExportProgressDetail(chapterQueue, exportProgress, etaLabel)
+    : formatExportProgressLabel(exportProgress, etaLabel)
+
   return (
     <>
       <span title={exportTooltip} className="relative inline-flex">
@@ -491,31 +492,10 @@ export function ExportButton() {
         {panelView === 'progress' && isExporting ? (
           <div className="space-y-4" aria-live="polite">
             <ProgressBar progress={exportProgress} />
-            <p className="text-center text-sm text-text-secondary">
-              {formatExportProgressLabel(exportProgress, etaLabel)}
+            <p className="text-center text-sm text-text-secondary" data-testid="export-progress-label">
+              {progressLabel}
             </p>
-            {batchExportLabel && (
-              <p className="text-center text-xs text-text-muted">{batchExportLabel}</p>
-            )}
-            {chapterQueue && (
-              <div data-testid="export-chapter-queue" className="rounded-lg bg-surface-3 px-3 py-2 ring-1 ring-border">
-                <p className="text-center text-[10px] font-medium text-text-primary">
-                  {getChapterQueueSummary(chapterQueue)}
-                </p>
-                <ul className="mt-2 space-y-1">
-                  {chapterQueue.items.map((item) => (
-                    <li
-                      key={item.entry.filename}
-                      data-status={item.status}
-                      className="flex items-center justify-between text-[10px] text-text-muted"
-                    >
-                      <span>{item.entry.label}</span>
-                      <span>{item.status}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {chapterQueue && <ExportChapterQueuePanel queue={chapterQueue} />}
             <Btn variant="danger" className="w-full" onClick={() => abortRef.current?.abort()}>
               キャンセル
             </Btn>
@@ -552,21 +532,7 @@ export function ExportButton() {
               <p className="mt-2 text-xs leading-relaxed text-red-200/90">{exportErrorDetail}</p>
             </div>
             {chapterQueue && hasFailedChapters(chapterQueue) && (
-              <div data-testid="export-chapter-queue" className="rounded-lg bg-surface-3 px-3 py-2 ring-1 ring-border">
-                <p className="text-[10px] font-medium text-text-primary">{getChapterQueueSummary(chapterQueue)}</p>
-                <ul className="mt-2 space-y-1">
-                  {chapterQueue.items.map((item) => (
-                    <li
-                      key={item.entry.filename}
-                      data-status={item.status}
-                      className="flex items-center justify-between text-[10px] text-text-muted"
-                    >
-                      <span>{item.entry.label}</span>
-                      <span>{item.status}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ExportChapterQueuePanel queue={chapterQueue} />
             )}
             {isRetryableExportJob(retryableJob) && (
               <div className="space-y-2" data-testid="export-retry-section">
