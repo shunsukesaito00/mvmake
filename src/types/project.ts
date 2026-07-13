@@ -350,6 +350,8 @@ export interface VideoClip extends BaseClip, ClipLutSettings {
   fadeOut: number
   /** false のとき内蔵音声をプレビュー/書き出し/ダッキングから除外（ナレーション差し替え用） */
   audioLinked?: boolean
+  /** false のとき内蔵音声は速度 KF/clip.speed の影響を受けず 1x で再生 */
+  speedAudioLinked?: boolean
 }
 
 export interface ImageClip extends BaseClip, ClipLutSettings {
@@ -1734,6 +1736,7 @@ function normalizeClip(clip: Clip): Clip {
       fadeIn: clip.fadeIn ?? DEFAULT_VISUAL_FADE.fadeIn,
       fadeOut: clip.fadeOut ?? DEFAULT_VISUAL_FADE.fadeOut,
       audioLinked: clip.audioLinked ?? true,
+      speedAudioLinked: clip.speedAudioLinked ?? true,
     }
   }
   if (clip.type === 'image') {

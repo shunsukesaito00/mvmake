@@ -10,7 +10,7 @@ import {
 } from '../utils/batchTransitionStressSetup'
 import { seedBatchTransitionRemovalStress } from '../utils/batchTransitionRemovalStressSetup'
 import type { AudioClip, ImageClip, MediaAsset, Project, VideoClip } from '../types/project'
-import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE, normalizeColorAdjustments } from '../types/project'
+import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_DUCKING, DEFAULT_KEN_BURNS, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE, normalizeColorAdjustments, normalizeProject } from '../types/project'
 
 const TRACK_V1 = 'track-v1'
 const TRACK_V2 = 'track-v2'
@@ -440,6 +440,13 @@ describe('color paste', () => {
     useProjectStore.setState({ selectedClipIds: ['c1', 'c2'], selectedClipId: 'c1' })
     expect(useProjectStore.getState().applyPrimaryClipColorToSelection()).toBe(1)
     expect((getTrackClips(TRACK_V1)[1] as ImageClip).color.midtones).toBeCloseTo(0.35)
+  })
+})
+
+describe('speed audio link', () => {
+  it('normalizeProject defaults speedAudioLinked to true', () => {
+    setProject(normalizeProject(makeProject([videoClip('c1', 0, 4)])))
+    expect((getTrackClips(TRACK_V1)[0] as VideoClip).speedAudioLinked).toBe(true)
   })
 })
 

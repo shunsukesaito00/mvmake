@@ -1,7 +1,12 @@
 import type { AudioClip, MediaAsset, Project, VideoClip } from '../types/project'
 import { getAudioClipsFromProject, getDuckingIntervals, getTrackPlaybackGain } from '../utils/clipUtils'
 import { scheduleVolumeAutomation } from '../utils/volumeKeyframes'
-import { getSourceOffsetAtLocalTime, scheduleSpeedAutomation } from '../utils/speedKeyframes'
+import { scheduleSpeedAutomation } from '../utils/speedKeyframes'
+import {
+  getConstantVideoAudioPlaybackRate,
+  resolveVideoAudioSpeedSchedule,
+  shouldScheduleVideoSpeedAutomation,
+} from '../utils/speedAudioLink'
 import { connectEqChain } from '../utils/audioEq'
 import { connectNoiseReductionChain } from '../utils/audioNoiseReduction'
 import { applyDucking, type DuckingSchedule } from '../utils/audioDucking'
@@ -103,18 +108,23 @@ class AudioEngine {
     const destination = this.getTrackBus(trackId)
 
     const localOffset = Math.max(0, fromTime - clip.startTime)
+    const videoClip = isVideo ? (clip as VideoClip) : null
+    const schedule = videoClip
+      ? resolveVideoAudioSpeedSchedule(videoClip, localOffset, clip.duration)
+      : null
     const offset = isVideo
-      ? clip.sourceStart + getSourceOffsetAtLocalTime(clip as VideoClip, localOffset)
+      ? schedule!.sourceStart
       : clip.sourceStart + localOffset * speed
     const when = this.context!.currentTime + Math.max(0, clip.startTime - fromTime)
-    const timelineDuration = clip.duration - localOffset
-    const videoClip = isVideo ? (clip as VideoClip) : null
-    const bufferDuration = videoClip
-      ? getSourceOffsetAtLocalTime(videoClip, localOffset + timelineDuration) - getSourceOffsetAtLocalTime(videoClip, localOffset)
-      : timelineDuration * speed
+    const timelineDuration = schedule?.timelineDuration ?? (clip.duration - localOffset)
+    const bufferDuration = schedule?.bufferDuration ?? timelineDuration * speed
 
-    if (isVideo) {
-      scheduleSpeedAutomation(source.playbackRate, when, localOffset, timelineDuration, clip as VideoClip, this.shuttleRate)
+    if (isVideo && videoClip) {
+      if (shouldScheduleVideoSpeedAutomation(videoClip)) {
+        scheduleSpeedAutomation(source.playbackRate, when, localOffset, timelineDuration, videoClip, this.shuttleRate)
+      } else {
+        source.playbackRate.value = getConstantVideoAudioPlaybackRate(videoClip, this.shuttleRate)
+      }
     } else {
       source.playbackRate.value = speed * this.shuttleRate
     }
@@ -226,7 +236,9 @@ export async function mixAudioOffline(project: Project, duration: number, sample
       const isVideoClip = isVideo
       const videoClip = isVideoClip ? (clip as VideoClip) : null
       const speed = isVideoClip ? videoClip!.speed ?? 1 : (clip as AudioClip).speed ?? 1
-      source.playbackRate.value = speed
+      const schedule = videoClip
+        ? resolveVideoAudioSpeedSchedule(videoClip, 0, clip.duration)
+        : null
 
       const gain = offline.createGain()
       const audio = isVideoClip ? videoClip!.audio ?? { volume: 1, fadeIn: 0, fadeOut: 0 } : (clip as AudioClip).audio
@@ -235,8 +247,14 @@ export async function mixAudioOffline(project: Project, duration: number, sample
       const when = clip.startTime
       scheduleVolumeAutomation(gain.gain, when, 0, clip.duration, clip.duration, audio)
 
-      if (isVideoClip) {
-        scheduleSpeedAutomation(source.playbackRate, when, 0, clip.duration, videoClip!)
+      if (isVideoClip && videoClip) {
+        if (shouldScheduleVideoSpeedAutomation(videoClip)) {
+          scheduleSpeedAutomation(source.playbackRate, when, 0, clip.duration, videoClip)
+        } else {
+          source.playbackRate.value = getConstantVideoAudioPlaybackRate(videoClip)
+        }
+      } else {
+        source.playbackRate.value = speed
       }
 
       const noiseChain = connectNoiseReductionChain(offline, audio.noiseReduction)
@@ -262,11 +280,10 @@ export async function mixAudioOffline(project: Project, duration: number, sample
         gain.connect(destination)
       }
 
-      const bufferDuration = isVideoClip
-        ? getSourceOffsetAtLocalTime(videoClip!, clip.duration)
-        : clip.duration * speed
+      const bufferDuration = schedule?.bufferDuration ?? clip.duration * speed
+      const sourceStart = schedule?.sourceStart ?? clip.sourceStart
 
-      source.start(when, clip.sourceStart, bufferDuration)
+      source.start(when, sourceStart, bufferDuration)
     } catch {
       // skip
     }

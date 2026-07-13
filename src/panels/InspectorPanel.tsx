@@ -8,6 +8,7 @@ import { useToastStore } from '../store/toastStore'
 import { PanelHeader, SectionTitle, Slider, EmptyState, Btn } from '../components/ui'
 import { VolumeKeyframesSection } from '../components/VolumeKeyframesSection'
 import { SpeedKeyframesSection } from '../components/SpeedKeyframesSection'
+import { SpeedAudioLinkSection } from '../components/SpeedAudioLinkSection'
 import { ColorAdjustmentsSection } from '../components/ColorAdjustmentsSection'
 import { VisualFadeSection } from '../components/VisualFadeSection'
 import { PhotoGuideSection } from '../components/PhotoGuideSection'
@@ -330,6 +331,10 @@ export function InspectorPanel() {
               />
             </CollapsibleSection>
             <CollapsibleSection title="再生速度" defaultOpen={false}>
+              <SpeedAudioLinkSection
+                clip={selectedClip as VideoClip}
+                onClipChange={(patch, recordHistory) => updateClip(selectedClip.id, patch, recordHistory)}
+              />
               <SpeedKeyframesSection
                 clip={selectedClip as VideoClip}
                 onClipChange={(patch) => updateClip(selectedClip.id, patch, true)}

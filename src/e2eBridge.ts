@@ -139,6 +139,14 @@ import {
   type ColorPasteStressStats,
 } from './utils/colorPasteStressSetup'
 import {
+  getVideoAudioSpeedScheduleForClip,
+  isClipSpeedAudioLinked,
+  previewExportScheduleParity,
+  seedSpeedAudioLinkStress,
+  setSpeedAudioLinkedById,
+  type SpeedAudioLinkStressStats,
+} from './utils/speedAudioLinkStressSetup'
+import {
   applyClipColor,
   applyClipRgbCurvePoint,
   getClipColor,
@@ -255,6 +263,11 @@ declare global {
       pasteColorToSelectedClips: () => number
       applyPrimaryClipColorToSelection: () => number
       clipMatchesColorPasteSourceClip: (clipId: string, sourceClipId: string) => boolean
+      loadSpeedAudioLinkStress: () => SpeedAudioLinkStressStats
+      isClipSpeedAudioLinked: (clipId: string) => boolean
+      setSpeedAudioLinkedById: (clipId: string, linked: boolean) => boolean
+      getVideoAudioSpeedScheduleForClip: (clipId: string, localStart: number, localEnd: number) => import('./utils/speedAudioLink').VideoAudioSpeedSchedule | null
+      previewExportScheduleParity: (clipId: string, localStart: number, localEnd: number) => boolean
       loadToneCurveStress: () => ToneCurveStressStats
       getClipColorMidtones: (clipId: string) => number
       getClipPixelGradeSample: (clipId: string, gray?: number) => { r: number; g: number; b: number }
@@ -435,6 +448,15 @@ export function installE2eBridge(): void {
     pasteColorToSelectedClips: () => pasteColorToSelectedClips(),
     applyPrimaryClipColorToSelection: () => applyPrimaryClipColorToSelection(),
     clipMatchesColorPasteSourceClip: (clipId, sourceClipId) => clipMatchesColorPasteSourceClip(clipId, sourceClipId),
+    loadSpeedAudioLinkStress: () => seedSpeedAudioLinkStress(),
+    isClipSpeedAudioLinked: (clipId) => isClipSpeedAudioLinked(clipId),
+    setSpeedAudioLinkedById: (clipId, linked) => setSpeedAudioLinkedById(clipId, linked),
+    getVideoAudioSpeedScheduleForClip: (clipId, localStart, localEnd) => (
+      getVideoAudioSpeedScheduleForClip(clipId, localStart, localEnd)
+    ),
+    previewExportScheduleParity: (clipId, localStart, localEnd) => (
+      previewExportScheduleParity(clipId, localStart, localEnd)
+    ),
     loadToneCurveStress: () => seedToneCurveStress(),
     getClipColorMidtones: (clipId) => getClipColor(clipId).midtones,
     getClipPixelGradeSample: (clipId, gray) => getClipPixelGradeSample(clipId, gray),

@@ -522,6 +522,51 @@ export async function clipMatchesColorPasteSourceClip(
   }, { targetId: clipId, sourceId: sourceClipId })
 }
 
+export async function loadSpeedAudioLinkStress(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadSpeedAudioLinkStress()
+  })
+}
+
+export async function isClipSpeedAudioLinked(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.isClipSpeedAudioLinked(id)
+  }, clipId)
+}
+
+export async function setSpeedAudioLinkedById(page: import('@playwright/test').Page, clipId: string, linked: boolean) {
+  return page.evaluate(({ id, value }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.setSpeedAudioLinkedById(id, value)
+  }, { id: clipId, value: linked })
+}
+
+export async function getVideoAudioSpeedScheduleForClip(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  localStart: number,
+  localEnd: number,
+) {
+  return page.evaluate(({ id, start, end }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getVideoAudioSpeedScheduleForClip(id, start, end)
+  }, { id: clipId, start: localStart, end: localEnd })
+}
+
+export async function previewExportScheduleParity(
+  page: import('@playwright/test').Page,
+  clipId: string,
+  localStart: number,
+  localEnd: number,
+) {
+  return page.evaluate(({ id, start, end }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.previewExportScheduleParity(id, start, end)
+  }, { id: clipId, start: localStart, end: localEnd })
+}
+
 export async function getClipSourceStart(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
