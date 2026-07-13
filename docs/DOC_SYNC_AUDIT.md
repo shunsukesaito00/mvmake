@@ -42,7 +42,7 @@
 | `RELEASE_NOTES.md` | 履歴用。件数は当時のスナップショットのまま（自動検証対象外） |
 | Premiere 同等性マトリクス | v1.68.0 時点の定性評価。数値サマリーとは別系統 |
 | ユニットテスト下限 | `docSyncAudit.test.ts` は件数が減った場合も検知するため下限アサートを併用 |
-| E2E basic / editor 分担 | 合計 1007・本番 781。v3.0.0 で Phase E E1〜E3 の 4 件を basic へ移植済み。残り Phase E 回帰は editor（226） |
+| E2E basic / editor 分担 | 合計 1012・本番 786。v3.0.0〜v3.0.1 で Phase E E1〜E3/E7/E8 の 9 件を basic へ移植済み |
 
 ## 関連ファイル
 

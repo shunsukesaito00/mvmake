@@ -1,7 +1,7 @@
 import { TRANSITION_DEFINITIONS } from './transitions'
 
 /** `e2e/basic.spec.ts` = `npm run test:e2e:prod` の期待シナリオ数 */
-export const PROD_SMOKE_SCENARIO_COUNT = 781
+export const PROD_SMOKE_SCENARIO_COUNT = 786
 
 /** v2.1.1 で basic.spec に追加したシナリオ（test 名の部分一致用） */
 export const PROD_SMOKE_V211_ADDITIONS = [
@@ -2034,6 +2034,15 @@ export const PROD_SMOKE_V300_ADDITIONS = [
   'マルチ選択: Cmd+A でトラック内の全クリップを選択できる',
   'ミキサー: トラックフェーダーとソロを操作できる',
   '編集ツール: タイムラインツールバーとショートカットで切替できる',
+] as const
+
+/** v3.0.1 で basic.spec に追加したシナリオ（Phase F F1 第2弾: JKL・リップルインサート） */
+export const PROD_SMOKE_V301_ADDITIONS = [
+  'JKLシャトル: L連打で 2x/4x に切り替わる',
+  'JKLシャトル: K で停止するとレートが 1x に戻る',
+  'リップルインサート: ON でギャップ挿入時に後続クリップがシフトする',
+  'リップルインサート: OFF では従来どおり重なり回避で配置する',
+  'リップルインサート: 挿入操作を undo できる',
 ] as const
 
 /** suffix 整理フェーズ4 完了時の double-named-reclick 層（各経路あたり suffix/plain の期待件数） */

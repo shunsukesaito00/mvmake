@@ -109,6 +109,14 @@ import {
   getTrackSolo,
   getTimelineEditTool,
   setTimelineEditTool,
+  getPlaybackShuttleRate,
+  getIsPlaying,
+  shuttleForward,
+  setRippleInsert,
+  getFirstMediaAssetId,
+  getTrackSummaries,
+  addClipFromMediaAt,
+  listClipStartTimesOnTrack,
 } from './helpers'
 
 async function goOnboarded(page: Page) {
@@ -20848,4 +20856,97 @@ test('編集ツール: タイムラインツールバーとショートカット
   await setTimelineEditTool(page, 'slip')
   await page.keyboard.press('y')
   expect(await getTimelineEditTool(page)).toBe('slip')
+})
+
+test('JKLシャトル: L連打で 2x/4x に切り替わる', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="audio"]', {
+    name: 'shuttle-bgm.wav',
+    mimeType: 'audio/wav',
+    buffer: makeSilentWav(30),
+  })
+  await page.getByTitle('クリックで再生位置に追加').click()
+
+  await page.keyboard.press('l')
+  expect(await getIsPlaying(page)).toBe(true)
+  expect(await getPlaybackShuttleRate(page)).toBe(1)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveCount(0)
+
+  await page.keyboard.press('l')
+  expect(await getPlaybackShuttleRate(page)).toBe(2)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveText('2x')
+
+  await page.keyboard.press('l')
+  expect(await getPlaybackShuttleRate(page)).toBe(4)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveText('4x')
+})
+
+test('JKLシャトル: K で停止するとレートが 1x に戻る', async ({ page }) => {
+  await goOnboarded(page)
+  await page.setInputFiles('input[accept*="audio"]', {
+    name: 'shuttle-stop.wav',
+    mimeType: 'audio/wav',
+    buffer: makeSilentWav(30),
+  })
+  await page.getByTitle('クリックで再生位置に追加').click()
+
+  await shuttleForward(page)
+  await shuttleForward(page)
+  expect(await getPlaybackShuttleRate(page)).toBe(2)
+
+  await page.keyboard.press('k')
+  expect(await getIsPlaying(page)).toBe(false)
+  expect(await getPlaybackShuttleRate(page)).toBe(1)
+  await expect(page.getByTestId('playback-shuttle-rate')).toHaveCount(0)
+
+  const transport = page.locator('main input[type="range"]').first()
+  const atStop = parseFloat(await transport.inputValue())
+  await page.waitForTimeout(400)
+  expect(Math.abs(parseFloat(await transport.inputValue()) - atStop)).toBeLessThan(0.05)
+})
+
+async function seedRippleInsertGapClips(page: Page) {
+  await page.setInputFiles('input[accept*="image"]', { name: 'ripple-gap.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  const mediaId = await getFirstMediaAssetId(page)
+  expect(mediaId).toBeTruthy()
+  const trackId = (await getTrackSummaries(page)).find((t) => t.type === 'video')!.id
+  expect(await addClipFromMediaAt(page, mediaId!, 0, trackId)).toBe(true)
+  expect(await addClipFromMediaAt(page, mediaId!, 8, trackId)).toBe(true)
+  return { mediaId: mediaId!, trackId }
+}
+
+test('リップルインサート: ON でギャップ挿入時に後続クリップがシフトする', async ({ page }) => {
+  await goOnboarded(page)
+  const { mediaId, trackId } = await seedRippleInsertGapClips(page)
+  await setRippleInsert(page, true)
+  await expect(page.getByTestId('ripple-insert-indicator')).toHaveText('挿入 ON')
+
+  expect(await addClipFromMediaAt(page, mediaId, 5, trackId)).toBe(true)
+  const starts = (await listClipStartTimesOnTrack(page, trackId)).sort((a, b) => a - b)
+  expect(starts).toContain(13)
+})
+
+test('リップルインサート: OFF では従来どおり重なり回避で配置する', async ({ page }) => {
+  await goOnboarded(page)
+  const { mediaId, trackId } = await seedRippleInsertGapClips(page)
+  await setRippleInsert(page, false)
+
+  expect(await addClipFromMediaAt(page, mediaId, 5, trackId)).toBe(true)
+  const starts = (await listClipStartTimesOnTrack(page, trackId)).sort((a, b) => a - b)
+  expect(starts).toContain(8)
+  expect(starts.some((t) => t > 8)).toBe(true)
+})
+
+test('リップルインサート: 挿入操作を undo できる', async ({ page }) => {
+  await goOnboarded(page)
+  const { mediaId, trackId } = await seedRippleInsertGapClips(page)
+  await setRippleInsert(page, true)
+  const before = (await listClipStartTimesOnTrack(page, trackId)).length
+  expect(await addClipFromMediaAt(page, mediaId, 5, trackId)).toBe(true)
+  expect((await listClipStartTimesOnTrack(page, trackId)).length).toBe(before + 1)
+
+  await page.evaluate(() => window.__FABLE_E2E__!.undo())
+  expect((await listClipStartTimesOnTrack(page, trackId)).length).toBe(before)
+  expect((await listClipStartTimesOnTrack(page, trackId)).sort((a, b) => a - b)).toEqual([0, 8])
 })
