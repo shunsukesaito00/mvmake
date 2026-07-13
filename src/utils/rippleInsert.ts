@@ -6,6 +6,11 @@ export function canRippleInsertAt(clips: Clip[], time: number): boolean {
   return !clips.some((c) => time > c.startTime && time < c.startTime + c.duration)
 }
 
+/** リップルインサートが有効か（マグネティック ON 時は常にギャップレス挿入） */
+export function isRippleInsertActive(magneticTimeline: boolean, rippleInsert: boolean): boolean {
+  return magneticTimeline || rippleInsert
+}
+
 export function prepareTrackClipsForInsert(
   clips: Clip[],
   newClip: Clip,

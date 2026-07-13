@@ -885,6 +885,20 @@ export async function setRippleInsert(page: import('@playwright/test').Page, val
   }, value)
 }
 
+export async function getMagneticTimeline(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getMagneticTimeline()
+  })
+}
+
+export async function setMagneticTimeline(page: import('@playwright/test').Page, value: boolean) {
+  await page.evaluate((enabled) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.setMagneticTimeline(enabled)
+  }, value)
+}
+
 export async function addClipFromMediaAt(
   page: import('@playwright/test').Page,
   mediaId: string,

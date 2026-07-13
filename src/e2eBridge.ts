@@ -301,6 +301,8 @@ declare global {
       getRippleDelete: () => boolean
       getRippleInsert: () => boolean
       setRippleInsert: (value: boolean) => void
+      getMagneticTimeline: () => boolean
+      setMagneticTimeline: (value: boolean) => void
       addClipFromMediaAt: (mediaId: string, trackId: string | undefined, startTime: number) => boolean
       getFirstMediaAssetId: () => string | null
       listClipStartTimesOnTrack: (trackId: string) => number[]
@@ -509,6 +511,8 @@ export function installE2eBridge(): void {
     getRippleDelete: () => useProjectStore.getState().rippleDelete,
     getRippleInsert: () => useProjectStore.getState().rippleInsert,
     setRippleInsert: (value) => useProjectStore.getState().setRippleInsert(value),
+    getMagneticTimeline: () => useProjectStore.getState().magneticTimeline,
+    setMagneticTimeline: (value) => useProjectStore.getState().setMagneticTimeline(value),
     addClipFromMediaAt: (mediaId, trackId, startTime) =>
       useProjectStore.getState().addClipFromMedia(mediaId, trackId, startTime),
     getFirstMediaAssetId: () => useProjectStore.getState().project.mediaAssets[0]?.id ?? null,

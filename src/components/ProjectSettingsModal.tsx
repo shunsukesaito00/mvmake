@@ -17,6 +17,8 @@ export function ProjectSettingsModal({ open, onClose }: ProjectSettingsModalProp
   const rippleDelete = useProjectStore((s) => s.rippleDelete)
   const setRippleDelete = useProjectStore((s) => s.setRippleDelete)
   const rippleInsert = useProjectStore((s) => s.rippleInsert)
+  const magneticTimeline = useProjectStore((s) => s.magneticTimeline)
+  const setMagneticTimeline = useProjectStore((s) => s.setMagneticTimeline)
   const setRippleInsert = useProjectStore((s) => s.setRippleInsert)
   const loopPlayback = useProjectStore((s) => s.loopPlayback)
   const setLoopPlayback = useProjectStore((s) => s.setLoopPlayback)
@@ -64,18 +66,29 @@ export function ProjectSettingsModal({ open, onClose }: ProjectSettingsModalProp
 
         <div className="space-y-3">
           <label className="flex items-center gap-2.5 text-sm text-text-secondary">
+            <input
+              type="checkbox"
+              checked={magneticTimeline}
+              onChange={(e) => setMagneticTimeline(e.target.checked)}
+              className="accent-accent"
+              data-testid="magnetic-timeline-toggle"
+            />
+            マグネティックタイムライン（ギャップレス挿入を既定 ON）
+          </label>
+          <label className="flex items-center gap-2.5 text-sm text-text-secondary">
             <input type="checkbox" checked={rippleDelete} onChange={(e) => setRippleDelete(e.target.checked)} className="accent-accent" />
             リップル編集（削除・トリム）
           </label>
-          <label className="flex items-center gap-2.5 text-sm text-text-secondary">
+          <label className={`flex items-center gap-2.5 text-sm ${magneticTimeline ? 'text-text-muted' : 'text-text-secondary'}`}>
             <input
               type="checkbox"
-              checked={rippleInsert}
+              checked={rippleInsert || magneticTimeline}
+              disabled={magneticTimeline}
               onChange={(e) => setRippleInsert(e.target.checked)}
               className="accent-accent"
               data-testid="ripple-insert-toggle"
             />
-            リップルインサート（メディア配置・ペースト）
+            リップルインサート（マグネティック OFF 時）
           </label>
           <label className="flex items-center gap-2.5 text-sm text-text-secondary">
             <input type="checkbox" checked={loopPlayback} onChange={(e) => setLoopPlayback(e.target.checked)} className="accent-accent" />

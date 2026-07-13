@@ -7,11 +7,15 @@ const TOOLS: Array<{ id: TimelineEditTool; label: string; shortcut: string; hint
   { id: 'slide', label: 'スライド', shortcut: 'U', hint: '隣接クリップ連動で編集点を移動' },
 ]
 
+import { isRippleInsertActive } from '../utils/rippleInsert'
+
 export function TimelineEditTools() {
   const timelineEditTool = useProjectStore((s) => s.timelineEditTool)
   const setTimelineEditTool = useProjectStore((s) => s.setTimelineEditTool)
   const rippleDelete = useProjectStore((s) => s.rippleDelete)
   const rippleInsert = useProjectStore((s) => s.rippleInsert)
+  const magneticTimeline = useProjectStore((s) => s.magneticTimeline)
+  const effectiveRippleInsert = isRippleInsertActive(magneticTimeline, rippleInsert)
 
   return (
     <div className="flex items-center gap-2 border-b border-border bg-surface-2 px-2 py-1.5">
@@ -49,13 +53,22 @@ export function TimelineEditTools() {
         リップル {rippleDelete ? 'ON' : 'OFF'}
       </span>
       <span
+        data-testid="magnetic-timeline-indicator"
+        className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${
+          magneticTimeline ? 'bg-accent/15 text-accent' : 'bg-surface-3 text-text-muted'
+        }`}
+        title="マグネティックタイムライン設定に連動"
+      >
+        磁気 {magneticTimeline ? 'ON' : 'OFF'}
+      </span>
+      <span
         data-testid="ripple-insert-indicator"
         className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${
-          rippleInsert ? 'bg-accent/15 text-accent' : 'bg-surface-3 text-text-muted'
+          effectiveRippleInsert ? 'bg-accent/15 text-accent' : 'bg-surface-3 text-text-muted'
         }`}
-        title="プロジェクト設定のリップルインサートに連動"
+        title="マグネティックまたはリップルインサート設定に連動"
       >
-        挿入 {rippleInsert ? 'ON' : 'OFF'}
+        挿入 {effectiveRippleInsert ? 'ON' : 'OFF'}
       </span>
       </div>
     </div>

@@ -80,7 +80,7 @@ import { splitSpeedKeyframes } from '../utils/speedKeyframesTimeline'
 import { getSourceOffsetAtLocalTime } from '../utils/speedKeyframes'
 import { canRemoveTrack, createTrack, findTrackInsertIndex } from '../utils/trackManagement'
 import { type PlaybackShuttleRate, cycleForwardShuttleRate } from '../utils/playbackShuttle'
-import { prepareTrackClipsForInsert } from '../utils/rippleInsert'
+import { isRippleInsertActive, prepareTrackClipsForInsert } from '../utils/rippleInsert'
 import {
   clipLocalTimeAt,
   findAdjacentKeyframeNavEntry,
@@ -170,6 +170,10 @@ function clearClipSelectionState() {
 export type TimelineEditTool = 'selection' | 'slip' | 'slide'
 export type ColorPreviewMode = 'normal' | 'beforeAfter'
 export type ColorScopeMode = 'waveform' | 'vector'
+
+function rippleInsertActive(state: { magneticTimeline: boolean; rippleInsert: boolean }): boolean {
+  return isRippleInsertActive(state.magneticTimeline, state.rippleInsert)
+}
 export type { SelectedNavKeyframe } from '../utils/keyframeNavigation'
 
 interface ProjectState {
@@ -191,6 +195,7 @@ interface ProjectState {
   colorClipboard: ClipColorSettings | null
   rippleDelete: boolean
   rippleInsert: boolean
+  magneticTimeline: boolean
   inPoint: number | null
   outPoint: number | null
   showSafeAreas: boolean
@@ -224,6 +229,7 @@ interface ProjectState {
   setProjectName: (name: string) => void
   setRippleDelete: (v: boolean) => void
   setRippleInsert: (v: boolean) => void
+  setMagneticTimeline: (v: boolean) => void
   setShowSafeAreas: (v: boolean) => void
   setLoopPlayback: (v: boolean) => void
   setShowPlayHint: (v: boolean) => void
@@ -390,6 +396,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   colorClipboard: null,
   rippleDelete: true,
   rippleInsert: false,
+  magneticTimeline: true,
   inPoint: null,
   outPoint: null,
   showSafeAreas: false,
@@ -462,6 +469,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setRestoreReady: (ready) => set({ restoreReady: ready }),
   setRippleDelete: (v) => set({ rippleDelete: v }),
   setRippleInsert: (v) => set({ rippleInsert: v }),
+  setMagneticTimeline: (v) => set((state) => ({
+    magneticTimeline: v,
+    rippleInsert: v ? true : state.rippleInsert,
+  })),
   setShowSafeAreas: (v) => set({ showSafeAreas: v }),
   setLoopPlayback: (v) => set({ loopPlayback: v }),
   setShowPlayHint: (v) => set({ showPlayHint: v }),
@@ -626,7 +637,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       targetTrack.clips,
       clip,
       clipStart,
-      get().rippleInsert,
+      rippleInsertActive(get()),
     )
 
     set((state) => ({
@@ -1036,7 +1047,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   pasteClip: () => {
-    const { clipboard, project, currentTime, rippleInsert } = get()
+    const { clipboard, project, currentTime } = get()
     if (!clipboard) return
 
     const track = project.tracks.find((t) => t.id === clipboard.trackId && !t.locked)
@@ -1048,7 +1059,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       id: createId(),
       startTime: currentTime,
     }
-    const updatedClips = prepareTrackClipsForInsert(track.clips, newClip, currentTime, rippleInsert)
+    const updatedClips = prepareTrackClipsForInsert(track.clips, newClip, currentTime, rippleInsertActive(get()))
 
     set((state) => ({
       project: {

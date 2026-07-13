@@ -540,6 +540,29 @@ describe('copy / paste', () => {
   })
 })
 
+describe('magnetic timeline', () => {
+  it('addClipFromMedia shifts subsequent clips when magnetic timeline is on by default', () => {
+    const asset = imageAsset('img-magnetic')
+    setProject(makeProject([videoClip('c1', 0, 5), videoClip('c2', 8, 5)], [asset]))
+    useProjectStore.setState({ magneticTimeline: true, rippleInsert: false })
+
+    const ok = useProjectStore.getState().addClipFromMedia(asset.id, TRACK_V1, 5)
+    expect(ok).toBe(true)
+    expect(getTrackClips(TRACK_V1).find((c) => c.id === 'c2')?.startTime).toBe(13)
+  })
+
+  it('addClipFromMedia keeps overlap resolution when magnetic and ripple insert are off', () => {
+    const asset = imageAsset('img-non-magnetic')
+    setProject(makeProject([videoClip('c1', 0, 5), videoClip('c2', 8, 5)], [asset]))
+    useProjectStore.setState({ magneticTimeline: false, rippleInsert: false })
+
+    useProjectStore.getState().addClipFromMedia(asset.id, TRACK_V1, 5)
+    const clips = getTrackClips(TRACK_V1)
+    expect(clips.find((c) => c.id === 'c2')?.startTime).toBe(8)
+    expect(clips.find((c) => c.mediaId === 'img-non-magnetic')?.startTime).toBeGreaterThan(8)
+  })
+})
+
 describe('ripple insert media', () => {
   it('addClipFromMedia shifts subsequent clips when ripple insert is on', () => {
     const asset = imageAsset('img-gap')

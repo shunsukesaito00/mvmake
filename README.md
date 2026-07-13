@@ -18,7 +18,7 @@
 ### タイムライン編集
 - マルチトラック（映像・テキスト・BGMを任意本数追加、レーン高さリサイズ）
 - クリップ移動・トリム・分割・複製・コピー&ペースト
-- リップル削除・リップルトリム・**リップルインサート**（設定 ON/OFF）、重なり防止、スナップ
+- リップル削除・リップルトリム・**マグネティックタイムライン**（ギャップレス挿入既定 ON）・**リップルインサート**（マグネティック OFF 時）、重なり防止、スナップ
 - トラックミュート/ロック・**追加/削除/名前変更**
 - **マルチクリップ選択**（Shift+クリック追加選択・Cmd+A トラック全選択・一括削除/複製/移動）
 - **編集ツールモード**（選択 / スリップ / スライドのツールバー切替・V/Y/U ショートカット）
@@ -84,7 +84,7 @@
 - テキスト背景・字幕帯（半透明背景・余白・角丸）
 - 章マーカー区間の部分書き出し（In/Out 連動）
 
-**現在のバージョン**: v3.1.0
+**現在のバージョン**: v3.2.0
 
 詳細な機能比較・ロードマップ（Phase A〜E 完了 / **Phase F v3.0+**）は [docs/FEATURE_COMPARISON.md](docs/FEATURE_COMPARISON.md) を参照。
 
@@ -118,7 +118,7 @@ npm run dev
 ```bash
 npm test          # ユニットテスト (Vitest)
 npm run test:e2e  # E2Eテスト (Playwright、初回は npx playwright install chromium が必要)。全量 1031 件 = basic 805 + editor 226
-npm run test:e2e:prod # 公開環境(GitHub Pages)に対するスモークE2E（basic 805 のみ。editor 227 はローカル/CI 全量）
+npm run test:e2e:prod # 公開環境(GitHub Pages)に対するスモークE2E（basic 805 のみ。editor 228 はローカル/CI 全量）
 npm run screenshot # README用スクリーンショット生成
 ```
 

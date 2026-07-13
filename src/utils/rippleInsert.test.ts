@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { VideoClip } from '../types/project'
 import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_TRANSFORM, DEFAULT_VISUAL_FADE } from '../types/project'
-import { canRippleInsertAt, prepareTrackClipsForInsert } from './rippleInsert'
+import { canRippleInsertAt, isRippleInsertActive, prepareTrackClipsForInsert } from './rippleInsert'
 
 function videoClip(id: string, startTime: number, duration: number): VideoClip {
   return {
@@ -43,5 +43,11 @@ describe('rippleInsert', () => {
     const result = prepareTrackClipsForInsert(existing, inserted, 5, false)
     expect(result.find((c) => c.id === 'new')?.startTime).toBeGreaterThan(8)
     expect(result.find((c) => c.id === 'b')?.startTime).toBe(8)
+  })
+
+  it('isRippleInsertActive is true when magnetic timeline is on', () => {
+    expect(isRippleInsertActive(true, false)).toBe(true)
+    expect(isRippleInsertActive(false, true)).toBe(true)
+    expect(isRippleInsertActive(false, false)).toBe(false)
   })
 })

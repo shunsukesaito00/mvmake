@@ -113,6 +113,7 @@ import {
   getIsPlaying,
   shuttleForward,
   setRippleInsert,
+  setMagneticTimeline,
   getFirstMediaAssetId,
   getTrackSummaries,
   getTrackCount,
@@ -20948,7 +20949,7 @@ async function seedRippleInsertGapClips(page: Page) {
 test('リップルインサート: ON でギャップ挿入時に後続クリップがシフトする', async ({ page }) => {
   await goOnboarded(page)
   const { mediaId, trackId } = await seedRippleInsertGapClips(page)
-  await setRippleInsert(page, true)
+  await expect(page.getByTestId('magnetic-timeline-indicator')).toHaveText('磁気 ON')
   await expect(page.getByTestId('ripple-insert-indicator')).toHaveText('挿入 ON')
 
   expect(await addClipFromMediaAt(page, mediaId, 5, trackId)).toBe(true)
@@ -20959,7 +20960,9 @@ test('リップルインサート: ON でギャップ挿入時に後続クリッ
 test('リップルインサート: OFF では従来どおり重なり回避で配置する', async ({ page }) => {
   await goOnboarded(page)
   const { mediaId, trackId } = await seedRippleInsertGapClips(page)
+  await setMagneticTimeline(page, false)
   await setRippleInsert(page, false)
+  await expect(page.getByTestId('ripple-insert-indicator')).toHaveText('挿入 OFF')
 
   expect(await addClipFromMediaAt(page, mediaId, 5, trackId)).toBe(true)
   const starts = (await listClipStartTimesOnTrack(page, trackId)).sort((a, b) => a - b)
@@ -20970,7 +20973,6 @@ test('リップルインサート: OFF では従来どおり重なり回避で�
 test('リップルインサート: 挿入操作を undo できる', async ({ page }) => {
   await goOnboarded(page)
   const { mediaId, trackId } = await seedRippleInsertGapClips(page)
-  await setRippleInsert(page, true)
   const before = (await listClipStartTimesOnTrack(page, trackId)).length
   expect(await addClipFromMediaAt(page, mediaId, 5, trackId)).toBe(true)
   expect((await listClipStartTimesOnTrack(page, trackId)).length).toBe(before + 1)
