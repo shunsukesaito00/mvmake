@@ -84,7 +84,7 @@
 - テキスト背景・字幕帯（半透明背景・余白・角丸）
 - 章マーカー区間の部分書き出し（In/Out 連動）
 
-**現在のバージョン**: v3.12.0
+**現在のバージョン**: v3.13.0
 
 詳細な機能比較・ロードマップ（Phase A〜E 完了 / **Phase F v3.0+**）は [docs/FEATURE_COMPARISON.md](docs/FEATURE_COMPARISON.md) を参照。
 

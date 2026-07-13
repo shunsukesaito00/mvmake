@@ -18,7 +18,7 @@ class AudioEngine {
   private trackAnalysers = new Map<string, AnalyserNode>()
   private sources = new Map<string, AudioBufferSourceNode>()
   private buffers = new Map<string, AudioBuffer>()
-  private startTime = 0
+  private contextPlayTime = 0
   private pausedAt = 0
   private playing = false
   private shuttleRate = 1
@@ -163,7 +163,7 @@ class AudioEngine {
     this.playing = true
     this.shuttleRate = shuttleRate
     this.pausedAt = fromTime
-    this.startTime = this.context!.currentTime - fromTime
+    this.contextPlayTime = this.context!.currentTime
     this.updateTrackGains(project)
 
     const duckingIntervals = getDuckingIntervals(project)
@@ -201,7 +201,16 @@ class AudioEngine {
 
   getCurrentTime(): number {
     if (!this.playing || !this.context) return this.pausedAt
-    return this.context.currentTime - this.startTime
+    const elapsed = this.context.currentTime - this.contextPlayTime
+    return this.pausedAt + elapsed * this.shuttleRate
+  }
+
+  isPlaying(): boolean {
+    return this.playing
+  }
+
+  getShuttleRate(): number {
+    return this.shuttleRate
   }
 
   dispose(): void {

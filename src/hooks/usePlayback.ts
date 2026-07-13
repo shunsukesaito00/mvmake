@@ -5,6 +5,13 @@ import { preloadMedia, syncVideosForPlayback, pauseAllVideos } from '../engine/c
 import { computeShuttleTimelineTime, isReverseShuttleRate, type PlaybackShuttleRate } from '../utils/playbackShuttle'
 import { shouldSyncPlaybackUi } from '../utils/playbackUiSync'
 import { setNativeVideoFrameCallback } from '../utils/nativeVideoPlayback'
+import {
+  resolveMasterPlaybackTime,
+  setPlaybackMasterClockMode,
+  shouldCorrectPlaybackDrift,
+  shouldUseAudioMasterClock,
+  computePlaybackDrift,
+} from '../utils/playbackMasterClock'
 
 export type PlaybackControls = {
   togglePlay: () => void
@@ -38,6 +45,7 @@ export function usePlayback(): PlaybackControls {
   const frameListenersRef = useRef(new Set<() => void>())
   const playbackTimeRef = useRef(0)
   const lastUiSyncMsRef = useRef(0)
+  const lastDriftCorrectionMsRef = useRef(0)
 
   useEffect(() => {
     projectRef.current = project
@@ -55,11 +63,6 @@ export function usePlayback(): PlaybackControls {
   const subscribeFrame = useCallback((listener: () => void) => {
     frameListenersRef.current.add(listener)
     return () => { frameListenersRef.current.delete(listener) }
-  }, [])
-
-  const getPlaybackTime = useCallback(() => {
-    if (playingRef.current) return playbackTimeRef.current
-    return useProjectStore.getState().currentTime
   }, [])
 
   const syncCurrentTimeToStore = useCallback((time: number, force = false) => {
@@ -81,13 +84,53 @@ export function usePlayback(): PlaybackControls {
     return computeShuttleTimelineTime(anchor.timelineTime, anchor.wallMs, anchor.rate)
   }, [])
 
+  const resolvePlaybackTime = useCallback(() => {
+    const wallTime = getAnchoredTime()
+    const { time, mode } = resolveMasterPlaybackTime({
+      playing: playingRef.current,
+      shuttleRate: shuttleRateRef.current,
+      audioTimelineTime: audioEngine.getCurrentTime(),
+      audioIsPlaying: audioEngine.isPlaying(),
+      wallTimelineTime: wallTime,
+    })
+    setPlaybackMasterClockMode(mode)
+
+    if (
+      mode === 'audio'
+      && shouldUseAudioMasterClock(true, shuttleRateRef.current)
+    ) {
+      const drift = computePlaybackDrift(time, wallTime)
+      const now = performance.now()
+      if (shouldCorrectPlaybackDrift(drift, lastDriftCorrectionMsRef.current, now)) {
+        lastDriftCorrectionMsRef.current = now
+        resetAnchor(time, shuttleRateRef.current)
+      }
+    }
+
+    playbackTimeRef.current = time
+    return time
+  }, [getAnchoredTime, resetAnchor])
+
+  const getPlaybackTime = useCallback(() => {
+    if (playingRef.current) return resolvePlaybackTime()
+    return useProjectStore.getState().currentTime
+  }, [resolvePlaybackTime])
+
   const startShuttlePlayback = useCallback((from: number, rate: PlaybackShuttleRate) => {
     resetAnchor(from, rate)
     lastUiSyncMsRef.current = 0
+    lastDriftCorrectionMsRef.current = 0
     if (isReverseShuttleRate(rate)) {
+      setPlaybackMasterClockMode('wall')
       audioEngine.pause(from)
     } else {
-      audioEngine.play(projectRef.current, from, rate)
+      setPlaybackMasterClockMode('audio')
+      void audioEngine.play(projectRef.current, from, rate).then(() => {
+        if (!playingRef.current) return
+        const audioTime = audioEngine.getCurrentTime()
+        resetAnchor(audioTime, rate)
+        playbackTimeRef.current = audioTime
+      })
     }
     syncVideosForPlayback(projectRef.current, from, true, rate)
   }, [resetAnchor])
@@ -100,6 +143,7 @@ export function usePlayback(): PlaybackControls {
     syncVideosForPlayback(projectRef.current, time, false, 1)
     resetAnchor(time, 1)
     playbackTimeRef.current = time
+    setPlaybackMasterClockMode('idle')
     setCurrentTime(time)
   }, [resetAnchor, setCurrentTime])
 
@@ -107,7 +151,7 @@ export function usePlayback(): PlaybackControls {
     if (!playingRef.current) return
 
     const { start, end } = getPlaybackRange()
-    const time = getAnchoredTime()
+    const time = resolvePlaybackTime()
 
     if (time >= end) {
       if (
@@ -129,7 +173,7 @@ export function usePlayback(): PlaybackControls {
       return
     }
 
-    if (time <= start) {
+    if (isReverseShuttleRate(shuttleRateRef.current) ? time <= start : time < start) {
       setIsPlaying(false)
       setPlaybackShuttleRate(1)
       stopPlayback(start)
@@ -142,7 +186,7 @@ export function usePlayback(): PlaybackControls {
     notifyFrame()
     if (!playingRef.current) return
     rafRef.current = requestAnimationFrame(tick)
-  }, [getPlaybackRange, getAnchoredTime, syncCurrentTimeToStore, setIsPlaying, setPlaybackShuttleRate, notifyFrame, stopPlayback, startShuttlePlayback])
+  }, [getPlaybackRange, resolvePlaybackTime, syncCurrentTimeToStore, setIsPlaying, setPlaybackShuttleRate, notifyFrame, stopPlayback, startShuttlePlayback])
 
   useEffect(() => {
     const now = useProjectStore.getState().currentTime

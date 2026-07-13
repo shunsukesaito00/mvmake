@@ -15,6 +15,7 @@ import {
   shouldRenderBeforeAfterPreview,
   shouldUseCssColorFallbackWhilePlaying,
 } from '../utils/playbackPreviewQuality'
+import { getPlaybackMasterClockMode } from '../utils/playbackMasterClock'
 
 export function PreviewPanel() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -180,6 +181,7 @@ export function PreviewPanel() {
 
   const stepFrame = (dir: -1 | 1) => seek(Math.max(0, Math.min(duration, currentTime + dir / fps)))
   const playbackPreviewMode = getPlaybackPreviewMode(isPlaying)
+  const playbackMasterClock = isPlaying ? getPlaybackMasterClockMode() : 'idle'
   const showBeforeAfterLabels = colorPreviewMode === 'beforeAfter' && !isPlaying
   const showPlaybackQualityNotice = isPlaying && (colorPreviewMode === 'beforeAfter' || showColorScope)
 
@@ -190,6 +192,7 @@ export function PreviewPanel() {
       data-preview-container
       data-native-video-playback={isPlaying && getActiveNativePlaybackClipId() ? 'true' : 'false'}
       data-playback-preview-mode={playbackPreviewMode}
+      data-playback-master-clock={playbackMasterClock}
     >
       <PanelHeader title="プレビュー" icon={<Icons.Film size={14} />}>
         <IconButton

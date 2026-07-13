@@ -1,4 +1,4 @@
-import { createChapterExportE2eProject, createChapterExportStressProject, getChapterExportStressProjectStats } from './engine/chapterExportStressProject'
+import { getPlaybackMasterClockMode } from './utils/playbackMasterClock'
 import { seedPhotoGuideSlideshowStress, type PhotoGuideSlideshowStressStats } from './utils/photoGuideStressSetup'
 import { seedMarkerEditStress, type MarkerEditStressStats } from './utils/markerStressSetup'
 import {
@@ -358,6 +358,7 @@ declare global {
       getPlaybackTime: () => number
       setPlaybackTime: (time: number) => void
       getPlaybackShuttleRate: () => number
+      getPlaybackMasterClockMode: () => 'audio' | 'wall' | 'idle'
       getIsPlaying: () => boolean
       shuttleForward: () => void
       shuttleReverse: () => void
@@ -640,6 +641,7 @@ export function installE2eBridge(): void {
     getPlaybackTime: () => useProjectStore.getState().currentTime,
     setPlaybackTime: (time) => useProjectStore.getState().setCurrentTime(time),
     getPlaybackShuttleRate: () => useProjectStore.getState().playbackShuttleRate,
+    getPlaybackMasterClockMode: () => getPlaybackMasterClockMode(),
     getIsPlaying: () => useProjectStore.getState().isPlaying,
     shuttleForward: () => useProjectStore.getState().shuttleForward(),
     shuttleReverse: () => useProjectStore.getState().shuttleReverse(),

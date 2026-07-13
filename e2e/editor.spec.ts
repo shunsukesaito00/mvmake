@@ -2036,6 +2036,22 @@ test('プレビュー: 再生中は簡易プレビューモードになる（Pha
   await expect(page.getByText('Before', { exact: true })).toBeVisible()
 })
 
+test('プレビュー: 順方向再生で音画マスタークロックが audio になる（Phase G G21）', async ({ page }) => {
+  const webm = await makeTinyWebmVideo(page)
+  await page.getByTitle('メディア').click()
+  await page.setInputFiles('input[accept*="video"]', { name: 'master-clock.webm', mimeType: 'video/webm', buffer: webm })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await expect(page.locator('footer').getByText('master-clock.webm')).toBeVisible()
+
+  await page.keyboard.press('Space')
+  await expect.poll(async () => page.locator('[data-preview-container]').getAttribute('data-playback-master-clock'), { timeout: 5000 }).toBe('audio')
+
+  await page.keyboard.press('k')
+  await expect(page.locator('[data-preview-container]')).toHaveAttribute('data-playback-master-clock', 'idle')
+})
+
 test('婚礼ゴールデンパス: テンプレ→写真→動画→テロップ→ルック→トランジション→章書き出し→再生停止', async ({ page }) => {
   test.setTimeout(180_000)
 
