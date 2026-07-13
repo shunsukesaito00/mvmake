@@ -1,8 +1,25 @@
-# 本番スモーク E2E 監査（v3.0.1）
+# 本番スモーク E2E 監査（v3.0.2）
 
-最終更新: 2026-07-13（v3.0.1 / Phase F F1 第2弾 — JKLシャトル・リップルインサート 5 件を basic へ選別移植）
+最終更新: 2026-07-13（v3.0.2 / Phase F F1 第3弾 — トラック管理 4 件を basic へ選別移植）
 
-> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 786 件**を実行。Phase E 操作性のうち **editor 専用 226 件**はローカル/CI 全量。v3.0.0 で E1〜E3（4 件）、**v3.0.1 で E7・E8（5 件）**を本番スモークへ移植済み。残りの Phase E 回帰は Phase F F1 継続で選別移植予定。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 790 件**を実行。Phase E 操作性のうち **editor 専用 226 件**はローカル/CI 全量。v3.0.0〜v3.0.2 で E1〜E3・E6・E7・E8（計 13 件）を本番スモークへ移植済み。残りの Phase E 回帰は Phase F F1 継続で選別移植予定。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+
+## v3.0.2 拡充（786→790）
+
+| 検証項目 | 結果 |
+|---------|------|
+| `e2e/basic.spec.ts` 件数 | **790**（+4） |
+| 追加シナリオ | Phase F F1 第3弾: トラック管理 4 件（`editor.spec.ts` から選別移植） |
+| Playwright タイトル重複 | **0** |
+
+### 追加シナリオ（v3.0.2）
+
+1. トラック管理: 映像トラックを追加して空トラックを削除できる
+2. トラック管理: クリップがあるトラックは削除できない
+3. トラック管理: トラック名を変更できる
+4. トラック管理: レーン高さをリサイズできる
+
+選定根拠: Phase E E6（トラック管理）は婚礼本編のマルチトラック編集で日常的に使う操作。本番デプロイ後もトラック追加・削除・リネーム・レーン高さの回帰を担保するため `basic.spec.ts` へ移植。
 
 ## v3.0.1 拡充（781→786）
 
@@ -1504,8 +1521,8 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 786 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 786`
+- `e2e/basic.spec.ts` — 790 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 790`
 - `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2664_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）

@@ -115,6 +115,9 @@ import {
   setRippleInsert,
   getFirstMediaAssetId,
   getTrackSummaries,
+  getTrackCount,
+  removeTrack,
+  getTrackName,
   addClipFromMediaAt,
   listClipStartTimesOnTrack,
 } from './helpers'
@@ -20949,4 +20952,61 @@ test('リップルインサート: 挿入操作を undo できる', async ({ pag
   await page.evaluate(() => window.__FABLE_E2E__!.undo())
   expect((await listClipStartTimesOnTrack(page, trackId)).length).toBe(before)
   expect((await listClipStartTimesOnTrack(page, trackId)).sort((a, b) => a - b)).toEqual([0, 8])
+})
+
+test('トラック管理: 映像トラックを追加して空トラックを削除できる', async ({ page }) => {
+  await goOnboarded(page)
+  const beforeSummaries = await getTrackSummaries(page)
+  const before = beforeSummaries.length
+  await page.getByTestId('timeline-add-track-menu').click()
+  await page.getByTestId('timeline-add-track-video').click()
+  const afterSummaries = await getTrackSummaries(page)
+  expect(afterSummaries.length).toBe(before + 1)
+
+  const newTrack = afterSummaries.find((t) => !beforeSummaries.some((b) => b.id === t.id))
+  expect(newTrack?.clipCount).toBe(0)
+  await page.getByTestId(`track-delete-${newTrack!.id}`).click()
+  expect(await getTrackCount(page)).toBe(before)
+})
+
+test('トラック管理: クリップがあるトラックは削除できない', async ({ page }) => {
+  await goOnboarded(page)
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64',
+  )
+  await page.setInputFiles('input[accept*="image"]', { name: 'trk-block.png', mimeType: 'image/png', buffer: png })
+  await page.getByTitle('クリックで再生位置に追加').click()
+
+  const summaries = await getTrackSummaries(page)
+  const withClip = summaries.find((t) => t.clipCount > 0)
+  expect(withClip).toBeTruthy()
+  expect(await removeTrack(page, withClip!.id)).toBe(false)
+  await expect(page.getByTestId(`track-delete-${withClip!.id}`)).toHaveCount(0)
+})
+
+test('トラック管理: トラック名を変更できる', async ({ page }) => {
+  await goOnboarded(page)
+  const trackId = (await getTrackSummaries(page)).find((t) => t.type === 'text')!.id
+  await page.getByTestId(`track-header-${trackId}`).locator('span').dblclick()
+  const input = page.getByTestId(`track-rename-input-${trackId}`)
+  await input.fill('ナレーション')
+  await input.press('Enter')
+  expect(await getTrackName(page, trackId)).toBe('ナレーション')
+})
+
+test('トラック管理: レーン高さをリサイズできる', async ({ page }) => {
+  await goOnboarded(page)
+  const trackId = (await getTrackSummaries(page))[0].id
+  const row = page.getByTestId(`track-row-${trackId}`)
+  const before = await row.evaluate((el) => el.getBoundingClientRect().height)
+  const handle = page.getByTestId(`track-resize-handle-${trackId}`)
+  const box = await handle.boundingBox()
+  expect(box).toBeTruthy()
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + 24)
+  await page.mouse.up()
+  const after = await row.evaluate((el) => el.getBoundingClientRect().height)
+  expect(after).toBeGreaterThan(before + 10)
 })
