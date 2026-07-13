@@ -13,7 +13,7 @@ import {
   getPlaybackPreviewMode,
   shouldCaptureColorScope,
   shouldRenderBeforeAfterPreview,
-  useCssColorFallbackWhilePlaying,
+  shouldUseCssColorFallbackWhilePlaying,
 } from '../utils/playbackPreviewQuality'
 
 export function PreviewPanel() {
@@ -60,7 +60,7 @@ export function PreviewPanel() {
     if (!ctx) return
     if (!playing) await seekVideosToTime(project, time)
 
-    const cssColorFallback = useCssColorFallbackWhilePlaying(playing)
+    const cssColorFallback = shouldUseCssColorFallbackWhilePlaying(playing)
     const nativePlaybackClipId = playing ? getActiveNativePlaybackClipId() : null
     const renderOptions = { showSafeAreas, playing, nativePlaybackClipId, cssColorFallback }
 

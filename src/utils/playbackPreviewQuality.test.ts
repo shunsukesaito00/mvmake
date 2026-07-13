@@ -9,13 +9,13 @@ import {
   shouldScrollTimelineDuringPlayback,
   shouldUpdatePlaybackScope,
   shouldUpdatePlaybackVu,
-  useCssColorFallbackWhilePlaying,
+  shouldUseCssColorFallbackWhilePlaying,
 } from './playbackPreviewQuality'
 
 describe('playbackPreviewQuality', () => {
   it('再生中は CSS フォールバックと lightweight モード', () => {
-    expect(useCssColorFallbackWhilePlaying(true)).toBe(true)
-    expect(useCssColorFallbackWhilePlaying(false)).toBe(false)
+    expect(shouldUseCssColorFallbackWhilePlaying(true)).toBe(true)
+    expect(shouldUseCssColorFallbackWhilePlaying(false)).toBe(false)
     expect(getPlaybackPreviewMode(true)).toBe('lightweight')
     expect(getPlaybackPreviewMode(false)).toBe('full')
   })

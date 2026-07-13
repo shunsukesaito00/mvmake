@@ -22,7 +22,7 @@ export function shouldUpdatePlaybackVu(lastUpdateMs: number, nowMs: number): boo
 }
 
 /** 再生中はピクセルグレード/LUT を避け CSS filter のみ使う */
-export function useCssColorFallbackWhilePlaying(playing: boolean): boolean {
+export function shouldUseCssColorFallbackWhilePlaying(playing: boolean): boolean {
   return playing
 }
 
