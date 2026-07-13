@@ -8,6 +8,12 @@ import { Modal, Btn, ProgressBar } from './ui'
 import { Icons } from './icons'
 import type { ExportPreset, ExportResolution } from '../types/exportPreset'
 import { deleteExportPreset, importExportPresets, loadExportPresets, saveExportPreset } from '../persistence/exportPresets'
+import {
+  getChapterExportContinueOnErrorHint,
+  getChapterExportContinueOnErrorLabel,
+  loadChapterExportContinueOnError,
+  saveChapterExportContinueOnError,
+} from '../persistence/chapterExportPrefs'
 import { downloadBlob } from '../persistence/projectFile'
 import { buildExportPreset, formatExportPresetSummary } from '../utils/exportPresetUtils'
 import {
@@ -86,6 +92,7 @@ export function ExportButton() {
   const [presets, setPresets] = useState<ExportPreset[]>([])
   const [chapterQueue, setChapterQueue] = useState<ChapterExportQueue | null>(null)
   const [retryableJob, setRetryableJob] = useState<ExportJobSnapshot | null>(null)
+  const [continueOnErrorPref, setContinueOnErrorPref] = useState(() => loadChapterExportContinueOnError())
   const abortRef = useRef<AbortController | null>(null)
   const exportStartedAtRef = useRef<number | null>(null)
   const presetImportRef = useRef<HTMLInputElement>(null)
@@ -154,7 +161,10 @@ export function ExportButton() {
   }, [showDialog, setShowExportHint])
 
   useEffect(() => {
-    if (showDialog) setPresets(loadExportPresets())
+    if (showDialog) {
+      setPresets(loadExportPresets())
+      setContinueOnErrorPref(loadChapterExportContinueOnError())
+    }
   }, [showDialog])
 
   useEffect(() => {
@@ -464,7 +474,12 @@ export function ExportButton() {
   }
 
   const handleBatchChapterExport = async () => {
-    await runBatchChapterExport()
+    await runBatchChapterExport(undefined, { continueOnError: continueOnErrorPref })
+  }
+
+  const handleContinueOnErrorPrefChange = (enabled: boolean) => {
+    setContinueOnErrorPref(enabled)
+    saveChapterExportContinueOnError(enabled)
   }
 
   const handleExport = async (
@@ -834,6 +849,26 @@ export function ExportButton() {
                 <p className="mt-2 text-[10px] text-text-muted">
                   {formatBatchExportSummary(markerChapters.length)}
                 </p>
+                <label
+                  data-testid="export-continue-on-error-toggle"
+                  className="mt-2 flex cursor-pointer items-start gap-2 rounded-xl bg-surface-3 px-3 py-2.5 ring-1 ring-border"
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={continueOnErrorPref}
+                    onChange={(e) => handleContinueOnErrorPrefChange(e.target.checked)}
+                    aria-label={getChapterExportContinueOnErrorLabel()}
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-xs font-medium text-text-primary">
+                      {getChapterExportContinueOnErrorLabel()}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] leading-relaxed text-text-muted">
+                      {getChapterExportContinueOnErrorHint()}
+                    </span>
+                  </span>
+                </label>
                 <Btn
                   variant="accent"
                   className="mt-2 w-full text-xs"
