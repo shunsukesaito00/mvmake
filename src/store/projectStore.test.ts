@@ -444,9 +444,11 @@ describe('color paste', () => {
 })
 
 describe('speed audio link', () => {
-  it('normalizeProject defaults speedAudioLinked to true', () => {
+  it('normalizeProject defaults speedAudioLinked to true and speedPreservePitch to false', () => {
     setProject(normalizeProject(makeProject([videoClip('c1', 0, 4)])))
-    expect((getTrackClips(TRACK_V1)[0] as VideoClip).speedAudioLinked).toBe(true)
+    const clip = getTrackClips(TRACK_V1)[0] as VideoClip
+    expect(clip.speedAudioLinked).toBe(true)
+    expect(clip.speedPreservePitch).toBe(false)
   })
 })
 

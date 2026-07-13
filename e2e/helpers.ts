@@ -543,6 +543,27 @@ export async function setSpeedAudioLinkedById(page: import('@playwright/test').P
   }, { id: clipId, value: linked })
 }
 
+export async function setSpeedPreservePitchById(page: import('@playwright/test').Page, clipId: string, preserve: boolean) {
+  return page.evaluate(({ id, value }) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.setSpeedPreservePitchById(id, value)
+  }, { id: clipId, value: preserve })
+}
+
+export async function getVideoAudioPlaybackModeForClip(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getVideoAudioPlaybackModeForClip(id)
+  }, clipId)
+}
+
+export async function previewExportPlaybackModeParity(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.previewExportPlaybackModeParity(id)
+  }, clipId)
+}
+
 export async function getVideoAudioSpeedScheduleForClip(
   page: import('@playwright/test').Page,
   clipId: string,

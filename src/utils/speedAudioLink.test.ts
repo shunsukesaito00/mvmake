@@ -3,9 +3,12 @@ import type { VideoClip } from '../types/project'
 import { DEFAULT_AUDIO, DEFAULT_COLOR, DEFAULT_CROP, DEFAULT_TRANSFORM } from '../types/project'
 import {
   getConstantVideoAudioPlaybackRate,
+  getVideoAudioPlaybackMode,
   isSpeedAudioLinked,
+  isSpeedPreservePitch,
   resolveVideoAudioSpeedSchedule,
   shouldScheduleVideoSpeedAutomation,
+  shouldUsePitchPreservedStretch,
 } from './speedAudioLink'
 
 const baseVideo: VideoClip = {
@@ -72,5 +75,17 @@ describe('speedAudioLink', () => {
 
   it('getConstantVideoAudioPlaybackRate returns 1x when unlinked', () => {
     expect(getConstantVideoAudioPlaybackRate({ ...baseVideo, speed: 0.5, speedAudioLinked: false }, 2)).toBe(2)
+  })
+
+  it('pitch preserve uses stretch playback mode when linked', () => {
+    const clip: VideoClip = {
+      ...baseVideo,
+      speedPreservePitch: true,
+      speedKeyframes: [{ id: '1', time: 0, speed: 0.5 }],
+    }
+    expect(shouldUsePitchPreservedStretch(clip)).toBe(true)
+    expect(getVideoAudioPlaybackMode(clip)).toBe('stretch')
+    expect(shouldScheduleVideoSpeedAutomation(clip)).toBe(false)
+    expect(isSpeedPreservePitch(clip)).toBe(true)
   })
 })

@@ -139,11 +139,14 @@ import {
   type ColorPasteStressStats,
 } from './utils/colorPasteStressSetup'
 import {
+  getVideoAudioPlaybackModeForClip,
   getVideoAudioSpeedScheduleForClip,
   isClipSpeedAudioLinked,
+  previewExportPlaybackModeParity,
   previewExportScheduleParity,
   seedSpeedAudioLinkStress,
   setSpeedAudioLinkedById,
+  setSpeedPreservePitchById,
   type SpeedAudioLinkStressStats,
 } from './utils/speedAudioLinkStressSetup'
 import {
@@ -266,8 +269,11 @@ declare global {
       loadSpeedAudioLinkStress: () => SpeedAudioLinkStressStats
       isClipSpeedAudioLinked: (clipId: string) => boolean
       setSpeedAudioLinkedById: (clipId: string, linked: boolean) => boolean
+      setSpeedPreservePitchById: (clipId: string, preserve: boolean) => boolean
+      getVideoAudioPlaybackModeForClip: (clipId: string) => string | null
       getVideoAudioSpeedScheduleForClip: (clipId: string, localStart: number, localEnd: number) => import('./utils/speedAudioLink').VideoAudioSpeedSchedule | null
       previewExportScheduleParity: (clipId: string, localStart: number, localEnd: number) => boolean
+      previewExportPlaybackModeParity: (clipId: string) => boolean
       loadToneCurveStress: () => ToneCurveStressStats
       getClipColorMidtones: (clipId: string) => number
       getClipPixelGradeSample: (clipId: string, gray?: number) => { r: number; g: number; b: number }
@@ -457,12 +463,15 @@ export function installE2eBridge(): void {
     loadSpeedAudioLinkStress: () => seedSpeedAudioLinkStress(),
     isClipSpeedAudioLinked: (clipId) => isClipSpeedAudioLinked(clipId),
     setSpeedAudioLinkedById: (clipId, linked) => setSpeedAudioLinkedById(clipId, linked),
+    setSpeedPreservePitchById: (clipId, preserve) => setSpeedPreservePitchById(clipId, preserve),
+    getVideoAudioPlaybackModeForClip: (clipId) => getVideoAudioPlaybackModeForClip(clipId),
     getVideoAudioSpeedScheduleForClip: (clipId, localStart, localEnd) => (
       getVideoAudioSpeedScheduleForClip(clipId, localStart, localEnd)
     ),
     previewExportScheduleParity: (clipId, localStart, localEnd) => (
       previewExportScheduleParity(clipId, localStart, localEnd)
     ),
+    previewExportPlaybackModeParity: (clipId) => previewExportPlaybackModeParity(clipId),
     loadToneCurveStress: () => seedToneCurveStress(),
     getClipColorMidtones: (clipId) => getClipColor(clipId).midtones,
     getClipPixelGradeSample: (clipId, gray) => getClipPixelGradeSample(clipId, gray),

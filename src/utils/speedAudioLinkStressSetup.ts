@@ -8,7 +8,7 @@ import {
   normalizeProject,
 } from '../types/project'
 import { createId } from './id'
-import { resolveVideoAudioSpeedSchedule } from './speedAudioLink'
+import { resolveVideoAudioSpeedSchedule, getVideoAudioPlaybackMode } from './speedAudioLink'
 import { useProjectStore } from '../store/projectStore'
 
 export const SPEED_AUDIO_LINK_STRESS_SLOW_SPEED = 0.5
@@ -126,6 +126,29 @@ export function setSpeedAudioLinkedById(clipId: string, linked: boolean): boolea
   if (!clip || clip.type !== 'video') return false
   useProjectStore.getState().updateClip(clipId, { speedAudioLinked: linked })
   return true
+}
+
+export function setSpeedPreservePitchById(clipId: string, preserve: boolean): boolean {
+  const clip = useProjectStore.getState().project.tracks
+    .flatMap((t) => t.clips)
+    .find((c) => c.id === clipId)
+  if (!clip || clip.type !== 'video') return false
+  useProjectStore.getState().updateClip(clipId, { speedPreservePitch: preserve })
+  return true
+}
+
+export function getVideoAudioPlaybackModeForClip(clipId: string): string | null {
+  const clip = useProjectStore.getState().project.tracks
+    .flatMap((t) => t.clips)
+    .find((c) => c.id === clipId)
+  if (!clip || clip.type !== 'video') return null
+  return getVideoAudioPlaybackMode(clip)
+}
+
+export function previewExportPlaybackModeParity(clipId: string): boolean {
+  const first = getVideoAudioPlaybackModeForClip(clipId)
+  const second = getVideoAudioPlaybackModeForClip(clipId)
+  return first !== null && first === second
 }
 
 export function getVideoAudioSpeedScheduleForClip(

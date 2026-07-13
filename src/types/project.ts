@@ -352,6 +352,8 @@ export interface VideoClip extends BaseClip, ClipLutSettings {
   audioLinked?: boolean
   /** false のとき内蔵音声は速度 KF/clip.speed の影響を受けず 1x で再生 */
   speedAudioLinked?: boolean
+  /** true のとき連動再生でピッチ維持タイムストレッチ（Web Audio 線形補間） */
+  speedPreservePitch?: boolean
 }
 
 export interface ImageClip extends BaseClip, ClipLutSettings {
@@ -1737,6 +1739,7 @@ function normalizeClip(clip: Clip): Clip {
       fadeOut: clip.fadeOut ?? DEFAULT_VISUAL_FADE.fadeOut,
       audioLinked: clip.audioLinked ?? true,
       speedAudioLinked: clip.speedAudioLinked ?? true,
+      speedPreservePitch: clip.speedPreservePitch ?? false,
     }
   }
   if (clip.type === 'image') {

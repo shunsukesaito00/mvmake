@@ -3,7 +3,7 @@ import { getAudioClipsFromProject, getDuckingIntervals, getTrackPlaybackGain } f
 import { scheduleVolumeAutomation } from '../utils/volumeKeyframes'
 import { scheduleSpeedAutomation } from '../utils/speedKeyframes'
 import {
-  getConstantVideoAudioPlaybackRate,
+  prepareVideoAudioPlayback,
   resolveVideoAudioSpeedSchedule,
   shouldScheduleVideoSpeedAutomation,
 } from '../utils/speedAudioLink'
@@ -102,8 +102,6 @@ class AudioEngine {
     if (fromTime >= clipEnd) return
 
     const source = this.context!.createBufferSource()
-    source.buffer = buffer
-
     const clipGain = this.context!.createGain()
     const destination = this.getTrackBus(trackId)
 
@@ -112,20 +110,28 @@ class AudioEngine {
     const schedule = videoClip
       ? resolveVideoAudioSpeedSchedule(videoClip, localOffset, clip.duration)
       : null
-    const offset = isVideo
-      ? schedule!.sourceStart
-      : clip.sourceStart + localOffset * speed
     const when = this.context!.currentTime + Math.max(0, clip.startTime - fromTime)
     const timelineDuration = schedule?.timelineDuration ?? (clip.duration - localOffset)
-    const bufferDuration = schedule?.bufferDuration ?? timelineDuration * speed
 
-    if (isVideo && videoClip) {
-      if (shouldScheduleVideoSpeedAutomation(videoClip)) {
+    let playbackBuffer = buffer
+    let offset = isVideo
+      ? schedule!.sourceStart
+      : clip.sourceStart + localOffset * speed
+    let playDuration = schedule?.bufferDuration ?? timelineDuration * speed
+
+    if (isVideo && videoClip && schedule) {
+      const prepared = prepareVideoAudioPlayback(buffer, videoClip, schedule, this.shuttleRate)
+      playbackBuffer = prepared.buffer
+      offset = prepared.offset
+      playDuration = prepared.duration
+      source.buffer = playbackBuffer
+      if (prepared.mode === 'rate' && shouldScheduleVideoSpeedAutomation(videoClip)) {
         scheduleSpeedAutomation(source.playbackRate, when, localOffset, timelineDuration, videoClip, this.shuttleRate)
       } else {
-        source.playbackRate.value = getConstantVideoAudioPlaybackRate(videoClip, this.shuttleRate)
+        source.playbackRate.value = prepared.playbackRate
       }
     } else {
+      source.buffer = playbackBuffer
       source.playbackRate.value = speed * this.shuttleRate
     }
 
@@ -147,7 +153,7 @@ class AudioEngine {
       clipGain.connect(destination)
     }
 
-    source.start(when, offset, bufferDuration)
+    source.start(when, offset, playDuration)
     this.sources.set(clip.id, source)
   }
 
@@ -231,7 +237,6 @@ export async function mixAudioOffline(project: Project, duration: number, sample
       const arrayBuffer = await asset.blob.arrayBuffer()
       const buffer = await offline.decodeAudioData(arrayBuffer.slice(0))
       const source = offline.createBufferSource()
-      source.buffer = buffer
 
       const isVideoClip = isVideo
       const videoClip = isVideoClip ? (clip as VideoClip) : null
@@ -247,13 +252,21 @@ export async function mixAudioOffline(project: Project, duration: number, sample
       const when = clip.startTime
       scheduleVolumeAutomation(gain.gain, when, 0, clip.duration, clip.duration, audio)
 
-      if (isVideoClip && videoClip) {
-        if (shouldScheduleVideoSpeedAutomation(videoClip)) {
+      let offset = schedule?.sourceStart ?? clip.sourceStart
+      let playDuration = schedule?.bufferDuration ?? clip.duration * speed
+
+      if (isVideoClip && videoClip && schedule) {
+        const prepared = prepareVideoAudioPlayback(buffer, videoClip, schedule)
+        source.buffer = prepared.buffer
+        offset = prepared.offset
+        playDuration = prepared.duration
+        if (prepared.mode === 'rate' && shouldScheduleVideoSpeedAutomation(videoClip)) {
           scheduleSpeedAutomation(source.playbackRate, when, 0, clip.duration, videoClip)
         } else {
-          source.playbackRate.value = getConstantVideoAudioPlaybackRate(videoClip)
+          source.playbackRate.value = prepared.playbackRate
         }
       } else {
+        source.buffer = buffer
         source.playbackRate.value = speed
       }
 
@@ -280,8 +293,8 @@ export async function mixAudioOffline(project: Project, duration: number, sample
         gain.connect(destination)
       }
 
-      const bufferDuration = schedule?.bufferDuration ?? clip.duration * speed
-      const sourceStart = schedule?.sourceStart ?? clip.sourceStart
+      const bufferDuration = playDuration
+      const sourceStart = offset
 
       source.start(when, sourceStart, bufferDuration)
     } catch {
