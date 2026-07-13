@@ -26,6 +26,7 @@ import { applyCompositorColorStackToImageData, needsCompositorPixelGrade } from 
 import { getAdjustmentLutForVisualTrack, resolveClipLut } from '../utils/lutResolve'
 import type { ResolvedLut } from '../utils/lutResolve'
 import { easeSmoothstep } from '../utils/transitions'
+import { seekVideoElement, VIDEO_SEEK_TOLERANCE_SEC } from '../utils/videoSeek'
 
 type VisualTransformClip = VideoClip | ImageClip | TextClip
 
@@ -942,17 +943,8 @@ export async function seekVideosToTime(project: Project, time: number): Promise<
       const video = getVideoElement(asset)
       const localTime = time - clip.startTime
       const sourceTime = getVideoSourceTime(clip, localTime)
-      if (Math.abs(video.currentTime - sourceTime) > 0.03) {
-        video.currentTime = sourceTime
-        promises.push(
-          new Promise((resolve) => {
-            const onSeeked = () => {
-              video.removeEventListener('seeked', onSeeked)
-              resolve()
-            }
-            video.addEventListener('seeked', onSeeked)
-          }),
-        )
+      if (Math.abs(video.currentTime - sourceTime) > VIDEO_SEEK_TOLERANCE_SEC) {
+        promises.push(seekVideoElement(video, sourceTime))
       }
     }
   }

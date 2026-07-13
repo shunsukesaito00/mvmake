@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 async function addOpeningText(page: import('@playwright/test').Page) {
-  await page.getByTitle('テキスト').click()
+  await page.locator('button[title="テキスト"]').click()
   await page.getByRole('button', { name: /Opening/ }).first().click()
   await expect(page.locator('footer').getByText('Opening')).toBeVisible()
 }
@@ -2594,6 +2594,28 @@ test('メディア: 大量インポートで高速インポート経路を使う
   await page.keyboard.press('?')
   await expect(page.getByRole('dialog', { name: 'ヘルプ' })).toBeVisible()
   await page.keyboard.press('Escape')
+})
+
+test('プレビュー: 再生中に再生ヘッドが進む（Phase G）', async ({ page }) => {
+  await addOpeningText(page)
+  const transport = page.locator('main input[type="range"]').first()
+  const before = parseFloat(await transport.inputValue())
+  await page.keyboard.press('Space')
+  await expect.poll(async () => parseFloat(await transport.inputValue()), { timeout: 5000 }).toBeGreaterThan(before + 0.05)
+  await page.keyboard.press('k')
+  await expect.poll(async () => getIsPlaying(page)).toBe(false)
+})
+
+test('書き出し: プリフライト通過後に進捗表示が出る', async ({ page }) => {
+  const hasEncoders = await checkEncodersSupported(page)
+  test.skip(!hasEncoders, 'H.264/AAC エンコーダ非対応環境のためスキップ')
+
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '1080p で書き出し' }).click()
+  await expect(page.getByText(/% 完了/)).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: 'キャンセル' }).click()
+  await expect(page.getByText('書き出しをキャンセルしました')).toBeVisible()
 })
 
 test('自動保存: 編集後にインジケータが表示される', async ({ page }) => {

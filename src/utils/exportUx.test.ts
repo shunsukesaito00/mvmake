@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ChapterBatchExportError } from './chapterBatchExport'
+import { FontLoadError } from './googleFonts'
 import {
   estimateExportEta,
   formatExportDuration,
@@ -54,6 +55,13 @@ describe('formatExportError', () => {
     expect(result.title).toBe('一括書き出しに失敗しました')
     expect(result.detail).toContain('新郎プロフィール')
     expect(result.detail).toContain('2/5章目')
+  })
+
+  it('FontLoadError にネットワーク案内を付与する', () => {
+    const result = formatExportError(new FontLoadError(['Noto Sans JP']))
+    expect(result.title).toBe('書き出しに失敗しました')
+    expect(result.detail).toContain('インターネット接続')
+    expect(result.detail).toContain('Noto Sans JP')
   })
 })
 

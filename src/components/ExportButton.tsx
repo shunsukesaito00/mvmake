@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { exportProject, isWebCodecsSupported, QUALITY_PRESETS, type ExportQuality } from '../engine/exporter'
+import { assertExportEncoderSupport } from '../utils/exportPreflight'
 import { useToastStore } from '../store/toastStore'
 import { Modal, Btn, ProgressBar } from './ui'
 import { Icons } from './icons'
@@ -278,6 +279,7 @@ export function ExportButton() {
 
     let exportError: unknown = null
     try {
+      await assertExportEncoderSupport({ width, height, fps: currentProject.fps, quality: exportQuality })
       const blob = await exportProject(exportProject_, exportParams.duration, setExportProgress, {
         signal: controller.signal,
         startTime: exportParams.startTime,
@@ -325,6 +327,7 @@ export function ExportButton() {
 
     let exportError: unknown = null
     try {
+      await assertExportEncoderSupport({ width, height, fps: project.fps, quality })
       const zipBlob = await exportAllChaptersToZip(
         async (entry, onChapterProgress) => {
           setBatchExportLabel(`章「${entry.label}」を書き出し中…`)

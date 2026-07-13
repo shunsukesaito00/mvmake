@@ -38,11 +38,14 @@ export function PreviewPanel() {
   const setShowSafeAreas = useProjectStore((s) => s.setShowSafeAreas)
   const getProjectDuration = useProjectStore((s) => s.getProjectDuration)
 
-  const { togglePlay, seek, subscribeFrame } = usePlaybackControls()
+  const { togglePlay, seek, subscribeFrame, getPlaybackTime } = usePlaybackControls()
   const duration = getProjectDuration()
   const fps = project.fps
 
-  const drawAtTime = useCallback(async (time: number, playing: boolean) => {
+  const pendingDrawRef = useRef<{ time: number; playing: boolean } | null>(null)
+  const drawInFlightRef = useRef(false)
+
+  const renderAtTime = useCallback(async (time: number, playing: boolean) => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -87,14 +90,35 @@ export function PreviewPanel() {
     }
   }, [project, showSafeAreas, colorPreviewMode, showColorScope])
 
+  const flushDraw = useCallback(async () => {
+    if (drawInFlightRef.current) return
+    drawInFlightRef.current = true
+    try {
+      while (pendingDrawRef.current) {
+        const { time, playing } = pendingDrawRef.current
+        pendingDrawRef.current = null
+        await renderAtTime(time, playing)
+      }
+    } finally {
+      drawInFlightRef.current = false
+      if (pendingDrawRef.current) void flushDraw()
+    }
+  }, [renderAtTime])
+
+  const scheduleDraw = useCallback((time: number, playing: boolean) => {
+    pendingDrawRef.current = { time, playing }
+    void flushDraw()
+  }, [flushDraw])
+
   useEffect(() => subscribeFrame(() => {
-    const { currentTime: t, isPlaying: p } = useProjectStore.getState()
-    void drawAtTime(t, p)
-  }), [subscribeFrame, drawAtTime])
+    const { isPlaying: p } = useProjectStore.getState()
+    const t = p ? getPlaybackTime() : useProjectStore.getState().currentTime
+    scheduleDraw(t, p)
+  }), [subscribeFrame, scheduleDraw, getPlaybackTime])
 
   useEffect(() => {
-    if (!isPlaying) void drawAtTime(currentTime, false)
-  }, [drawAtTime, isPlaying, currentTime])
+    if (!isPlaying) scheduleDraw(currentTime, false)
+  }, [scheduleDraw, isPlaying, currentTime])
 
   // ステージ内に収まるcanvas表示サイズをアスペクト比維持で算出(オーバーレイと共有するため明示計算)
   useEffect(() => {

@@ -34,6 +34,7 @@ export function estimateExportEta(progress: number, elapsedMs: number): ExportEt
 }
 
 import { ChapterBatchExportError } from './chapterBatchExport'
+import { FontLoadError } from './googleFonts'
 
 export function isExportAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError'
@@ -53,6 +54,13 @@ export function formatExportError(err: unknown, context: 'single' | 'batch' = 's
     return {
       title: `${action}に失敗しました`,
       detail: err.message,
+    }
+  }
+
+  if (err instanceof FontLoadError) {
+    return {
+      title: `${action}に失敗しました`,
+      detail: `${err.message}。インターネット接続を確認するか、別のフォントをお試しください。`,
     }
   }
 
