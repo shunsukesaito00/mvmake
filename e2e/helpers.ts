@@ -1033,6 +1033,13 @@ export async function getShowColorScope(page: import('@playwright/test').Page) {
   })
 }
 
+export async function showSnsShareGuideForTest(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    window.__FABLE_E2E__.showSnsShareGuideForTest()
+  })
+}
+
 export async function setShowColorScope(page: import('@playwright/test').Page, show: boolean) {
   await page.evaluate((value) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

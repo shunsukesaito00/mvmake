@@ -6,6 +6,7 @@ import { TimelinePanel } from '../panels/TimelinePanel'
 import { MixerPanel } from '../panels/MixerPanel'
 import { Toolbar } from '../components/Toolbar'
 import { HelpModal } from '../components/HelpModal'
+import { SnsShareGuideModal } from '../components/SnsShareGuideModal'
 import { ProjectSettingsModal } from '../components/ProjectSettingsModal'
 import { usePanelSizes, startResize } from '../hooks/usePanelSize'
 
@@ -91,6 +92,7 @@ export function AppLayout() {
       </div>
 
       <HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
+      <SnsShareGuideModal />
       <ProjectSettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
     </>
   )

@@ -365,6 +365,8 @@ declare global {
       setShowColorScope: (show: boolean) => void
       getColorScopeMode: () => string
       setColorScopeMode: (mode: 'waveform' | 'vector') => void
+      showSnsShareGuideForTest: () => void
+      requestSnsExportFlow: () => void
     }
   }
 }
@@ -643,9 +645,11 @@ export function installE2eBridge(): void {
     getShowColorScope: () => useProjectStore.getState().showColorScope,
     setShowColorScope: (show) => useProjectStore.getState().setShowColorScope(show),
     getColorScopeMode: () => useProjectStore.getState().colorScopeMode,
-    setColorScopeMode: (mode) => useProjectStore.getState().setColorScopeMode(mode),
+      setColorScopeMode: (mode) => useProjectStore.getState().setColorScopeMode(mode),
+      showSnsShareGuideForTest: () => useProjectStore.getState().setShowSnsShareGuide(true),
+      requestSnsExportFlow: () => useProjectStore.getState().requestSnsExportFlow(),
+    }
   }
-}
 
 function findClipInProject(project: { tracks: Array<{ clips: Clip[] }> }, clipId: string): Clip | null {
   for (const track of project.tracks) {

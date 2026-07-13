@@ -902,6 +902,42 @@ test('章マーカー: インスペクターに意味説明を表示する', asy
   await expect(page.getByText('書き出しダイアログで章ごとの範囲 MP4')).toBeVisible()
 })
 
+test('SNS即配信: ツールバーボタンで書き出しダイアログをSNS設定で開ける', async ({ page }) => {
+  await applyWeddingFullTemplate(page)
+  await page.getByTestId('sns-share-toolbar-button').click()
+  const dialog = page.getByRole('dialog', { name: 'MP4書き出し' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByTestId('sns-share-flow-section')).toBeVisible()
+  await expect(dialog.getByText('プロジェクト解像度: 1080×1920')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: /軽量SNS共有/ })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('SNS即配信: 書き出しダイアログで9:16・軽量設定を適用できる', async ({ page }) => {
+  await page.setInputFiles('input[accept*="image"]', { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG })
+  await expect(page.getByText('1件のメディアを追加しました')).toBeVisible()
+  await page.getByTitle('クリックで再生位置に追加').click()
+  await page.getByRole('button', { name: '書き出し' }).click()
+  const dialog = page.getByRole('dialog', { name: 'MP4書き出し' })
+  await dialog.getByRole('button', { name: '9:16に切り替えて設定を適用' }).click()
+  await expect(page.getByText('SNS配信用の設定を適用しました')).toBeVisible()
+  await expect(dialog.getByText('プロジェクト解像度: 1080×1920')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: /軽量SNS共有/ })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('SNS即配信: 共有案内モーダルを表示できる', async ({ page }) => {
+  await page.evaluate(() => window.__FABLE_E2E__?.showSnsShareGuideForTest())
+  await expect(page.getByRole('dialog', { name: 'SNS 共有の案内' })).toBeVisible()
+  await expect(page.getByTestId('sns-share-guide-modal')).toBeVisible()
+  await expect(page.getByText('Instagram / TikTok')).toBeVisible()
+})
+
+test('ヘルプ: SNS即配信の案内を婚礼制作フローに表示', async ({ page }) => {
+  await page.keyboard.press('?')
+  await page.getByTestId('help-workflow-tab').click()
+  await expect(page.getByTestId('help-sns-share-content')).toBeVisible()
+  await expect(page.getByText('SNS即配信（婚礼本編とは別）')).toBeVisible()
+})
+
 test('トランジション: 画像クリップへの適用フロー', async ({ page }) => {
   // 1x1 PNG をインポート
   const png = Buffer.from(

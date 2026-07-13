@@ -5,7 +5,7 @@ import { exportProjectFile, importProjectFile, downloadBlob } from '../persisten
 import { useToastStore } from '../store/toastStore'
 import { ExportButton } from './ExportButton'
 import { ProjectListModal } from './ProjectListModal'
-import { IconButton } from './ui'
+import { IconButton, Btn } from './ui'
 import { Icons } from './icons'
 import { AutoSaveIndicator } from './AutoSaveIndicator'
 import { formatStorageError } from '../persistence/storageUtils'
@@ -33,8 +33,10 @@ export function Toolbar({ onOpenHelp, onOpenSettings, showMixer, onToggleMixer }
   const setProjectName = useProjectStore((s) => s.setProjectName)
   const resetProject = useProjectStore((s) => s.resetProject)
   const loadProject = useProjectStore((s) => s.loadProject)
+  const requestSnsExportFlow = useProjectStore((s) => s.requestSnsExportFlow)
   const showToast = useToastStore((s) => s.showToast)
   const webCodecsOk = isWebCodecsSupported()
+  const hasClips = project.tracks.some((t) => t.clips.length > 0)
 
   const commitName = () => {
     if (nameInput.trim()) setProjectName(nameInput.trim())
@@ -181,6 +183,16 @@ export function Toolbar({ onOpenHelp, onOpenSettings, showMixer, onToggleMixer }
         <IconButton onClick={onOpenHelp} tooltip="ショートカット" size="sm">
           <Icons.Help size={14} />
         </IconButton>
+        <Btn
+          variant="default"
+          data-testid="sns-share-toolbar-button"
+          disabled={!hasClips || !webCodecsOk}
+          className="px-2 py-1 text-[10px] font-semibold"
+          title={!hasClips ? 'クリップを追加してから利用できます' : '9:16縦型・軽量で書き出し'}
+          onClick={() => requestSnsExportFlow()}
+        >
+          SNS配信
+        </Btn>
         <ExportButton />
       </div>
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { TEMPLATE_WORKFLOW_STEPS, CHAPTER_MARKER_GUIDE } from '../content/weddingWorkflowGuide'
+import { SNS_SHARE_STEPS } from '../content/snsShareGuide'
 import { Modal, Btn } from './ui'
 
 interface HelpModalProps {
@@ -102,6 +103,19 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
           <div className="rounded-lg border border-border bg-surface-3/60 px-3 py-2.5">
             <p className="text-[11px] font-semibold text-text-primary">章マーカーとは</p>
             <p className="mt-1.5 text-[11px] leading-relaxed text-text-secondary">{CHAPTER_MARKER_GUIDE}</p>
+          </div>
+          <div data-testid="help-sns-share-content" className="rounded-lg border border-accent/20 bg-accent-muted/20 px-3 py-2.5">
+            <p className="text-[11px] font-semibold text-text-primary">SNS即配信（婚礼本編とは別）</p>
+            <p className="mt-1.5 text-[10px] text-text-muted">ツールバー「SNS配信」または書き出しダイアログから 9:16・軽量で書き出し、共有案内に従って投稿します。</p>
+            <ol className="mt-2 space-y-1.5">
+              {SNS_SHARE_STEPS.map((step, index) => (
+                <li key={step.title} className="text-[10px] leading-relaxed text-text-secondary">
+                  <span className="font-semibold text-accent">{index + 1}. {step.title}</span>
+                  {' — '}
+                  {step.body}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       )}

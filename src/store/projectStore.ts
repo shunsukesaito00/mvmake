@@ -204,6 +204,8 @@ interface ProjectState {
   showExportHint: boolean
   coachmarkFromSample: boolean
   showTemplateWorkflowGuide: boolean
+  snsExportPending: boolean
+  showSnsShareGuide: boolean
   timelineEditTool: TimelineEditTool
   colorPreviewMode: ColorPreviewMode
   showColorScope: boolean
@@ -238,6 +240,9 @@ interface ProjectState {
   setShowExportHint: (v: boolean) => void
   setCoachmarkFromSample: (v: boolean) => void
   setShowTemplateWorkflowGuide: (v: boolean) => void
+  requestSnsExportFlow: () => void
+  acknowledgeSnsExportPending: () => void
+  setShowSnsShareGuide: (v: boolean) => void
   setTimelineEditTool: (tool: TimelineEditTool) => void
   setColorPreviewMode: (mode: ColorPreviewMode) => void
   setShowColorScope: (show: boolean) => void
@@ -408,6 +413,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   showExportHint: false,
   coachmarkFromSample: false,
   showTemplateWorkflowGuide: false,
+  snsExportPending: false,
+  showSnsShareGuide: false,
   timelineEditTool: 'selection',
   colorPreviewMode: 'normal',
   showColorScope: false,
@@ -502,6 +509,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setShowExportHint: (v) => set({ showExportHint: v }),
   setCoachmarkFromSample: (v) => set({ coachmarkFromSample: v }),
   setShowTemplateWorkflowGuide: (v) => set({ showTemplateWorkflowGuide: v }),
+  requestSnsExportFlow: () => {
+    const { project } = get()
+    if (project.width !== 1080 || project.height !== 1920) {
+      get().setProjectSettings({ width: 1080, height: 1920 })
+    }
+    set({ snsExportPending: true })
+  },
+  acknowledgeSnsExportPending: () => set({ snsExportPending: false }),
+  setShowSnsShareGuide: (v) => set({ showSnsShareGuide: v }),
   setTimelineEditTool: (tool) => set({ timelineEditTool: tool }),
   setColorPreviewMode: (mode) => set({ colorPreviewMode: mode }),
   setShowColorScope: (show) => set({ showColorScope: show }),
@@ -1678,6 +1694,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       showExportHint: false,
       coachmarkFromSample: false,
       showTemplateWorkflowGuide: true,
+      snsExportPending: false,
+      showSnsShareGuide: false,
     })
   },
 
@@ -1824,6 +1842,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       showExportHint: false,
       coachmarkFromSample: false,
       showTemplateWorkflowGuide: false,
+      snsExportPending: false,
+      showSnsShareGuide: false,
       playbackShuttleRate: 1,
     })
   },
@@ -1846,6 +1866,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       showExportHint: false,
       coachmarkFromSample: false,
       showTemplateWorkflowGuide: false,
+      snsExportPending: false,
+      showSnsShareGuide: false,
     })
     ensureProjectFontsLoaded(normalized).catch(console.error)
     preloadProjectLuts(normalized.lutAssets ?? []).catch(console.error)

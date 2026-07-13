@@ -33,6 +33,7 @@ import {
   sanitizeFileBase,
 } from '../utils/chapterBatchExport'
 import { resolveRangeExportParams } from '../utils/chapterRangeExport'
+import { getSnsExportDefaults } from '../utils/snsShareFlow'
 
 type ExportPanelView = 'form' | 'progress' | 'cancelled' | 'error'
 
@@ -50,9 +51,15 @@ export function ExportButton() {
   const abortRef = useRef<AbortController | null>(null)
   const exportStartedAtRef = useRef<number | null>(null)
   const presetImportRef = useRef<HTMLInputElement>(null)
+  const snsExportActiveRef = useRef(false)
+  const snsDefaults = getSnsExportDefaults()
 
   const showExportHint = useProjectStore((s) => s.showExportHint)
   const setShowExportHint = useProjectStore((s) => s.setShowExportHint)
+  const snsExportPending = useProjectStore((s) => s.snsExportPending)
+  const acknowledgeSnsExportPending = useProjectStore((s) => s.acknowledgeSnsExportPending)
+  const setShowSnsShareGuide = useProjectStore((s) => s.setShowSnsShareGuide)
+  const setProjectSettings = useProjectStore((s) => s.setProjectSettings)
 
   const project = useProjectStore((s) => s.project)
   const isExporting = useProjectStore((s) => s.isExporting)
@@ -91,6 +98,15 @@ export function ExportButton() {
   useEffect(() => {
     if (showDialog) setPresets(loadExportPresets())
   }, [showDialog])
+
+  useEffect(() => {
+    if (!snsExportPending) return
+    setQuality(snsDefaults.quality)
+    setResolution(snsDefaults.resolution)
+    acknowledgeSnsExportPending()
+    resetExportPanel()
+    setShowDialog(true)
+  }, [snsExportPending])
 
   useEffect(() => {
     if (!isExporting || exportStartedAtRef.current === null) return
@@ -218,12 +234,28 @@ export function ExportButton() {
     showToast(`「${range?.label ?? '章'}」を In/Out に設定しました`, 'info')
   }
 
-  const handleExport = async (exportResolution: ExportResolution) => {
+  const applySnsExportPreset = () => {
+    setProjectSettings({ width: 1080, height: 1920 })
+    setQuality(snsDefaults.quality)
+    setResolution(snsDefaults.resolution)
+    showToast('SNS配信用の設定を適用しました', 'info')
+  }
+
+  const handleSnsOneClickExport = () => {
+    useProjectStore.getState().setProjectSettings({ width: 1080, height: 1920 })
+    setQuality(snsDefaults.quality)
+    setResolution(snsDefaults.resolution)
+    snsExportActiveRef.current = true
+    void handleExport('project', snsDefaults.quality)
+  }
+
+  const handleExport = async (exportResolution: ExportResolution, qualityOverride?: ExportQuality) => {
     if (!isWebCodecsSupported()) {
       showToast('書き出しには Chrome / Edge / Safari が必要です', 'error')
       return
     }
 
+    const currentProject = useProjectStore.getState().project
     const duration = getProjectDuration()
     const { inPoint: exportIn, outPoint: exportOut } = useProjectStore.getState()
     const exportParams = resolveRangeExportParams(exportIn, exportOut, duration)
@@ -235,29 +267,34 @@ export function ExportButton() {
       return
     }
 
+    const exportQuality = qualityOverride ?? quality
     beginExport()
 
     const controller = new AbortController()
     abortRef.current = controller
 
-    const { width, height } = resolveExportSize(project.width, project.height, exportResolution)
-    const exportProject_ = { ...project, width, height }
+    const { width, height } = resolveExportSize(currentProject.width, currentProject.height, exportResolution)
+    const exportProject_ = { ...currentProject, width, height }
 
     let exportError: unknown = null
     try {
       const blob = await exportProject(exportProject_, exportParams.duration, setExportProgress, {
         signal: controller.signal,
         startTime: exportParams.startTime,
-        quality,
+        quality: exportQuality,
       })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${project.name || 'movie'}.mp4`
+      a.download = `${currentProject.name || 'movie'}.mp4`
       a.click()
       URL.revokeObjectURL(url)
       setShowDialog(false)
       showToast('書き出しが完了しました', 'success')
+      if (snsExportActiveRef.current) {
+        snsExportActiveRef.current = false
+        setShowSnsShareGuide(true)
+      }
     } catch (err) {
       exportError = err
       console.error(err)
@@ -389,6 +426,24 @@ export function ExportButton() {
           </div>
         ) : (
           <div className="space-y-4">
+            <div
+              data-testid="sns-share-flow-section"
+              className="rounded-xl border border-accent/30 bg-accent-muted/30 p-3 ring-1 ring-accent/20"
+            >
+              <p className="text-[11px] font-semibold text-text-primary">SNS即配信（9:16縦型・軽量）</p>
+              <p className="mt-1 text-[10px] leading-relaxed text-text-muted">
+                Instagram ストーリー / Reels / TikTok 向け。婚礼本編（16:9 上映）とは別ラインです。
+              </p>
+              <div className="mt-2 flex flex-col gap-2">
+                <Btn variant="default" className="w-full text-xs" onClick={applySnsExportPreset}>
+                  9:16に切り替えて設定を適用
+                </Btn>
+                <Btn variant="accent" className="w-full text-xs" onClick={handleSnsOneClickExport}>
+                  9:16で即書き出し
+                </Btn>
+              </div>
+            </div>
+
             <p className="text-[10px] text-text-muted">
               プロジェクト解像度: {project.width}×{project.height}
             </p>
