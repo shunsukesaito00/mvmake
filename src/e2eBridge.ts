@@ -120,6 +120,16 @@ import {
   type KeyframeNavStressStats,
 } from './utils/keyframeNavStressSetup'
 import {
+  detachVideoAudioById,
+  getAudibleVideoAudioClipCount,
+  getDuckingIntervalCount,
+  isClipAudioLinked,
+  linkVideoAudioById,
+  prepareNarrationForVideoClipById,
+  seedVideoAudioLinkStress,
+  type VideoAudioLinkStressStats,
+} from './utils/videoAudioLinkStressSetup'
+import {
   applyClipColor,
   applyClipRgbCurvePoint,
   getClipColor,
@@ -218,6 +228,18 @@ declare global {
       loadKeyframeNavStress: () => KeyframeNavStressStats
       jumpToAdjacentKeyframe: (direction: 'prev' | 'next') => boolean
       getSelectedNavKeyframe: () => import('./utils/keyframeNavigation').SelectedNavKeyframe | null
+      loadVideoAudioLinkStress: () => VideoAudioLinkStressStats
+      isClipAudioLinked: (clipId: string) => boolean
+      detachVideoAudioById: (clipId: string) => boolean
+      linkVideoAudioById: (clipId: string) => boolean
+      getDuckingIntervalCount: () => number
+      getAudibleVideoAudioClipCount: () => number
+      prepareNarrationForVideoClipById: (clipId: string) => {
+        clipId: string
+        audioTrackId: string
+        startTime: number
+        duration: number
+      } | null
       loadToneCurveStress: () => ToneCurveStressStats
       getClipColorMidtones: (clipId: string) => number
       getClipPixelGradeSample: (clipId: string, gray?: number) => { r: number; g: number; b: number }
@@ -385,6 +407,13 @@ export function installE2eBridge(): void {
     loadKeyframeNavStress: () => seedKeyframeNavStress(),
     jumpToAdjacentKeyframe: (direction) => jumpToAdjacentKeyframe(direction),
     getSelectedNavKeyframe: () => getSelectedNavKeyframe(),
+    loadVideoAudioLinkStress: () => seedVideoAudioLinkStress(),
+    isClipAudioLinked: (clipId) => isClipAudioLinked(clipId),
+    detachVideoAudioById: (clipId) => detachVideoAudioById(clipId),
+    linkVideoAudioById: (clipId) => linkVideoAudioById(clipId),
+    getDuckingIntervalCount: () => getDuckingIntervalCount(),
+    getAudibleVideoAudioClipCount: () => getAudibleVideoAudioClipCount(),
+    prepareNarrationForVideoClipById: (clipId) => prepareNarrationForVideoClipById(clipId),
     loadToneCurveStress: () => seedToneCurveStress(),
     getClipColorMidtones: (clipId) => getClipColor(clipId).midtones,
     getClipPixelGradeSample: (clipId, gray) => getClipPixelGradeSample(clipId, gray),

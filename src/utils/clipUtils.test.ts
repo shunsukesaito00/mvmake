@@ -373,6 +373,11 @@ describe('getDuckingIntervals', () => {
     const silent = makeProject([{ ...baseVideoClip, audio: { volume: 0, fadeIn: 0, fadeOut: 0 } }])
     expect(getDuckingIntervals(silent)).toEqual([])
   })
+
+  it('ignores detached video audio', () => {
+    const project = makeProject([{ ...baseVideoClip, audioLinked: false }])
+    expect(getDuckingIntervals(project)).toEqual([])
+  })
 })
 
 describe('isTrackAudible', () => {

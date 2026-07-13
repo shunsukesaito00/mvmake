@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
-import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, setRippleInsert, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, loadRollingEditStress, rollingTrimAtEditPointById, getRollingEditClipDuration, getRollingEditClipStartTime, toggleTrackLock, loadKeyframeNavStress, jumpToAdjacentKeyframe, getSelectedNavKeyframe, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, getSelectedClipCount, getAudioTrackIds, getTrackVolume, setTrackVolume, toggleTrackSolo, getTrackSolo, getTimelineEditTool, setTimelineEditTool, getColorPreviewMode, getShowColorScope, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName, getTrackCount, getTrackSummaries, getTrackName, removeTrack, getPlaybackShuttleRate, getIsPlaying, shuttleForward, addClipFromMediaAt, getFirstMediaAssetId, listClipStartTimesOnTrack } from './helpers'
+import { installNarrationRecordingMocks, installNarrationPermissionDeniedMock, installNarrationNoDeviceMock, installNarrationEmptyRecordingMock, makeSilentWav, makeTinyWebmVideo, makeWavWithPeak, clickTimelineClip, timelineClip, TINY_PNG, applyWeddingFullTemplate, assertPlaybackStops, checkEncodersSupported, loadChapterExportStressProject, loadChapterExportE2eProject, loadPhotoGuideSlideshowStress, loadMarkerEditStress, clearTextStylePresets, loadTextStylePresetStress, loadMediaListStress, loadBatchTransitionStress, loadBatchTransitionRemovalStress, loadMediaReplaceStress, loadUserProjectTemplateStress, loadUserProjectTemplateExportStress, importUserProjectTemplateJson, clearUserProjectTemplates, getUserProjectTemplateCount, getProjectClipCount, loadProjectSettingsPresetExportStress, importProjectSettingsPresetJson, clearProjectSettingsPresets, getProjectSettingsPresetCount, getProjectWidth, getProjectHeight, getProjectFps, getRippleDelete, setRippleInsert, getLoopPlayback, loadAudioNormalizeStress, getClipAudioVolume, getClipVolumeKeyframeMax, loadTransformKeyframeStress, getClipTransformKeyframeCount, getInterpolatedTransformAt, listImageClipTransformKeyframeCounts, loadStructuredWeddingTemplateStress, getStructuredWeddingTemplateStressStats, getChapterMarkerCount, getPhotoGuideClipCount, loadVertical916PresetStress, getVertical916PresetStressStats, applyVertical916Preset, loadExportResolutionAlignmentStress, getExportResolutionAlignmentStressStats, applyResolutionPresetById, loadExportPresetStress, loadExportPresetExportStress, applyExportPresetByName, importExportPresetJson, clearExportPresets, getExportPresetCount, getInPoint, getOutPoint, loadVideoFadeStress, getMediaVisualOpacityForClip, getClipFadeValues, applyClipFade, loadVolumeKeyframeTimelineStress, loadVolumeKeyframeStress, getVolumeAtClipLocalTime, getClipVolumeKeyframeCount, listAudioClipVolumeKeyframeCounts, listVolumeKeyframeClipCounts, listAudioTrackVolumeKeyframeCounts, updateVolumeKeyframeById, loadSlipSlideStress, loadRollingEditStress, rollingTrimAtEditPointById, getRollingEditClipDuration, getRollingEditClipStartTime, toggleTrackLock, loadKeyframeNavStress, jumpToAdjacentKeyframe, getSelectedNavKeyframe, loadVideoAudioLinkStress, isClipAudioLinked, detachVideoAudioById, linkVideoAudioById, getDuckingIntervalCount, getAudibleVideoAudioClipCount, prepareNarrationForVideoClipById, getClipSourceStart, getClipStartTime, getStressClipDuration, getClipTransformKeyframeTimes, getClipVolumeKeyframeTimes, slipClipById, slideClipById, loadToneCurveStress, getClipColorMidtones, getClipPixelGradeSample, getRgbCurveSampleAt, applyClipColorMidtones, applyClipRgbCurvePoint, loadTemplateStress, applyBuiltinTemplateById, applyUserTemplateById, tryImportTemplateStressJson, getTemplateStressClipCount, getTemplateStressMarkerCount, selectClipById, getSelectedClipCount, getAudioTrackIds, getTrackVolume, setTrackVolume, toggleTrackSolo, getTrackSolo, getTimelineEditTool, setTimelineEditTool, getColorPreviewMode, getShowColorScope, countClipsWithTransition, getClipMediaId, getClipKenBurnsEnabled, getMediaReplaceCandidateCount, getMediaAssetName, getTrackCount, getTrackSummaries, getTrackName, removeTrack, getPlaybackShuttleRate, getIsPlaying, shuttleForward, addClipFromMediaAt, getFirstMediaAssetId, listClipStartTimesOnTrack } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   // オンボーディング済みとして起動
@@ -3600,4 +3600,44 @@ test('キーフレームナビ: キーフレームがないクリップではジ
   await addOpeningText(page)
   await clickTimelineClip(page, 'Opening')
   expect(await jumpToAdjacentKeyframe(page, 'next')).toBe(false)
+})
+
+test('動画音声リンク: 切り離しでダッキング区間と可聴動画音声が減る', async ({ page }) => {
+  const stats = await loadVideoAudioLinkStress(page)
+  expect(await isClipAudioLinked(page, stats.videoClipId)).toBe(true)
+  expect(await getAudibleVideoAudioClipCount(page)).toBe(1)
+  expect(await getDuckingIntervalCount(page)).toBe(stats.duckingIntervalCountBefore)
+  expect(stats.duckingIntervalCountBefore).toBeGreaterThan(0)
+
+  expect(await detachVideoAudioById(page, stats.videoClipId)).toBe(true)
+  expect(await isClipAudioLinked(page, stats.videoClipId)).toBe(false)
+  expect(await getAudibleVideoAudioClipCount(page)).toBe(0)
+  expect(await getDuckingIntervalCount(page)).toBe(0)
+})
+
+test('動画音声リンク: リンク復帰でダッキング区間と可聴動画音声が戻る', async ({ page }) => {
+  const stats = await loadVideoAudioLinkStress(page)
+  expect(await detachVideoAudioById(page, stats.videoClipId)).toBe(true)
+  expect(await getDuckingIntervalCount(page)).toBe(0)
+
+  expect(await linkVideoAudioById(page, stats.videoClipId)).toBe(true)
+  expect(await isClipAudioLinked(page, stats.videoClipId)).toBe(true)
+  expect(await getAudibleVideoAudioClipCount(page)).toBe(1)
+  expect(await getDuckingIntervalCount(page)).toBe(stats.duckingIntervalCountBefore)
+})
+
+test('動画音声リンク: ナレーション配置準備で切り離しとクリップ先頭へシークする', async ({ page }) => {
+  const stats = await loadVideoAudioLinkStress(page)
+  await page.evaluate(() => window.__FABLE_E2E__!.setPlaybackTime(10))
+
+  const result = await prepareNarrationForVideoClipById(page, stats.videoClipId)
+  expect(result).toMatchObject({
+    clipId: stats.videoClipId,
+    audioTrackId: stats.audioTrackId,
+    startTime: stats.narrationStartTime,
+    duration: 5,
+  })
+  expect(await isClipAudioLinked(page, stats.videoClipId)).toBe(false)
+  expect(await getAudibleVideoAudioClipCount(page)).toBe(0)
+  await expect.poll(async () => page.evaluate(() => window.__FABLE_E2E__!.getPlaybackTime())).toBeCloseTo(stats.narrationStartTime, 2)
 })

@@ -87,6 +87,7 @@ import {
   listClipKeyframeNavEntries,
   type SelectedNavKeyframe,
 } from '../utils/keyframeNavigation'
+import { findPreferredNarrationTrack } from '../utils/videoAudioLink'
 
 const MAX_HISTORY = 50
 
@@ -260,6 +261,14 @@ interface ProjectState {
   rollingTrimAtEditPoint: (prevClipId: string, nextClipId: string, deltaSeconds: number, recordHistory?: boolean) => boolean
   setSelectedNavKeyframe: (selection: SelectedNavKeyframe | null) => void
   jumpToAdjacentKeyframe: (direction: 'prev' | 'next') => boolean
+  detachVideoAudio: (clipId: string) => boolean
+  linkVideoAudio: (clipId: string) => boolean
+  prepareNarrationForVideoClip: (clipId: string) => {
+    clipId: string
+    audioTrackId: string
+    startTime: number
+    duration: number
+  } | null
   applyRippleTrimOnTrack: (trackId: string, trimmedClipId: string, endBefore: number, delta: number) => void
   setClipTransition: (clipId: string, transition: Transition | undefined) => void
   applyBatchTransitions: (
@@ -1223,6 +1232,50 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       },
     })
     return true
+  },
+
+  detachVideoAudio: (clipId) => {
+    const found = findClip(get().project, clipId)
+    if (!found || found.clip.type !== 'video') return false
+    if (found.clip.audioLinked === false) return true
+
+    get().pushHistory()
+    get().updateClip(clipId, { audioLinked: false })
+    return true
+  },
+
+  linkVideoAudio: (clipId) => {
+    const found = findClip(get().project, clipId)
+    if (!found || found.clip.type !== 'video') return false
+    if (found.clip.audioLinked !== false) return true
+
+    get().pushHistory()
+    get().updateClip(clipId, { audioLinked: true })
+    return true
+  },
+
+  prepareNarrationForVideoClip: (clipId) => {
+    const { project } = get()
+    const found = findClip(project, clipId)
+    if (!found || found.clip.type !== 'video') return null
+
+    const audioTrack = findPreferredNarrationTrack(project.tracks)
+    if (!audioTrack) return null
+
+    get().pushHistory()
+    get().updateClip(clipId, { audioLinked: false })
+    set({
+      ...syncClipSelection([clipId]),
+      currentTime: found.clip.startTime,
+      future: [],
+    })
+
+    return {
+      clipId,
+      audioTrackId: audioTrack.id,
+      startTime: found.clip.startTime,
+      duration: found.clip.duration,
+    }
   },
 
   applyRippleTrimOnTrack: (trackId, trimmedClipId, endBefore, delta) => {

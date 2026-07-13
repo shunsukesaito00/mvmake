@@ -348,6 +348,8 @@ export interface VideoClip extends BaseClip, ClipLutSettings {
   crop: CropSettings
   fadeIn: number
   fadeOut: number
+  /** false のとき内蔵音声をプレビュー/書き出し/ダッキングから除外（ナレーション差し替え用） */
+  audioLinked?: boolean
 }
 
 export interface ImageClip extends BaseClip, ClipLutSettings {
@@ -1731,6 +1733,7 @@ function normalizeClip(clip: Clip): Clip {
       crop: clip.crop ?? { ...DEFAULT_CROP },
       fadeIn: clip.fadeIn ?? DEFAULT_VISUAL_FADE.fadeIn,
       fadeOut: clip.fadeOut ?? DEFAULT_VISUAL_FADE.fadeOut,
+      audioLinked: clip.audioLinked ?? true,
     }
   }
   if (clip.type === 'image') {

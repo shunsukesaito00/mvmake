@@ -370,6 +370,36 @@ describe('jumpToAdjacentKeyframe', () => {
   })
 })
 
+describe('video audio link', () => {
+  it('detachVideoAudio excludes clip from ducking intervals', () => {
+    setProject(makeProject([
+      videoClip('c1', 1, 4),
+      audioClip('a1', 0, 10, { ducking: { enabled: true, amount: 0.3, fade: 0.5 } }),
+    ], [videoAsset('media-v1', 30), videoAsset('media-a1', 30)]))
+    useProjectStore.setState({ selectedClipId: 'c1' })
+
+    expect(useProjectStore.getState().detachVideoAudio('c1')).toBe(true)
+    const clip = getTrackClips(TRACK_V1)[0] as VideoClip
+    expect(clip.audioLinked).toBe(false)
+  })
+
+  it('linkVideoAudio restores linked state', () => {
+    setProject(makeProject([videoClip('c1', 0, 4, { audioLinked: false })]))
+    expect(useProjectStore.getState().linkVideoAudio('c1')).toBe(true)
+    expect((getTrackClips(TRACK_V1)[0] as VideoClip).audioLinked).toBe(true)
+  })
+
+  it('prepareNarrationForVideoClip detaches audio and seeks to clip start', () => {
+    setProject(makeProject([videoClip('c1', 3, 5)], [videoAsset('media-v1', 30)]))
+    useProjectStore.setState({ currentTime: 9 })
+
+    const result = useProjectStore.getState().prepareNarrationForVideoClip('c1')
+    expect(result).toMatchObject({ clipId: 'c1', audioTrackId: TRACK_BGM, startTime: 3, duration: 5 })
+    expect(useProjectStore.getState().currentTime).toBe(3)
+    expect((getTrackClips(TRACK_V1)[0] as VideoClip).audioLinked).toBe(false)
+  })
+})
+
 describe('applyRippleTrimOnTrack with keyframes', () => {
   it('preserves transform keyframes when shifting subsequent clips', () => {
     const kfs = [{ id: 'kf1', time: 1, x: 0.2, y: 0.5, scale: 1, rotation: 0, opacity: 1 }]

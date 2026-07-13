@@ -15,6 +15,7 @@ import { MarkerInspectorSection } from '../components/MarkerInspectorSection'
 import { BeatMarkerSection } from '../components/BeatMarkerSection'
 import { TextStylePresetsSection } from '../components/TextStylePresetsSection'
 import { ClipMediaReplaceSection } from '../components/ClipMediaReplaceSection'
+import { VideoAudioLinkSection } from '../components/VideoAudioLinkSection'
 import { AudioNormalizeSection } from '../components/AudioNormalizeSection'
 import { AudioEqSection } from '../components/AudioEqSection'
 import { AudioNoiseReductionSection } from '../components/AudioNoiseReductionSection'
@@ -293,6 +294,10 @@ export function InspectorPanel() {
         {selectedClip.type === 'video' && (
           <>
             <CollapsibleSection title="動画音声">
+              <VideoAudioLinkSection
+                clip={selectedClip as VideoClip}
+                onClipChange={(patch, recordHistory) => updateClip(selectedClip.id, patch, recordHistory)}
+              />
               <Slider label="音量" value={(selectedClip as VideoClip).audio.volume} min={0} max={2} step={0.01} onChange={(v) => updateClip(selectedClip.id, { audio: { ...(selectedClip as VideoClip).audio, volume: v } })} />
               <AudioNormalizeSection
                 asset={mediaAssets.find((a) => a.id === (selectedClip as VideoClip).mediaId)}

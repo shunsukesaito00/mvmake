@@ -4,6 +4,7 @@ import {
   DEFAULT_KEN_BURNS,
 } from '../types/project'
 import { getMaxLocalDurationForSourceBudget, getSourceOffsetAtLocalTime } from './speedKeyframes'
+import { isVideoAudioAudible } from './videoAudioLink'
 
 export function isCompatibleTrack(
   asset: { type: string },
@@ -285,6 +286,7 @@ export function getAudioClipsFromProject(
         const asset = assetMap.get(clip.mediaId)
         if (asset) result.push({ clip, asset, isVideo: false, trackMuted: false, trackId: track.id, trackGain })
       } else if (clip.type === 'video' && track.type === 'video') {
+        if (!isVideoAudioAudible(clip)) continue
         const asset = assetMap.get(clip.mediaId)
         if (asset) result.push({ clip, asset, isVideo: true, trackMuted: false, trackId: track.id, trackGain })
       }
@@ -373,7 +375,7 @@ export function getDuckingIntervals(project: Project): Array<{ start: number; en
     if (track.muted || track.type !== 'video') continue
     for (const clip of track.clips) {
       if (clip.type !== 'video') continue
-      if ((clip.audio?.volume ?? 1) <= 0.01) continue
+      if (!isVideoAudioAudible(clip)) continue
       intervals.push({ start: clip.startTime, end: clip.startTime + clip.duration })
     }
   }

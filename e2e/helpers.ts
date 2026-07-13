@@ -427,6 +427,55 @@ export async function getSelectedNavKeyframe(page: import('@playwright/test').Pa
   })
 }
 
+export async function loadVideoAudioLinkStress(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.loadVideoAudioLinkStress()
+  })
+}
+
+export async function isClipAudioLinked(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.isClipAudioLinked(id)
+  }, clipId)
+}
+
+export async function detachVideoAudioById(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.detachVideoAudioById(id)
+  }, clipId)
+}
+
+export async function linkVideoAudioById(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.linkVideoAudioById(id)
+  }, clipId)
+}
+
+export async function getDuckingIntervalCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getDuckingIntervalCount()
+  })
+}
+
+export async function getAudibleVideoAudioClipCount(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.getAudibleVideoAudioClipCount()
+  })
+}
+
+export async function prepareNarrationForVideoClipById(page: import('@playwright/test').Page, clipId: string) {
+  return page.evaluate((id) => {
+    if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
+    return window.__FABLE_E2E__.prepareNarrationForVideoClipById(id)
+  }, clipId)
+}
+
 export async function getClipSourceStart(page: import('@playwright/test').Page, clipId: string) {
   return page.evaluate((id) => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')
