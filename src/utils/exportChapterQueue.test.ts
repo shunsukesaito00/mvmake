@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest'
 import type { ChapterExportEntry } from './chapterBatchExport'
 import {
   createChapterExportQueue,
+  finalizeChapterQueueOnAbort,
   formatBatchExportProgressDetail,
+  formatChapterQueueCancelDetail,
   formatChapterQueueFailureDetail,
   formatChapterQueueItemStatus,
   getChapterQueueSummary,
   getFailedChapterIndices,
+  getResumableChapterCount,
+  hasPartialChapterProgress,
   isChapterQueueComplete,
   runChapterExportQueue,
   zipCompletedChapterQueue,
@@ -134,5 +138,37 @@ describe('exportChapterQueue', () => {
     expect(progressSnapshots).toEqual([0.25, 0.75])
     expect(queue.items[0]?.progress).toBeUndefined()
     expect(queue.items[0]?.status).toBe('done')
+  })
+
+  it('formatChapterQueueFailureDetail は失敗章のエラーメッセージを含む', () => {
+    const queue = createChapterExportQueue(entries)
+    queue.items[0]!.status = 'done'
+    queue.items[1]!.status = 'failed'
+    queue.items[1]!.errorMessage = 'encode failed'
+    expect(formatChapterQueueFailureDetail(queue)).toContain('「新郎プロフィール」: encode failed')
+    expect(formatChapterQueueFailureDetail(queue)).toContain('完了済みの章は保持されています。')
+  })
+
+  it('finalizeChapterQueueOnAbort は running を pending に戻す', () => {
+    const queue = createChapterExportQueue(entries)
+    queue.items[0]!.status = 'done'
+    queue.items[1]!.status = 'running'
+    queue.items[1]!.progress = 0.4
+    finalizeChapterQueueOnAbort(queue)
+    expect(queue.items[0]?.status).toBe('done')
+    expect(queue.items[1]?.status).toBe('pending')
+    expect(queue.items[1]?.progress).toBeUndefined()
+  })
+
+  it('hasPartialChapterProgress / getResumableChapterCount / formatChapterQueueCancelDetail', () => {
+    const queue = createChapterExportQueue(entries)
+    expect(hasPartialChapterProgress(queue)).toBe(false)
+    expect(getResumableChapterCount(queue)).toBe(0)
+
+    queue.items[0]!.status = 'done'
+    expect(hasPartialChapterProgress(queue)).toBe(true)
+    expect(getResumableChapterCount(queue)).toBe(2)
+    expect(formatChapterQueueCancelDetail(queue)).toContain('1 章が完了済み')
+    expect(formatChapterQueueCancelDetail(queue)).toContain('残り 2 章')
   })
 })

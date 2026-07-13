@@ -34,6 +34,14 @@ export function ExportChapterQueuePanel({ queue }: { queue: ChapterExportQueue }
             {item.status === 'running' && item.progress != null && (
               <ProgressBar progress={item.progress} />
             )}
+            {item.status === 'failed' && item.errorMessage && (
+              <p
+                data-testid="export-chapter-queue-error"
+                className="text-[9px] leading-relaxed text-red-300/90"
+              >
+                {item.errorMessage}
+              </p>
+            )}
           </li>
         ))}
       </ul>

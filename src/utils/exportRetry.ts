@@ -13,10 +13,15 @@ export function isRetryableExportJob(job: ExportJobSnapshot | null | undefined):
   return job != null
 }
 
-export function getExportRetryButtonLabel(mode: ExportJobMode, failedChapterCount = 0): string {
+export function getExportRetryButtonLabel(
+  mode: ExportJobMode,
+  failedChapterCount = 0,
+  resumableChapterCount = 0,
+): string {
   switch (mode) {
     case 'batch':
       if (failedChapterCount > 0) return `失敗した ${failedChapterCount} 章のみ再試行`
+      if (resumableChapterCount > 0) return '残りの章から再開'
       return '同じ設定で章 ZIP を再試行'
     case 'sns':
       return '同じ設定で SNS 書き出しを再試行'
@@ -25,11 +30,18 @@ export function getExportRetryButtonLabel(mode: ExportJobMode, failedChapterCoun
   }
 }
 
-export function getExportRetryHint(mode: ExportJobMode, failedChapterCount = 0): string {
+export function getExportRetryHint(
+  mode: ExportJobMode,
+  failedChapterCount = 0,
+  resumableChapterCount = 0,
+): string {
   switch (mode) {
     case 'batch':
       if (failedChapterCount > 0) {
         return '完了済みの章はそのまま保持し、失敗した章だけを再書き出しします。'
+      }
+      if (resumableChapterCount > 0) {
+        return '完了済みの章はそのまま保持し、未完了の章だけを書き出します。'
       }
       return '前回と同じ解像度・品質・章区間で ZIP 一括書き出しを再実行します。'
     case 'sns':

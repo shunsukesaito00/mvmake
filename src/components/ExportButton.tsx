@@ -35,10 +35,14 @@ import {
 } from '../utils/chapterBatchExport'
 import {
   createChapterExportQueue,
+  finalizeChapterQueueOnAbort,
   formatBatchExportProgressDetail,
+  formatChapterQueueCancelDetail,
   formatChapterQueueFailureDetail,
   getFailedChapterIndices,
+  getResumableChapterCount,
   hasFailedChapters,
+  hasPartialChapterProgress,
   isChapterQueueComplete,
   runChapterExportQueue,
   zipCompletedChapterQueue,
@@ -121,6 +125,7 @@ export function ExportButton() {
   const exportDisabled = isExporting || !hasClips
   const exportTooltip = !hasClips ? 'クリップを追加してから書き出してください' : undefined
   const failedChapterCount = chapterQueue ? getFailedChapterIndices(chapterQueue).length : 0
+  const resumableChapterCount = chapterQueue ? getResumableChapterCount(chapterQueue) : 0
 
   useEffect(() => {
     if (!showExportHint) return
@@ -378,6 +383,10 @@ export function ExportButton() {
       exportError = err
       console.error(err)
     } finally {
+      if (exportError && isExportAbortError(exportError)) {
+        queue = finalizeChapterQueueOnAbort(queue)
+        setChapterQueue(queue)
+      }
       finishExport(exportError, 'batch')
     }
   }
@@ -504,12 +513,19 @@ export function ExportButton() {
           <div className="space-y-4" role="status" aria-label="書き出し結果">
             <div className="rounded-xl bg-surface-3 p-4 ring-1 ring-border">
               <p className="text-sm font-medium text-text-primary">書き出しをキャンセルしました</p>
-              <p className="mt-2 text-xs leading-relaxed text-text-muted">{exportErrorDetail}</p>
+              <p className="mt-2 text-xs leading-relaxed text-text-muted">
+                {chapterQueue && hasPartialChapterProgress(chapterQueue)
+                  ? formatChapterQueueCancelDetail(chapterQueue)
+                  : exportErrorDetail}
+              </p>
             </div>
+            {chapterQueue && hasPartialChapterProgress(chapterQueue) && (
+              <ExportChapterQueuePanel queue={chapterQueue} />
+            )}
             {isRetryableExportJob(retryableJob) && (
               <div className="space-y-2" data-testid="export-retry-section">
                 <p className="text-[10px] leading-relaxed text-text-muted">
-                  {getExportRetryHint(retryableJob.mode, failedChapterCount)}
+                  {getExportRetryHint(retryableJob.mode, failedChapterCount, resumableChapterCount)}
                 </p>
                 <Btn
                   variant="accent"
@@ -517,7 +533,7 @@ export function ExportButton() {
                   data-testid="export-retry-button"
                   onClick={handleRetryLastExport}
                 >
-                  {getExportRetryButtonLabel(retryableJob.mode, failedChapterCount)}
+                  {getExportRetryButtonLabel(retryableJob.mode, failedChapterCount, resumableChapterCount)}
                 </Btn>
               </div>
             )}
@@ -531,13 +547,13 @@ export function ExportButton() {
               <p className="text-sm font-medium text-red-300">{exportErrorTitle}</p>
               <p className="mt-2 text-xs leading-relaxed text-red-200/90">{exportErrorDetail}</p>
             </div>
-            {chapterQueue && hasFailedChapters(chapterQueue) && (
+            {chapterQueue && (hasFailedChapters(chapterQueue) || hasPartialChapterProgress(chapterQueue)) && (
               <ExportChapterQueuePanel queue={chapterQueue} />
             )}
             {isRetryableExportJob(retryableJob) && (
               <div className="space-y-2" data-testid="export-retry-section">
                 <p className="text-[10px] leading-relaxed text-text-muted">
-                  {getExportRetryHint(retryableJob.mode, failedChapterCount)}
+                  {getExportRetryHint(retryableJob.mode, failedChapterCount, resumableChapterCount)}
                 </p>
                 <Btn
                   variant="accent"
@@ -545,7 +561,7 @@ export function ExportButton() {
                   data-testid="export-retry-button"
                   onClick={handleRetryLastExport}
                 >
-                  {getExportRetryButtonLabel(retryableJob.mode, failedChapterCount)}
+                  {getExportRetryButtonLabel(retryableJob.mode, failedChapterCount, resumableChapterCount)}
                 </Btn>
               </div>
             )}
