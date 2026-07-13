@@ -1,6 +1,6 @@
 # ドキュメント同期監査（Q11）
 
-最終更新: 2026-07-11（v1.79.0 / Phase C Q11）
+最終更新: 2026-07-13（v2.9.4 / Phase E 完了レビュー反映）
 
 ## 目的
 
@@ -13,7 +13,7 @@
 | バージョン | `package.json` `version` | README・FEATURE_COMPARISON サマリー |
 | ユニットテスト件数 | `src/**/*.test.ts` の `it` / `test` + `it.each` 展開 | FEATURE_COMPARISON サマリー |
 | E2E 件数 | `e2e/basic.spec.ts` + `e2e/editor.spec.ts` の `test(` | FEATURE_COMPARISON サマリー |
-| 本番スモーク | `e2e/basic.spec.ts`（= `test:e2e:prod`） | README・FEATURE_COMPARISON |
+| 本番スモーク | `e2e/basic.spec.ts`（= `test:e2e:prod`。**editor は含まない**） | README・FEATURE_COMPARISON |
 | 実装済み機能数 | FEATURE_COMPARISON「機能比較マトリクス」のデータ行数 | サマリー表 |
 | MVP 要磨り込み | マトリクス備考の `(MVP)` 件数 | サマリー表・完成度見直し節 |
 | 監査 doc 一覧 | `docs/*_AUDIT.md` の存在 | `AGENTS.md` 参照 |
@@ -42,6 +42,7 @@
 | `RELEASE_NOTES.md` | 履歴用。件数は当時のスナップショットのまま（自動検証対象外） |
 | Premiere 同等性マトリクス | v1.68.0 時点の定性評価。数値サマリーとは別系統 |
 | ユニットテスト下限 | `docSyncAudit.test.ts` は件数が減った場合も検知するため下限アサートを併用 |
+| E2E basic / editor 分担 | 合計 1003・本番 777 は**意図的分離**。Phase E 回帰は editor（226）。F1 で basic へ選別移植予定 |
 
 ## 関連ファイル
 

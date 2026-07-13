@@ -86,7 +86,9 @@
 
 **現在のバージョン**: v2.9.4
 
-詳細な機能比較・ロードマップ（Phase A〜E・操作性ギャップ分析）は [docs/FEATURE_COMPARISON.md](docs/FEATURE_COMPARISON.md) を参照。
+詳細な機能比較・ロードマップ（Phase A〜E 完了 / **Phase F v3.0+**）は [docs/FEATURE_COMPARISON.md](docs/FEATURE_COMPARISON.md) を参照。
+
+**Phase E 完了（v2.9.4）**: マルチ選択・ミキサー・編集ツール・Volume グラフ・カラーワークフロー・トラック管理・JKL シャトル・リップルインサート・ローリング編集・KFジャンプ・A/Vリンク・色調一括ペースト・速度オーディオ連動。
 
 ### v1.5〜v1.24 で追加された主な機能
 
@@ -115,8 +117,8 @@ npm run dev
 
 ```bash
 npm test          # ユニットテスト (Vitest)
-npm run test:e2e  # E2Eテスト (Playwright、初回は npx playwright install chromium が必要)
-npm run test:e2e:prod # 公開環境(GitHub Pages)に対するスモークE2E（basic 777 シナリオ）
+npm run test:e2e  # E2Eテスト (Playwright、初回は npx playwright install chromium が必要)。全量 1003 件 = basic 777 + editor 226
+npm run test:e2e:prod # 公開環境(GitHub Pages)に対するスモークE2E（basic 777 のみ。editor 226 はローカル/CI 全量）
 npm run screenshot # README用スクリーンショット生成
 ```
 

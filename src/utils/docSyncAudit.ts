@@ -116,7 +116,7 @@ export function parseFeatureComparisonSummary(md: string): FeatureComparisonSumm
   const implementedCount = Number(md.match(/\*\*実装済み機能\*\* \| (\d+)/)?.[1] ?? NaN) || null
   const mvpMatch = md.match(/\*\*実装済み機能\*\* \| \d+ 項目（うち MVP 要磨[りき]込み (\d+) 項目）/)
   const unitTests = Number(md.match(/\*\*ユニットテスト\*\* \| (\d+)/)?.[1] ?? NaN) || null
-  const e2eMatch = md.match(/\*\*E2E\*\* \| (\d+) シナリオ（本番スモーク (\d+)）/)
+  const e2eMatch = md.match(/\*\*E2E\*\* \| (\d+) シナリオ（本番スモーク(?: \*\*)?(\d+)/)
   return {
     packageVersion,
     implementedCount,
@@ -138,7 +138,7 @@ export function parseReadmeVersion(md: string): string | null {
 }
 
 export function parseReadmeProdSmokeCount(md: string): number | null {
-  const match = md.match(/test:e2e:prod[^（]*（[^0-9]*(\d+)\s*シナリオ）/)
+  const match = md.match(/test:e2e:prod[^（]*（[^0-9]*(\d+)\s*(?:シナリオ|のみ)/)
   return match ? Number(match[1]) : null
 }
 
