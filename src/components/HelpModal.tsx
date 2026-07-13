@@ -1,9 +1,13 @@
+import { useState } from 'react'
+import { TEMPLATE_WORKFLOW_STEPS, CHAPTER_MARKER_GUIDE } from '../content/weddingWorkflowGuide'
 import { Modal, Btn } from './ui'
 
 interface HelpModalProps {
   open: boolean
   onClose: () => void
 }
+
+type HelpTab = 'shortcuts' | 'workflow'
 
 const SHORTCUTS = [
   { key: 'Space', action: '再生 / 一時停止' },
@@ -12,7 +16,7 @@ const SHORTCUTS = [
   { key: 'Shift + ← / →', action: '1秒送り' },
   { key: 'S', action: '再生位置で分割' },
   { key: 'I / O', action: 'In点 / Out点を設定' },
-  { key: 'M', action: '章マーカー追加' },
+  { key: 'M', action: '章マーカー追加（各章の始まり・書き出し区間に使用）' },
   { key: 'Shift + M', action: 'ビートマーカー追加' },
   { key: 'Cmd+C / Cmd+V', action: 'コピー / ペースト' },
   { key: 'Cmd+D', action: '選択クリップを複製（複数選択時は一括）' },
@@ -42,20 +46,66 @@ const SHORTCUTS = [
   { key: 'トラック名ダブルクリック', action: 'トラック名の変更' },
   { key: 'トラック下辺ドラッグ', action: 'レーン高さのリサイズ（設定はブラウザに保存）' },
   { key: 'Z', action: '選択クリップへズーム' },
-  { key: '?', action: 'このショートカット一覧を表示' },
+  { key: '?', action: 'このヘルプを表示' },
 ]
 
 export function HelpModal({ open, onClose }: HelpModalProps) {
+  const [tab, setTab] = useState<HelpTab>('shortcuts')
+
   return (
-    <Modal open={open} onClose={onClose} title="キーボードショートカット" width="w-[420px]">
-      <div className="max-h-[50vh] space-y-1.5 overflow-y-auto">
-        {SHORTCUTS.map(({ key, action }) => (
-          <div key={key} className="flex items-center justify-between rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-3">
-            <kbd className="rounded-md bg-surface-4 px-2 py-0.5 font-mono text-[11px] text-accent ring-1 ring-border">{key}</kbd>
-            <span className="text-sm text-text-secondary">{action}</span>
-          </div>
-        ))}
+    <Modal open={open} onClose={onClose} title="ヘルプ" width="w-[460px]">
+      <div className="mb-3 flex gap-1 rounded-lg bg-surface-3 p-1">
+        <button
+          type="button"
+          data-testid="help-shortcuts-tab"
+          onClick={() => setTab('shortcuts')}
+          className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${
+            tab === 'shortcuts' ? 'bg-surface-1 text-text-primary shadow-sm' : 'text-text-muted hover:text-text-secondary'
+          }`}
+        >
+          ショートカット
+        </button>
+        <button
+          type="button"
+          data-testid="help-workflow-tab"
+          onClick={() => setTab('workflow')}
+          className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${
+            tab === 'workflow' ? 'bg-surface-1 text-text-primary shadow-sm' : 'text-text-muted hover:text-text-secondary'
+          }`}
+        >
+          婚礼制作フロー
+        </button>
       </div>
+
+      {tab === 'shortcuts' ? (
+        <div className="max-h-[50vh] space-y-1.5 overflow-y-auto">
+          {SHORTCUTS.map(({ key, action }) => (
+            <div key={key} className="flex items-center justify-between rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-3">
+              <kbd className="rounded-md bg-surface-4 px-2 py-0.5 font-mono text-[11px] text-accent ring-1 ring-border">{key}</kbd>
+              <span className="ml-3 flex-1 text-right text-sm text-text-secondary">{action}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div data-testid="help-workflow-content" className="max-h-[50vh] space-y-4 overflow-y-auto">
+          <div>
+            <p className="text-[11px] font-semibold text-text-primary">テンプレ適用後の編集導線</p>
+            <ol className="mt-2 space-y-2">
+              {TEMPLATE_WORKFLOW_STEPS.map((step, index) => (
+                <li key={step.title} className="rounded-lg bg-surface-3 px-3 py-2">
+                  <p className="text-xs font-semibold text-accent">{index + 1}. {step.title}</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-text-secondary">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="rounded-lg border border-border bg-surface-3/60 px-3 py-2.5">
+            <p className="text-[11px] font-semibold text-text-primary">章マーカーとは</p>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-text-secondary">{CHAPTER_MARKER_GUIDE}</p>
+          </div>
+        </div>
+      )}
+
       <Btn variant="ghost" className="mt-4 w-full" onClick={onClose}>
         閉じる
       </Btn>

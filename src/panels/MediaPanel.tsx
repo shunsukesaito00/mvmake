@@ -30,6 +30,7 @@ import { LARGE_FILE_BYTES, formatStorageUsageLabel } from '../persistence/storag
 import { formatBytes } from '../utils/formatBytes'
 import { useStorageEstimate } from '../hooks/useStorageEstimate'
 import { UserProjectTemplatesSection } from '../components/UserProjectTemplatesSection'
+import { TemplateWorkflowCallout } from '../components/TemplateWorkflowCallout'
 
 interface ImportProgress {
   current: number
@@ -393,6 +394,7 @@ export function MediaPanel() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <PanelHeader title={currentTab.label} icon={<TabIcon size={14} />} />
+        <TemplateWorkflowCallout />
 
         {tab === 'media' && (
           <div className="flex flex-1 flex-col overflow-hidden">

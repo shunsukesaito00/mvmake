@@ -15,6 +15,11 @@ const STEPS = [
     description: '写真・テキスト・BGM入りのサンプルを開き、再生と書き出しまで約15分で完走できます。まずは触ってみましょう。',
   },
   {
+    icon: Icons.Layout,
+    title: 'テンプレで章立て',
+    description: '左の「テンプレ」から結婚式フル構成を選ぶと、章マーカーと写真ガイドが配置されます。写真をガイド位置へドラッグし、章ごとに書き出せます。',
+  },
+  {
     icon: Icons.Grid,
     title: 'タイムラインで編集',
     description: 'メディアを下のタイムラインへドラッグして配置。トリム・分割・トランジション・テキストで演出を加えます。',
@@ -22,7 +27,7 @@ const STEPS = [
   {
     icon: Icons.Export,
     title: 'MP4で書き出し',
-    description: '右上の「書き出し」から品質と解像度を選ぶだけ。すべてブラウザ内で処理され、外部にアップロードされません。',
+    description: '右上の「書き出し」から品質と解像度を選ぶだけ。章マーカー区間ごとの MP4 / ZIP も選べます。すべてブラウザ内で処理されます。',
   },
 ]
 
@@ -92,7 +97,7 @@ export function OnboardingModal() {
           </div>
           <div>
             <h2 className="text-base font-bold text-text-primary">FABLE へようこそ</h2>
-            <p className="text-[11px] text-text-muted">サンプルで15分完走を目指す3ステップ</p>
+            <p className="text-[11px] text-text-muted">サンプルで15分完走を目指す4ステップ</p>
           </div>
         </div>
 

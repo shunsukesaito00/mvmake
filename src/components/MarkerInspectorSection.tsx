@@ -1,4 +1,5 @@
 import type { TimelineMarker } from '../types/project'
+import { CHAPTER_MARKER_GUIDE } from '../content/weddingWorkflowGuide'
 import { useProjectStore } from '../store/projectStore'
 import { usePlaybackControls } from '../contexts/PlaybackContext'
 import { clampMarkerTime } from '../utils/markerEdit'
@@ -21,8 +22,18 @@ export function MarkerInspectorSection({ marker }: MarkerInspectorSectionProps) 
 
   const clampTime = (time: number) => clampMarkerTime(time, duration)
 
+  const isChapter = marker.type !== 'beat'
+
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
+      {isChapter && (
+        <p
+          data-testid="chapter-marker-guide"
+          className="border-b border-border px-3 py-2.5 text-[10px] leading-relaxed text-text-muted"
+        >
+          {CHAPTER_MARKER_GUIDE}
+        </p>
+      )}
       <div className="space-y-3 px-3 py-3">
         <label className="block space-y-1">
           <span className="text-[10px] font-semibold tracking-wider text-text-muted uppercase">ラベル</span>

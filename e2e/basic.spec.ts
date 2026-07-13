@@ -384,11 +384,11 @@ test('ヘルプ: 「?」キーでショートカット一覧をトグル表示',
   await goOnboarded(page)
 
   await page.keyboard.press('?')
-  await expect(page.getByRole('dialog', { name: 'キーボードショートカット' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'ヘルプ' })).toBeVisible()
   await expect(page.getByText('再生 / 一時停止')).toBeVisible()
 
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('dialog', { name: 'キーボードショートカット' })).toBeHidden()
+  await expect(page.getByRole('dialog', { name: 'ヘルプ' })).toBeHidden()
 })
 
 test('ユーザーテンプレート: 保存・適用・新規作成', async ({ page }) => {
@@ -3426,7 +3426,7 @@ test('メディア: 動画をインポートして UI が応答し続ける', as
   await expect(page.getByText('sample-clip.webm')).toBeVisible()
 
   await page.keyboard.press('?')
-  await expect(page.getByRole('dialog', { name: 'キーボードショートカット' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'ヘルプ' })).toBeVisible()
   await page.keyboard.press('Escape')
 
   await expect(page.getByText(/video ·/)).toBeVisible()
