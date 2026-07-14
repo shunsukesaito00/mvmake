@@ -3015,6 +3015,24 @@ test('書き出し: 失敗時に完了チャイムが鳴る（Phase H G32）', a
   expect(chimes).toContain('failure')
 })
 
+test('書き出し: 失敗時にタブタイトルを一時変更しフォーカス復帰で戻す（Phase H G33）', async ({ page }) => {
+  test.setTimeout(90_000)
+
+  await goOnboarded(page)
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  const originalTitle = await page.title()
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await setExportFailOnce(page)
+  await page.getByRole('button', { name: '1080p で書き出し' }).click()
+  await expect(page.getByRole('alert', { name: '書き出しエラー' })).toBeVisible({ timeout: 15_000 })
+  await expect.poll(() => page.title()).toBe('! 書き出し失敗')
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await expect.poll(() => page.title()).toBe(originalTitle)
+})
+
 test('書き出し: 短尺プロジェクトで章 ZIP をダウンロード（対応環境）', async ({ page }) => {
   test.setTimeout(300_000)
 

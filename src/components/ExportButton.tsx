@@ -33,6 +33,7 @@ import {
   type ExportNotificationOutcome,
 } from '../utils/exportNotification'
 import { playExportChime } from '../utils/exportChime'
+import { flashExportTabTitle } from '../utils/exportTabTitle'
 import { downloadBlob } from '../persistence/projectFile'
 import { buildExportPreset, formatExportPresetSummary } from '../utils/exportPresetUtils'
 import {
@@ -243,6 +244,7 @@ export function ExportButton() {
       typeof window !== 'undefined'
         ? new URL('pwa-192.png', window.location.href).href
         : undefined
+    flashExportTabTitle(outcome)
     notifyExportCompletion(outcome, detail, {
       enabled: loadExportCompletionNotificationEnabled(),
       iconUrl,

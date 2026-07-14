@@ -55,6 +55,7 @@
 - In/Out範囲ループ再生・範囲書き出し
 - MP4書き出し（1080p / 720p、品質3段階: 16/8/4Mbps）
 - 書き出しプリセットの保存・適用・JSON 共有（`.fable-export-preset.json`）
+- 書き出し完了フィードバック（トースト・非アクティブ時通知・チャイム・タブタイトル一時バッジ）
 
 ### その他
 - Undo/Redo（50履歴）
@@ -84,7 +85,7 @@
 - テキスト背景・字幕帯（半透明背景・余白・角丸）
 - 章マーカー区間の部分書き出し（In/Out 連動）
 
-**現在のバージョン**: v3.24.0
+**現在のバージョン**: v3.25.0
 
 詳細な機能比較・ロードマップ（Phase A〜E 完了 / **Phase F v3.0+**）は [docs/FEATURE_COMPARISON.md](docs/FEATURE_COMPARISON.md) を参照。
 
@@ -117,8 +118,8 @@ npm run dev
 
 ```bash
 npm test          # ユニットテスト (Vitest)
-npm run test:e2e  # E2Eテスト (Playwright、初回は npx playwright install chromium が必要)。全量 1075 件 = basic 811 + editor 264
-npm run test:e2e:prod # 公開環境(GitHub Pages)に対するスモークE2E（basic 811 のみ。editor 264 はローカル/CI 全量）
+npm run test:e2e  # E2Eテスト (Playwright、初回は npx playwright install chromium が必要)。全量 1077 件 = basic 812 + editor 265
+npm run test:e2e:prod # 公開環境(GitHub Pages)に対するスモークE2E（basic 812 のみ。editor 265 はローカル/CI 全量）
 npm run screenshot # README用スクリーンショット生成
 ```
 

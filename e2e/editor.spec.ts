@@ -2195,6 +2195,23 @@ test('書き出し: 完了チャイムトグルが再表示後も保持される
   await expect(page.getByTestId('export-completion-chime-toggle').locator('input[type="checkbox"]')).toBeChecked()
 })
 
+test('書き出し: 失敗時にタブタイトルを一時変更しフォーカス復帰で戻す（Phase H G33）', async ({ page }) => {
+  test.setTimeout(90_000)
+
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  const originalTitle = await page.title()
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await setExportFailOnce(page)
+  await page.getByRole('button', { name: '1080p で書き出し' }).click()
+  await expect(page.getByRole('alert', { name: '書き出しエラー' })).toBeVisible({ timeout: 15_000 })
+  await expect.poll(() => page.title()).toBe('! 書き出し失敗')
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await expect.poll(() => page.title()).toBe(originalTitle)
+})
+
 test('ショートカット: Space で再生・停止、Cmd/Ctrl+Z で取り消し', async ({ page }) => {
   await addOpeningText(page)
 
