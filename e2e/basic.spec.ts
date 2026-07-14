@@ -82,6 +82,9 @@ import {
   timelineClip,
   checkEncodersSupported,
   setExportFailOnChapter,
+  setExportFailOnce,
+  installExportNotificationMock,
+  getExportNotifications,
   loadChapterExportStressProject,
   loadChapterExportE2eProject,
   loadMarkerEditStress,
@@ -2970,6 +2973,25 @@ test('書き出し: 章 ZIP 失敗画面から失敗サマリーをコピーで�
   await expect(page.getByText('失敗サマリーをコピーしました')).toBeVisible({ timeout: 10_000 })
   const text = await page.evaluate(() => navigator.clipboard.readText())
   expect(text).toContain('新郎プロフィール')
+})
+
+test('書き出し: 失敗時に完了通知が送られる（Phase H G31）', async ({ page }) => {
+  test.setTimeout(90_000)
+
+  await goOnboarded(page)
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await installExportNotificationMock(page)
+  await addOpeningText(page)
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByTestId('export-completion-notification-toggle').locator('input[type="checkbox"]').check()
+  await setExportFailOnce(page)
+  await page.getByRole('button', { name: '1080p で書き出し' }).click()
+  await expect(page.getByRole('alert', { name: '書き出しエラー' })).toBeVisible({ timeout: 15_000 })
+  await expect.poll(async () => (await getExportNotifications(page)).length).toBeGreaterThan(0)
+  const notes = await getExportNotifications(page)
+  expect(notes.some((n) => n.tag === 'fable-export-failure' || n.title.includes('失敗'))).toBe(true)
 })
 
 test('書き出し: 短尺プロジェクトで章 ZIP をダウンロード（対応環境）', async ({ page }) => {

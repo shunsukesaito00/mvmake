@@ -240,6 +240,31 @@ export async function setExportFailOnChapter(page: import('@playwright/test').Pa
   }, label)
 }
 
+/** 書き出し完了通知のモックを仕込み、タブ非表示扱いにする */
+export async function installExportNotificationMock(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    type Note = { title: string; body?: string; tag?: string }
+    const calls: Note[] = []
+    class MockNotification {
+      static permission: NotificationPermission = 'granted'
+      static requestPermission = async () => 'granted' as NotificationPermission
+      constructor(title: string, options?: NotificationOptions) {
+        calls.push({ title, body: options?.body, tag: options?.tag })
+      }
+    }
+    ;(window as unknown as { __FABLE_E2E_NOTIFICATIONS__: Note[] }).__FABLE_E2E_NOTIFICATIONS__ = calls
+    ;(window as unknown as { Notification: typeof MockNotification }).Notification = MockNotification
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true })
+  })
+}
+
+export async function getExportNotifications(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    return (window as unknown as { __FABLE_E2E_NOTIFICATIONS__?: Array<{ title: string; body?: string; tag?: string }> })
+      .__FABLE_E2E_NOTIFICATIONS__ ?? []
+  })
+}
+
 export async function loadExportAudioDecodeStress(page: import('@playwright/test').Page) {
   return page.evaluate(async () => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

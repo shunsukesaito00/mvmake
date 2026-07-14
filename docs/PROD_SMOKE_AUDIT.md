@@ -1,8 +1,15 @@
 # 本番スモーク E2E 監査（v3.0.4）
 
-最終更新: 2026-07-14（v3.22.0 / Phase H G30 で basic を 808→809）
+最終更新: 2026-07-14（v3.23.0 / Phase H G31 で basic を 809→810）
 
-> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 809 件**を実行。Phase E E1〜E13 の婚礼クリティカル **28 件は v3.0.0〜v3.0.4 で basic へ移植完了**（Phase F F1 完了）。v3.19.0〜v3.22.0 で章 ZIP 運用 UX を拡充。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+> **E2E 分担**: `test:e2e:prod` は **`e2e/basic.spec.ts` の 810 件**を実行。Phase E E1〜E13 の婚礼クリティカル **28 件は v3.0.0〜v3.0.4 で basic へ移植完了**（Phase F F1 完了）。v3.19.0〜v3.23.0 で章 ZIP 運用 UX を拡充。詳細は [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md#e2e-スイート分担本番スモークギャップ)。
+
+## v3.23.0 拡充（809→810）— Phase H G31
+
+| 検証項目 | 結果 |
+|----------|------|
+| `e2e/basic.spec.ts` 件数 | **810**（+1） |
+| 追加シナリオ | 書き出し失敗時に完了通知（Browser Notification）が送られる |
 
 ## v3.22.0 拡充（808→809）— Phase H G30
 
@@ -1591,8 +1598,8 @@
 
 ## 自動検証
 
-- `e2e/basic.spec.ts` — 809 `test(`
-- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 809`
+- `e2e/basic.spec.ts` — 810 `test(`
+- `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_SCENARIO_COUNT = 810`
 - `src/utils/prodSmokeAudit.ts` — `PROD_SMOKE_V2664_ADDITIONS`
 - `src/utils/prodSmokeAudit.ts` — `auditTransitionCoverage()`（トランジション29種カバー監査）
 - `src/utils/prodSmokeAudit.ts` — `auditPhase4DoubleNamedReclickLayers()`（フェーズ4 層監査）

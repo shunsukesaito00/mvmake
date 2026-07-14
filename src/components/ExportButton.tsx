@@ -14,6 +14,18 @@ import {
   loadChapterExportContinueOnError,
   saveChapterExportContinueOnError,
 } from '../persistence/chapterExportPrefs'
+import {
+  getExportCompletionNotificationHint,
+  getExportCompletionNotificationLabel,
+  loadExportCompletionNotificationEnabled,
+  saveExportCompletionNotificationEnabled,
+} from '../persistence/exportNotificationPrefs'
+import {
+  getNotificationPermission,
+  notifyExportCompletion,
+  requestNotificationPermission,
+  type ExportNotificationOutcome,
+} from '../utils/exportNotification'
 import { downloadBlob } from '../persistence/projectFile'
 import { buildExportPreset, formatExportPresetSummary } from '../utils/exportPresetUtils'
 import {
@@ -97,6 +109,8 @@ export function ExportButton() {
   const [chapterQueue, setChapterQueue] = useState<ChapterExportQueue | null>(null)
   const [retryableJob, setRetryableJob] = useState<ExportJobSnapshot | null>(null)
   const [continueOnErrorPref, setContinueOnErrorPref] = useState(() => loadChapterExportContinueOnError())
+  const [notifyCompletionPref, setNotifyCompletionPref] = useState(() => loadExportCompletionNotificationEnabled())
+  const [notificationPermission, setNotificationPermission] = useState(() => getNotificationPermission())
   const abortRef = useRef<AbortController | null>(null)
   const exportStartedAtRef = useRef<number | null>(null)
   const presetImportRef = useRef<HTMLInputElement>(null)
@@ -169,6 +183,8 @@ export function ExportButton() {
     if (showDialog) {
       setPresets(loadExportPresets())
       setContinueOnErrorPref(loadChapterExportContinueOnError())
+      setNotifyCompletionPref(loadExportCompletionNotificationEnabled())
+      setNotificationPermission(getNotificationPermission())
     }
   }, [showDialog])
 
@@ -214,6 +230,17 @@ export function ExportButton() {
     setEtaLabel('残り時間を計算中…')
   }
 
+  const emitExportNotification = (outcome: ExportNotificationOutcome, detail?: string) => {
+    const iconUrl =
+      typeof window !== 'undefined'
+        ? new URL('pwa-192.png', window.location.href).href
+        : undefined
+    notifyExportCompletion(outcome, detail, {
+      enabled: loadExportCompletionNotificationEnabled(),
+      iconUrl,
+    })
+  }
+
   const finishExport = (err: unknown | null, context: 'single' | 'batch' = 'single') => {
     setIsExporting(false)
     setExportProgress(0)
@@ -231,6 +258,7 @@ export function ExportButton() {
         setExportErrorTitle(presentation.title)
         setExportErrorDetail(presentation.detail)
         showToast(presentation.title, 'error')
+        emitExportNotification('failure', presentation.detail)
       }
       return
     }
@@ -358,6 +386,7 @@ export function ExportButton() {
     setExportErrorTitle('一部の章を ZIP 保存しました')
     setExportErrorDetail(summary)
     showToast(summary, 'info')
+    emitExportNotification('partial', summary)
   }
 
   const handleDownloadPartialChapterZip = async () => {
@@ -453,6 +482,7 @@ export function ExportButton() {
         URL.revokeObjectURL(url)
         setShowDialog(false)
         showToast(`${entries.length} 章を ZIP で書き出しました`, 'success')
+        emitExportNotification('success', `${entries.length} 章を ZIP で書き出しました`)
         const skipMessage = formatExportAudioDecodeSkipMessage(mergeExportAudioDecodeSkips(chapterSkippedAudio))
         if (skipMessage) showToast(skipMessage, 'info')
       } else if (continueOnError && isChapterQueuePartiallySuccessful(queue)) {
@@ -493,6 +523,27 @@ export function ExportButton() {
   const handleContinueOnErrorPrefChange = (enabled: boolean) => {
     setContinueOnErrorPref(enabled)
     saveChapterExportContinueOnError(enabled)
+  }
+
+  const handleNotifyCompletionPrefChange = async (enabled: boolean) => {
+    if (enabled) {
+      const permission = await requestNotificationPermission()
+      setNotificationPermission(permission)
+      if (permission !== 'granted') {
+        setNotifyCompletionPref(false)
+        saveExportCompletionNotificationEnabled(false)
+        if (permission === 'denied') {
+          showToast('通知がブロックされています。ブラウザ設定から許可してください', 'error')
+        } else if (permission === 'unsupported') {
+          showToast('このブラウザは通知に対応していません', 'error')
+        } else {
+          showToast('通知が許可されませんでした', 'info')
+        }
+        return
+      }
+    }
+    setNotifyCompletionPref(enabled)
+    saveExportCompletionNotificationEnabled(enabled)
   }
 
   const handleExport = async (
@@ -543,6 +594,7 @@ export function ExportButton() {
       URL.revokeObjectURL(url)
       setShowDialog(false)
       showToast('書き出しが完了しました', 'success')
+      emitExportNotification('success', '書き出しが完了しました')
       const skipMessage = formatExportAudioDecodeSkipMessage(skippedAudio)
       if (skipMessage) showToast(skipMessage, 'info')
       if (snsExportActiveRef.current) {
@@ -783,6 +835,32 @@ export function ExportButton() {
             <p className="text-[10px] text-text-muted">
               プロジェクト解像度: {project.width}×{project.height}
             </p>
+            <label
+              data-testid="export-completion-notification-toggle"
+              className="flex cursor-pointer items-start gap-2 rounded-xl bg-surface-3 px-3 py-2.5 ring-1 ring-border"
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={notifyCompletionPref}
+                onChange={(e) => void handleNotifyCompletionPrefChange(e.target.checked)}
+                aria-label={getExportCompletionNotificationLabel()}
+              />
+              <span className="min-w-0">
+                <span className="block text-xs font-medium text-text-primary">
+                  {getExportCompletionNotificationLabel()}
+                </span>
+                <span className="mt-0.5 block text-[10px] leading-relaxed text-text-muted">
+                  {getExportCompletionNotificationHint()}
+                  {notificationPermission === 'denied' && (
+                    <span className="mt-1 block text-red-300/90">通知はブラウザでブロックされています。</span>
+                  )}
+                  {notificationPermission === 'unsupported' && (
+                    <span className="mt-1 block text-red-300/90">この環境では通知 API が使えません。</span>
+                  )}
+                </span>
+              </span>
+            </label>
             {exportMemoryPressure.message && (
               <p
                 data-testid="export-memory-warning"
