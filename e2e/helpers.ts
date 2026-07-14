@@ -265,6 +265,19 @@ export async function getExportNotifications(page: import('@playwright/test').Pa
   })
 }
 
+/** 書き出し完了チャイムを E2E フック配列へ記録する */
+export async function installExportChimeMock(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    ;(window as unknown as { __FABLE_E2E_CHIMES__: string[] }).__FABLE_E2E_CHIMES__ = []
+  })
+}
+
+export async function getExportChimes(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    return (window as unknown as { __FABLE_E2E_CHIMES__?: string[] }).__FABLE_E2E_CHIMES__ ?? []
+  })
+}
+
 export async function loadExportAudioDecodeStress(page: import('@playwright/test').Page) {
   return page.evaluate(async () => {
     if (!window.__FABLE_E2E__) throw new Error('E2E bridge not installed')

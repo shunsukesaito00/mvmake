@@ -21,11 +21,18 @@ import {
   saveExportCompletionNotificationEnabled,
 } from '../persistence/exportNotificationPrefs'
 import {
+  getExportCompletionChimeHint,
+  getExportCompletionChimeLabel,
+  loadExportCompletionChimeEnabled,
+  saveExportCompletionChimeEnabled,
+} from '../persistence/exportChimePrefs'
+import {
   getNotificationPermission,
   notifyExportCompletion,
   requestNotificationPermission,
   type ExportNotificationOutcome,
 } from '../utils/exportNotification'
+import { playExportChime } from '../utils/exportChime'
 import { downloadBlob } from '../persistence/projectFile'
 import { buildExportPreset, formatExportPresetSummary } from '../utils/exportPresetUtils'
 import {
@@ -110,6 +117,7 @@ export function ExportButton() {
   const [retryableJob, setRetryableJob] = useState<ExportJobSnapshot | null>(null)
   const [continueOnErrorPref, setContinueOnErrorPref] = useState(() => loadChapterExportContinueOnError())
   const [notifyCompletionPref, setNotifyCompletionPref] = useState(() => loadExportCompletionNotificationEnabled())
+  const [chimeCompletionPref, setChimeCompletionPref] = useState(() => loadExportCompletionChimeEnabled())
   const [notificationPermission, setNotificationPermission] = useState(() => getNotificationPermission())
   const abortRef = useRef<AbortController | null>(null)
   const exportStartedAtRef = useRef<number | null>(null)
@@ -230,7 +238,7 @@ export function ExportButton() {
     setEtaLabel('残り時間を計算中…')
   }
 
-  const emitExportNotification = (outcome: ExportNotificationOutcome, detail?: string) => {
+  const emitExportCompletionSignals = (outcome: ExportNotificationOutcome, detail?: string) => {
     const iconUrl =
       typeof window !== 'undefined'
         ? new URL('pwa-192.png', window.location.href).href
@@ -238,6 +246,9 @@ export function ExportButton() {
     notifyExportCompletion(outcome, detail, {
       enabled: loadExportCompletionNotificationEnabled(),
       iconUrl,
+    })
+    playExportChime(outcome, {
+      enabled: loadExportCompletionChimeEnabled(),
     })
   }
 
@@ -258,7 +269,7 @@ export function ExportButton() {
         setExportErrorTitle(presentation.title)
         setExportErrorDetail(presentation.detail)
         showToast(presentation.title, 'error')
-        emitExportNotification('failure', presentation.detail)
+        emitExportCompletionSignals('failure', presentation.detail)
       }
       return
     }
@@ -386,7 +397,7 @@ export function ExportButton() {
     setExportErrorTitle('一部の章を ZIP 保存しました')
     setExportErrorDetail(summary)
     showToast(summary, 'info')
-    emitExportNotification('partial', summary)
+    emitExportCompletionSignals('partial', summary)
   }
 
   const handleDownloadPartialChapterZip = async () => {
@@ -482,7 +493,7 @@ export function ExportButton() {
         URL.revokeObjectURL(url)
         setShowDialog(false)
         showToast(`${entries.length} 章を ZIP で書き出しました`, 'success')
-        emitExportNotification('success', `${entries.length} 章を ZIP で書き出しました`)
+        emitExportCompletionSignals('success', `${entries.length} 章を ZIP で書き出しました`)
         const skipMessage = formatExportAudioDecodeSkipMessage(mergeExportAudioDecodeSkips(chapterSkippedAudio))
         if (skipMessage) showToast(skipMessage, 'info')
       } else if (continueOnError && isChapterQueuePartiallySuccessful(queue)) {
@@ -546,6 +557,11 @@ export function ExportButton() {
     saveExportCompletionNotificationEnabled(enabled)
   }
 
+  const handleChimeCompletionPrefChange = (enabled: boolean) => {
+    setChimeCompletionPref(enabled)
+    saveExportCompletionChimeEnabled(enabled)
+  }
+
   const handleExport = async (
     exportResolution: ExportResolution,
     qualityOverride?: ExportQuality,
@@ -594,7 +610,7 @@ export function ExportButton() {
       URL.revokeObjectURL(url)
       setShowDialog(false)
       showToast('書き出しが完了しました', 'success')
-      emitExportNotification('success', '書き出しが完了しました')
+      emitExportCompletionSignals('success', '書き出しが完了しました')
       const skipMessage = formatExportAudioDecodeSkipMessage(skippedAudio)
       if (skipMessage) showToast(skipMessage, 'info')
       if (snsExportActiveRef.current) {
@@ -858,6 +874,26 @@ export function ExportButton() {
                   {notificationPermission === 'unsupported' && (
                     <span className="mt-1 block text-red-300/90">この環境では通知 API が使えません。</span>
                   )}
+                </span>
+              </span>
+            </label>
+            <label
+              data-testid="export-completion-chime-toggle"
+              className="flex cursor-pointer items-start gap-2 rounded-xl bg-surface-3 px-3 py-2.5 ring-1 ring-border"
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={chimeCompletionPref}
+                onChange={(e) => handleChimeCompletionPrefChange(e.target.checked)}
+                aria-label={getExportCompletionChimeLabel()}
+              />
+              <span className="min-w-0">
+                <span className="block text-xs font-medium text-text-primary">
+                  {getExportCompletionChimeLabel()}
+                </span>
+                <span className="mt-0.5 block text-[10px] leading-relaxed text-text-muted">
+                  {getExportCompletionChimeHint()}
                 </span>
               </span>
             </label>
