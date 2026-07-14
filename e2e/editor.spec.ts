@@ -2093,6 +2093,50 @@ test('書き出し: 失敗時自動スキップトグルが再表示後も保持
   await expect(page.getByTestId('export-continue-on-error-toggle').locator('input[type="checkbox"]')).toBeChecked()
 })
 
+test('書き出し: 章 ZIP 失敗画面から失敗サマリーをコピーできる（Phase H G30）', async ({ page }) => {
+  test.setTimeout(180_000)
+
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await loadChapterExportE2eProject(page)
+  await setExportFailOnChapter(page, '新郎プロフィール')
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '軽量' }).click()
+  await page.getByRole('button', { name: '全章を ZIP で書き出し' }).click()
+  await expect(page.getByRole('alert', { name: '書き出しエラー' })).toBeVisible({ timeout: 120_000 })
+  await expect(page.getByTestId('export-copy-summary-button')).toBeVisible()
+  await page.getByTestId('export-copy-summary-button').click()
+  await expect(page.getByText('失敗サマリーをコピーしました')).toBeVisible({ timeout: 10_000 })
+  const text = await page.evaluate(() => navigator.clipboard.readText())
+  expect(text).toContain('新郎プロフィール')
+  expect(text).toContain('失敗')
+})
+
+test('書き出し: 章 ZIP 部分成功画面から失敗サマリーをコピーできる（Phase H G30）', async ({ page }) => {
+  test.setTimeout(300_000)
+
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await loadChapterExportE2eProject(page)
+  await setExportFailOnChapter(page, '新郎プロフィール')
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '軽量' }).click()
+  await page.getByTestId('export-continue-on-error-toggle').locator('input[type="checkbox"]').check()
+  const downloadPromise = page.waitForEvent('download', { timeout: 240_000 })
+  await page.getByRole('button', { name: '全章を ZIP で書き出し' }).click()
+  await downloadPromise
+  await expect(page.getByTestId('export-partial-success')).toBeVisible({ timeout: 30_000 })
+  await page.getByTestId('export-copy-summary-button').click()
+  await expect(page.getByText('失敗サマリーをコピーしました')).toBeVisible({ timeout: 10_000 })
+  const text = await page.evaluate(() => navigator.clipboard.readText())
+  expect(text).toContain('新郎プロフィール')
+  expect(text).toMatch(/完了/)
+})
+
 test('ショートカット: Space で再生・停止、Cmd/Ctrl+Z で取り消し', async ({ page }) => {
   await addOpeningText(page)
 

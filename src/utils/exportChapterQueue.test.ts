@@ -3,16 +3,19 @@ import type { ChapterExportEntry } from './chapterBatchExport'
 import {
   buildPartialChapterZipFilename,
   buildPartialSuccessChapterZipFilename,
+  canCopyChapterQueueSummary,
   canDownloadPartialChapterZip,
   canSkipFailedAndContinue,
   createChapterExportQueue,
   finalizeChapterQueueOnAbort,
   formatBatchExportProgressDetail,
   formatChapterQueueCancelDetail,
+  formatChapterQueueCopySummary,
   formatChapterQueueFailureDetail,
   formatChapterQueueItemStatus,
   formatChapterQueueSkipContinueSummary,
   getChapterQueueSummary,
+  getCopyChapterQueueSummaryButtonLabel,
   getFailedChapterIndices,
   getPartialChapterZipButtonLabel,
   getPartialChapterZipHint,
@@ -228,5 +231,20 @@ describe('exportChapterQueue', () => {
     queue.items[2]!.status = 'done'
     expect(canSkipFailedAndContinue(queue)).toBe(false)
     expect(isChapterQueuePartiallySuccessful(queue)).toBe(true)
+  })
+
+  it('formatChapterQueueCopySummary は章ごとの結果一覧を返す', () => {
+    const queue = createChapterExportQueue(entries)
+    queue.items[0]!.status = 'done'
+    queue.items[1]!.status = 'failed'
+    queue.items[1]!.errorMessage = 'encode failed'
+    expect(canCopyChapterQueueSummary(queue)).toBe(true)
+    expect(getCopyChapterQueueSummaryButtonLabel()).toBe('失敗サマリーをコピー')
+    const text = formatChapterQueueCopySummary(queue, '婚礼本編')
+    expect(text).toContain('プロジェクト: 婚礼本編')
+    expect(text).toContain('1/3 完了・1 失敗')
+    expect(text).toContain('- オープニング: 完了')
+    expect(text).toContain('- 新郎プロフィール: 失敗 — encode failed')
+    expect(text).toContain('- エンディング: 待機中')
   })
 })

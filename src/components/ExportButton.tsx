@@ -42,15 +42,19 @@ import {
 import {
   buildPartialChapterZipFilename,
   buildPartialSuccessChapterZipFilename,
+  canCopyChapterQueueSummary,
   canDownloadPartialChapterZip,
   canSkipFailedAndContinue,
+  copyTextToClipboard,
   createChapterExportQueue,
   finalizeChapterQueueOnAbort,
   formatBatchExportProgressDetail,
   formatChapterQueueCancelDetail,
+  formatChapterQueueCopySummary,
   formatChapterQueueFailureDetail,
   formatChapterQueueSkipContinueSummary,
   getChapterQueueDoneCount,
+  getCopyChapterQueueSummaryButtonLabel,
   getFailedChapterIndices,
   getPartialChapterZipButtonLabel,
   getPartialChapterZipHint,
@@ -149,6 +153,7 @@ export function ExportButton() {
   const pendingChapterCount = chapterQueue ? getPendingChapterIndices(chapterQueue).length : 0
   const canSavePartialZip = chapterQueue ? canDownloadPartialChapterZip(chapterQueue) : false
   const canSkipFailedContinue = chapterQueue ? canSkipFailedAndContinue(chapterQueue) : false
+  const canCopyQueueSummary = chapterQueue ? canCopyChapterQueueSummary(chapterQueue) : false
 
   useEffect(() => {
     if (!showExportHint) return
@@ -371,6 +376,14 @@ export function ExportButton() {
       console.error(err)
       showToast('完了章の ZIP 保存に失敗しました', 'error')
     }
+  }
+
+  const handleCopyChapterQueueSummary = async () => {
+    if (!chapterQueue || !canCopyChapterQueueSummary(chapterQueue)) return
+    const text = formatChapterQueueCopySummary(chapterQueue, project.name || '')
+    const ok = await copyTextToClipboard(text)
+    if (ok) showToast('失敗サマリーをコピーしました', 'success')
+    else showToast('コピーに失敗しました', 'error')
   }
 
   const runBatchChapterExport = async (
@@ -652,6 +665,16 @@ export function ExportButton() {
             {chapterQueue && (hasFailedChapters(chapterQueue) || hasPartialChapterProgress(chapterQueue)) && (
               <ExportChapterQueuePanel queue={chapterQueue} />
             )}
+            {canCopyQueueSummary && (
+              <Btn
+                variant="default"
+                className="w-full"
+                data-testid="export-copy-summary-button"
+                onClick={() => void handleCopyChapterQueueSummary()}
+              >
+                {getCopyChapterQueueSummaryButtonLabel()}
+              </Btn>
+            )}
             {canSkipFailedContinue && (
               <div className="space-y-2" data-testid="export-skip-continue-section">
                 <p className="text-[10px] leading-relaxed text-text-muted">
@@ -708,6 +731,16 @@ export function ExportButton() {
               <p className="mt-2 text-xs leading-relaxed text-amber-100/90">{exportErrorDetail}</p>
             </div>
             {chapterQueue && <ExportChapterQueuePanel queue={chapterQueue} />}
+            {canCopyQueueSummary && (
+              <Btn
+                variant="default"
+                className="w-full"
+                data-testid="export-copy-summary-button"
+                onClick={() => void handleCopyChapterQueueSummary()}
+              >
+                {getCopyChapterQueueSummaryButtonLabel()}
+              </Btn>
+            )}
             {isRetryableExportJob(retryableJob) && failedChapterCount > 0 && (
               <div className="space-y-2" data-testid="export-retry-section">
                 <p className="text-[10px] leading-relaxed text-text-muted">

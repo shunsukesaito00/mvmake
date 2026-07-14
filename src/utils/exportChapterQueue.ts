@@ -192,6 +192,64 @@ export function buildPartialSuccessChapterZipFilename(projectName: string, doneC
   return `${sanitizeFileBase(projectName || 'movie')}_chapters_${doneCount}ok_${failedCount}fail.zip`
 }
 
+/** 章ごとの成功/失敗一覧をコピー用テキストにする */
+export function formatChapterQueueCopySummary(queue: ChapterExportQueue, projectName = ''): string {
+  const total = queue.items.length
+  const done = getChapterQueueDoneCount(queue)
+  const failed = getFailedChapterIndices(queue).length
+  const pending = getPendingChapterIndices(queue).length
+  const header = [
+    projectName ? `プロジェクト: ${projectName}` : null,
+    `章書き出し結果: ${done}/${total} 完了・${failed} 失敗・${pending} 待機`,
+    '',
+  ].filter((line): line is string => line != null)
+
+  const body = queue.items.map((item) => {
+    const status = formatChapterQueueItemStatus(item.status)
+    const err =
+      item.status === 'failed' && item.errorMessage ? ` — ${item.errorMessage}` : ''
+    return `- ${item.entry.label}: ${status}${err}`
+  })
+
+  return [...header, ...body].join('\n')
+}
+
+export function canCopyChapterQueueSummary(queue: ChapterExportQueue): boolean {
+  return queue.items.some(
+    (item) => item.status === 'done' || item.status === 'failed' || item.status === 'pending',
+  ) && hasFailedChapters(queue)
+}
+
+export function getCopyChapterQueueSummaryButtonLabel(): string {
+  return '失敗サマリーをコピー'
+}
+
+export async function copyTextToClipboard(text: string): Promise<boolean> {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // fall through
+  }
+  try {
+    if (typeof document === 'undefined') return false
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.setAttribute('readonly', '')
+    ta.style.position = 'fixed'
+    ta.style.left = '-9999px'
+    document.body.appendChild(ta)
+    ta.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(ta)
+    return ok
+  } catch {
+    return false
+  }
+}
+
 export async function runChapterExportQueue(
   queue: ChapterExportQueue,
   exportChapter: (

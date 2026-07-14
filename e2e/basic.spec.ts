@@ -2952,6 +2952,26 @@ test('書き出し: 失敗時自動スキップトグルで初回から続行で
   await expect(page.getByTestId('export-partial-success')).toBeVisible({ timeout: 30_000 })
 })
 
+test('書き出し: 章 ZIP 失敗画面から失敗サマリーをコピーできる（Phase H G30）', async ({ page }) => {
+  test.setTimeout(180_000)
+
+  await goOnboarded(page)
+  const encodersSupported = await checkEncodersSupported(page)
+  test.skip(!encodersSupported, 'エンコーダ非対応環境のためスキップ')
+
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await loadChapterExportE2eProject(page)
+  await setExportFailOnChapter(page, '新郎プロフィール')
+  await page.getByRole('button', { name: '書き出し' }).click()
+  await page.getByRole('button', { name: '軽量' }).click()
+  await page.getByRole('button', { name: '全章を ZIP で書き出し' }).click()
+  await expect(page.getByRole('alert', { name: '書き出しエラー' })).toBeVisible({ timeout: 120_000 })
+  await page.getByTestId('export-copy-summary-button').click()
+  await expect(page.getByText('失敗サマリーをコピーしました')).toBeVisible({ timeout: 10_000 })
+  const text = await page.evaluate(() => navigator.clipboard.readText())
+  expect(text).toContain('新郎プロフィール')
+})
+
 test('書き出し: 短尺プロジェクトで章 ZIP をダウンロード（対応環境）', async ({ page }) => {
   test.setTimeout(300_000)
 
